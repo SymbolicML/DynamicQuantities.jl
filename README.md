@@ -84,9 +84,25 @@ julia> ustrip(x)
 
 ## Units
 
-Despite the name, `DynamicUnits.jl` does not actually work with units.
-Instead, it works with *dimensions*.
-You can use `Unitful` to convert to a consistent unit system (e.g., SI) from units, pass the result to DynamicUnits, perform your calculations, and then convert back to units.
+Despite the name, DynamicUnits does not actually work with units. Instead, it works with *dimensions*.
+You can use Unitful to parse units, and use the DynamicUnits->Unitful extension for conversion:
+
+```julia
+julia> x = 0.5u"km/s"
+0.5 km s⁻¹
+
+julia> convert(DynamicUnits.Quantity, x)
+500.0 𝐋^1 𝐓^(-1)
+
+julia> y = convert(DynamicUnits.Quantity, x)
+500.0 𝐋^1 𝐓^(-1)
+
+julia> y2 = y^2 * 0.3
+75000.0 𝐋^2 𝐓^(-2)
+
+julia> x2 = convert(Unitful.Quantity, y2)
+75000.0 m² s⁻²
+```
 
 ## Vectors
 
