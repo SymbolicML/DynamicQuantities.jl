@@ -93,9 +93,6 @@ julia> using Unitful: Unitful, @u_str
 julia> x = 0.5u"km/s"
 0.5 km s⁻¹
 
-julia> convert(DynamicUnits.Quantity, x)
-500.0 𝐋^1 𝐓^(-1)
-
 julia> y = convert(DynamicUnits.Quantity, x)
 500.0 𝐋^1 𝐓^(-1)
 
