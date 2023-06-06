@@ -63,10 +63,6 @@ using Test
 
     @test !(y ≈ x)
 
-    y = Quantity(2 // 10, length=1, 𝐌=5 // 2)
-
-    @test y ≈ x
-
     y = x * Inf
 
     @test isfinite(x)

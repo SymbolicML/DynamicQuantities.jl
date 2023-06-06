@@ -1,3 +1,28 @@
+macro map_dimensions(f, l...)
+    # Create a new Dimensions object by applying f to each key
+    output = :(Dimensions())
+    for dim in DIMENSION_NAMES
+        f_expr = :($f())
+        for arg in l
+            push!(f_expr.args, :($arg.$dim))
+        end
+        push!(output.args, f_expr)
+    end
+    return output |> esc
+end
+macro all_dimensions(f, l...)
+    # Test a function over all dimensions
+    output = Expr(:&&)
+    for dim in DIMENSION_NAMES
+        f_expr = :($f())
+        for arg in l
+            push!(f_expr.args, :($arg.$dim))
+        end
+        push!(output.args, f_expr)
+    end
+    return output |> esc
+end
+
 Base.float(q::Quantity{T}) where {T<:AbstractFloat} = convert(T, q)
 Base.convert(::Type{T}, q::Quantity) where {T<:Real} =
     let
@@ -7,13 +32,11 @@ Base.convert(::Type{T}, q::Quantity) where {T<:Real} =
     end
 
 Base.isfinite(q::Quantity) = isfinite(q.value)
-Base.keys(d::Dimensions) = keys(d.data)
-Base.values(d::Dimensions) = values(d.data)
-Base.iszero(d::Dimensions) = all(iszero, values(d))
+Base.keys(::Dimensions) = DIMENSION_NAMES
+Base.iszero(d::Dimensions) = @all_dimensions(iszero, d)
 Base.iszero(q::Quantity) = iszero(q.value)
-Base.getindex(d::Dimensions, k::Int) = d.data[k]
-Base.getindex(d::Dimensions, k::Symbol) = d.data[k]
-Base.:(==)(l::Dimensions, r::Dimensions) = all(k -> (l[k] == r[k]), keys(l))
+Base.getindex(d::Dimensions, k::Symbol) = getfield(d, k)
+Base.:(==)(l::Dimensions, r::Dimensions) = @all_dimensions(==, l, r)
 Base.:(==)(l::Quantity, r::Quantity) = l.value == r.value && l.dimensions == r.dimensions && l.valid == r.valid
 Base.:(≈)(l::Quantity, r::Quantity) = l.value ≈ r.value && l.dimensions == r.dimensions && l.valid == r.valid
 Base.length(::Dimensions) = 1
@@ -22,14 +45,12 @@ Base.iterate(d::Dimensions) = (d, nothing)
 Base.iterate(::Dimensions, ::Nothing) = nothing
 Base.iterate(q::Quantity) = (q, nothing)
 Base.iterate(::Quantity, ::Nothing) = nothing
-Base.map(f::F, l::Dimensions, r::Dimensions) where {F<:Function} = Dimensions(ntuple(k -> f(l[k], r[k]), Val(NumDimensions)))
-Base.map(f::F, l::Dimensions) where {F<:Function} = Dimensions(ntuple(k -> f(l[k]), Val(NumDimensions)))
 
 Base.show(io::IO, d::Dimensions) =
     let tmp_io = IOBuffer()
-        foreach(keys(d)) do k
+        for k in keys(d)
             if !iszero(d[k])
-                print(tmp_io, k)
+                print(tmp_io, SYNONYM_MAPPING[k])
                 pretty_print_exponent(tmp_io, d[k])
                 print(tmp_io, " ")
             end
@@ -60,10 +81,10 @@ dimension(q::Quantity) = q.dimensions
 dimension(::Number) = Dimensions()
 valid(q::Quantity) = q.valid
 
-ulength(q::Quantity) = q.dimensions[:𝐋]
-umass(q::Quantity) = q.dimensions[:𝐌]
-utime(q::Quantity) = q.dimensions[:𝐓]
-ucurrent(q::Quantity) = q.dimensions[:𝐈]
-utemperature(q::Quantity) = q.dimensions[:𝚯]
-uluminosity(q::Quantity) = q.dimensions[:𝐉]
-uamount(q::Quantity) = q.dimensions[:𝐍]
+ulength(q::Quantity) = q.dimensions.length
+umass(q::Quantity) = q.dimensions.mass
+utime(q::Quantity) = q.dimensions.time
+ucurrent(q::Quantity) = q.dimensions.current
+utemperature(q::Quantity) = q.dimensions.temperature
+uluminosity(q::Quantity) = q.dimensions.luminosity
+uamount(q::Quantity) = q.dimensions.amount

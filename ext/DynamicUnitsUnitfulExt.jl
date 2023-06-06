@@ -11,7 +11,7 @@ else
 end
 
 # This lets the user override the preferred units:
-const UNITFUL_EQUIVALENCIES = let basic = (𝐋=u"m", 𝐌=u"kg", 𝐓=u"s", 𝐈=u"A", 𝚯=u"K", 𝐉=u"cd", 𝐍=u"mol")
+const UNITFUL_EQUIVALENCIES = let basic = (length=u"m", mass=u"kg", time=u"s", current=u"A", temperature=u"K", luminosity=u"cd", amount=u"mol")
     NamedTuple((k => Unitful.upreferred(basic[k]) for k in keys(basic)))
 end
 
