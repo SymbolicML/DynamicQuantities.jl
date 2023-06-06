@@ -32,8 +32,9 @@ julia> @btime f($unitful);
   29.666 μs (42 allocations: 1.91 KiB)
 ```
 
-Here, the DynamicUnits `Quantity` allows the compiler to build a function that is type stable,
-while the Unitful `Quantity` requires type inference at runtime.
+(Note the μ and n.)
+Here, the DynamicUnits quantity object allows the compiler to build a function that is type stable,
+while the Unitful quantity object, which stores its dimensions in the type, requires type inference at runtime.
 
 However, if the dimensions in your function *can* be inferred by the compiler,
 then you are better off using Unitful:
