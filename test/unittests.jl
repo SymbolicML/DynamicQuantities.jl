@@ -83,6 +83,13 @@ using Test
     @test uamount(y) == 0
     @test ustrip(y) ≈ 0.2^2.1
     @test ustrip(y) === 0.2^(21 // 10)
+
+    x1 = Quantity(0.5)
+    x2 = Quantity(10.0, length=1)
+    y = x2^x1
+
+    @test ulength(y) == 1 // 2
+    @test ustrip(y) ≈ 10.0^0.5
 end
 
 @testset "Arrays" begin
@@ -106,7 +113,11 @@ end
     @test dimension(z) == Dimensions(length=1, mass=2)
     @test float(z / (z * -1 / 52)) ≈ ustrip(z)
 
+    @test Dimensions(length=1) / 0.5 == Quantity(2.0, length=1)
     @test 0.5 / Dimensions(length=1) == Quantity(0.5, length=-1)
+    @test Dimensions(length=1) * 0.5 == Quantity(0.5, length=1)
+    @test 0.5 / Quantity(1, length=1) == Quantity(0.5, length=-1)
+    @test 0.5 * Quantity(1, length=1) == Quantity(0.5, length=1)
     @test Quantity(0.5) / Dimensions(length=1) == Quantity(0.5, length=-1)
     @test Quantity(0.5, length=2) / Dimensions(length=1) == Quantity(0.5, length=1)
     @test Dimensions(length=1) / Quantity(0.5, length=2, mass=-5) == Quantity(2, length=-1, mass=5)
