@@ -7,10 +7,6 @@ const VALID_KEYS = (:𝐋, :𝐌, :𝐓, :𝐈, :𝚯, :𝐉, :𝐍)
 const VALID_SYNONYMS = (:length, :mass, :time, :current, :temperature, :luminosity, :amount)
 const VALID_KWARGS = Tuple(union(VALID_KEYS, VALID_SYNONYMS))
 
-@inline tryrationalize(::Type{T}, x::Rational{T}) where {T<:Integer} = x
-@inline tryrationalize(::Type{T}, x::T) where {T<:Integer} = Rational{T}(x)
-@inline tryrationalize(::Type{T}, x) where {T<:Integer} = rationalize(T, x)
-
 struct Dimensions
     data::DefaultDimensionType
 

@@ -12,8 +12,8 @@ Base.values(d::Dimensions) = values(d.data)
 Base.iszero(d::Dimensions) = all(iszero, values(d))
 Base.getindex(d::Dimensions, k::Symbol) = d.data[k]
 Base.getindex(d::Dimensions, k::Int) = d.data[k]
-Base.:(==)(l::D, r::D) where {D<:Dimensions} = all(k -> (l[k] == r[k]), keys(l))
-Base.:(==)(l::Q, r::Q) where {Q<:Quantity} = l.val == r.val && l.dimensions == r.dimensions && l.valid == r.valid
+Base.:(==)(l::Dimensions, r::Dimensions) = all(k -> (l[k] == r[k]), keys(l))
+Base.:(==)(l::Quantity, r::Quantity) = l.val == r.val && l.dimensions == r.dimensions && l.valid == r.valid
 
 Base.show(io::IO, d::Dimensions) =
     foreach(keys(d)) do k
@@ -24,6 +24,7 @@ Base.show(io::IO, d::Dimensions) =
         end
     end
 Base.show(io::IO, q::Quantity) = q.valid ? print(io, q.val, " ", q.dimensions) : print(io, "INVALID")
+
 tryround(x::Rational{Int}) = isinteger(x) ? round(Int, x) : x
 pretty_print_exponent(io::IO, x::Rational{Int}) =
     let
@@ -33,3 +34,6 @@ pretty_print_exponent(io::IO, x::Rational{Int}) =
             print(io, "^(", tryround(x), ")")
         end
     end
+@inline tryrationalize(::Type{T}, x::Rational{T}) where {T<:Integer} = x
+@inline tryrationalize(::Type{T}, x::T) where {T<:Integer} = Rational{T}(x)
+@inline tryrationalize(::Type{T}, x) where {T<:Integer} = rationalize(T, x)
