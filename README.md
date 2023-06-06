@@ -23,16 +23,16 @@ julia> dyn_uni = Quantity(0.2, mass=1, length=0.5, amount=3)
 julia> unitful = convert(Unitful.Quantity, dyn_uni)
 0.2 kg m¹ᐟ² mol³
 
-julia> f(x) = x ^ rand(1:10) * 0.3;
+julia> f(x, i) = x ^ i * 0.3;
 
-julia> @btime f($dyn_uni);
-  41.330 ns (0 allocations: 0 bytes)
+julia> @btime f($dyn_uni, i) setup=(i=rand(1:10));
+  9.384 ns (0 allocations: 0 bytes)
 
-julia> @btime f($unitful);
-  29.542 μs (42 allocations: 1.91 KiB)
+julia> @btime f($unitful, i) setup=(i=rand(1:10));
+  29.667 μs (42 allocations: 1.91 KiB)
 ```
 
-(Note the μ and n.)
+**(Note the μ and n.)**
 Here, the DynamicUnits quantity object allows the compiler to build a function that is type stable,
 while the Unitful quantity object, which stores its dimensions in the type, requires type inference at runtime.
 
