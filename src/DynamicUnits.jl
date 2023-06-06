@@ -1,10 +1,16 @@
 module DynamicUnits
 
-export Quantity, Dimensions, ustrip, dimensions, valid
+export Quantity, Dimensions, ustrip, dimension, valid
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 
 include("types.jl")
 include("utils.jl")
 include("math.jl")
+
+import Requires: @init, @require
+
+if !isdefined(Base, :get_extension)
+    @init @require Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d" include("../ext/DynamicUnitsUnitfulExt.jl")
+end
 
 end

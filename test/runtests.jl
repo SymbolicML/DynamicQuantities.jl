@@ -1,6 +1,9 @@
-using DynamicUnits
-using Test
+using SafeTestsets
 
-@testset "unittests.jl" begin
+@safetestset "Unit tests" begin
     include("unittests.jl")
+end
+
+@safetestset "Unitful.jl integration tests" begin
+    include("unitful.jl")
 end
