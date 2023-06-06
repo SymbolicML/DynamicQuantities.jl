@@ -39,6 +39,12 @@ Physical quantity with value `value` of type `T` and dimensions `dimensions`.
 The `valid` field is used to indicate whether the quantity is valid or not
 (e.g., due to dimensional error). For example, the velocity of an object
 with mass 1 kg and velocity 2 m/s is `Quantity(2, mass=1, length=1, time=-1)`.
+You should access these fields with `value(q)`, `dimensions(q)`, and `valid(q)`.
+You can access specific dimensions with `ulength(q)`, `umass(q)`, `utime(q)`,
+`ucurrent(q)`, `utemperature(q)`, `uluminosity(q)`, and `uamount(q)`.
+
+Severals operators in `Base` are extended to work with `Quantity` objects,
+including `*`, `+`, `-`, `/`, `^`, `sqrt`, and `cbrt`.
 """
 struct Quantity{T}
     value::T
