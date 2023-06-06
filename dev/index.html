@@ -7,13 +7,13 @@ julia&gt; dyn_uni = Quantity(0.2, mass=1, length=0.5, amount=3)
 julia&gt; unitful = convert(Unitful.Quantity, dyn_uni)
 0.2 kg m¹ᐟ² mol³
 
-julia&gt; f(x) = x ^ rand(1:10) * 0.3;
+julia&gt; f(x, i) = x ^ i * 0.3;
 
-julia&gt; @btime f($dyn_uni);
-  41.330 ns (0 allocations: 0 bytes)
+julia&gt; @btime f($dyn_uni, i) setup=(i=rand(1:10));
+  9.384 ns (0 allocations: 0 bytes)
 
-julia&gt; @btime f($unitful);
-  29.542 μs (42 allocations: 1.91 KiB)</code></pre><p>(Note the μ and n.) Here, the DynamicUnits quantity object allows the compiler to build a function that is type stable, while the Unitful quantity object, which stores its dimensions in the type, requires type inference at runtime.</p><p>However, if the dimensions in your function <em>can</em> be inferred by the compiler, then you can get better speeds with Unitful:</p><pre><code class="language-julia hljs">julia&gt; g(x) = x ^ 2 * 0.3;
+julia&gt; @btime f($unitful, i) setup=(i=rand(1:10));
+  29.667 μs (42 allocations: 1.91 KiB)</code></pre><p><strong>(Note the μ and n.)</strong> Here, the DynamicUnits quantity object allows the compiler to build a function that is type stable, while the Unitful quantity object, which stores its dimensions in the type, requires type inference at runtime.</p><p>However, if the dimensions in your function <em>can</em> be inferred by the compiler, then you can get better speeds with Unitful:</p><pre><code class="language-julia hljs">julia&gt; g(x) = x ^ 2 * 0.3;
 
 julia&gt; @btime g($dyn_uni);
   6.083 ns (0 allocations: 0 bytes)
@@ -76,4 +76,4 @@ true</code></pre><h2 id="Vectors"><a class="docs-heading-anchor" href="#Vectors"
  -0.01603602425887379 𝐋 ⁴ 𝐌 ³
  1.4388184352393647 
  2.382303019892503 𝐋 ² 𝐌 ¹
- 0.6071392594021706 𝐋 ⁴ 𝐌 ⁴</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Tuesday 6 June 2023 15:46">Tuesday 6 June 2023</span>. Using Julia version 1.9.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ 0.6071392594021706 𝐋 ⁴ 𝐌 ⁴</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Tuesday 6 June 2023 15:50">Tuesday 6 June 2023</span>. Using Julia version 1.9.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
