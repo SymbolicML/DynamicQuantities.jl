@@ -9,6 +9,16 @@ const SYNONYM_MAPPING = NamedTuple(DIMENSION_NAMES .=> DIMENSION_SYNONYMS)
 A type representing the dimensions of a quantity, with each
 field giving the power of the corresponding dimension. For
 example, the dimensions of velocity are `Dimensions(length=1, time=-1)`.
+
+# Fields
+
+- `length::Rational{Int}`: length dimension (i.e., meters^(length))
+- `mass::Rational{Int}`: mass dimension (i.e., kg^(mass))
+- `time::Rational{Int}`: time dimension (i.e., s^(time))
+- `current::Rational{Int}`: current dimension (i.e., A^(current))
+- `temperature::Rational{Int}`: temperature dimension (i.e., K^(temperature))
+- `luminosity::Rational{Int}`: luminosity dimension (i.e., cd^(luminosity))
+- `amount::Rational{Int}`: amount dimension (i.e., mol^(amount))
 """
 struct Dimensions
     length::R
@@ -45,6 +55,12 @@ You can access specific dimensions with `ulength(q)`, `umass(q)`, `utime(q)`,
 
 Severals operators in `Base` are extended to work with `Quantity` objects,
 including `*`, `+`, `-`, `/`, `^`, `sqrt`, and `cbrt`.
+
+# Fields
+
+- `value::T`: value of the quantity of some type `T`
+- `dimensions::Dimensions`: dimensions of the quantity
+- `valid::Bool`: whether the quantity is valid or not
 """
 struct Quantity{T}
     value::T
