@@ -6,20 +6,20 @@ DocMeta.setdocmeta!(DynamicUnits, :DocTestSetup, :(using DynamicUnits); recursiv
 makedocs(;
     modules=[DynamicUnits],
     authors="MilesCranmer <miles.cranmer@gmail.com> and contributors",
-    repo="https://github.com/MilesCranmer/DynamicUnits.jl/blob/{commit}{path}#{line}",
+    repo="https://github.com/SymbolicML/DynamicUnits.jl/blob/{commit}{path}#{line}",
     sitename="DynamicUnits.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://MilesCranmer.github.io/DynamicUnits.jl",
+        canonical="https://symbolicml.org/DynamicUnits.jl",
         edit_link="main",
-        assets=String[],
+        assets=String[]
     ),
     pages=[
         "Home" => "index.md",
-    ],
+    ]
 )
 
 deploydocs(;
-    repo="github.com/MilesCranmer/DynamicUnits.jl",
-    devbranch="main",
+    repo="github.com/SymbolicML/DynamicUnits.jl",
+    devbranch="main"
 )

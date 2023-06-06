@@ -4,7 +4,7 @@ CurrentModule = DynamicUnits
 
 # DynamicUnits
 
-Documentation for [DynamicUnits](https://github.com/MilesCranmer/DynamicUnits.jl).
+Documentation for [DynamicUnits](https://github.com/SymbolicML/DynamicUnits.jl).
 
 ```@index
 ```
