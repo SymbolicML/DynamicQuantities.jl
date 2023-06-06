@@ -11,6 +11,7 @@ Base.keys(d::Dimensions) = keys(d.data)
 Base.values(d::Dimensions) = values(d.data)
 Base.iszero(d::Dimensions) = all(iszero, values(d))
 Base.getindex(d::Dimensions, k::Symbol) = d.data[k]
+Base.getindex(d::Dimensions, k::Int) = d.data[k]
 Base.:(==)(l::D, r::D) where {D<:Dimensions} = all(k -> (l[k] == r[k]), keys(l))
 Base.:(==)(l::Q, r::Q) where {Q<:Quantity} = l.val == r.val && l.dimensions == r.dimensions && l.valid == r.valid
 

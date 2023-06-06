@@ -1,7 +1,8 @@
 const Dimensionless = (𝐋=0 // 1, 𝐌=0 // 1, 𝐓=0 // 1, 𝐈=0 // 1, 𝚯=0 // 1, 𝐉=0 // 1, 𝐍=0 // 1)
+const NumDimensions = length(Dimensionless)
 const R = Rational{Int}
 const DefaultDimensionType = typeof(Dimensionless)
-const DefaultDataType = NTuple{7,R}
+const DefaultDataType = NTuple{NumDimensions,R}
 const VALID_KEYS = (:𝐋, :𝐌, :𝐓, :𝐈, :𝚯, :𝐉, :𝐍)
 const VALID_SYNONYMS = (:length, :mass, :time, :current, :temperature, :luminosity, :amount)
 const VALID_KWARGS = Tuple(union(VALID_KEYS, VALID_SYNONYMS))
@@ -32,6 +33,8 @@ struct Dimensions
         end
     Dimensions(; kws...) = isempty(kws) ? new(Dimensionless) : Dimensions(NamedTuple(kws))
 end
+Dimensions(f::F, l::Dimensions, r::Dimensions) where {F<:Function} = Dimensions(ntuple(k -> f(l[k], r[k]), Val(NumDimensions)))
+Dimensions(f::F, l::Dimensions) where {F<:Function} = Dimensions(ntuple(k -> f(l[k]), Val(NumDimensions)))
 
 struct Quantity{T}
     val::T
