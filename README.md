@@ -14,10 +14,10 @@ This is done to allow for calculations where physical dimensions are not known a
 The performance of DynamicUnits is slower than Unitful if the dimensions are known at compile time:
 
 ```julia
-julia> using BenchmarkTools
+julia> using BenchmarkTools, DynamicUnits; import Unitful
 
 julia> dyn_uni = Quantity(0.2, mass=1, length=0.5, amount=3)
-0.2 𝐋^(1//2) 𝐌^1 𝐍^3
+0.2 𝐋 ¹ᐟ² 𝐌 ¹ 𝐍 ³
 
 julia> unitful = convert(Unitful.Quantity, dyn_uni)
 0.2 kg m¹ᐟ² mol³
@@ -58,33 +58,33 @@ You can create a `Quantity` object with a value and keyword arguments for the po
 (`mass`, `length`, `time`, `current`, `temperature`, `luminosity`, `amount`):
 
 ```julia
-julia> x = Quantity(0.2, mass=1, length=0.5)
-0.2 𝐋^(1//2) 𝐌^1
+julia> x = Quantity(0.3, mass=1, length=0.5)
+0.3 𝐋 ¹ᐟ² 𝐌 ¹
 
 julia> y = Quantity(10.2, mass=2, time=-2)
-10.2 𝐌^2 𝐓^(-2)
+10.2 𝐌 ² 𝐓 ⁻²
 ```
 
 Elementary calculations with `+, -, *, /, ^, sqrt, cbrt` are supported:
 
 ```julia
 julia> x * y
-2.04 𝐋^(1//2) 𝐌^3 𝐓^(-2)
+3.0599999999999996 𝐋 ¹ᐟ² 𝐌 ³ 𝐓 ⁻²
 
 julia> x / y
-0.019607843137254905 𝐋^(1//2) 𝐌^(-1) 𝐓^2
+0.029411764705882353 𝐋 ¹ᐟ² 𝐌 ⁻¹ 𝐓 ²
 
 julia> x ^ 3
-0.008000000000000002 𝐋^(3//2) 𝐌^3
+0.027 𝐋 ³ᐟ² 𝐌 ³
 
 julia> x ^ -1
-5.0 𝐋^(-1//2) 𝐌^(-1)
+3.3333333333333335 𝐋 ⁻¹ᐟ² 𝐌 ⁻¹
 
 julia> sqrt(x)
-0.4472135954999579 𝐋^(1//4) 𝐌^(1//2)
+0.5477225575051661 𝐋 ¹ᐟ⁴ 𝐌 ¹ᐟ²
 
 julia> x ^ 1.5
-0.0894427190999916 𝐋^(3//4) 𝐌^(3//2)
+0.1643167672515498 𝐋 ³ᐟ⁴ 𝐌 ³ᐟ²
 ```
 
 Each of these values has the same type, thus obviating the need for type inference at runtime.
@@ -93,7 +93,7 @@ Furthermore, we can do dimensional analysis automatically:
 
 ```julia
 julia> x + 3 * x
-0.8 𝐋^(1//2) 𝐌^1
+1.2 𝐋 ¹ᐟ² 𝐌 ¹
 
 julia> x + y
 INVALID
@@ -105,7 +105,7 @@ The dimensions of a `Quantity` can be accessed either with `dimension(quantity)`
 
 ```julia
 julia> dimension(x)
-𝐋^(1//2) 𝐌^1
+𝐋 ¹ᐟ² 𝐌 ¹
 ```
 
 or with `umass`, `ulength`, etc., for the various dimensions:
@@ -137,10 +137,10 @@ julia> x = 0.5u"km/s"
 0.5 km s⁻¹
 
 julia> y = convert(DynamicUnits.Quantity, x)
-500.0 𝐋^1 𝐓^(-1)
+500.0 𝐋 ¹ 𝐓 ⁻¹
 
 julia> y2 = y^2 * 0.3
-75000.0 𝐋^2 𝐓^(-2)
+75000.0 𝐋 ² 𝐓 ⁻²
 
 julia> x2 = convert(Unitful.Quantity, y2)
 75000.0 m² s⁻²
@@ -157,11 +157,11 @@ like so:
 ```julia
 julia> randn(5) .* Dimensions(mass=2/5, length=2)
 5-element Vector{Quantity{Float64}}:
- -0.72119725412798 𝐋^2 𝐌^(2//5)
- 0.6443068291470538 𝐋^2 𝐌^(2//5)
- 1.2137320667123697 𝐋^2 𝐌^(2//5)
- 0.5125746727860678 𝐋^2 𝐌^(2//5)
- -0.6511788444561991 𝐋^2 𝐌^(2//5)
+ -0.6450221578668845 𝐋 ² 𝐌 ²ᐟ⁵
+ 0.4024829670050946 𝐋 ² 𝐌 ²ᐟ⁵
+ 0.21478863605789672 𝐋 ² 𝐌 ²ᐟ⁵
+ 0.0719774550969669 𝐋 ² 𝐌 ²ᐟ⁵
+ -1.4231241943420674 𝐋 ² 𝐌 ²ᐟ⁵
 ```
 
 Because it is type stable, you can have mixed units in a vector too:
@@ -169,9 +169,9 @@ Because it is type stable, you can have mixed units in a vector too:
 ```julia
 julia> v = [Quantity(randn(), mass=rand(0:5), length=rand(0:5)) for _=1:5]
 5-element Vector{Quantity{Float64}}:
- 0.6531745868307951 
- 0.5260730397041357 𝐋^2 𝐌^5
- 1.0827471975303913 𝐌^1
- 1.5524518860763528 𝐌^1
- 0.5376635007504901 𝐋^3 𝐌^1
+ 2.2054411324716865 𝐌 ³
+ -0.01603602425887379 𝐋 ⁴ 𝐌 ³
+ 1.4388184352393647 
+ 2.382303019892503 𝐋 ² 𝐌 ¹
+ 0.6071392594021706 𝐋 ⁴ 𝐌 ⁴
 ```

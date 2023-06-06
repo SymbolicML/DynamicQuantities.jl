@@ -65,15 +65,18 @@ Base.show(io::IO, q::Quantity) = q.valid ? print(io, q.value, " ", q.dimensions)
 tryround(x::Rational{Int}) = isinteger(x) ? round(Int, x) : x
 pretty_print_exponent(io::IO, x::Rational{Int}) =
     let
-        if x >= 0 && isinteger(x)
-            print(io, "^", round(Int, x))
+        if isinteger(x)
+            print(io, " ", to_superscript(string(round(Int, x))))
         else
-            print(io, "^(", tryround(x), ")")
+            print(io, " ", to_superscript(string(x)))
         end
     end
-@inline tryrationalize(::Type{T}, x::Rational{T}) where {T<:Integer} = x
-@inline tryrationalize(::Type{T}, x::T) where {T<:Integer} = Rational{T}(x)
-@inline tryrationalize(::Type{T}, x) where {T<:Integer} = rationalize(T, x)
+const SUPERSCRIPT_MAPPING = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
+to_superscript(s::AbstractString) = replace(s, r"\d" => x -> SUPERSCRIPT_MAPPING[parse(Int, x)+1], r"//" => "ᐟ", "-" => "⁻")
+
+tryrationalize(::Type{T}, x::Rational{T}) where {T<:Integer} = x
+tryrationalize(::Type{T}, x::T) where {T<:Integer} = Rational{T}(x)
+tryrationalize(::Type{T}, x) where {T<:Integer} = rationalize(T, x)
 
 ustrip(q::Quantity) = q.value
 ustrip(q::Number) = q

@@ -30,7 +30,8 @@ using Test
     y = x^2 + x
 
     @test !valid(y)
-    @test string(x) == "0.2 𝐋^1 𝐌^(5//2)"
+    @test string(x) == "0.2 𝐋 ¹ 𝐌 ⁵ᐟ²"
+    @test string(inv(x)) == "5.0 𝐋 ⁻¹ 𝐌 ⁻⁵ᐟ²"
     @test string(y) == "INVALID"
 
     y = inv(x)
