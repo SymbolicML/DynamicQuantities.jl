@@ -92,6 +92,11 @@ using Test
     @test ustrip(y) ≈ 10.0^0.5
 end
 
+@testset "Fallbacks" begin
+    @test ustrip(0.5) == 0.5
+    @test dimension(0.5) == Dimensions()
+end
+
 @testset "Arrays" begin
     X = randn(10)
     uX = X .* Dimensions(length=2.5, luminosity=0.5)
