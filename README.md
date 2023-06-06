@@ -34,7 +34,7 @@ While both of these are type stable,
 because Unitful parametrizes the type on the dimensions, functions can specialize
 to units and the compiler can optimize away units from the code.
 
-However, if the dimension is unknown, the performance can suffer quite a bit.
+However, if the dimension is unknown, the performance of Unitful suffers quite a bit.
 This is where DynamicUnits shines:
 
 ```julia
