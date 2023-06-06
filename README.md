@@ -4,3 +4,106 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://symbolicml.org/DynamicExpressions.jl/dev/)
 [![Build Status](https://github.com/SymbolicML/DynamicUnits.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/SymbolicML/DynamicUnits.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://coveralls.io/repos/github/SymbolicML/DynamicUnits.jl/badge.svg?branch=main)](https://coveralls.io/github/SymbolicML/DynamicUnits.jl?branch=main)
+
+This defines a simple statically-typed `Quantity` type for Julia.
+Physical dimensions are stored as a *value*, as opposed to a parametric type, as in [Unitful.jl](https://github.com/PainterQubits/Unitful.jl).
+This is done to allow for calculations where physical dimensions are not known at compile time.
+
+## Usage
+
+You can create a `Quantity` object with a value and keyword arguments for the powers of the physical dimensions
+(`mass`, `length`, `time`, `current`, `temperature`, `luminosity`, `amount`):
+
+```julia
+julia> x = Quantity(0.2, mass=1, length=0.5)
+0.2 M^1 L^(1//2) 
+
+julia> y = Quantity(10.2, mass=2, time=-2)
+10.2 T^(-2) M^2 
+```
+
+Elementary calculations with `+, -, *, /, ^, sqrt, cbrt` are supported:
+
+```julia
+julia> x * y
+2.04 T^(-2) M^3 L^(1//2)
+
+julia> x / y
+0.019607843137254905 T^2 M^(-1) L^(1//2)
+
+julia> x ^ 3
+0.008000000000000002 M^3 L^(3//2) 
+
+julia> x ^ -1
+5.0 M^(-1) L^(-1//2)
+
+julia> sqrt(x)
+0.4472135954999579 M^(1//2) L^(1//4)
+
+julia> x ^ 1.5
+0.0894427190999916 M^(3//2) L^(3//4)
+```
+
+Each of these values has the same type, thus obviating the need for type inference at runtime.
+
+Furthermore, we can do dimensional analysis automatically:
+
+```julia
+julia> x + 2 * x
+0.6000000000000001 M^1 L^(1//2)
+
+julia> x + y
+INVALID
+```
+
+We can see the second one has `valid(quantity) == false`. This doesn't throw an error by default, as it allows for stable return values.
+
+The dimensions of a `Quantity` can be accessed either with `dimensions(quantity)` for the entire `Dimensions` object:
+
+```julia
+julia> dimensions(x)
+M^1 L^(1//2)
+```
+
+or with `umass`, `ulength`, etc., for the various dimensions:
+
+```julia
+julia> umass(x)
+1
+
+julia> ulength(x)
+1//2
+```
+
+## Units
+
+Despite the name, `DynamicUnits.jl` does not actually work with units.
+Instead, it works with *dimensions*.
+You can use `Unitful` to convert to a consistent unit system (e.g., SI) from units, pass the result to DynamicUnits, perform your calculations, and then convert back to units.
+
+## Vectors
+
+There is not a separate class for vectors, but you can create units
+like so:
+
+```julia
+julia> randn(5) .* Dimensions(mass=2/5, length=2)
+5-element Vector{Quantity{Float64}}:
+ -0.72119725412798 𝐋^2 𝐌^(2//5)
+ 0.6443068291470538 𝐋^2 𝐌^(2//5)
+ 1.2137320667123697 𝐋^2 𝐌^(2//5)
+ 0.5125746727860678 𝐋^2 𝐌^(2//5)
+ -0.6511788444561991 𝐋^2 𝐌^(2//5)
+```
+
+Because it is type stable, you can have mixed units in a vector too:
+
+```julia
+julia> v = [Quantity(randn(), mass=rand(0:5), length=rand(0:5)) for _=1:5]
+5-element Vector{Quantity{Float64}}:
+ 0.6531745868307951 
+ 0.5260730397041357 𝐋^2 𝐌^5
+ 1.0827471975303913 𝐌^1
+ 1.5524518860763528 𝐌^1
+ 0.5376635007504901 𝐋^3 𝐌^1
+```
