@@ -9,6 +9,47 @@ This defines a simple statically-typed `Quantity` type for Julia.
 Physical dimensions are stored as a *value*, as opposed to a parametric type, as in [Unitful.jl](https://github.com/PainterQubits/Unitful.jl).
 This is done to allow for calculations where physical dimensions are not known at compile time.
 
+## Performance
+
+The performance of DynamicUnits is slower than Unitful if the dimensions are known at compile time:
+
+```julia
+julia> using BenchmarkTools
+
+julia> dyn_uni = Quantity(0.2, mass=1, length=0.5, amount=3)
+
+julia> unitful = convert(Unitful.Quantity, dyn_uni)
+
+julia> f(x) = x ^ 2 * 0.3
+
+julia> @btime f($dyn_uni);
+  56.317 ns (0 allocations: 0 bytes)
+
+julia> @btime f($unitful);
+  1.958 ns (0 allocations: 0 bytes)
+```
+While both of these are type stable,
+because Unitful parametrizes the type on the dimensions, functions can specialize
+to units and the compiler can optimize away units from the code.
+
+However, if the dimension is unknown, the performance can suffer quite a bit.
+This is where DynamicUnits shines:
+
+```julia
+julia> g(x) = x ^ rand(1:10) * 0.3;
+
+julia> @btime g($dyn_uni);
+  80.449 ns (0 allocations: 0 bytes)
+
+julia> @btime g($unitful);
+  29.666 μs (42 allocations: 1.91 KiB)
+```
+
+Here, only the DynamicUnits `Quantity` results in a function that is type stable,
+while the Unitful `Quantity` results in the compiler having to do type inference at runtime.
+
+
+
 ## Usage
 
 You can create a `Quantity` object with a value and keyword arguments for the powers of the physical dimensions
@@ -105,46 +146,6 @@ julia> x2 = convert(Unitful.Quantity, y2)
 julia> x^2*0.3 == x2
 true
 ```
-
-## Performance
-
-The performance of DynamicUnits is slower than Unitful if the dimensions are known at compile time:
-
-```julia
-julia> using BenchmarkTools
-
-julia> dyn_uni = Quantity(0.2, mass=1, length=0.5, amount=3)
-
-julia> unitful = convert(Unitful.Quantity, dyn_uni)
-
-julia> f(x) = x ^ 2 * 0.3
-
-julia> @btime f($dyn_uni);
-  56.317 ns (0 allocations: 0 bytes)
-
-julia> @btime f($unitful);
-  1.958 ns (0 allocations: 0 bytes)
-```
-While both of these are type stable,
-because Unitful parametrizes the type on the dimensions, functions can specialize
-to units and the compiler can optimize away units from the code.
-
-However, if the dimension is unknown, the performance can suffer quite a bit.
-This is where DynamicUnits shines:
-
-```julia
-julia> g(x) = x ^ rand(1:10) * 0.3;
-
-julia> @btime g($dyn_uni);
-  80.449 ns (0 allocations: 0 bytes)
-
-julia> @btime g($unitful);
-  29.666 μs (42 allocations: 1.91 KiB)
-```
-
-Here, only the DynamicUnits `Quantity` results in a function that is type stable,
-while the Unitful `Quantity` results in the compiler having to do type inference at runtime.
-
 
 ## Vectors
 
