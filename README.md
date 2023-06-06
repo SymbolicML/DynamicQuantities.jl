@@ -17,10 +17,12 @@ The performance of DynamicUnits is slower than Unitful if the dimensions are kno
 julia> using BenchmarkTools
 
 julia> dyn_uni = Quantity(0.2, mass=1, length=0.5, amount=3)
+0.2 𝐋^(1//2) 𝐌^1 𝐍^3
 
 julia> unitful = convert(Unitful.Quantity, dyn_uni)
+0.2 kg m¹ᐟ² mol³
 
-julia> f(x) = x ^ 2 * 0.3
+julia> f(x) = x ^ 2 * 0.3;
 
 julia> @btime f($dyn_uni);
   56.317 ns (0 allocations: 0 bytes)
