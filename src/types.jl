@@ -12,7 +12,7 @@ struct Dimensions
     data::DefaultDimensionType
 
     Dimensions(data::DefaultDimensionType) = new(data)
-    Dimensions(data::DefaultDataType) = new(DefaultDimensionType(data))
+    Dimensions(data::DefaultDataType) = Dimensions(DefaultDimensionType(data))
     Dimensions(kws::NamedTuple) =
         let
             foreach(keys(kws)) do k
