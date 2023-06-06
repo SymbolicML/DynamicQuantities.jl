@@ -88,6 +88,8 @@ Despite the name, DynamicUnits does not actually work with units. Instead, it wo
 You can use Unitful to parse units, and use the DynamicUnits->Unitful extension for conversion:
 
 ```julia
+julia> using Unitful: Unitful, @u_str
+
 julia> x = 0.5u"km/s"
 0.5 km s⁻¹
 
@@ -102,6 +104,9 @@ julia> y2 = y^2 * 0.3
 
 julia> x2 = convert(Unitful.Quantity, y2)
 75000.0 m² s⁻²
+
+julia> x^2*0.3 == x2
+true
 ```
 
 ## Vectors
