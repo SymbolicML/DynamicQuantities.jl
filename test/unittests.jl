@@ -101,6 +101,9 @@ end
     @test sum(X) == ustrip(sum(uX))
     @test dimension(prod(uX)) == prod([Dimensions(length=2.5, luminosity=0.5) for i in 1:10])
     @test dimension(X[1]) == Dimensions()
+
+    uX = X .* Quantity(2, length=2.5, luminosity=0.5)
+    @test sum(X) == 0.5 * ustrip(sum(uX))
 end
 
 @testset "Alternate dimension construction" begin
