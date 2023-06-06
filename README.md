@@ -16,32 +16,32 @@ You can create a `Quantity` object with a value and keyword arguments for the po
 
 ```julia
 julia> x = Quantity(0.2, mass=1, length=0.5)
-0.2 M^1 L^(1//2) 
+0.2 𝐋^(1//2) 𝐌^1
 
 julia> y = Quantity(10.2, mass=2, time=-2)
-10.2 T^(-2) M^2 
+10.2 𝐌^2 𝐓^(-2)
 ```
 
 Elementary calculations with `+, -, *, /, ^, sqrt, cbrt` are supported:
 
 ```julia
 julia> x * y
-2.04 T^(-2) M^3 L^(1//2)
+2.04 𝐋^(1//2) 𝐌^3 𝐓^(-2)
 
 julia> x / y
-0.019607843137254905 T^2 M^(-1) L^(1//2)
+0.019607843137254905 𝐋^(1//2) 𝐌^(-1) 𝐓^2
 
 julia> x ^ 3
-0.008000000000000002 M^3 L^(3//2) 
+0.008000000000000002 𝐋^(3//2) 𝐌^3
 
 julia> x ^ -1
-5.0 M^(-1) L^(-1//2)
+5.0 𝐋^(-1//2) 𝐌^(-1)
 
 julia> sqrt(x)
-0.4472135954999579 M^(1//2) L^(1//4)
+0.4472135954999579 𝐋^(1//4) 𝐌^(1//2)
 
 julia> x ^ 1.5
-0.0894427190999916 M^(3//2) L^(3//4)
+0.0894427190999916 𝐋^(3//4) 𝐌^(3//2)
 ```
 
 Each of these values has the same type, thus obviating the need for type inference at runtime.
@@ -49,8 +49,8 @@ Each of these values has the same type, thus obviating the need for type inferen
 Furthermore, we can do dimensional analysis automatically:
 
 ```julia
-julia> x + 2 * x
-0.6000000000000001 M^1 L^(1//2)
+julia> x + 3 * x
+0.8 𝐋^(1//2) 𝐌^1
 
 julia> x + y
 INVALID
@@ -62,7 +62,7 @@ The dimensions of a `Quantity` can be accessed either with `dimensions(quantity)
 
 ```julia
 julia> dimensions(x)
-M^1 L^(1//2)
+𝐋^(1//2) 𝐌^1
 ```
 
 or with `umass`, `ulength`, etc., for the various dimensions:
@@ -75,7 +75,7 @@ julia> ulength(x)
 1//2
 ```
 
-You can strip units with `ustrip`:
+Finally, you can strip units with `ustrip`:
     
 ```julia
 julia> ustrip(x)
