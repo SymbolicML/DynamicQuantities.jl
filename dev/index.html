@@ -29,7 +29,9 @@ INVALID</code></pre><p>We can see the second one has <code>valid(quantity) == fa
 
 julia&gt; ulength(x)
 1//2</code></pre><p>Finally, you can strip units with <code>ustrip</code>:</p><pre><code class="language-julia hljs">julia&gt; ustrip(x)
-0.2</code></pre><h2 id="Units"><a class="docs-heading-anchor" href="#Units">Units</a><a id="Units-1"></a><a class="docs-heading-anchor-permalink" href="#Units" title="Permalink"></a></h2><p>Despite the name, DynamicUnits does not actually work with units. Instead, it works with <em>dimensions</em>. You can use Unitful to parse units, and use the DynamicUnits-&gt;Unitful extension for conversion:</p><pre><code class="language-julia hljs">julia&gt; x = 0.5u&quot;km/s&quot;
+0.2</code></pre><h2 id="Units"><a class="docs-heading-anchor" href="#Units">Units</a><a id="Units-1"></a><a class="docs-heading-anchor-permalink" href="#Units" title="Permalink"></a></h2><p>Despite the name, DynamicUnits does not actually work with units. Instead, it works with <em>dimensions</em>. You can use Unitful to parse units, and use the DynamicUnits-&gt;Unitful extension for conversion:</p><pre><code class="language-julia hljs">julia&gt; using Unitful: Unitful, @u_str
+
+julia&gt; x = 0.5u&quot;km/s&quot;
 0.5 km s⁻¹
 
 julia&gt; convert(DynamicUnits.Quantity, x)
@@ -42,7 +44,10 @@ julia&gt; y2 = y^2 * 0.3
 75000.0 𝐋^2 𝐓^(-2)
 
 julia&gt; x2 = convert(Unitful.Quantity, y2)
-75000.0 m² s⁻²</code></pre><h2 id="Vectors"><a class="docs-heading-anchor" href="#Vectors">Vectors</a><a id="Vectors-1"></a><a class="docs-heading-anchor-permalink" href="#Vectors" title="Permalink"></a></h2><p>There is not a separate class for vectors, but you can create units like so:</p><pre><code class="language-julia hljs">julia&gt; randn(5) .* Dimensions(mass=2/5, length=2)
+75000.0 m² s⁻²
+
+julia&gt; x^2*0.3 == x2
+true</code></pre><h2 id="Vectors"><a class="docs-heading-anchor" href="#Vectors">Vectors</a><a id="Vectors-1"></a><a class="docs-heading-anchor-permalink" href="#Vectors" title="Permalink"></a></h2><p>There is not a separate class for vectors, but you can create units like so:</p><pre><code class="language-julia hljs">julia&gt; randn(5) .* Dimensions(mass=2/5, length=2)
 5-element Vector{Quantity{Float64}}:
  -0.72119725412798 𝐋^2 𝐌^(2//5)
  0.6443068291470538 𝐋^2 𝐌^(2//5)
@@ -54,4 +59,4 @@ julia&gt; x2 = convert(Unitful.Quantity, y2)
  0.5260730397041357 𝐋^2 𝐌^5
  1.0827471975303913 𝐌^1
  1.5524518860763528 𝐌^1
- 0.5376635007504901 𝐋^3 𝐌^1</code></pre><h1 id="DynamicUnits-2"><a class="docs-heading-anchor" href="#DynamicUnits-2">DynamicUnits</a><a class="docs-heading-anchor-permalink" href="#DynamicUnits-2" title="Permalink"></a></h1><p>Documentation for <a href="https://github.com/SymbolicML/DynamicUnits.jl">DynamicUnits</a>.</p><ul></ul></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Tuesday 6 June 2023 06:33">Tuesday 6 June 2023</span>. Using Julia version 1.9.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ 0.5376635007504901 𝐋^3 𝐌^1</code></pre><h1 id="DynamicUnits-2"><a class="docs-heading-anchor" href="#DynamicUnits-2">DynamicUnits</a><a class="docs-heading-anchor-permalink" href="#DynamicUnits-2" title="Permalink"></a></h1><p>Documentation for <a href="https://github.com/SymbolicML/DynamicUnits.jl">DynamicUnits</a>.</p><ul></ul></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Tuesday 6 June 2023 06:35">Tuesday 6 June 2023</span>. Using Julia version 1.9.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
