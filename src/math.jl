@@ -16,8 +16,8 @@ Base.:/(l::Number, r::Quantity) = l * inv(r)
 Base.:/(l::Dimensions, r::Number) = Quantity(inv(r), l, true)
 Base.:/(l::Number, r::Dimensions) = Quantity(l, inv(r), true)
 
-Base.:+(l::Quantity, r::Quantity) = Quantity(l.value + r.value, l.dimensions, l.dimensions == r.dimensions)
-Base.:-(l::Quantity, r::Quantity) = Quantity(l.value - r.value, l.dimensions, l.dimensions == r.dimensions)
+Base.:+(l::Quantity, r::Quantity) = Quantity(l.value + r.value, l.dimensions, l.valid && r.valid && l.dimensions == r.dimensions)
+Base.:-(l::Quantity, r::Quantity) = Quantity(l.value - r.value, l.dimensions, l.valid && r.valid && l.dimensions == r.dimensions)
 
 Base.:^(l::Quantity, r::Quantity) =
     let rr = tryrationalize(Int, r.value)
