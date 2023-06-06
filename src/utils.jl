@@ -79,16 +79,75 @@ tryrationalize(::Type{T}, x::Rational{T}) where {T<:Integer} = x
 tryrationalize(::Type{T}, x::T) where {T<:Integer} = Rational{T}(x)
 tryrationalize(::Type{T}, x) where {T<:Integer} = rationalize(T, x)
 
+"""
+    ustrip(q::Quantity)
+
+Remove the units from a quantity.
+"""
 ustrip(q::Quantity) = q.value
 ustrip(q::Number) = q
+
+"""
+    dimension(q::Quantity)
+
+Get the dimensions of a quantity, returning a `Dimensions` object.
+"""
 dimension(q::Quantity) = q.dimensions
 dimension(::Number) = Dimensions()
+
+"""
+    valid(q::Quantity)
+
+Check if a quantity is valid. If invalid, dimensional analysis
+during a previous calculation failed (such as adding mass and velocity).
+"""
 valid(q::Quantity) = q.valid
 
+"""
+    ulength(q::Quantity)
+
+Get the length dimension of a quantity (e.g., meters^(ulength)).
+"""
 ulength(q::Quantity) = q.dimensions.length
+
+"""
+    umass(q::Quantity)
+
+Get the mass dimension of a quantity (e.g., kg^(umass)).
+"""
 umass(q::Quantity) = q.dimensions.mass
+
+"""
+    utime(q::Quantity)
+
+Get the time dimension of a quantity (e.g., s^(utime))
+"""
 utime(q::Quantity) = q.dimensions.time
+
+"""
+    ucurrent(q::Quantity)
+
+Get the current dimension of a quantity (e.g., A^(ucurrent)).
+"""
 ucurrent(q::Quantity) = q.dimensions.current
+
+"""
+    utemperature(q::Quantity)
+
+Get the temperature dimension of a quantity (e.g., K^(utemperature)).
+"""
 utemperature(q::Quantity) = q.dimensions.temperature
+
+"""
+    uluminosity(q::Quantity)
+
+Get the luminosity dimension of a quantity (e.g., cd^(uluminosity)).
+"""
 uluminosity(q::Quantity) = q.dimensions.luminosity
+
+"""
+    uamount(q::Quantity)
+
+Get the amount dimension of a quantity (e.g., mol^(uamount)).
+"""
 uamount(q::Quantity) = q.dimensions.amount
