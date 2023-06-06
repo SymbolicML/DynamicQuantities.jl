@@ -128,8 +128,12 @@ julia> ustrip(x)
 
 ## Units
 
-Despite the name, DynamicQuantities does not actually work with units. Instead, it works with *dimensions*.
-You can use Unitful to parse units, and use the DynamicQuantities->Unitful extension for conversion:
+DynamicQuantities works with quantities which store physical dimensions and a value,
+and does not directly provide a unit system.
+However, performing calculations with physical dimensions
+is actually equivalent to working with a standardized unit system.
+Thus, you can use Unitful to parse units,
+and then use the DynamicQuantities->Unitful extension for conversion:
 
 ```julia
 julia> using Unitful: Unitful, @u_str
