@@ -33,5 +33,7 @@ Base.:^(l::Quantity, r::Number) =
 Base.inv(d::Dimensions) = map(-, d)
 Base.inv(q::Quantity) = Quantity(inv(q.value), inv(q.dimensions), q.valid)
 
-Base.sqrt(q::Quantity) = Quantity(sqrt(q.value), q.dimensions^(1 // 2), q.valid)
-Base.cbrt(q::Quantity) = Quantity(cbrt(q.value), q.dimensions^(1 // 3), q.valid)
+Base.sqrt(d::Dimensions) = d^(1 // 2)
+Base.sqrt(q::Quantity) = Quantity(sqrt(q.value), sqrt(q.dimensions), q.valid)
+Base.cbrt(d::Dimensions) = d^(1 // 3)
+Base.cbrt(q::Quantity) = Quantity(cbrt(q.value), cbrt(q.dimensions), q.valid)
