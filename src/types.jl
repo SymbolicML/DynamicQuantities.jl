@@ -30,8 +30,6 @@ struct Dimensions
         end
     Dimensions(; kws...) = isempty(kws) ? new(Dimensionless) : Dimensions(NamedTuple(kws))
 end
-Dimensions(f::F, l::Dimensions, r::Dimensions) where {F<:Function} = Dimensions(ntuple(k -> f(l[k], r[k]), Val(NumDimensions)))
-Dimensions(f::F, l::Dimensions) where {F<:Function} = Dimensions(ntuple(k -> f(l[k]), Val(NumDimensions)))
 
 struct Quantity{T}
     value::T

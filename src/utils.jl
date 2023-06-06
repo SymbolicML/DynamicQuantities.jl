@@ -22,6 +22,8 @@ Base.iterate(d::Dimensions) = (d, nothing)
 Base.iterate(::Dimensions, ::Nothing) = nothing
 Base.iterate(q::Quantity) = (q, nothing)
 Base.iterate(::Quantity, ::Nothing) = nothing
+Base.map(f::F, l::Dimensions, r::Dimensions) where {F<:Function} = Dimensions(ntuple(k -> f(l[k], r[k]), Val(NumDimensions)))
+Base.map(f::F, l::Dimensions) where {F<:Function} = Dimensions(ntuple(k -> f(l[k]), Val(NumDimensions)))
 
 Base.show(io::IO, d::Dimensions) =
     let tmp_io = IOBuffer()
