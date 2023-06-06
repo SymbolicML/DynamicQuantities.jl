@@ -5,6 +5,7 @@ const DefaultDimensionType = typeof(Dimensionless)
 const DefaultDataType = NTuple{NumDimensions,R}
 const VALID_KEYS = (:𝐋, :𝐌, :𝐓, :𝐈, :𝚯, :𝐉, :𝐍)
 const VALID_SYNONYMS = (:length, :mass, :time, :current, :temperature, :luminosity, :amount)
+const SYNONYM_MAPPING = NamedTuple(VALID_SYNONYMS .=> VALID_KEYS)
 const VALID_KWARGS = Tuple(union(VALID_KEYS, VALID_SYNONYMS))
 
 struct Dimensions

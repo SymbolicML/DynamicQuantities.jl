@@ -10,8 +10,31 @@ Base.isfinite(q::Quantity) = isfinite(q.val)
 Base.keys(d::Dimensions) = keys(d.data)
 Base.values(d::Dimensions) = values(d.data)
 Base.iszero(d::Dimensions) = all(iszero, values(d))
-Base.getindex(d::Dimensions, k::Symbol) = d.data[k]
 Base.getindex(d::Dimensions, k::Int) = d.data[k]
+Base.getindex(d::Dimensions, k::Symbol) =
+    let
+        if k in VALID_KEYS
+            return d.data[k]
+        elseif k in VALID_SYNONYMS
+            return d.data[SYNONYM_MAPPING[k]]
+        else
+            throw(error("$k is not a valid property of Dimensions."))
+        end
+    end
+Base.getproperty(q::Quantity, k::Symbol) =
+    let
+        if k == :val
+            return getfield(q, :val)
+        elseif k == :dimensions
+            return getfield(q, :dimensions)
+        elseif k == :valid
+            return getfield(q, :valid)
+        elseif k in VALID_KWARGS
+            return getfield(q, :dimensions)[k]
+        else
+            throw(error("$k is not a valid property of Quantity."))
+        end
+    end
 Base.:(==)(l::Dimensions, r::Dimensions) = all(k -> (l[k] == r[k]), keys(l))
 Base.:(==)(l::Quantity, r::Quantity) = l.val == r.val && l.dimensions == r.dimensions && l.valid == r.valid
 
