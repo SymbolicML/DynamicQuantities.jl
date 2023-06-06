@@ -65,11 +65,7 @@ Base.show(io::IO, q::Quantity) = q.valid ? print(io, q.value, " ", q.dimensions)
 tryround(x::Rational{Int}) = isinteger(x) ? round(Int, x) : x
 pretty_print_exponent(io::IO, x::Rational{Int}) =
     let
-        if isinteger(x)
-            print(io, " ", to_superscript(string(round(Int, x))))
-        else
-            print(io, " ", to_superscript(string(x)))
-        end
+        print(io, " ", to_superscript(string(tryround(x))))
     end
 const SUPERSCRIPT_MAPPING = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
 const INTCHARS = ['0' + i for i = 0:9]
