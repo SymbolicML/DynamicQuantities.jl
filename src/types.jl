@@ -3,14 +3,26 @@ const DIMENSION_NAMES = (:length, :mass, :time, :current, :temperature, :luminos
 const DIMENSION_SYNONYMS = (:𝐋, :𝐌, :𝐓, :𝐈, :𝚯, :𝐉, :𝐍)
 const SYNONYM_MAPPING = NamedTuple(DIMENSION_NAMES .=> DIMENSION_SYNONYMS)
 
-Base.@kwdef struct Dimensions
-    length::R = 0 // 1
-    mass::R = 0 // 1
-    time::R = 0 // 1
-    current::R = 0 // 1
-    temperature::R = 0 // 1
-    luminosity::R = 0 // 1
-    amount::R = 0 // 1
+struct Dimensions
+    length::R
+    mass::R
+    time::R
+    current::R
+    temperature::R
+    luminosity::R
+    amount::R
+
+    Dimensions(length::R, mass::R, time::R, current::R, temperature::R, luminosity::R, amount::R) =
+        new(length, mass, time, current, temperature, luminosity, amount)
+    Dimensions(; kws...) = Dimensions(
+        tryrationalize(Int, get(kws, :length, 0 // 1)),
+        tryrationalize(Int, get(kws, :mass, 0 // 1)),
+        tryrationalize(Int, get(kws, :time, 0 // 1)),
+        tryrationalize(Int, get(kws, :current, 0 // 1)),
+        tryrationalize(Int, get(kws, :temperature, 0 // 1)),
+        tryrationalize(Int, get(kws, :luminosity, 0 // 1)),
+        tryrationalize(Int, get(kws, :amount, 0 // 1)),
+    )
 end
 
 struct Quantity{T}
