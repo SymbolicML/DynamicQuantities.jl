@@ -62,10 +62,11 @@ Base.show(io::IO, d::Dimensions) =
     end
 Base.show(io::IO, q::Quantity) = q.valid ? print(io, q.value, " ", q.dimensions) : print(io, "INVALID")
 
-tryround(x::Rational{Int}) = isinteger(x) ? round(Int, x) : x
-pretty_print_exponent(io::IO, x::Rational{Int}) =
+string_rational(x::Rational) = isinteger(x) ? string(x.num) : string(x)
+string_rational(x::SimpleRatio) = string_rational(x.num // x.den)
+pretty_print_exponent(io::IO, x::R) =
     let
-        print(io, " ", to_superscript(string(tryround(x))))
+        print(io, " ", to_superscript(string_rational(x)))
     end
 const SUPERSCRIPT_MAPPING = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
 const INTCHARS = ['0' + i for i = 0:9]
@@ -75,9 +76,10 @@ to_superscript(s::AbstractString) = join(
     end
 )
 
-tryrationalize(::Type{T}, x::Rational{T}) where {T<:Integer} = x
-tryrationalize(::Type{T}, x::T) where {T<:Integer} = Rational{T}(x)
-tryrationalize(::Type{T}, x) where {T<:Integer} = rationalize(T, x)
+tryrationalize(::Type{<:Integer}, x::Rational) = R(x)
+tryrationalize(::Type{<:Integer}, x::Integer) = R(x)
+tryrationalize(::Type{<:Integer}, x) = simple_ratio_rationalize(x)
+simple_ratio_rationalize(x) = isinteger(x) ? R(round(Int, x)) : R(rationalize(Int, x))
 
 """
     ustrip(q::Quantity)

@@ -23,7 +23,7 @@ Base.:^(l::Quantity, r::Quantity) =
     let rr = tryrationalize(Int, r.value)
         Quantity(l.value^rr, l.dimensions^rr, l.valid && r.valid && iszero(r.dimensions))
     end
-Base.:^(l::Dimensions, r::Rational{Int}) = @map_dimensions(Base.Fix1(*, r), l)
+Base.:^(l::Dimensions, r::R) = @map_dimensions(Base.Fix1(*, r), l)
 Base.:^(l::Dimensions, r::Number) = l^tryrationalize(Int, r)
 Base.:^(l::Quantity, r::Number) =
     let rr = tryrationalize(Int, r)
