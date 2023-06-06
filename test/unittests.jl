@@ -87,6 +87,11 @@ using Test
 
     @test ulength(y) == 1 // 2
     @test ustrip(y) ≈ 10.0^0.5
+
+    x = Quantity(-1.2, length=2 // 5)
+
+    @test abs(x) == Quantity(1.2, length=2 // 5)
+    @test abs(x) == abs(Quantity(1.2, length=2 // 5))
 end
 
 @testset "Fallbacks" begin

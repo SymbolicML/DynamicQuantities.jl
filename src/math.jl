@@ -37,3 +37,5 @@ Base.sqrt(d::Dimensions) = d^(1 // 2)
 Base.sqrt(q::Quantity) = Quantity(sqrt(q.value), sqrt(q.dimensions), q.valid)
 Base.cbrt(d::Dimensions) = d^(1 // 3)
 Base.cbrt(q::Quantity) = Quantity(cbrt(q.value), cbrt(q.dimensions), q.valid)
+
+Base.abs(q::Quantity) = Quantity(abs(q.value), q.dimensions, q.valid)
