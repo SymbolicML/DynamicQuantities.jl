@@ -9,7 +9,7 @@ using Test
     @test umass(x) === 5 // 2
     @test valid(x)
     @test ustrip(x) === 0.2
-    @test dimensions(x) == Dimensions(length=1, mass=5 // 2)
+    @test dimension(x) == Dimensions(length=1, mass=5 // 2)
     @test typeof(x).parameters[1] == Float64
 
     y = x^2
@@ -92,8 +92,8 @@ end
     @test eltype(uX) == Quantity{Float64}
     @test typeof(sum(uX)) == Quantity{Float64}
     @test sum(X) == ustrip(sum(uX))
-    @test dimensions(prod(uX)) == prod([Dimensions(length=2.5, luminosity=0.5) for i in 1:10])
-    @test dimensions(X[1]) == Dimensions()
+    @test dimension(prod(uX)) == prod([Dimensions(length=2.5, luminosity=0.5) for i in 1:10])
+    @test dimension(X[1]) == Dimensions()
 end
 
 @testset "Alternate dimension construction" begin
@@ -103,7 +103,7 @@ end
     @test typeof(z).parameters[1] <: Int
     @test z == z2
     @test ustrip(z) == -52
-    @test dimensions(z) == Dimensions(length=1, mass=2)
+    @test dimension(z) == Dimensions(length=1, mass=2)
     @test float(z / (z * -1 / 52)) ≈ ustrip(z)
 
     @test 0.5 / Dimensions(length=1) == Quantity(0.5, length=-1)

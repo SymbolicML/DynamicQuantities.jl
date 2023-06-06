@@ -56,8 +56,8 @@ pretty_print_exponent(io::IO, x::Rational{Int}) =
 
 ustrip(q::Quantity) = q.value
 ustrip(q::Number) = q
-dimensions(q::Quantity) = q.dimensions
-dimensions(q::Number) = Dimensions()
+dimension(q::Quantity) = q.dimensions
+dimension(::Number) = Dimensions()
 valid(q::Quantity) = q.valid
 
 ulength(q::Quantity) = q.dimensions[:𝐋]

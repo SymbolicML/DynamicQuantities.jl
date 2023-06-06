@@ -58,10 +58,10 @@ INVALID
 
 We can see the second one has `valid(quantity) == false`. This doesn't throw an error by default, as it allows for stable return values.
 
-The dimensions of a `Quantity` can be accessed either with `dimensions(quantity)` for the entire `Dimensions` object:
+The dimensions of a `Quantity` can be accessed either with `dimension(quantity)` for the entire `Dimensions` object:
 
 ```julia
-julia> dimensions(x)
+julia> dimension(x)
 𝐋^(1//2) 𝐌^1
 ```
 
