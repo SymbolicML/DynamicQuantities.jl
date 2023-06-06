@@ -1,5 +1,4 @@
 Base.float(q::Quantity{T}) where {T<:AbstractFloat} = convert(T, q)
-Base.convert(::Type{Dimensions}, d::D_TYPE) = Dimensions(d)
 Base.convert(::Type{T}, q::Quantity) where {T<:Real} =
     let
         @assert q.valid "Quantity $(q) is invalid!"
@@ -11,15 +10,13 @@ Base.isfinite(q::Quantity) = isfinite(q.val)
 Base.keys(d::Dimensions) = keys(d.data)
 Base.values(d::Dimensions) = values(d.data)
 Base.iszero(d::Dimensions) = all(iszero, values(d))
-Base.getindex(d::Dimensions, k::Symbol) = get(d.data, k, zero(Rational{Int}))
-Base.:(==)(l::Dimensions, r::Dimensions) = all(k -> (l[k] == r[k]), union(keys(l), keys(r)))
-Base.:(==)(l::Quantity, r::Quantity) = l.val == r.val && l.dimensions == r.dimensions && l.valid == r.valid
+Base.getindex(d::Dimensions, k::Symbol) = d.data[k]
+Base.:(==)(l::D, r::D) where {D<:Dimensions} = all(k -> (l[k] == r[k]), keys(l))
+Base.:(==)(l::Q, r::Q) where {Q<:Quantity} = l.val == r.val && l.dimensions == r.dimensions && l.valid == r.valid
 
 Base.show(io::IO, d::Dimensions) =
     foreach(keys(d)) do k
-        if d[k] == 0
-            print(io, "")
-        else
+        if !iszero(d[k])
             print(io, k)
             pretty_print_exponent(io, d[k])
             print(io, " ")
