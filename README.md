@@ -69,7 +69,7 @@ or with `umass`, `ulength`, etc., for the various dimensions:
 
 ```julia
 julia> umass(x)
-1
+1//1
 
 julia> ulength(x)
 1//2
