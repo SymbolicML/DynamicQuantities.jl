@@ -75,6 +75,13 @@ julia> ulength(x)
 1//2
 ```
 
+You can strip units with `ustrip`:
+    
+```julia
+julia> ustrip(x)
+0.2
+```
+
 ## Units
 
 Despite the name, `DynamicUnits.jl` does not actually work with units.
