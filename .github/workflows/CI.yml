@@ -60,6 +60,6 @@ jobs:
       - run: |
           julia --project=docs -e '
             using Documenter: DocMeta, doctest
-            using DynamicUnits
-            DocMeta.setdocmeta!(DynamicUnits, :DocTestSetup, :(using DynamicUnits); recursive=true)
-            doctest(DynamicUnits)'
+            using DynamicQuantities
+            DocMeta.setdocmeta!(DynamicQuantities, :DocTestSetup, :(using DynamicQuantities); recursive=true)
+            doctest(DynamicQuantities)'

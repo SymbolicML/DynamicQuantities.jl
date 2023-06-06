@@ -1,5 +1,5 @@
 using BenchmarkTools
-using DynamicUnits
+using DynamicQuantities
 
 const SUITE = BenchmarkGroup()
 

@@ -1,15 +1,15 @@
 ```@meta
-CurrentModule = DynamicUnits
+CurrentModule = DynamicQuantities
 ```
 
 # API Reference
 
-API Reference for [DynamicUnits](https://github.com/SymbolicML/DynamicUnits.jl).
+API Reference for [DynamicQuantities](https://github.com/SymbolicML/DynamicQuantities.jl).
 
 ```@index
 ```
 
 ```@autodocs
-Modules = [DynamicUnits]
+Modules = [DynamicQuantities]
 Order   = [:type, :function]
 ```

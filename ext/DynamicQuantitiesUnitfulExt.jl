@@ -1,11 +1,11 @@
-module DynamicUnitsUnitfulExt
+module DynamicQuantitiesUnitfulExt
 
 if isdefined(Base, :get_extension)
-    import DynamicUnits
+    import DynamicQuantities
     import Unitful
     import Unitful: @u_str
 else
-    import ..DynamicUnits
+    import ..DynamicQuantities
     import ..Unitful
     import ..Unitful: @u_str
 end
@@ -15,10 +15,10 @@ const UNITFUL_EQUIVALENCIES = let basic = (length=u"m", mass=u"kg", time=u"s", c
     NamedTuple((k => Unitful.upreferred(basic[k]) for k in keys(basic)))
 end
 
-Base.convert(::Type{Unitful.Quantity}, x::DynamicUnits.Quantity) =
+Base.convert(::Type{Unitful.Quantity}, x::DynamicQuantities.Quantity) =
     let
-        cumulator = DynamicUnits.ustrip(x)
-        dims = DynamicUnits.dimension(x)
+        cumulator = DynamicQuantities.ustrip(x)
+        dims = DynamicQuantities.dimension(x)
         for dim in keys(dims)
             value = dims[dim]
             iszero(value) && continue
@@ -27,20 +27,20 @@ Base.convert(::Type{Unitful.Quantity}, x::DynamicUnits.Quantity) =
         cumulator
     end
 
-Base.convert(::Type{DynamicUnits.Quantity}, x::Unitful.Quantity) =
+Base.convert(::Type{DynamicQuantities.Quantity}, x::Unitful.Quantity) =
     let
         value = Unitful.ustrip(Unitful.upreferred(x))
-        dimension = convert(DynamicUnits.Dimensions, Unitful.dimension(x))
-        return DynamicUnits.Quantity(value, dimension)
+        dimension = convert(DynamicQuantities.Dimensions, Unitful.dimension(x))
+        return DynamicQuantities.Quantity(value, dimension)
     end
 
-Base.convert(::Type{DynamicUnits.Dimensions}, d::Unitful.Dimensions{D}) where {D} =
+Base.convert(::Type{DynamicQuantities.Dimensions}, d::Unitful.Dimensions{D}) where {D} =
     let
-        cumulator = DynamicUnits.Dimensions()
+        cumulator = DynamicQuantities.Dimensions()
         for dim in D
             dim_symbol = _map_dim_name_to_dynamic_units(typeof(dim))
             dim_power = dim.power
-            cumulator *= DynamicUnits.Dimensions(; dim_symbol => dim_power)
+            cumulator *= DynamicQuantities.Dimensions(; dim_symbol => dim_power)
         end
         cumulator
     end

@@ -1,4 +1,4 @@
-using DynamicUnits
+using DynamicQuantities
 using Test
 
 @testset "Basic utilities" begin

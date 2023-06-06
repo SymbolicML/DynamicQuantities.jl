@@ -1,9 +1,9 @@
-# DynamicUnits
+# DynamicQuantities
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://symbolicml.org/DynamicUnits.jl/stable/)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://symbolicml.org/DynamicUnits.jl/dev/)
-[![Build Status](https://github.com/SymbolicML/DynamicUnits.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/SymbolicML/DynamicUnits.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://coveralls.io/repos/github/SymbolicML/DynamicUnits.jl/badge.svg?branch=main)](https://coveralls.io/github/SymbolicML/DynamicUnits.jl?branch=main)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://symbolicml.org/DynamicQuantities.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://symbolicml.org/DynamicQuantities.jl/dev/)
+[![Build Status](https://github.com/SymbolicML/DynamicQuantities.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/SymbolicML/DynamicQuantities.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://coveralls.io/repos/github/SymbolicML/DynamicQuantities.jl/badge.svg?branch=main)](https://coveralls.io/github/SymbolicML/DynamicQuantities.jl?branch=main)
 
 This defines a simple statically-typed `Quantity` type for Julia.
 Physical dimensions are stored as a *value*, as opposed to a parametric type, as in [Unitful.jl](https://github.com/PainterQubits/Unitful.jl).
@@ -11,11 +11,11 @@ This is done to allow for calculations where physical dimensions are not known a
 
 ## Performance
 
-DynamicUnits can greatly outperform Unitful
+DynamicQuantities can greatly outperform Unitful
 when the compiler cannot infer dimensions in a function:
 
 ```julia
-julia> using BenchmarkTools, DynamicUnits; import Unitful
+julia> using BenchmarkTools, DynamicQuantities; import Unitful
 
 julia> dyn_uni = Quantity(0.2, mass=1, length=0.5, amount=3)
 0.2 𝐋 ¹ᐟ² 𝐌 ¹ 𝐍 ³
@@ -33,7 +33,7 @@ julia> @btime f($unitful, i) setup=(i=rand(1:10));
 ```
 
 **(Note the μ and n.)**
-Here, the DynamicUnits quantity object allows the compiler to build a function that is type stable,
+Here, the DynamicQuantities quantity object allows the compiler to build a function that is type stable,
 while the Unitful quantity object, which stores its dimensions in the type, requires type inference at runtime.
 
 However, if the dimensions in your function *can* be inferred by the compiler,
@@ -128,8 +128,8 @@ julia> ustrip(x)
 
 ## Units
 
-Despite the name, DynamicUnits does not actually work with units. Instead, it works with *dimensions*.
-You can use Unitful to parse units, and use the DynamicUnits->Unitful extension for conversion:
+Despite the name, DynamicQuantities does not actually work with units. Instead, it works with *dimensions*.
+You can use Unitful to parse units, and use the DynamicQuantities->Unitful extension for conversion:
 
 ```julia
 julia> using Unitful: Unitful, @u_str
@@ -137,7 +137,7 @@ julia> using Unitful: Unitful, @u_str
 julia> x = 0.5u"km/s"
 0.5 km s⁻¹
 
-julia> y = convert(DynamicUnits.Quantity, x)
+julia> y = convert(DynamicQuantities.Quantity, x)
 500.0 𝐋 ¹ 𝐓 ⁻¹
 
 julia> y2 = y^2 * 0.3

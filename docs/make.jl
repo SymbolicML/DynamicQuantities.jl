@@ -1,7 +1,7 @@
-using DynamicUnits
+using DynamicQuantities
 using Documenter
 
-DocMeta.setdocmeta!(DynamicUnits, :DocTestSetup, :(using DynamicUnits); recursive=true)
+DocMeta.setdocmeta!(DynamicQuantities, :DocTestSetup, :(using DynamicQuantities); recursive=true)
 
 readme = open(dirname(@__FILE__) * "/../README.md") do io
     read(io, String)
@@ -26,13 +26,13 @@ open(dirname(@__FILE__) * "/src/index.md", "w") do io
 end
 
 makedocs(;
-    modules=[DynamicUnits],
+    modules=[DynamicQuantities],
     authors="MilesCranmer <miles.cranmer@gmail.com> and contributors",
-    repo="https://github.com/SymbolicML/DynamicUnits.jl/blob/{commit}{path}#{line}",
-    sitename="DynamicUnits.jl",
+    repo="https://github.com/SymbolicML/DynamicQuantities.jl/blob/{commit}{path}#{line}",
+    sitename="DynamicQuantities.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://symbolicml.org/DynamicUnits.jl",
+        canonical="https://symbolicml.org/DynamicQuantities.jl",
         edit_link="main",
         assets=String[]
     ),
@@ -43,6 +43,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/SymbolicML/DynamicUnits.jl",
+    repo="github.com/SymbolicML/DynamicQuantities.jl",
     devbranch="main"
 )
