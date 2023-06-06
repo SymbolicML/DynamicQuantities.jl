@@ -72,7 +72,12 @@ pretty_print_exponent(io::IO, x::Rational{Int}) =
         end
     end
 const SUPERSCRIPT_MAPPING = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
-to_superscript(s::AbstractString) = replace(s, r"\d" => x -> SUPERSCRIPT_MAPPING[parse(Int, x)+1], r"//" => "ᐟ", "-" => "⁻")
+const INTCHARS = ['0' + i for i = 0:9]
+to_superscript(s::AbstractString) = join(
+    map(replace(replace(s, "-" => "⁻"), r"//" => "ᐟ")) do c
+        c ∈ INTCHARS ? SUPERSCRIPT_MAPPING[parse(Int, c)+1] : c
+    end
+)
 
 tryrationalize(::Type{T}, x::Rational{T}) where {T<:Integer} = x
 tryrationalize(::Type{T}, x::T) where {T<:Integer} = Rational{T}(x)
