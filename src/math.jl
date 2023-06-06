@@ -1,4 +1,3 @@
-
 Base.:*(l::Dimensions, r::Dimensions) = Dimensions(D_TYPE([(k, l[k] + r[k]) for k in union(keys(l.data), keys(r.data))]))
 Base.:*(l::Quantity, r::Quantity) = Quantity(l.val * r.val, l.dimensions * r.dimensions, l.valid && r.valid)
 Base.:*(l::Quantity, r::Number) = Quantity(l.val * r, l.dimensions, l.valid)
