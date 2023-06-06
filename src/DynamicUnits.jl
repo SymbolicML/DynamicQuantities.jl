@@ -3,6 +3,8 @@ module DynamicUnits
 export Quantity, Dimensions, ustrip, dimension, valid
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 
+import Ratios: SimpleRatio
+
 include("types.jl")
 include("utils.jl")
 include("math.jl")
