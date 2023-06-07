@@ -3,6 +3,7 @@ import SaferIntegers: SafeInt
 
 const INT_TYPE = SafeInt
 const R = SimpleRatio{INT_TYPE}
+const ZERO = R(0)
 const DIMENSION_NAMES = (:length, :mass, :time, :current, :temperature, :luminosity, :amount)
 const DIMENSION_SYNONYMS = (:𝐋, :𝐌, :𝐓, :𝐈, :𝚯, :𝐉, :𝐍)
 const SYNONYM_MAPPING = NamedTuple(DIMENSION_NAMES .=> DIMENSION_SYNONYMS)
@@ -36,13 +37,13 @@ struct Dimensions
     Dimensions(length::R, mass::R, time::R, current::R, temperature::R, luminosity::R, amount::R) =
         new(length, mass, time, current, temperature, luminosity, amount)
     Dimensions(; kws...) = Dimensions(
-        tryrationalize(R, get(kws, :length, 0 // 1)),
-        tryrationalize(R, get(kws, :mass, 0 // 1)),
-        tryrationalize(R, get(kws, :time, 0 // 1)),
-        tryrationalize(R, get(kws, :current, 0 // 1)),
-        tryrationalize(R, get(kws, :temperature, 0 // 1)),
-        tryrationalize(R, get(kws, :luminosity, 0 // 1)),
-        tryrationalize(R, get(kws, :amount, 0 // 1)),
+        tryrationalize(R, get(kws, :length, ZERO)),
+        tryrationalize(R, get(kws, :mass, ZERO)),
+        tryrationalize(R, get(kws, :time, ZERO)),
+        tryrationalize(R, get(kws, :current, ZERO)),
+        tryrationalize(R, get(kws, :temperature, ZERO)),
+        tryrationalize(R, get(kws, :luminosity, ZERO)),
+        tryrationalize(R, get(kws, :amount, ZERO)),
     )
 end
 
