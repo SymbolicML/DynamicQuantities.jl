@@ -78,7 +78,6 @@ to_superscript(s::AbstractString) = join(
     end
 )
 
-tryrationalize(::Type{RI}, x::RI) where {RI} = x
 tryrationalize(::Type{RI}, x::Rational) where {RI} = RI(x)
 tryrationalize(::Type{RI}, x::Integer) where {RI} = RI(x)
 tryrationalize(::Type{RI}, x) where {RI} = simple_ratio_rationalize(RI, x)
