@@ -6,6 +6,7 @@ export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 include("types.jl")
 include("utils.jl")
 include("math.jl")
+include("cached_rational.jl")
 
 import Requires: @init, @require
 
