@@ -1,6 +1,7 @@
 import Ratios: SimpleRatio
 
-const R = SimpleRatio{Int}
+const INT_TYPE = Int
+const R = SimpleRatio{INT_TYPE}
 const DIMENSION_NAMES = (:length, :mass, :time, :current, :temperature, :luminosity, :amount)
 const DIMENSION_SYNONYMS = (:𝐋, :𝐌, :𝐓, :𝐈, :𝚯, :𝐉, :𝐍)
 const SYNONYM_MAPPING = NamedTuple(DIMENSION_NAMES .=> DIMENSION_SYNONYMS)
@@ -34,13 +35,13 @@ struct Dimensions
     Dimensions(length::R, mass::R, time::R, current::R, temperature::R, luminosity::R, amount::R) =
         new(length, mass, time, current, temperature, luminosity, amount)
     Dimensions(; kws...) = Dimensions(
-        tryrationalize(Int, get(kws, :length, 0 // 1)),
-        tryrationalize(Int, get(kws, :mass, 0 // 1)),
-        tryrationalize(Int, get(kws, :time, 0 // 1)),
-        tryrationalize(Int, get(kws, :current, 0 // 1)),
-        tryrationalize(Int, get(kws, :temperature, 0 // 1)),
-        tryrationalize(Int, get(kws, :luminosity, 0 // 1)),
-        tryrationalize(Int, get(kws, :amount, 0 // 1)),
+        tryrationalize(INT_TYPE, get(kws, :length, 0 // 1)),
+        tryrationalize(INT_TYPE, get(kws, :mass, 0 // 1)),
+        tryrationalize(INT_TYPE, get(kws, :time, 0 // 1)),
+        tryrationalize(INT_TYPE, get(kws, :current, 0 // 1)),
+        tryrationalize(INT_TYPE, get(kws, :temperature, 0 // 1)),
+        tryrationalize(INT_TYPE, get(kws, :luminosity, 0 // 1)),
+        tryrationalize(INT_TYPE, get(kws, :amount, 0 // 1)),
     )
 end
 

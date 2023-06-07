@@ -79,7 +79,7 @@ to_superscript(s::AbstractString) = join(
 tryrationalize(::Type{<:Integer}, x::Rational) = R(x)
 tryrationalize(::Type{<:Integer}, x::Integer) = R(x)
 tryrationalize(::Type{<:Integer}, x) = simple_ratio_rationalize(x)
-simple_ratio_rationalize(x) = isinteger(x) ? R(round(Int, x)) : R(rationalize(Int, x))
+simple_ratio_rationalize(x) = isinteger(x) ? R(round(INT_TYPE, x)) : R(rationalize(INT_TYPE, x))
 
 """
     ustrip(q::Quantity)

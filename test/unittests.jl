@@ -1,4 +1,5 @@
 using DynamicQuantities
+using DynamicQuantities: INT_TYPE
 using Test
 
 @testset "Basic utilities" begin

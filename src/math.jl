@@ -20,13 +20,13 @@ Base.:+(l::Quantity, r::Quantity) = Quantity(l.value + r.value, l.dimensions, l.
 Base.:-(l::Quantity, r::Quantity) = Quantity(l.value - r.value, l.dimensions, l.valid && r.valid && l.dimensions == r.dimensions)
 
 Base.:^(l::Quantity, r::Quantity) =
-    let rr = tryrationalize(Int, r.value)
+    let rr = tryrationalize(INT_TYPE, r.value)
         Quantity(l.value^rr, l.dimensions^rr, l.valid && r.valid && iszero(r.dimensions))
     end
 Base.:^(l::Dimensions, r::R) = @map_dimensions(Base.Fix1(*, r), l)
-Base.:^(l::Dimensions, r::Number) = l^tryrationalize(Int, r)
+Base.:^(l::Dimensions, r::Number) = l^tryrationalize(INT_TYPE, r)
 Base.:^(l::Quantity, r::Number) =
-    let rr = tryrationalize(Int, r)
+    let rr = tryrationalize(INT_TYPE, r)
         Quantity(l.value^rr, l.dimensions^rr, l.valid)
     end
 
