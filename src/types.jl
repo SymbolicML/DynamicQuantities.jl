@@ -36,13 +36,13 @@ struct Dimensions
     Dimensions(length::R, mass::R, time::R, current::R, temperature::R, luminosity::R, amount::R) =
         new(length, mass, time, current, temperature, luminosity, amount)
     Dimensions(; kws...) = Dimensions(
-        tryrationalize(INT_TYPE, get(kws, :length, 0 // 1)),
-        tryrationalize(INT_TYPE, get(kws, :mass, 0 // 1)),
-        tryrationalize(INT_TYPE, get(kws, :time, 0 // 1)),
-        tryrationalize(INT_TYPE, get(kws, :current, 0 // 1)),
-        tryrationalize(INT_TYPE, get(kws, :temperature, 0 // 1)),
-        tryrationalize(INT_TYPE, get(kws, :luminosity, 0 // 1)),
-        tryrationalize(INT_TYPE, get(kws, :amount, 0 // 1)),
+        tryrationalize(R, get(kws, :length, 0 // 1)),
+        tryrationalize(R, get(kws, :mass, 0 // 1)),
+        tryrationalize(R, get(kws, :time, 0 // 1)),
+        tryrationalize(R, get(kws, :current, 0 // 1)),
+        tryrationalize(R, get(kws, :temperature, 0 // 1)),
+        tryrationalize(R, get(kws, :luminosity, 0 // 1)),
+        tryrationalize(R, get(kws, :amount, 0 // 1)),
     )
 end
 
