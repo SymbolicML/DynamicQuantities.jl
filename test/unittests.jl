@@ -1,4 +1,5 @@
 using DynamicQuantities
+using DynamicQuantities: INT_TYPE, R
 using Test
 
 @testset "Basic utilities" begin
@@ -92,6 +93,13 @@ using Test
 
     @test abs(x) == Quantity(1.2, length=2 // 5)
     @test abs(x) == abs(Quantity(1.2, length=2 // 5))
+
+    @test one(Quantity{Float64}) == Quantity(1.0)
+    @test one(Quantity{String}) == Quantity("")
+    @test zero(Quantity{Float64}) == Quantity(0.0)
+    @test zero(Quantity{Int}) == Quantity(0, length=0, mass=0)
+    @test Quantity(1.0, one(Dimensions)) == Quantity(1.0)
+    @test one(Dimensions) == Dimensions()
 end
 
 @testset "Fallbacks" begin
@@ -142,4 +150,18 @@ end
     d = Dimensions(length=-0.2, luminosity=2)
     q = Quantity(0.5, inv(d))
     @test q == Quantity(0.5, length=0.2, luminosity=-2)
+end
+
+@testset "Trigger overflow" begin
+    f(x, N) =
+        let
+            for _ = 1:N
+                x = x + R(2 // 3)
+                x = x - R(2 // 3)
+            end
+            x
+        end
+
+    @test f(R(5 // 7), 15) == R(5 // 7)
+    @test_throws OverflowError f(R(5 // 7), 20)
 end

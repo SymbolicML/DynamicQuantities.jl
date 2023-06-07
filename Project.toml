@@ -6,6 +6,7 @@ version = "0.1.0"
 [deps]
 Ratios = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
+SaferIntegers = "88634af6-177f-5301-88b8-7819386cfa38"
 
 [weakdeps]
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
@@ -16,6 +17,7 @@ DynamicQuantitiesUnitfulExt = "Unitful"
 [compat]
 Ratios = "0.4"
 Requires = "1"
+SaferIntegers = "3"
 Unitful = "1"
 julia = "1.6"
 
