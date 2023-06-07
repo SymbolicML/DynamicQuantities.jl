@@ -151,17 +151,3 @@ end
     q = Quantity(0.5, inv(d))
     @test q == Quantity(0.5, length=0.2, luminosity=-2)
 end
-
-@testset "Trigger overflow" begin
-    f(x, N) =
-        let
-            for _ = 1:N
-                x = x + R(2 // 3)
-                x = x - R(2 // 3)
-            end
-            x
-        end
-
-    @test f(R(5 // 7), 15) == R(5 // 7)
-    @test_throws OverflowError f(R(5 // 7), 20)
-end

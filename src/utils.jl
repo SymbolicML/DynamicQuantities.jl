@@ -66,7 +66,6 @@ Base.show(io::IO, d::Dimensions) =
 Base.show(io::IO, q::Quantity) = q.valid ? print(io, q.value, " ", q.dimensions) : print(io, "INVALID")
 
 string_rational(x::Rational) = isinteger(x) ? string(x.num) : string(x)
-string_rational(x::SimpleRatio) = string_rational(x.num // x.den)
 pretty_print_exponent(io::IO, x::R) =
     let
         print(io, " ", to_superscript(string_rational(x)))
