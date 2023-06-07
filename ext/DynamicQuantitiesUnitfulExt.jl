@@ -34,6 +34,11 @@ Base.convert(::Type{DynamicQuantities.Quantity}, x::Unitful.Quantity) =
         return DynamicQuantities.Quantity(value, dimension)
     end
 
+Base.convert(::Type{DynamicQuantities.Quantity}, x::Unitful.FreeUnits) =
+    let
+        convert(DynamicQuantities.Quantity, 1.0 * x)
+    end
+
 Base.convert(::Type{DynamicQuantities.Dimensions}, d::Unitful.Dimensions{D}) where {D} =
     let
         cumulator = DynamicQuantities.Dimensions()
@@ -43,6 +48,11 @@ Base.convert(::Type{DynamicQuantities.Dimensions}, d::Unitful.Dimensions{D}) whe
             cumulator *= DynamicQuantities.Dimensions(; dim_symbol => dim_power)
         end
         cumulator
+    end
+
+Base.convert(::Type{DynamicQuantities.Dimensions}, x::Unitful.FreeUnits) =
+    let
+        dimension(convert(Unitful.Quantity, x))
     end
 
 function _map_dim_name_to_dynamic_units(::Type{Unitful.Dimension{D}}) where {D}
