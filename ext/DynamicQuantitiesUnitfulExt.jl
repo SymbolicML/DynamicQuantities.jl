@@ -52,7 +52,7 @@ Base.convert(::Type{DynamicQuantities.Dimensions}, d::Unitful.Dimensions{D}) whe
 
 Base.convert(::Type{DynamicQuantities.Dimensions}, x::Unitful.FreeUnits) =
     let
-        dimension(convert(Unitful.Quantity, x))
+        DynamicQuantities.dimension(convert(DynamicQuantities.Quantity, x))
     end
 
 function _map_dim_name_to_dynamic_units(::Type{Unitful.Dimension{D}}) where {D}
@@ -64,7 +64,7 @@ function _map_dim_name_to_dynamic_units(::Type{Unitful.Dimension{D}}) where {D}
     D == :Temperature && return :temperature
     D == :Luminosity && return :luminosity
     D == :Amount && return :amount
-    error("Unknown dimension: $D")
+    throw(error("Unknown dimension: $D. Valid dimensions are: (:Length, :Mass, :Time, :Current, :Temperature, :Luminosity, :Amount)."))
 end
 
 
