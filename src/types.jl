@@ -1,6 +1,7 @@
 import Ratios: SimpleRatio
+import SaferIntegers: SafeInt
 
-const INT_TYPE = Int
+const INT_TYPE = SafeInt
 const R = SimpleRatio{INT_TYPE}
 const DIMENSION_NAMES = (:length, :mass, :time, :current, :temperature, :luminosity, :amount)
 const DIMENSION_SYNONYMS = (:𝐋, :𝐌, :𝐓, :𝐈, :𝚯, :𝐉, :𝐍)
