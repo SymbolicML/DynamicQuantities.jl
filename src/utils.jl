@@ -45,6 +45,9 @@ Base.iterate(d::Dimensions) = (d, nothing)
 Base.iterate(::Dimensions, ::Nothing) = nothing
 Base.iterate(q::Quantity) = (q, nothing)
 Base.iterate(::Quantity, ::Nothing) = nothing
+Base.zero(::Type{Quantity{T}}) where {T} = Quantity(zero(T))
+Base.one(::Type{Quantity{T}}) where {T} = Quantity(one(T))
+Base.one(::Type{Dimensions}) = Dimensions()
 
 Base.show(io::IO, d::Dimensions) =
     let tmp_io = IOBuffer()

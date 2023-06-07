@@ -92,6 +92,13 @@ using Test
 
     @test abs(x) == Quantity(1.2, length=2 // 5)
     @test abs(x) == abs(Quantity(1.2, length=2 // 5))
+
+    @test one(Quantity{Float64}) == Quantity(1.0)
+    @test one(Quantity{String}) == Quantity("")
+    @test zero(Quantity{Float64}) == Quantity(0.0)
+    @test zero(Quantity{Int}) == Quantity(0, length=0, mass=0)
+    @test Quantity(1.0, one(Dimensions)) == Quantity(1.0)
+    @test one(Dimensions) == Dimensions()
 end
 
 @testset "Fallbacks" begin
