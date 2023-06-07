@@ -1,5 +1,5 @@
 import Ratios: SimpleRatio
-import SaferIntegers: SafeInt
+import SaferIntegers: SafeInt8
 
 const INT_TYPE = SafeInt8
 const R = SimpleRatio{INT_TYPE}
