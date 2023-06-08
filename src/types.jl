@@ -81,7 +81,7 @@ struct Quantity{T, R}
 
     Quantity(x; kws...) = new{typeof(x), DEFAULT_DIM_TYPE}(x, Dimensions(; kws...), true)
     Quantity(x, valid::Bool; kws...) = new{typeof(x), DEFAULT_DIM_TYPE}(x, Dimensions(; kws...), valid)
-    Quantity(x, valid::Bool, ::Type{R}; kws...) where {R} = new{typeof(x), R}(x, Dimensions(R; kws...), valid)
+    Quantity(x, ::Type{_R}, valid::Bool; kws...) where {_R} = new{typeof(x), _R}(x, Dimensions(_R; kws...), valid)
     Quantity(x, ::Type{_R}; kws...) where {_R}  = new{typeof(x), _R}(x, Dimensions(_R; kws...), true)
     Quantity(x, d::Dimensions{_R}) where {_R}  = new{typeof(x), _R}(x, d, true)
     Quantity(x, d::Dimensions{_R}, valid::Bool) where {_R}  = new{typeof(x), _R}(x, d, valid)
