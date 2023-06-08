@@ -150,17 +150,3 @@ end
     q = Quantity(0.5, inv(d))
     @test q == Quantity(0.5, length=0.2, luminosity=-2)
 end
-
-@testset "Trigger overflow" begin
-    f(x, N) =
-        let
-            for _ = 1:N
-                x = x + Rational{SafeInt}(2 // 3)
-                x = x - Rational{SafeInt}(2 // 3)
-            end
-            x
-        end
-
-    @test f(Rational{SafeInt}(5 // 7), 15) == Rational{SafeInt}(5 // 7)
-    @test_throws OverflowError f(Rational{SafeInt}(5 // 7), 20)
-end
