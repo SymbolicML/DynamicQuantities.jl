@@ -24,12 +24,11 @@ macro all_dimensions(f, l...)
 end
 
 Base.float(q::Quantity{T}) where {T<:AbstractFloat} = convert(T, q)
-Base.convert(::Type{T}, q::Quantity) where {T<:Real} =
-    let
-        @assert q.valid "Quantity $(q) is invalid!"
-        @assert iszero(q.dimensions) "Quantity $(q) has dimensions! Use `ustrip` instead."
-        return convert(T, q.value)
-    end
+function Base.convert(::Type{T}, q::Quantity) where {T<:Real}
+    @assert q.valid "Quantity $(q) is invalid!"
+    @assert iszero(q.dimensions) "Quantity $(q) has dimensions! Use `ustrip` instead."
+    return convert(T, q.value)
+end
 
 Base.isfinite(q::Quantity) = isfinite(q.value)
 Base.keys(::Dimensions) = DIMENSION_NAMES
@@ -49,44 +48,42 @@ Base.zero(::Type{Quantity{T}}) where {T} = Quantity(zero(T))
 Base.one(::Type{Quantity{T}}) where {T} = Quantity(one(T))
 Base.one(::Type{Dimensions}) = Dimensions()
 
-Base.show(io::IO, d::Dimensions) =
-    let tmp_io = IOBuffer()
-        for k in keys(d)
-            if !iszero(d[k])
-                print(tmp_io, SYNONYM_MAPPING[k])
-                pretty_print_exponent(tmp_io, d[k])
-                print(tmp_io, " ")
-            end
+function Base.show(io::IO, d::Dimensions)
+    tmp_io = IOBuffer()
+    for k in keys(d)
+        if !iszero(d[k])
+            print(tmp_io, SYNONYM_MAPPING[k])
+            pretty_print_exponent(tmp_io, d[k])
+            print(tmp_io, " ")
         end
-        s = String(take!(tmp_io))
-        s = replace(s, r"^\s*" => "")
-        s = replace(s, r"\s*$" => "")
-        print(io, s)
     end
+    s = String(take!(tmp_io))
+    s = replace(s, r"^\s*" => "")
+    s = replace(s, r"\s*$" => "")
+    print(io, s)
+end
 Base.show(io::IO, q::Quantity) = q.valid ? print(io, q.value, " ", q.dimensions) : print(io, "INVALID")
 
 string_rational(x::Rational) = isinteger(x) ? string(x.num) : string(x)
 string_rational(x::SimpleRatio) = string_rational(x.num // x.den)
-pretty_print_exponent(io::IO, x::R) =
-    let
-        print(io, " ", to_superscript(string_rational(x)))
-    end
+function pretty_print_exponent(io::IO, x::R) 
+    print(io, " ", to_superscript(string_rational(x)))
+end
 const SUPERSCRIPT_MAPPING = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
 const INTCHARS = ['0' + i for i = 0:9]
-to_superscript(s::AbstractString) = join(
-    map(replace(replace(s, "-" => "⁻"), r"//" => "ᐟ")) do c
+function to_superscript(s::AbstractString)
+    join(map(replace(replace(s, "-" => "⁻"), r"//" => "ᐟ")) do c
         c ∈ INTCHARS ? SUPERSCRIPT_MAPPING[parse(Int, c)+1] : c
-    end
-)
+    end)
+end
 
 tryrationalize(::Type{RI}, x::RI) where {RI} = x
 tryrationalize(::Type{RI}, x::Rational) where {RI} = RI(x)
 tryrationalize(::Type{RI}, x::Integer) where {RI} = RI(x)
 tryrationalize(::Type{RI}, x) where {RI} = simple_ratio_rationalize(RI, x)
-simple_ratio_rationalize(::Type{RI}, x) where {RI} =
-    let int_type = RI.parameters[1]
-        isinteger(x) ? RI(round(int_type, x)) : RI(rationalize(int_type, x))
-    end
+function simple_ratio_rationalize(::Type{RI}, x) where {RI<:Union{Rational{T}, SimpleRatio{T}}, T}
+    isinteger(x) ? RI(T(x)) : RI(rationalize(T, x))
+end
 
 """
     ustrip(q::Quantity)
