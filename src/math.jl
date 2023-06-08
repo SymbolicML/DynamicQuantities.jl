@@ -23,10 +23,7 @@ _pow(l::Dimensions{R}, r::R) where {R} = @map_dimensions(Base.Fix1(*, r), l)
 _pow(l::Quantity{T,R}, r::R) where {T,R} = Quantity(l.value^convert(T, r), _pow(l.dimensions, r), l.valid)
 Base.:^(l::Dimensions{R}, r::Number) where {R} = _pow(l, tryrationalize(R, r))
 Base.:^(l::Quantity{T,R}, r::Number) where {T,R} = _pow(l, tryrationalize(R, r))
-Base.:^(l::Q, r::Quantity) where {T,R,Q<:Quantity{T,R}} =
-    let rr = tryrationalize(R, r.value)
-        Quantity(l.value^convert(T, rr), _pow(l.dimensions, rr), l.valid && r.valid && iszero(r.dimensions))
-    end
+Base.:^(l::Quantity, r::Quantity) = Quantity(l.value^r.value, l.dimensions, l.valid && r.valid && iszero(r.dimensions))
 
 Base.inv(d::Dimensions) = @map_dimensions(-, d)
 Base.inv(q::Quantity) = Quantity(inv(q.value), inv(q.dimensions), q.valid)
