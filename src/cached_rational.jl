@@ -32,7 +32,7 @@ CRational(num::INT_TYPE, den::INT_TYPE) =
 CRational(n::INT_TYPE) = unsafe_rational(n, one(n))
 CRational(n::Integer) = CRational(INT_TYPE(n))
 CRational(r::Rational{INT_TYPE}) = unsafe_rational(r.num, r.den)
-CRational(r::Rational) = CRational(INT_TYPE(r.num), INT_TYPE(r.den))
+CRational(r::Rational) = unsafe_rational(INT_TYPE(r.num), INT_TYPE(r.den))
 
 CRational{INT_TYPE}(n::Integer) = CRational(n)
 CRational{INT_TYPE}(r::Rational) = CRational(r)
