@@ -4,10 +4,6 @@ using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using Test
 
-@static if !hasmethod(round, Tuple{Int, SimpleRatio{Int}})
-    @eval Base.round(T, x::SimpleRatio) = round(T, x.num // x.den)
-end
-
 @testset "Basic utilities" begin
 
     for T in [Float16, Float32, Float64], R in [Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
