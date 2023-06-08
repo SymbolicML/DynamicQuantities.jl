@@ -3,7 +3,6 @@ module DynamicQuantities
 export Quantity, Dimensions, ustrip, dimension, valid
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 
-include("cached_rational.jl")
 include("types.jl")
 include("utils.jl")
 include("math.jl")

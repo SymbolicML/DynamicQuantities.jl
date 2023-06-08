@@ -1,13 +1,13 @@
 import SaferIntegers: SafeInt8
 
 const INT_TYPE = SafeInt8
+include("cached_rational.jl")
 const R = CRational{INT_TYPE}
 const ZERO = R(0)
 const DIMENSION_NAMES = (:length, :mass, :time, :current, :temperature, :luminosity, :amount)
 const DIMENSION_SYNONYMS = (:𝐋, :𝐌, :𝐓, :𝐈, :𝚯, :𝐉, :𝐍)
 const SYNONYM_MAPPING = NamedTuple(DIMENSION_NAMES .=> DIMENSION_SYNONYMS)
 
-include("cached_rational.jl")
 
 """
     Dimensions

@@ -1,7 +1,3 @@
-import SaferIntegers: SafeInt8
-
-const INT_TYPE = SafeInt8
-
 const gcd_table =
     Tuple(
         Tuple(
