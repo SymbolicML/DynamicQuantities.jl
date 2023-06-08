@@ -113,17 +113,21 @@ end
 end
 
 @testset "Arrays" begin
-    X = randn(10)
-    uX = X .* Dimensions(length=2.5, luminosity=0.5)
+    for T in [Float16, Float32, Float64], R in [Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
+        X = randn(T, 10)
+        uX = X .* Dimensions{R}(length=2.5, luminosity=0.5)
 
-    @test eltype(uX) <: Quantity{Float64}
-    @test typeof(sum(uX)) <: Quantity{Float64}
-    @test sum(X) == ustrip(sum(uX))
-    @test dimension(prod(uX)) == prod([Dimensions(length=2.5, luminosity=0.5) for i in 1:10])
-    @test dimension(X[1]) == Dimensions()
+        @test eltype(uX) <: Quantity{T,R}
+        @test typeof(sum(uX)) <: Quantity{T,R}
+        @test sum(X) == ustrip(sum(uX))
+        @test dimension(prod(uX)) == prod([Dimensions(length=2.5, luminosity=0.5) for i in 1:10])
+        @test dimension(prod(uX)) == prod([Dimensions(R, length=2.5, luminosity=0.5) for i in 1:10])
+        @test typeof(dimension(prod(uX))) <: Dimensions{R}
+        @test dimension(X[1]) == Dimensions()
 
-    uX = X .* Quantity(2, length=2.5, luminosity=0.5)
-    @test sum(X) == 0.5 * ustrip(sum(uX))
+        uX = X .* Quantity(2, length=2.5, luminosity=0.5)
+        @test sum(X) == 0.5 * ustrip(sum(uX))
+    end
 end
 
 @testset "Alternate dimension construction" begin
