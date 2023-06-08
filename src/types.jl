@@ -1,5 +1,4 @@
-import Ratios: SimpleRatio
-import SaferIntegers: SafeInt
+const DEFAULT_DIM_TYPE = Rational{Int16}
 
 """
     Dimensions
@@ -27,25 +26,28 @@ struct Dimensions{R <: Real}
     luminosity::R
     amount::R
 
-    function Dimensions(length::R,
-                        mass::R,
-                        time::R,
-                        current::R,
-                        temperature::R,
-                        luminosity::R,
-                        amount::R) where R
-        new{R}(length, mass, time, current, temperature, luminosity, amount)
+    function Dimensions(length::_R,
+                        mass::_R,
+                        time::_R,
+                        current::_R,
+                        temperature::_R,
+                        luminosity::_R,
+                        amount::_R) where {_R<:Real}
+        new{_R}(length, mass, time, current, temperature, luminosity, amount)
     end
-    Dimensions(; kws...) = Dimensions(SimpleRatio{SafeInt}; kws...)
-    Dimensions(R; kws...) = Dimensions(
-        tryrationalize(R, get(kws, :length,      zero(R))),
-        tryrationalize(R, get(kws, :mass,        zero(R))),
-        tryrationalize(R, get(kws, :time,        zero(R))),
-        tryrationalize(R, get(kws, :current,     zero(R))),
-        tryrationalize(R, get(kws, :temperature, zero(R))),
-        tryrationalize(R, get(kws, :luminosity,  zero(R))),
-        tryrationalize(R, get(kws, :amount,      zero(R))),
+    Dimensions(; kws...) = Dimensions(DEFAULT_DIM_TYPE; kws...)
+    Dimensions(::Type{_R}; kws...) where {_R} = Dimensions(
+        tryrationalize(_R, get(kws, :length,      zero(_R))),
+        tryrationalize(_R, get(kws, :mass,        zero(_R))),
+        tryrationalize(_R, get(kws, :time,        zero(_R))),
+        tryrationalize(_R, get(kws, :current,     zero(_R))),
+        tryrationalize(_R, get(kws, :temperature, zero(_R))),
+        tryrationalize(_R, get(kws, :luminosity,  zero(_R))),
+        tryrationalize(_R, get(kws, :amount,      zero(_R))),
     )
+    Dimensions{_R}(; kws...) where {_R} = Dimensions(_R; kws...)
+    Dimensions{_R}(args...) where {_R} = Dimensions(Base.Fix1(convert, _R).(args)...)
+    Dimensions(args...) = Dimensions{DEFAULT_DIM_TYPE}(args...)
 end
 
 const DIMENSION_NAMES = Base.fieldnames(Dimensions)
@@ -77,10 +79,10 @@ struct Quantity{T, R}
     dimensions::Dimensions{R}
     valid::Bool
 
-    Quantity(x; kws...) = new{typeof(x), SimpleRatio{SafeInt}}(x, Dimensions(; kws...), true)
-    Quantity(x, valid::Bool; kws...) = new{typeof(x), SimpleRatio{SafeInt}}(x, Dimensions(; kws...), valid)
+    Quantity(x; kws...) = new{typeof(x), DEFAULT_DIM_TYPE}(x, Dimensions(; kws...), true)
+    Quantity(x, valid::Bool; kws...) = new{typeof(x), DEFAULT_DIM_TYPE}(x, Dimensions(; kws...), valid)
     Quantity(x, valid::Bool, ::Type{R}; kws...) where {R} = new{typeof(x), R}(x, Dimensions(R; kws...), valid)
-    Quantity(x, ::Type{R}; kws...) where {R}  = new{typeof(x), R}(x, Dimensions(R; kws...), true)
-    Quantity(x, d::Dimensions{R}) where {R}  = new{typeof(x), R}(x, d, true)
-    Quantity(x, d::Dimensions{R}, valid::Bool) where {R}  = new{typeof(x), R}(x, d, valid)
+    Quantity(x, ::Type{_R}; kws...) where {_R}  = new{typeof(x), _R}(x, Dimensions(_R; kws...), true)
+    Quantity(x, d::Dimensions{_R}) where {_R}  = new{typeof(x), _R}(x, d, true)
+    Quantity(x, d::Dimensions{_R}, valid::Bool) where {_R}  = new{typeof(x), _R}(x, d, valid)
 end

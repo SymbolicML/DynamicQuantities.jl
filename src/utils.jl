@@ -1,6 +1,6 @@
-macro map_dimensions(f, l...)
+macro map_dimensions(D, f, l...)
     # Create a new Dimensions object by applying f to each key
-    output = :(Dimensions())
+    output = :($D())
     for dim in DIMENSION_NAMES
         f_expr = :($f())
         for arg in l
@@ -48,6 +48,7 @@ Base.iterate(::Quantity, ::Nothing) = nothing
 Base.zero(::Type{Quantity{T}}) where {T} = Quantity(zero(T))
 Base.one(::Type{Quantity{T}}) where {T} = Quantity(one(T))
 Base.one(::Type{Dimensions}) = Dimensions()
+Base.one(::Type{Dimensions{R}}) where {R} = Dimensions{R}()
 
 Base.show(io::IO, d::Dimensions) =
     let tmp_io = IOBuffer()
@@ -65,12 +66,8 @@ Base.show(io::IO, d::Dimensions) =
     end
 Base.show(io::IO, q::Quantity) = q.valid ? print(io, q.value, " ", q.dimensions) : print(io, "INVALID")
 
-string_rational(x::Rational) = isinteger(x) ? string(x.num) : string(x)
-string_rational(x::SimpleRatio) = string_rational(x.num // x.den)
-pretty_print_exponent(io::IO, x::R) =
-    let
-        print(io, " ", to_superscript(string_rational(x)))
-    end
+string_rational(x) = isinteger(x) ? string(round(Int, x)) : string(x)
+pretty_print_exponent(io::IO, x) = print(io, " ", to_superscript(string_rational(x)))
 const SUPERSCRIPT_MAPPING = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
 const INTCHARS = ['0' + i for i = 0:9]
 to_superscript(s::AbstractString) = join(
@@ -79,14 +76,11 @@ to_superscript(s::AbstractString) = join(
     end
 )
 
-tryrationalize(::Type{RI}, x::RI) where {RI} = x
-tryrationalize(::Type{RI}, x::Rational) where {RI} = RI(x)
-tryrationalize(::Type{RI}, x::Integer) where {RI} = RI(x)
-tryrationalize(::Type{RI}, x) where {RI} = simple_ratio_rationalize(RI, x)
-simple_ratio_rationalize(::Type{RI}, x) where {RI} =
-    let int_type = RI.parameters[1]
-        isinteger(x) ? RI(round(int_type, x)) : RI(rationalize(int_type, x))
-    end
+tryrationalize(::Type{R}, x::R) where {R} = x
+tryrationalize(::Type{R}, x::Rational) where {R} = convert(R, x)
+tryrationalize(::Type{R}, x::Integer) where {R} = convert(R, x)
+tryrationalize(::Type{R}, x) where {R} = simple_ratio_rationalize(R, x)
+simple_ratio_rationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)) : convert(R, rationalize(Int, x))
 
 """
     ustrip(q::Quantity)

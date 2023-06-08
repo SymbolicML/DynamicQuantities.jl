@@ -110,8 +110,8 @@ end
     X = randn(10)
     uX = X .* Dimensions(length=2.5, luminosity=0.5)
 
-    @test eltype(uX) == Quantity{Float64}
-    @test typeof(sum(uX)) == Quantity{Float64}
+    @test eltype(uX) <: Quantity{Float64}
+    @test typeof(sum(uX)) <: Quantity{Float64}
     @test sum(X) == ustrip(sum(uX))
     @test dimension(prod(uX)) == prod([Dimensions(length=2.5, luminosity=0.5) for i in 1:10])
     @test dimension(X[1]) == Dimensions()
