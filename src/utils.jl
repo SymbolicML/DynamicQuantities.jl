@@ -81,8 +81,7 @@ to_superscript(s::AbstractString) = join(
 )
 
 tryrationalize(::Type{R}, x::R) where {R} = x
-tryrationalize(::Type{R}, x::Rational) where {R} = convert(R, x)
-tryrationalize(::Type{R}, x::Integer) where {R} = convert(R, x)
+tryrationalize(::Type{R}, x::Union{Rational,Integer}) where {R} = convert(R, x)
 tryrationalize(::Type{R}, x) where {R} = simple_ratio_rationalize(R, x)
 simple_ratio_rationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)) : convert(R, rationalize(Int, x))
 
