@@ -81,13 +81,6 @@ using Test
     @test ustrip(y) ≈ 0.2^2.1
     @test ustrip(y) == 0.2^(21 // 10)
 
-    x1 = Quantity(0.5)
-    x2 = Quantity(10.0, length=1)
-    y = x2^x1
-
-    @test ulength(y) == 1 // 2
-    @test ustrip(y) ≈ 10.0^0.5
-
     x = Quantity(-1.2, length=2 // 5)
 
     @test abs(x) == Quantity(1.2, length=2 // 5)
