@@ -50,12 +50,6 @@ struct Dimensions{R <: Real}
     Dimensions(args...) = Dimensions{DEFAULT_DIM_TYPE}(args...)
 end
 
-Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2} = Dimensions{promote_type(R1,R2)}
-Base.promote(d1::Dimensions, d2::Dimensions) = promote_type(d1, d2).((d1, d2))
-Base.convert(::Type{Dimensions{R}}, d::Dimensions{R}) where {R} = d
-Base.convert(::Type{Dimensions{R}}, d::Dimensions) where {R} = Dimensions{R}(d.length, d.mass, d.time, d.current, d.temperature, d.luminosity, d.amount)
-Dimensions{R}(d::Dimensions) where {R} = convert(Dimensions{R}, d)
-
 const DIMENSION_NAMES = Base.fieldnames(Dimensions)
 const DIMENSION_SYNONYMS = (:𝐋, :𝐌, :𝐓, :𝐈, :𝚯, :𝐉, :𝐍)
 const SYNONYM_MAPPING = NamedTuple(DIMENSION_NAMES .=> DIMENSION_SYNONYMS)
@@ -92,9 +86,3 @@ struct Quantity{T, R}
     Quantity(x, d::Dimensions{_R}) where {_R}  = new{typeof(x), _R}(x, d, true)
     Quantity(x, d::Dimensions{_R}, valid::Bool) where {_R}  = new{typeof(x), _R}(x, d, valid)
 end
-
-Base.promote_rule(::Type{Quantity{T1,R1}}, ::Type{Quantity{T2,R2}}) where {T1,R1,T2,R2} = Quantity{promote_type(T1,T2),promote_type(R1,R2)}
-Base.promote(q1::Quantity, q2::Quantity) = promote_type(q1, q2).((q1, q2))
-Base.convert(::Type{Quantity{T,R}}, q::Quantity{T,R}) where {T,R} = q
-Base.convert(::Type{Quantity{T,R}}, q::Quantity) where {T,R} = Quantity(convert(T, q.value), convert(Dimensions{R}, q.dimensions), q.valid)
-Quantity{T,R}(q::Quantity) where {T,R} = convert(Quantity{T,R}, q)
