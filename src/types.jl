@@ -1,5 +1,5 @@
 const INT_TYPE = Int8
-const R = Rational{INT_TYPE}
+const R = CRational{INT_TYPE}
 const ZERO = R(0)
 const DIMENSION_NAMES = (:length, :mass, :time, :current, :temperature, :luminosity, :amount)
 const DIMENSION_SYNONYMS = (:𝐋, :𝐌, :𝐓, :𝐈, :𝚯, :𝐉, :𝐍)

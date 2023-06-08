@@ -36,7 +36,7 @@ SUITE["with_quantity"] = let s = BenchmarkGroup()
     s["/y"] = @benchmarkable $f5(x, y) setup = (x = default(); y = default()) evals = 1000
     f6(x, y) = x^y
     s["^y"] = @benchmarkable $f6(x, y) setup = (x = default(); y = rand(-2:2)) evals = 1000
-    f9(x, y) = x + y
-    s["+y"] = @benchmarkable $f9(x, y) setup = (x = default(); y = default()) evals = 1000
+    f9(x, y) = x * y
+    s["*y"] = @benchmarkable $f9(x, y) setup = (x = default(); y = default()) evals = 1000
     s
 end

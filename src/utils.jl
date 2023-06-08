@@ -65,7 +65,7 @@ Base.show(io::IO, d::Dimensions) =
     end
 Base.show(io::IO, q::Quantity) = q.valid ? print(io, q.value, " ", q.dimensions) : print(io, "INVALID")
 
-string_rational(x::Rational) = isinteger(x) ? string(x.num) : string(x)
+string_rational(x::CRational) = isinteger(x) ? string(x.num) : string(x)
 pretty_print_exponent(io::IO, x::R) =
     let
         print(io, " ", to_superscript(string_rational(x)))
@@ -78,6 +78,7 @@ to_superscript(s::AbstractString) = join(
     end
 )
 
+tryrationalize(::Type{RI}, x::RI) where {RI} = x
 tryrationalize(::Type{RI}, x::Rational) where {RI} = RI(x)
 tryrationalize(::Type{RI}, x::Integer) where {RI} = RI(x)
 tryrationalize(::Type{RI}, x) where {RI} = simple_ratio_rationalize(RI, x)
