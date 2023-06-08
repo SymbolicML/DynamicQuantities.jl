@@ -58,4 +58,9 @@ function _map_dim_name_to_dynamic_units(::Type{Unitful.Dimension{D}}) where {D}
 end
 
 
+DynamicQuantities.dynquantity(u::Unitful.FreeUnits)=Base.convert(DynamicQuantities.Quantity,Unitful.upreferred(1u))
+DynamicQuantities.dynquantity(q::Unitful.AbstractQuantity) = Base.convert(DynamicQuantities.Quantity,Unitful.upreferred(q))
+DynamicQuantities.unitful(q::DynamicQuantities.Quantity) = Base.convert(Unitful.Quantity,q)
+Unitful.uconvert(u::Unitful.FreeUnits,q::DynamicQuantities.Quantity) = Unitful.uconvert(u, Base.convert(Unitful.Quantity,q))
+
 end

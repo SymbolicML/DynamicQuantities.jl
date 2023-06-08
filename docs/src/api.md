@@ -11,5 +11,5 @@ API Reference for [DynamicQuantities](https://github.com/SymbolicML/DynamicQuant
 
 ```@autodocs
 Modules = [DynamicQuantities]
-Order   = [:type, :function]
+Order   = [:type, :function, :macro]
 ```

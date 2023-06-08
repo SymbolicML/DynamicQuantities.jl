@@ -160,3 +160,84 @@ uluminosity(q::Quantity) = q.dimensions.luminosity
 Get the amount dimension of a quantity (e.g., mol^(uamount)).
 """
 uamount(q::Quantity) = q.dimensions.amount
+
+"""
+    dynquantity(u)
+
+Convert `Unitful.FreeUnits` or `Unitful.AbstractQuantity` to  `DynamicQuantities.quantity`.
+
+```jldoctest
+julia> dynquantity(u"cm")
+1//100 𝐋 ¹
+```
+
+```jldoctest
+julia> 1u"cm"|> dynquantity
+1//100 𝐋 ¹
+````
+
+"""
+function dynquantity end
+
+"""
+    unitful(q)
+
+Make `Quantity` unitful.
+
+```jldoctest
+julia> DynamicQuantities.Quantity(3.0,length=3) |> unitful
+3.0 m^3
+```
+"""
+function unitful end
+
+"""
+    uconvert(unit,q)
+
+Convert `Quantity` to a certain unitful unit.
+
+```jldoctest
+julia> DynamicQuantities.Quantity(3.0,length=3) |> u"dm^3"
+3000.0 dm^3
+```
+"""
+function uconvert end
+
+"""
+    @q_str(x)
+
+Construct Quantity via string macro.
+
+```jldoctest
+julia> q"kHz"
+1000 𝐓 ⁻¹
+```
+
+"""
+macro q_str(x)
+    quote
+        DynamicQuantities.dynquantity($(Unitful).@u_str($(x)))
+    end
+end
+
+
+function _dynquantities(xs...)
+    code = Expr(:block)
+    for x in xs
+        push!(code.args, :($x = DynamicQuantities.dynquantity($Unitful.$x)))
+    end
+    code
+end
+
+"""
+    @dynquantities
+
+Construct a list of quantity values
+```jldoctest
+julia> @dynquantities cm km Hz
+1 𝐓 ⁻¹ 
+```
+"""
+macro dynquantities(xs...)
+    esc(_dynquantities(xs...))
+end

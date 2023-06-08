@@ -30,6 +30,8 @@ makedocs(;
     authors="MilesCranmer <miles.cranmer@gmail.com> and contributors",
     repo="https://github.com/SymbolicML/DynamicQuantities.jl/blob/{commit}{path}#{line}",
     sitename="DynamicQuantities.jl",
+         clean = false, 
+         doctest = true,
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
         canonical="https://symbolicml.org/DynamicQuantities.jl",

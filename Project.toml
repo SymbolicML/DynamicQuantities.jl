@@ -7,12 +7,9 @@ version = "0.1.0"
 Ratios = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 SaferIntegers = "88634af6-177f-5301-88b8-7819386cfa38"
-
-[weakdeps]
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
-[extensions]
-DynamicQuantitiesUnitfulExt = "Unitful"
+
 
 [compat]
 Ratios = "0.4"
@@ -24,7 +21,7 @@ julia = "1.6"
 [extras]
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 
 [targets]
-test = ["Test", "SafeTestsets", "Unitful"]
+test = ["Test", "SafeTestsets","Documenter"]
