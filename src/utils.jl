@@ -1,6 +1,6 @@
-macro map_dimensions(D, f, l...)
+macro map_dimensions(f, l...)
     # Create a new Dimensions object by applying f to each key
-    output = :($D())
+    output = :(Dimensions())
     for dim in DIMENSION_NAMES
         f_expr = :($f())
         for arg in l
@@ -23,8 +23,6 @@ macro all_dimensions(f, l...)
     return output |> esc
 end
 
-Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2} = Dimensions{promote_type(R1,R2)}
-Base.promote_rule(::Type{Quantity{T1,R1}}, ::Type{Quantity{T2,R2}}) where {T1,R1,T2,R2} = Quantity{promote_type(T1,T2),promote_type(R1,R2)}
 Base.float(q::Quantity{T}) where {T<:AbstractFloat} = convert(T, q)
 Base.convert(::Type{T}, q::Quantity) where {T<:Real} =
     let
@@ -47,8 +45,12 @@ Base.iterate(d::Dimensions) = (d, nothing)
 Base.iterate(::Dimensions, ::Nothing) = nothing
 Base.iterate(q::Quantity) = (q, nothing)
 Base.iterate(::Quantity, ::Nothing) = nothing
+Base.zero(::Type{Quantity{T,R}}) where {T,R} = Quantity(zero(T), R)
+Base.one(::Type{Quantity{T,R}}) where {T,R} = Quantity(one(T), R)
 Base.zero(::Type{Quantity{T}}) where {T} = Quantity(zero(T))
 Base.one(::Type{Quantity{T}}) where {T} = Quantity(one(T))
+Base.zero(::Type{Quantity}) = Quantity(zero(DEFAULT_DIM_TYPE))
+Base.one(::Type{Quantity}) = Quantity(one(DEFAULT_DIM_TYPE))
 Base.one(::Type{Dimensions}) = Dimensions()
 Base.one(::Type{Dimensions{R}}) where {R} = Dimensions{R}()
 
