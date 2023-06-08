@@ -23,6 +23,8 @@ macro all_dimensions(f, l...)
     return output |> esc
 end
 
+Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2} = Dimensions{promote_type(R1,R2)}
+Base.promote_rule(::Type{Quantity{T1,R1}}, ::Type{Quantity{T2,R2}}) where {T1,R1,T2,R2} = Quantity{promote_type(T1,T2),promote_type(R1,R2)}
 Base.float(q::Quantity{T}) where {T<:AbstractFloat} = convert(T, q)
 Base.convert(::Type{T}, q::Quantity) where {T<:Real} =
     let
