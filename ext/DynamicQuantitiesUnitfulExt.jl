@@ -11,18 +11,20 @@ else
 end
 
 # This lets the user override the preferred units:
-const UNITFUL_EQUIVALENCIES = let basic = (length=u"m", mass=u"kg", time=u"s", current=u"A", temperature=u"K", luminosity=u"cd", amount=u"mol")
-    NamedTuple((k => Unitful.upreferred(basic[k]) for k in keys(basic)))
+function unitful_equivalences()
+    si_units = (length=u"m", mass=u"kg", time=u"s", current=u"A", temperature=u"K", luminosity=u"cd", amount=u"mol")
+    return NamedTuple((k => Unitful.upreferred(si_units[k]) for k in keys(si_units)))
 end
 
 Base.convert(::Type{Unitful.Quantity}, x::DynamicQuantities.Quantity) =
     let
         cumulator = DynamicQuantities.ustrip(x)
         dims = DynamicQuantities.dimension(x)
+        equiv = unitful_equivalences()
         for dim in keys(dims)
             value = dims[dim]
             iszero(value) && continue
-            cumulator *= UNITFUL_EQUIVALENCIES[dim]^value
+            cumulator *= equiv[dim]^value
         end
         cumulator
     end
