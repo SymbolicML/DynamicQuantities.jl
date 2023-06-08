@@ -1,5 +1,4 @@
 using DynamicQuantities
-using DynamicQuantities: INT_TYPE, R
 using Test
 
 @testset "Basic utilities" begin
@@ -156,12 +155,12 @@ end
     f(x, N) =
         let
             for _ = 1:N
-                x = x + R(2 // 3)
-                x = x - R(2 // 3)
+                x = x + Rational{SafeInt}(2 // 3)
+                x = x - Rational{SafeInt}(2 // 3)
             end
             x
         end
 
-    @test f(R(5 // 7), 15) == R(5 // 7)
-    @test_throws OverflowError f(R(5 // 7), 20)
+    @test f(Rational{SafeInt}(5 // 7), 15) == Rational{SafeInt}(5 // 7)
+    @test_throws OverflowError f(Rational{SafeInt}(5 // 7), 20)
 end
