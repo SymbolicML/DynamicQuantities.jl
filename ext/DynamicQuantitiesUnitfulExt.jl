@@ -36,6 +36,11 @@ Base.convert(::Type{DynamicQuantities.Quantity}, x::Unitful.Quantity) =
         return DynamicQuantities.Quantity(value, dimension)
     end
 
+Base.convert(::Type{DynamicQuantities.Quantity}, x::Unitful.FreeUnits) =
+    let
+        convert(DynamicQuantities.Quantity, 1.0 * x)
+    end
+
 Base.convert(::Type{DynamicQuantities.Dimensions}, d::Unitful.Dimensions{D}) where {D} =
     let
         cumulator = DynamicQuantities.Dimensions()
@@ -47,6 +52,11 @@ Base.convert(::Type{DynamicQuantities.Dimensions}, d::Unitful.Dimensions{D}) whe
         cumulator
     end
 
+Base.convert(::Type{DynamicQuantities.Dimensions}, x::Unitful.FreeUnits) =
+    let
+        DynamicQuantities.dimension(convert(DynamicQuantities.Quantity, x))
+    end
+
 function _map_dim_name_to_dynamic_units(::Type{Unitful.Dimension{D}}) where {D}
     # (We could do this automatically, but it's more obvious what we are doing this way.)
     D == :Length && return :length
@@ -56,7 +66,7 @@ function _map_dim_name_to_dynamic_units(::Type{Unitful.Dimension{D}}) where {D}
     D == :Temperature && return :temperature
     D == :Luminosity && return :luminosity
     D == :Amount && return :amount
-    error("Unknown dimension: $D")
+    throw(error("Unknown dimension: $D. Valid dimensions are: (:Length, :Mass, :Time, :Current, :Temperature, :Luminosity, :Amount)."))
 end
 
 
