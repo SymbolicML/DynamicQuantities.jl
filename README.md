@@ -2,8 +2,6 @@
 
 ![logo](https://github.com/SymbolicML/DynamicQuantities.jl/assets/7593028/a278d0c1-2f95-416b-ba04-82750074146b)
 
-# DynamicQuantities
-
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://symbolicml.org/DynamicQuantities.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://symbolicml.org/DynamicQuantities.jl/dev/)
 [![Build Status](https://github.com/SymbolicML/DynamicQuantities.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/SymbolicML/DynamicQuantities.jl/actions/workflows/CI.yml?query=branch%3Amain)
@@ -11,7 +9,7 @@
 
 </div>
   
-This defines a simple statically-typed `Quantity` type for Julia.
+DynamicQuantities defines a simple statically-typed `Quantity` type for Julia.
 Physical dimensions are stored as a *value*, as opposed to a parametric type, as in [Unitful.jl](https://github.com/PainterQubits/Unitful.jl).
 This is done to allow for calculations where physical dimensions are not known at compile time.
 
