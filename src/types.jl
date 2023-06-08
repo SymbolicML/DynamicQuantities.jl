@@ -47,7 +47,6 @@ struct Dimensions{R <: Real}
     )
     Dimensions{_R}(; kws...) where {_R} = Dimensions(_R; kws...)
     Dimensions{_R}(args...) where {_R} = Dimensions(Base.Fix1(convert, _R).(args)...)
-    Dimensions(args...) = Dimensions{DEFAULT_DIM_TYPE}(args...)
 end
 
 const DIMENSION_NAMES = Base.fieldnames(Dimensions)
