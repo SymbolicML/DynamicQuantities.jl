@@ -4,7 +4,7 @@ const gcd_table =
     Tuple(
         Tuple(
             if j == 0
-                (Rational{Int8}(0), Rational{Int8}(0))
+                Rational{Int8}.((0, 0))
             else
                 Rational{Int8}.(divgcd(Int16(i), Int16(j)))
             end
