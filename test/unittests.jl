@@ -1,105 +1,109 @@
 using DynamicQuantities
-using DynamicQuantities: INT_TYPE, R
+using DynamicQuantities: DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE, DIMENSION_NAMES
+using Ratios: SimpleRatio
+using SaferIntegers: SafeInt16
 using Test
 
 @testset "Basic utilities" begin
 
-    x = Quantity(0.2, length=1, mass=2.5)
+    for T in [Float16, Float32, Float64], R in [Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
+        x = Quantity(T(0.2), R, length=1, mass=2.5)
 
-    @test ulength(x) == 1 // 1
-    @test umass(x) == 5 // 2
-    @test valid(x)
-    @test ustrip(x) == 0.2
-    @test dimension(x) == Dimensions(length=1, mass=5 // 2)
-    @test typeof(x).parameters[1] == Float64
+        @test typeof(x).parameters[1] == T
+        @test typeof(x).parameters[2] == R
+        @test ulength(x) == R(1 // 1)
+        @test umass(x) == R(5 // 2)
+        @test ustrip(x) ≈ T(0.2)
+        @test dimension(x) == Dimensions(R, length=1, mass=5 // 2)
+        if R == DEFAULT_DIM_TYPE
+            @test x == Quantity(T(0.2), length=1, mass=2.5)
+            @test dimension(x) == Dimensions(length=1, mass=5 // 2)
+        end
 
-    y = x^2
+        y = x^2
 
-    @test ulength(y) == 2 // 1
-    @test umass(y) == 5 // 1
-    @test ustrip(y) ≈ 0.04
-    @test valid(y)
-    @test typeof(y).parameters[1] == Float64
+        @test typeof(x).parameters[1] == T
+        @test typeof(x).parameters[2] == R
+        @test ulength(y) == R(2 // 1)
+        @test umass(y) == (5 // 1)
+        @test ustrip(y) ≈ T(0.04)
 
-    y = x + x
+        y = x + x
 
-    @test ulength(y) == 1 // 1
-    @test umass(y) == 5 // 2
-    @test ustrip(y) ≈ 0.4
-    @test valid(y)
+        @test ulength(y) == R(1 // 1)
+        @test umass(y) == R(5 // 2)
+        @test ustrip(y) ≈ T(0.4)
 
-    y = x^2 + x
+        if R <: Rational
+            @test string(x) == "0.2 𝐋 ¹ 𝐌 ⁵ᐟ²"
+            @test string(inv(x)) == "5.0 𝐋 ⁻¹ 𝐌 ⁻⁵ᐟ²"
+        end
 
-    @test !valid(y)
-    @test string(x) == "0.2 𝐋 ¹ 𝐌 ⁵ᐟ²"
-    @test string(inv(x)) == "5.0 𝐋 ⁻¹ 𝐌 ⁻⁵ᐟ²"
-    @test string(y) == "INVALID"
+        @test_throws DimensionError x^2 + x
 
-    y = inv(x)
+        # Check output of error:
+        try
+            x^2 + x
+            @test false
+        catch e
+            r"DimensionError: .* and .* have incompatible dimensions."
+            io = IOBuffer()
+            showerror(io, e)
+            msg = String(take!(io))
+            @test occursin("DimensionError", msg)
+            @test occursin("incompatible dimensions", msg)
+        end
 
-    @test ulength(y) == -1 // 1
-    @test umass(y) == -5 // 2
-    @test ustrip(y) ≈ 5
-    @test valid(y)
+        y = inv(x)
 
-    y = x - x
+        @test ulength(y) == R(-1 // 1)
+        @test umass(y) == R(-5 // 2)
+        @test ustrip(y) ≈ R(5)
 
-    @test iszero(x) == false
-    @test iszero(y) == true
-    @test iszero(y.dimensions) == false
+        y = x - x
 
-    y = x / x
+        @test iszero(x) == false
+        @test iszero(y) == true
+        @test iszero(y.dimensions) == false
 
-    @test iszero(x.dimensions) == false
-    @test iszero(y.dimensions) == true
+        y = x / x
 
-    y = Quantity(2 // 10, length=1, mass=5 // 2)
+        @test iszero(x.dimensions) == false
+        @test iszero(y.dimensions) == true
 
-    @test y ≈ x
+        y = Quantity(T(2 // 10), R, length=1, mass=5 // 2)
 
-    y = Quantity(2 // 10, false, length=1, mass=5 // 2)
+        @test y ≈ x
 
-    @test !(y ≈ x)
+        y = Quantity(T(2 // 10), R, length=1, mass=6 // 2)
 
-    y = Quantity(2 // 10, length=1, mass=6 // 2)
+        @test !(y ≈ x)
 
-    @test !(y ≈ x)
+        y = x * Inf32
 
-    y = x * Inf
+        @test typeof(y).parameters[1] == promote_type(T, Float32)
+        @test typeof(y).parameters[2] == R
+        @test isfinite(x)
+        @test !isfinite(y)
 
-    @test isfinite(x)
-    @test !isfinite(y)
+        y = x^2.1
 
-    y = x^2.1
-
-    @test ulength(y) == 1 * (21 // 10)
-    @test umass(y) == (5 // 2) * (21 // 10)
-    @test utime(y) == 0
-    @test ucurrent(y) == 0
-    @test utemperature(y) == 0
-    @test uluminosity(y) == 0
-    @test uamount(y) == 0
-    @test ustrip(y) ≈ 0.2^2.1
-    @test ustrip(y) == 0.2^(21 // 10)
-
-    x1 = Quantity(0.5)
-    x2 = Quantity(10.0, length=1)
-    y = x2^x1
-
-    @test ulength(y) == 1 // 2
-    @test ustrip(y) ≈ 10.0^0.5
+        @test typeof(y).parameters[1] == T  # Should not promote! Expect 2.1 to be converted to 21//10
+        @test typeof(y).parameters[2] == R
+        @test ulength(y) == R(1 * (21 // 10))
+        @test umass(y) == R((5 // 2) * (21 // 10))
+        @test utime(y) == R(0)
+        @test ucurrent(y) == R(0)
+        @test utemperature(y) == R(0)
+        @test uluminosity(y) == R(0)
+        @test uamount(y) == R(0)
+        @test ustrip(y) ≈ T(0.2^2.1)
+    end
 
     x = Quantity(-1.2, length=2 // 5)
 
     @test abs(x) == Quantity(1.2, length=2 // 5)
     @test abs(x) == abs(Quantity(1.2, length=2 // 5))
-
-    @test one(Quantity{Float64}) == Quantity(1.0)
-    @test one(Quantity{String}) == Quantity("")
-    @test zero(Quantity{Float64}) == Quantity(0.0)
-    @test zero(Quantity{Int}) == Quantity(0, length=0, mass=0)
-    @test Quantity(1.0, one(Dimensions)) == Quantity(1.0)
-    @test one(Dimensions) == Dimensions()
 end
 
 @testset "Fallbacks" begin
@@ -108,17 +112,21 @@ end
 end
 
 @testset "Arrays" begin
-    X = randn(10)
-    uX = X .* Dimensions(length=2.5, luminosity=0.5)
+    for T in [Float16, Float32, Float64], R in [Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
+        X = randn(T, 10)
+        uX = X .* Dimensions{R}(length=2.5, luminosity=0.5)
 
-    @test eltype(uX) == Quantity{Float64}
-    @test typeof(sum(uX)) == Quantity{Float64}
-    @test sum(X) == ustrip(sum(uX))
-    @test dimension(prod(uX)) == prod([Dimensions(length=2.5, luminosity=0.5) for i in 1:10])
-    @test dimension(X[1]) == Dimensions()
+        @test eltype(uX) <: Quantity{T,R}
+        @test typeof(sum(uX)) <: Quantity{T,R}
+        @test sum(X) == ustrip(sum(uX))
+        @test dimension(prod(uX)) == prod([Dimensions(length=2.5, luminosity=0.5) for i in 1:10])
+        @test dimension(prod(uX)) == prod([Dimensions(R, length=2.5, luminosity=0.5) for i in 1:10])
+        @test typeof(dimension(prod(uX))) <: Dimensions{R}
+        @test dimension(X[1]) == Dimensions()
 
-    uX = X .* Quantity(2, length=2.5, luminosity=0.5)
-    @test sum(X) == 0.5 * ustrip(sum(uX))
+        uX = X .* Quantity(2, length=2.5, luminosity=0.5)
+        @test sum(X) == 0.5 * ustrip(sum(uX))
+    end
 end
 
 @testset "Alternate dimension construction" begin
@@ -140,6 +148,23 @@ end
     @test Quantity(0.5, length=2) / Dimensions(length=1) == Quantity(0.5, length=1)
     @test Dimensions(length=1) / Quantity(0.5, length=2, mass=-5) == Quantity(2, length=-1, mass=5)
 
+    @test Dimensions{Int8}([0 for i=1:length(DIMENSION_NAMES)]...) == Dimensions{Int8}()
+
+    @test zero(Quantity{ComplexF64,Int8}) + Quantity(1) == Quantity(1.0+0.0im, length=Int8(0))
+    @test one(Quantity{ComplexF64,Int8}) - Quantity(1) == Quantity(0.0+0.0im, length=Int8(0))
+    @test typeof(one(Dimensions{Int16})) == Dimensions{Int16}
+    @test one(Dimensions{Int16}) == Dimensions(mass=Int16(0))
+
+    @test zero(Quantity{ComplexF64}) == Quantity(0.0+0.0im)
+    @test one(Quantity{ComplexF64}) == Quantity(1.0+0.0im)
+
+    @test zero(Quantity) == Quantity(0.0)
+    @test typeof(zero(Quantity)) == Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
+    @test one(Quantity) - Quantity(1) == Quantity(0.0)
+    @test typeof(one(Quantity)) == Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
+    @test typeof(one(Dimensions)) == Dimensions{DEFAULT_DIM_TYPE}
+    @test one(Dimensions) == Dimensions()
+
     @test sqrt(z * -1) == Quantity(sqrt(52), length=1 // 2, mass=1)
     @test cbrt(z) == Quantity(cbrt(-52), length=1 // 3, mass=2 // 3)
 
@@ -150,18 +175,4 @@ end
     d = Dimensions(length=-0.2, luminosity=2)
     q = Quantity(0.5, inv(d))
     @test q == Quantity(0.5, length=0.2, luminosity=-2)
-end
-
-@testset "Trigger overflow" begin
-    f(x, N) =
-        let
-            for _ = 1:N
-                x = x + R(2 // 3)
-                x = x - R(2 // 3)
-            end
-            x
-        end
-
-    @test f(R(5 // 7), 15) == R(5 // 7)
-    @test_throws OverflowError f(R(5 // 7), 20)
 end
