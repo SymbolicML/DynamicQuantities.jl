@@ -30,10 +30,10 @@ julia> unitful = convert(Unitful.Quantity, dyn_uni)
 julia> f(x, i) = x ^ i * 0.3;
 
 julia> @btime f($dyn_uni, i) setup=(i=rand(1:10));
-  9.384 ns (0 allocations: 0 bytes)
+  87.755 ns (0 allocations: 0 bytes)
 
 julia> @btime f($unitful, i) setup=(i=rand(1:10));
-  29.667 μs (42 allocations: 1.91 KiB)
+  30.708 μs (42 allocations: 1.91 KiB)
 ```
 
 **(Note the μ and n.)**
@@ -47,7 +47,7 @@ then you can get better speeds with Unitful:
 julia> g(x) = x ^ 2 * 0.3;
 
 julia> @btime g($dyn_uni);
-  6.083 ns (0 allocations: 0 bytes)
+  85.063 ns (0 allocations: 0 bytes)
 
 julia> @btime g($unitful);
   1.958 ns (0 allocations: 0 bytes)
@@ -154,6 +154,33 @@ julia> x2 = convert(Unitful.Quantity, y2)
 
 julia> x^2*0.3 == x2
 true
+```
+
+## Types
+
+Both the `Quantity`'s values and dimensions are of arbitrary type.
+For example, you might choose to use [Ratios.jl](https://github.com/timholy/Ratios.jl/)
+combined with [SaferIntegers.jl](https://github.com/JeffreySarnoff/SaferIntegers.jl)
+for faster dimension calculations:
+
+```julia
+julia> using DynamicQuantities, Ratios, SaferIntegers
+
+julia> Base.round(::Type{T}, x::SimpleRatio) where {T} = round(T, x.num // x.den)  # Define missing function
+
+julia> q = Quantity(0.2, length=2)
+0.2 𝐋 ²
+
+julia> q_fast = Quantity(Float32(0.2), SimpleRatio{SafeInt8}, length=2)
+0.2 𝐋 ²
+
+julia> f(x, i) = x ^ i * 0.3;
+
+julia> @btime f($q, i) setup=(i=rand(1:10));
+  83.117 ns (0 allocations: 0 bytes)
+
+julia> @btime f($q_fast, i) setup=(i=rand(1:10));
+  10.594 ns (0 allocations: 0 bytes)
 ```
 
 ## Vectors
