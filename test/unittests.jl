@@ -1,5 +1,5 @@
 using DynamicQuantities
-using DynamicQuantities: DEFAULT_DIM_TYPE
+using DynamicQuantities: DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE, DIMENSION_NAMES
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using Test
@@ -135,6 +135,23 @@ end
     @test Quantity(0.5) / Dimensions(length=1) == Quantity(0.5, length=-1)
     @test Quantity(0.5, length=2) / Dimensions(length=1) == Quantity(0.5, length=1)
     @test Dimensions(length=1) / Quantity(0.5, length=2, mass=-5) == Quantity(2, length=-1, mass=5)
+
+    @test Dimensions{Int8}([0 for i=1:length(DIMENSION_NAMES)]...) == Dimensions{Int8}()
+
+    @test zero(Quantity{ComplexF64,Int8}) + Quantity(1) == Quantity(1.0+0.0im, length=Int8(0))
+    @test one(Quantity{ComplexF64,Int8}) - Quantity(1) == Quantity(0.0+0.0im, length=Int8(0))
+    @test typeof(one(Dimensions{Int16})) == Dimensions{Int16}
+    @test one(Dimensions{Int16}) == Dimensions(mass=Int16(0))
+
+    @test zero(Quantity{ComplexF64}) == Quantity(0.0+0.0im)
+    @test one(Quantity{ComplexF64}) == Quantity(1.0+0.0im)
+
+    @test zero(Quantity) == Quantity(0.0)
+    @test typeof(zero(Quantity)) == Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
+    @test one(Quantity) - Quantity(1) == Quantity(0.0)
+    @test typeof(one(Quantity)) == Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
+    @test typeof(one(Dimensions)) == Dimensions{DEFAULT_DIM_TYPE}
+    @test one(Dimensions) == Dimensions()
 
     @test sqrt(z * -1) == Quantity(sqrt(52), length=1 // 2, mass=1)
     @test cbrt(z) == Quantity(cbrt(-52), length=1 // 3, mass=2 // 3)
