@@ -1,4 +1,5 @@
 const DEFAULT_DIM_TYPE = Rational{Int16}
+const DEFAULT_VALUE_TYPE = Float64
 
 """
     Dimensions

@@ -44,14 +44,17 @@ Base.iterate(d::Dimensions) = (d, nothing)
 Base.iterate(::Dimensions, ::Nothing) = nothing
 Base.iterate(q::Quantity) = (q, nothing)
 Base.iterate(::Quantity, ::Nothing) = nothing
+
 Base.zero(::Type{Quantity{T,R}}) where {T,R} = Quantity(zero(T), R)
 Base.one(::Type{Quantity{T,R}}) where {T,R} = Quantity(one(T), R)
-Base.zero(::Type{Quantity{T}}) where {T} = Quantity(zero(T))
-Base.one(::Type{Quantity{T}}) where {T} = Quantity(one(T))
-Base.zero(::Type{Quantity}) = Quantity(zero(DEFAULT_DIM_TYPE))
-Base.one(::Type{Quantity}) = Quantity(one(DEFAULT_DIM_TYPE))
-Base.one(::Type{Dimensions}) = Dimensions()
 Base.one(::Type{Dimensions{R}}) where {R} = Dimensions{R}()
+
+Base.zero(::Type{Quantity{T}}) where {T} = zero(Quantity{T,DEFAULT_DIM_TYPE})
+Base.one(::Type{Quantity{T}}) where {T} = one(Quantity{T,DEFAULT_DIM_TYPE})
+
+Base.zero(::Type{Quantity}) = zero(Quantity{DEFAULT_VALUE_TYPE})
+Base.one(::Type{Quantity}) = one(Quantity{DEFAULT_VALUE_TYPE})
+Base.one(::Type{Dimensions}) = one(Dimensions{DEFAULT_DIM_TYPE})
 
 Base.show(io::IO, d::Dimensions) =
     let tmp_io = IOBuffer()
