@@ -16,8 +16,28 @@ Base.:/(l::Number, r::Quantity) = l * inv(r)
 Base.:/(l::Dimensions, r::Number) = Quantity(inv(r), l, true)
 Base.:/(l::Number, r::Dimensions) = Quantity(l, inv(r), true)
 
-Base.:+(l::Quantity, r::Quantity) = Quantity(l.value + r.value, l.dimensions, l.valid && r.valid && l.dimensions == r.dimensions)
-Base.:-(l::Quantity, r::Quantity) = Quantity(l.value - r.value, l.dimensions, l.valid && r.valid && l.dimensions == r.dimensions)
+function Base.:+(l::Quantity, r::Quantity)
+    if iszero(l)
+        return r
+    elseif iszero(r)
+        return l
+    else
+        l.dimensions == r.dimensions ? Quantity(l.value + r.value, l.dimensions, l.valid && r.valid ) : error("dimension mismatch")
+    end
+end
+
+
+function Base.:-(l::Quantity, r::Quantity)
+    if iszero(l)
+        return -r
+    elseif iszero(r)
+        return l
+    else
+        l.dimensions == r.dimensions ?  Quantity(l.value - r.value, l.dimensions, l.valid && r.valid) : error("dimension mismatch: l=$l, r=$r")
+    end
+end
+
+Base.:-(l::Quantity) =  Quantity(- l.value, l.dimensions, l.valid)
 
 Base.:^(l::Quantity, r::Quantity) =
     let rr = tryrationalize(R, r.value)
@@ -38,4 +58,16 @@ Base.sqrt(q::Quantity) = Quantity(sqrt(q.value), sqrt(q.dimensions), q.valid)
 Base.cbrt(d::Dimensions) = d^(1 // 3)
 Base.cbrt(q::Quantity) = Quantity(cbrt(q.value), cbrt(q.dimensions), q.valid)
 
-Base.abs(q::Quantity) = Quantity(abs(q.value), q.dimensions, q.valid)
+
+#
+# We need this for pivoting: we could introduce a pivoting type RowNonZero instead.
+# 
+#Base.abs(q::Quantity) = Quantity(abs(q.value), q.dimensions, q.valid)
+Base.abs(q::Quantity) = Quantity(abs(q.value))
+
+
+Base.iszero(d::Dimensions) = d==Dimensions()
+Base.isless(q::Quantity,r::Quantity) =  q.value<r.value && q.dimensions==r.dimensions
+Base.isone(q::Quantity{T}) where T =   isone(q.value) && iszero(q.dimensions)
+Base.iszero(q::Quantity{T}) where T  =  iszero(q.value)
+
