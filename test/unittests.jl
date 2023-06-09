@@ -41,6 +41,18 @@ using Test
 
         @test_throws DimensionError x^2 + x
 
+        # Check output of error:
+        try
+            x^2 + x
+            @test false
+        catch e
+            r"DimensionError: .* and .* have incompatible dimensions."
+            io = IOBuffer()
+            showerror(io, e)
+            msg = String(take!(io))
+            @test occursin("DimensionError", msg)
+            @test occursin("incompatible dimensions", msg)
+        end
 
         y = inv(x)
 

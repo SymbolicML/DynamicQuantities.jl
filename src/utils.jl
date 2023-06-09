@@ -86,7 +86,7 @@ tryrationalize(::Type{R}, x::R) where {R} = x
 tryrationalize(::Type{R}, x::Union{Rational,Integer}) where {R} = convert(R, x)
 tryrationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)) : convert(R, rationalize(Int, x))
 
-Base.showerror(io::IO, e::DimensionError) = print(io, "DimensionError: ", e.q1, " and ", e.q2, " have different dimensions")
+Base.showerror(io::IO, e::DimensionError) = print(io, "DimensionError: ", e.q1, " and ", e.q2, " have incompatible dimensions")
 
 """
     ustrip(q::Quantity)
