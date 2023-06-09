@@ -94,17 +94,15 @@ julia> x ^ 1.5
 
 Each of these values has the same type, thus obviating the need for type inference at runtime.
 
-Furthermore, we can do dimensional analysis automatically:
+Furthermore, we can do dimensional analysis by detecting `DimensionError`:
 
 ```julia
 julia> x + 3 * x
 1.2 𝐋 ¹ᐟ² 𝐌 ¹
 
 julia> x + y
-INVALID
+ERROR: DimensionError: 0.3 𝐋 ¹ᐟ² 𝐌 ¹ and 10.2 𝐌 ² 𝐓 ⁻² have different dimensions
 ```
-
-We can see the second one has `valid(quantity) == false`. This doesn't throw an error by default, as it allows for stable return values.
 
 The dimensions of a `Quantity` can be accessed either with `dimension(quantity)` for the entire `Dimensions` object:
 

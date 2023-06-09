@@ -26,7 +26,6 @@ end
 Base.float(q::Quantity{T}) where {T<:AbstractFloat} = convert(T, q)
 Base.convert(::Type{T}, q::Quantity) where {T<:Real} =
     let
-        @assert q.valid "Quantity $(q) is invalid!"
         @assert iszero(q.dimensions) "Quantity $(q) has dimensions! Use `ustrip` instead."
         return convert(T, q.value)
     end
@@ -37,8 +36,8 @@ Base.iszero(d::Dimensions) = @all_dimensions(iszero, d)
 Base.iszero(q::Quantity) = iszero(q.value)
 Base.getindex(d::Dimensions, k::Symbol) = getfield(d, k)
 Base.:(==)(l::Dimensions, r::Dimensions) = @all_dimensions(==, l, r)
-Base.:(==)(l::Quantity, r::Quantity) = l.value == r.value && l.dimensions == r.dimensions && l.valid == r.valid
-Base.isapprox(l::Quantity, r::Quantity; kws...) = isapprox(l.value, r.value; kws...) && l.dimensions == r.dimensions && l.valid == r.valid
+Base.:(==)(l::Quantity, r::Quantity) = l.value == r.value && l.dimensions == r.dimensions
+Base.isapprox(l::Quantity, r::Quantity; kws...) = isapprox(l.value, r.value; kws...) && l.dimensions == r.dimensions
 Base.length(::Dimensions) = 1
 Base.length(::Quantity) = 1
 Base.iterate(d::Dimensions) = (d, nothing)
@@ -68,7 +67,7 @@ Base.show(io::IO, d::Dimensions) =
         s = replace(s, r"\s*$" => "")
         print(io, s)
     end
-Base.show(io::IO, q::Quantity) = q.valid ? print(io, q.value, " ", q.dimensions) : print(io, "INVALID")
+Base.show(io::IO, q::Quantity) = print(io, q.value, " ", q.dimensions)
 
 string_rational(x) = isinteger(x) ? string(round(Int, x)) : string(x)
 pretty_print_exponent(io::IO, x) = print(io, " ", to_superscript(string_rational(x)))
@@ -83,6 +82,8 @@ to_superscript(s::AbstractString) = join(
 tryrationalize(::Type{R}, x::R) where {R} = x
 tryrationalize(::Type{R}, x::Union{Rational,Integer}) where {R} = convert(R, x)
 tryrationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)) : convert(R, rationalize(Int, x))
+
+Base.showerror(io::IO, e::DimensionError) = print(io, "DimensionError: ", e.q1, " and ", e.q2, " have different dimensions")
 
 """
     ustrip(q::Quantity)
@@ -99,14 +100,6 @@ Get the dimensions of a quantity, returning a `Dimensions` object.
 """
 dimension(q::Quantity) = q.dimensions
 dimension(::Number) = Dimensions()
-
-"""
-    valid(q::Quantity)
-
-Check if a quantity is valid. If invalid, dimensional analysis
-during a previous calculation failed (such as adding mass and velocity).
-"""
-valid(q::Quantity) = q.valid
 
 """
     ulength(q::Quantity)
