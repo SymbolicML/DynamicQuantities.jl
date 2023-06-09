@@ -1,4 +1,5 @@
 import DynamicQuantities
+using DynamicQuantities: DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 import Unitful
 import Unitful: @u_str
 import Ratios: SimpleRatio
@@ -15,7 +16,7 @@ risapprox(x::Unitful.Quantity, y::Unitful.Quantity; kws...) =
 
 factor_for_preferred_units = 1e-3
 
-for T in [Float16, Float32, Float64], R in [Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
+for T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
     x = DynamicQuantities.Quantity(T(0.2*factor_for_preferred_units), R, length=1, amount=2, current=-1 // 2, luminosity=2 // 5)
     x_unitful = T(0.2)u"m*mol^2*A^(-1//2)*cd^(2//5)"
 

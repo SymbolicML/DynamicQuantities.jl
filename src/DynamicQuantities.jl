@@ -3,6 +3,7 @@ module DynamicQuantities
 export Quantity, Dimensions, DimensionError, ustrip, dimension, valid
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 
+include("fixed_rational.jl")
 include("types.jl")
 include("utils.jl")
 include("math.jl")
