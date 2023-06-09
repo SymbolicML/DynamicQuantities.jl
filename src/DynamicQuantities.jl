@@ -1,9 +1,7 @@
 module DynamicQuantities
 
-export Quantity, Dimensions, ustrip, dimension, valid
+export Quantity, Dimensions, DimensionError, ustrip, dimension, valid
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
-
-import Ratios: SimpleRatio
 
 include("types.jl")
 include("utils.jl")

@@ -1,12 +1,10 @@
 name = "DynamicQuantities"
 uuid = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
 authors = ["MilesCranmer <miles.cranmer@gmail.com> and contributors"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
-Ratios = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
-SaferIntegers = "88634af6-177f-5301-88b8-7819386cfa38"
 
 [weakdeps]
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
@@ -15,16 +13,16 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 DynamicQuantitiesUnitfulExt = "Unitful"
 
 [compat]
-Ratios = "0.4"
 Requires = "1"
-SaferIntegers = "3"
 Unitful = "1"
 julia = "1.6"
 
 [extras]
+Ratios = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
+SaferIntegers = "88634af6-177f-5301-88b8-7819386cfa38"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Test", "SafeTestsets", "Unitful"]
+test = ["Test", "Ratios", "SaferIntegers", "SafeTestsets", "Unitful"]
