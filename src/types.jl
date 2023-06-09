@@ -57,10 +57,9 @@ const SYNONYM_MAPPING = NamedTuple(DIMENSION_NAMES .=> DIMENSION_SYNONYMS)
     Quantity{T}
 
 Physical quantity with value `value` of type `T` and dimensions `dimensions`.
-The `valid` field is used to indicate whether the quantity is valid or not
-(e.g., due to dimensional error). For example, the velocity of an object
-with mass 1 kg and velocity 2 m/s is `Quantity(2, mass=1, length=1, time=-1)`.
-You should access these fields with `ustrip(q)`, `dimensions(q)`, and `valid(q)`.
+For example, the velocity of an object with mass 1 kg and velocity
+2 m/s is `Quantity(2, mass=1, length=1, time=-1)`.
+You should access these fields with `ustrip(q)`, and `dimensions(q)`.
 You can access specific dimensions with `ulength(q)`, `umass(q)`, `utime(q)`,
 `ucurrent(q)`, `utemperature(q)`, `uluminosity(q)`, and `uamount(q)`.
 
@@ -71,17 +70,17 @@ including `*`, `+`, `-`, `/`, `^`, `sqrt`, and `cbrt`.
 
 - `value::T`: value of the quantity of some type `T`
 - `dimensions::Dimensions`: dimensions of the quantity
-- `valid::Bool`: whether the quantity is valid or not
 """
 struct Quantity{T, R}
     value::T
     dimensions::Dimensions{R}
-    valid::Bool
 
-    Quantity(x; kws...) = new{typeof(x), DEFAULT_DIM_TYPE}(x, Dimensions(; kws...), true)
-    Quantity(x, valid::Bool; kws...) = new{typeof(x), DEFAULT_DIM_TYPE}(x, Dimensions(; kws...), valid)
-    Quantity(x, ::Type{_R}, valid::Bool; kws...) where {_R} = new{typeof(x), _R}(x, Dimensions(_R; kws...), valid)
-    Quantity(x, ::Type{_R}; kws...) where {_R}  = new{typeof(x), _R}(x, Dimensions(_R; kws...), true)
-    Quantity(x, d::Dimensions{_R}) where {_R}  = new{typeof(x), _R}(x, d, true)
-    Quantity(x, d::Dimensions{_R}, valid::Bool) where {_R}  = new{typeof(x), _R}(x, d, valid)
+    Quantity(x; kws...) = new{typeof(x), DEFAULT_DIM_TYPE}(x, Dimensions(; kws...))
+    Quantity(x, ::Type{_R}; kws...) where {_R}  = new{typeof(x), _R}(x, Dimensions(_R; kws...))
+    Quantity(x, d::Dimensions{_R}) where {_R}  = new{typeof(x), _R}(x, d)
+end
+
+struct DimensionError{Q1,Q2} <: Exception
+    q1::Q1
+    q2::Q2
 end

@@ -13,7 +13,6 @@ using Test
         @test typeof(x).parameters[2] == R
         @test ulength(x) == R(1 // 1)
         @test umass(x) == R(5 // 2)
-        @test valid(x)
         @test ustrip(x) ≈ T(0.2)
         @test dimension(x) == Dimensions(R, length=1, mass=5 // 2)
         if R == DEFAULT_DIM_TYPE
@@ -28,30 +27,26 @@ using Test
         @test ulength(y) == R(2 // 1)
         @test umass(y) == (5 // 1)
         @test ustrip(y) ≈ T(0.04)
-        @test valid(y)
 
         y = x + x
 
         @test ulength(y) == R(1 // 1)
         @test umass(y) == R(5 // 2)
         @test ustrip(y) ≈ T(0.4)
-        @test valid(y)
 
-        y = x^2 + x
-
-        @test !valid(y)
         if R <: Rational
             @test string(x) == "0.2 𝐋 ¹ 𝐌 ⁵ᐟ²"
             @test string(inv(x)) == "5.0 𝐋 ⁻¹ 𝐌 ⁻⁵ᐟ²"
         end
-        @test string(y) == "INVALID"
+
+        @test_throws DimensionError x^2 + x
+
 
         y = inv(x)
 
         @test ulength(y) == R(-1 // 1)
         @test umass(y) == R(-5 // 2)
         @test ustrip(y) ≈ R(5)
-        @test valid(y)
 
         y = x - x
 
@@ -67,10 +62,6 @@ using Test
         y = Quantity(T(2 // 10), R, length=1, mass=5 // 2)
 
         @test y ≈ x
-
-        y = Quantity(T(2 // 10), R, false, length=1, mass=5 // 2)
-
-        @test !(y ≈ x)
 
         y = Quantity(T(2 // 10), R, length=1, mass=6 // 2)
 
