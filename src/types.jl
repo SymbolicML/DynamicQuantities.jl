@@ -1,12 +1,4 @@
-import Ratios: SimpleRatio
-import SaferIntegers: SafeInt
-
-const INT_TYPE = SafeInt
-const R = SimpleRatio{INT_TYPE}
-const ZERO = R(0)
-const DIMENSION_NAMES = (:length, :mass, :time, :current, :temperature, :luminosity, :amount)
-const DIMENSION_SYNONYMS = (:𝐋, :𝐌, :𝐓, :𝐈, :𝚯, :𝐉, :𝐍)
-const SYNONYM_MAPPING = NamedTuple(DIMENSION_NAMES .=> DIMENSION_SYNONYMS)
+const DEFAULT_DIM_TYPE = Rational{Int16}
 
 """
     Dimensions
@@ -17,15 +9,15 @@ example, the dimensions of velocity are `Dimensions(length=1, time=-1)`.
 
 # Fields
 
-- `length::Rational{Int}`: length dimension (i.e., meters^(length))
-- `mass::Rational{Int}`: mass dimension (i.e., kg^(mass))
-- `time::Rational{Int}`: time dimension (i.e., s^(time))
-- `current::Rational{Int}`: current dimension (i.e., A^(current))
-- `temperature::Rational{Int}`: temperature dimension (i.e., K^(temperature))
-- `luminosity::Rational{Int}`: luminosity dimension (i.e., cd^(luminosity))
-- `amount::Rational{Int}`: amount dimension (i.e., mol^(amount))
+- `length`: length dimension (i.e., meters^(length))
+- `mass`: mass dimension (i.e., kg^(mass))
+- `time`: time dimension (i.e., s^(time))
+- `current`: current dimension (i.e., A^(current))
+- `temperature`: temperature dimension (i.e., K^(temperature))
+- `luminosity`: luminosity dimension (i.e., cd^(luminosity))
+- `amount`: amount dimension (i.e., mol^(amount))
 """
-struct Dimensions
+struct Dimensions{R <: Real}
     length::R
     mass::R
     time::R
@@ -34,18 +26,32 @@ struct Dimensions
     luminosity::R
     amount::R
 
-    Dimensions(length::R, mass::R, time::R, current::R, temperature::R, luminosity::R, amount::R) =
-        new(length, mass, time, current, temperature, luminosity, amount)
-    Dimensions(; kws...) = Dimensions(
-        tryrationalize(R, get(kws, :length, ZERO)),
-        tryrationalize(R, get(kws, :mass, ZERO)),
-        tryrationalize(R, get(kws, :time, ZERO)),
-        tryrationalize(R, get(kws, :current, ZERO)),
-        tryrationalize(R, get(kws, :temperature, ZERO)),
-        tryrationalize(R, get(kws, :luminosity, ZERO)),
-        tryrationalize(R, get(kws, :amount, ZERO)),
+    function Dimensions(length::_R,
+                        mass::_R,
+                        time::_R,
+                        current::_R,
+                        temperature::_R,
+                        luminosity::_R,
+                        amount::_R) where {_R<:Real}
+        new{_R}(length, mass, time, current, temperature, luminosity, amount)
+    end
+    Dimensions(; kws...) = Dimensions(DEFAULT_DIM_TYPE; kws...)
+    Dimensions(::Type{_R}; kws...) where {_R} = Dimensions(
+        tryrationalize(_R, get(kws, :length,      zero(_R))),
+        tryrationalize(_R, get(kws, :mass,        zero(_R))),
+        tryrationalize(_R, get(kws, :time,        zero(_R))),
+        tryrationalize(_R, get(kws, :current,     zero(_R))),
+        tryrationalize(_R, get(kws, :temperature, zero(_R))),
+        tryrationalize(_R, get(kws, :luminosity,  zero(_R))),
+        tryrationalize(_R, get(kws, :amount,      zero(_R))),
     )
+    Dimensions{_R}(; kws...) where {_R} = Dimensions(_R; kws...)
+    Dimensions{_R}(args...) where {_R} = Dimensions(Base.Fix1(convert, _R).(args)...)
 end
+
+const DIMENSION_NAMES = Base.fieldnames(Dimensions)
+const DIMENSION_SYNONYMS = (:𝐋, :𝐌, :𝐓, :𝐈, :𝚯, :𝐉, :𝐍)
+const SYNONYM_MAPPING = NamedTuple(DIMENSION_NAMES .=> DIMENSION_SYNONYMS)
 
 """
     Quantity{T}
@@ -67,13 +73,15 @@ including `*`, `+`, `-`, `/`, `^`, `sqrt`, and `cbrt`.
 - `dimensions::Dimensions`: dimensions of the quantity
 - `valid::Bool`: whether the quantity is valid or not
 """
-struct Quantity{T}
+struct Quantity{T, R}
     value::T
-    dimensions::Dimensions
+    dimensions::Dimensions{R}
     valid::Bool
 
-    Quantity(x; kws...) = new{typeof(x)}(x, Dimensions(; kws...), true)
-    Quantity(x, valid::Bool; kws...) = new{typeof(x)}(x, Dimensions(; kws...), valid)
-    Quantity(x, d::Dimensions) = new{typeof(x)}(x, d, true)
-    Quantity(x, d::Dimensions, valid::Bool) = new{typeof(x)}(x, d, valid)
+    Quantity(x; kws...) = new{typeof(x), DEFAULT_DIM_TYPE}(x, Dimensions(; kws...), true)
+    Quantity(x, valid::Bool; kws...) = new{typeof(x), DEFAULT_DIM_TYPE}(x, Dimensions(; kws...), valid)
+    Quantity(x, ::Type{_R}, valid::Bool; kws...) where {_R} = new{typeof(x), _R}(x, Dimensions(_R; kws...), valid)
+    Quantity(x, ::Type{_R}; kws...) where {_R}  = new{typeof(x), _R}(x, Dimensions(_R; kws...), true)
+    Quantity(x, d::Dimensions{_R}) where {_R}  = new{typeof(x), _R}(x, d, true)
+    Quantity(x, d::Dimensions{_R}, valid::Bool) where {_R}  = new{typeof(x), _R}(x, d, valid)
 end

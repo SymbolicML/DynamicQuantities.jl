@@ -38,16 +38,21 @@ Base.iszero(q::Quantity) = iszero(q.value)
 Base.getindex(d::Dimensions, k::Symbol) = getfield(d, k)
 Base.:(==)(l::Dimensions, r::Dimensions) = @all_dimensions(==, l, r)
 Base.:(==)(l::Quantity, r::Quantity) = l.value == r.value && l.dimensions == r.dimensions && l.valid == r.valid
-Base.:(≈)(l::Quantity, r::Quantity) = l.value ≈ r.value && l.dimensions == r.dimensions && l.valid == r.valid
+Base.isapprox(l::Quantity, r::Quantity; kws...) = isapprox(l.value, r.value; kws...) && l.dimensions == r.dimensions && l.valid == r.valid
 Base.length(::Dimensions) = 1
 Base.length(::Quantity) = 1
 Base.iterate(d::Dimensions) = (d, nothing)
 Base.iterate(::Dimensions, ::Nothing) = nothing
 Base.iterate(q::Quantity) = (q, nothing)
 Base.iterate(::Quantity, ::Nothing) = nothing
+Base.zero(::Type{Quantity{T,R}}) where {T,R} = Quantity(zero(T), R)
+Base.one(::Type{Quantity{T,R}}) where {T,R} = Quantity(one(T), R)
 Base.zero(::Type{Quantity{T}}) where {T} = Quantity(zero(T))
 Base.one(::Type{Quantity{T}}) where {T} = Quantity(one(T))
+Base.zero(::Type{Quantity}) = Quantity(zero(DEFAULT_DIM_TYPE))
+Base.one(::Type{Quantity}) = Quantity(one(DEFAULT_DIM_TYPE))
 Base.one(::Type{Dimensions}) = Dimensions()
+Base.one(::Type{Dimensions{R}}) where {R} = Dimensions{R}()
 
 Base.show(io::IO, d::Dimensions) =
     let tmp_io = IOBuffer()
@@ -65,12 +70,8 @@ Base.show(io::IO, d::Dimensions) =
     end
 Base.show(io::IO, q::Quantity) = q.valid ? print(io, q.value, " ", q.dimensions) : print(io, "INVALID")
 
-string_rational(x::Rational) = isinteger(x) ? string(x.num) : string(x)
-string_rational(x::SimpleRatio) = string_rational(x.num // x.den)
-pretty_print_exponent(io::IO, x::R) =
-    let
-        print(io, " ", to_superscript(string_rational(x)))
-    end
+string_rational(x) = isinteger(x) ? string(round(Int, x)) : string(x)
+pretty_print_exponent(io::IO, x) = print(io, " ", to_superscript(string_rational(x)))
 const SUPERSCRIPT_MAPPING = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
 const INTCHARS = ['0' + i for i = 0:9]
 to_superscript(s::AbstractString) = join(
@@ -79,14 +80,9 @@ to_superscript(s::AbstractString) = join(
     end
 )
 
-tryrationalize(::Type{RI}, x::RI) where {RI} = x
-tryrationalize(::Type{RI}, x::Rational) where {RI} = RI(x)
-tryrationalize(::Type{RI}, x::Integer) where {RI} = RI(x)
-tryrationalize(::Type{RI}, x) where {RI} = simple_ratio_rationalize(RI, x)
-simple_ratio_rationalize(::Type{RI}, x) where {RI} =
-    let int_type = RI.parameters[1]
-        isinteger(x) ? RI(round(int_type, x)) : RI(rationalize(int_type, x))
-    end
+tryrationalize(::Type{R}, x::R) where {R} = x
+tryrationalize(::Type{R}, x::Union{Rational,Integer}) where {R} = convert(R, x)
+tryrationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)) : convert(R, rationalize(Int, x))
 
 """
     ustrip(q::Quantity)

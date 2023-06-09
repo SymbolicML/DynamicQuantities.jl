@@ -29,20 +29,22 @@ Base.convert(::Type{Unitful.Quantity}, x::DynamicQuantities.Quantity) =
         cumulator
     end
 
-Base.convert(::Type{DynamicQuantities.Quantity}, x::Unitful.Quantity) =
+Base.convert(::Type{DynamicQuantities.Quantity}, x::Unitful.Quantity{T}) where {T} = convert(DynamicQuantities.Quantity{T,DynamicQuantities.DEFAULT_DIM_TYPE}, x)
+Base.convert(::Type{DynamicQuantities.Quantity{T,R}}, x::Unitful.Quantity) where {T,R} =
     let
         value = Unitful.ustrip(Unitful.upreferred(x))
-        dimension = convert(DynamicQuantities.Dimensions, Unitful.dimension(x))
-        return DynamicQuantities.Quantity(value, dimension)
+        dimension = convert(DynamicQuantities.Dimensions{R}, Unitful.dimension(x))
+        return DynamicQuantities.Quantity(convert(T, value), dimension)
     end
 
-Base.convert(::Type{DynamicQuantities.Dimensions}, d::Unitful.Dimensions{D}) where {D} =
+Base.convert(::Type{DynamicQuantities.Dimensions}, d::Unitful.Dimensions) = convert(DynamicQuantities.Dimensions{DynamicQuantities.DEFAULT_DIM_TYPE}, d)
+Base.convert(::Type{DynamicQuantities.Dimensions{R}}, d::Unitful.Dimensions{D}) where {R,D} =
     let
-        cumulator = DynamicQuantities.Dimensions()
+        cumulator = DynamicQuantities.Dimensions{R}()
         for dim in D
             dim_symbol = _map_dim_name_to_dynamic_units(typeof(dim))
             dim_power = dim.power
-            cumulator *= DynamicQuantities.Dimensions(; dim_symbol => dim_power)
+            cumulator *= DynamicQuantities.Dimensions(R; dim_symbol => dim_power)
         end
         cumulator
     end
