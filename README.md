@@ -13,6 +13,12 @@ DynamicQuantities defines a simple statically-typed `Quantity` type for Julia.
 Physical dimensions are stored as a *value*, as opposed to a parametric type, as in [Unitful.jl](https://github.com/PainterQubits/Unitful.jl).
 This is done to allow for calculations where physical dimensions are not known at compile time.
 
+- [Performance](#performance)
+- [Usage](#usage)
+- [Units](#units)
+- [Types](#types)
+- [Vectors](#vectors)
+
 ## Performance
 
 DynamicQuantities can greatly outperform Unitful
