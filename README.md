@@ -175,10 +175,8 @@ julia> R8 = FixedRational{Int8,6};
 julia> R32 = FixedRational{Int32,2^4 * 3^2 * 5^2 * 7};  # Default
 
 julia> q8 = [Quantity(randn(), R8, length=rand(-2:2)) for i in 1:1000];
-0.2 𝐋 ²
 
 julia> q32 = [Quantity(randn(), R32, length=rand(-2:2)) for i in 1:1000];
-0.2 𝐋 ²
 
 julia> f(x) = @. x ^ 2 * 0.5;
 
