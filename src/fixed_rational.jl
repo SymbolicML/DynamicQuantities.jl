@@ -28,3 +28,7 @@ Base.promote(x::T, y::F) where {T,T2,den,F<:FixedRational{T2,den}} = promote(x, 
 Base.promote(x::F, y::T) where {T,T2,den,F<:FixedRational{T2,den}} = promote(convert(Rational, x), y)
 Base.show(io::IO, x::F) where {T,den,F<:FixedRational{T,den}} = show(io, convert(Rational, x))
 Base.zero(::Type{F}) where {T,den,F<:FixedRational{T,den}} = unsafe_fixed_rational(0, T, Val(den))
+
+tryrationalize(::Type{F}, x::F) where {T,den,F<:FixedRational{T,den}} = x
+tryrationalize(::Type{F}, x::Union{Rational,Integer}) where {T,den,F<:FixedRational{T,den}} = convert(F, x)
+tryrationalize(::Type{F}, x) where {T,den,F<:FixedRational{T,den}} = unsafe_fixed_rational(round(T, x * den), T, Val(den))
