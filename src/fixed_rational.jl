@@ -18,7 +18,7 @@ Base.:-(l::F, r::F) where {T,den,F<:FixedRational{T,den}} = unsafe_fixed_rationa
 Base.:-(x::F) where {T,den,F<:FixedRational{T,den}} = unsafe_fixed_rational(-x.num, T, Val(den))
 Base.inv(x::F) where {T,den,F<:FixedRational{T,den}} = unsafe_fixed_rational(widemul(den, den) ÷ x.num, T, Val(den))
 
-Base.:(==)(x::FixedRational, y::FixedRational) = x.num == y.num
+Base.:(==)(x::F, y::F) where {F<:FixedRational} = x.num == y.num
 Base.iszero(x::FixedRational) = iszero(x.num)
 Base.isinteger(x::F) where {T,den,F<:FixedRational{T,den}} = iszero(x.num % den)
 Base.convert(::Type{FixedRational{T,den}}, x::Integer) where {T,den} = unsafe_fixed_rational(x * den, T, Val(den))
@@ -26,8 +26,8 @@ Base.convert(::Type{FixedRational{T,den}}, x::Rational) where {T,den} = FixedRat
 Base.convert(::Type{Rational}, x::FixedRational{T,den}) where {T,den} = Rational{T}(x.num, den)
 Base.convert(::Type{AF}, x::FixedRational{T,den}) where {AF<:AbstractFloat,T,den} = convert(AF, x.num) / convert(AF, den)
 Base.round(::Type{T}, x::F) where {T,T2,den,F<:FixedRational{T2,den}} = div(convert(T, x.num), convert(T, den), RoundNearest)
-Base.promote(x::T, y::F) where {T,T2,den,F<:FixedRational{T2,den}} = promote(x, convert(Rational, y))
-Base.promote(x::F, y::T) where {T,T2,den,F<:FixedRational{T2,den}} = promote(convert(Rational, x), y)
+Base.promote(x, y::F) where {T,den,F<:FixedRational{T,den}} = promote(x, convert(Rational, y))
+Base.promote(x::F, y) where {T,den,F<:FixedRational{T,den}} = promote(convert(Rational, x), y)
 Base.show(io::IO, x::F) where {T,den,F<:FixedRational{T,den}} = show(io, convert(Rational, x))
 Base.zero(::Type{F}) where {T,den,F<:FixedRational{T,den}} = unsafe_fixed_rational(0, T, Val(den))
 
