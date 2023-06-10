@@ -6,7 +6,7 @@ using Test
 
 @testset "Basic utilities" begin
 
-    for T in [Float16, Float32, Float64], R in [Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
+    for T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
         x = Quantity(T(0.2), R, length=1, mass=2.5)
 
         @test typeof(x).parameters[1] == T

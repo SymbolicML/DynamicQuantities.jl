@@ -1,4 +1,4 @@
-const DEFAULT_DIM_TYPE = Rational{Int16}
+const DEFAULT_DIM_TYPE = FixedRational{Int32, 2^4 * 3^2 * 5^2 * 7}
 const DEFAULT_VALUE_TYPE = Float64
 
 """
