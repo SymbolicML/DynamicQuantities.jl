@@ -30,10 +30,10 @@ julia> unitful = convert(Unitful.Quantity, dyn_uni)
 julia> f(x, i) = x ^ i * 0.3;
 
 julia> @btime f($dyn_uni, i) setup=(i=rand(1:10));
-  87.755 ns (0 allocations: 0 bytes)
+  10.719 ns (0 allocations: 0 bytes)
 
 julia> @btime f($unitful, i) setup=(i=rand(1:10));
-  30.708 μs (42 allocations: 1.91 KiB)
+  30.583 μs (42 allocations: 1.91 KiB)
 ```
 
 **(Note the μ and n.)**
@@ -47,10 +47,10 @@ then you can get better speeds with Unitful:
 julia> g(x) = x ^ 2 * 0.3;
 
 julia> @btime g($dyn_uni);
-  85.063 ns (0 allocations: 0 bytes)
+  10.051 ns (0 allocations: 0 bytes)
 
 julia> @btime g($unitful);
-  1.958 ns (0 allocations: 0 bytes)
+  2.000 ns (0 allocations: 0 bytes)
 ```
 
 While both of these are type stable,
@@ -159,28 +159,34 @@ true
 ## Types
 
 Both the `Quantity`'s values and dimensions are of arbitrary type.
-For example, you might choose to use [Ratios.jl](https://github.com/timholy/Ratios.jl/)
-combined with [SaferIntegers.jl](https://github.com/JeffreySarnoff/SaferIntegers.jl)
-for faster dimension calculations:
+By default, dimensions are stored as a `DynamicQuantities.FixedRational{Int32,C}`
+object, which represents a rational number
+with a fixed denominator `C`. This is much faster than `Rational`.
+
+However, for many applications, `FixedRational{Int8,6}` will suffice,
+and can be faster as it means the entire `Dimensions`
+struct will fit into 64 bits. Let's see an example:
 
 ```julia
-julia> using DynamicQuantities, Ratios, SaferIntegers
+julia> using DynamicQuantities; using DynamicQuantities: FixedRational
 
-julia> Base.round(::Type{T}, x::SimpleRatio) where {T} = round(T, x.num // x.den)  # Define missing function
+julia> R8 = FixedRational{Int8,6};
 
-julia> q = Quantity(0.2, length=2)
+julia> R32 = FixedRational{Int32,2^4 * 3^2 * 5^2 * 7};  # Default
+
+julia> q8 = [Quantity(randn(), R8, length=rand(-2:2)) for i in 1:1000];
 0.2 𝐋 ²
 
-julia> q_fast = Quantity(Float32(0.2), SimpleRatio{SafeInt8}, length=2)
+julia> q32 = [Quantity(randn(), R32, length=rand(-2:2)) for i in 1:1000];
 0.2 𝐋 ²
 
-julia> f(x, i) = x ^ i * 0.3;
+julia> f(x) = @. x ^ 2 * 0.5;
 
-julia> @btime f($q, i) setup=(i=rand(1:10));
-  83.117 ns (0 allocations: 0 bytes)
+julia> @btime f($q8);
+  7.750 μs (1 allocation: 15.75 KiB)
 
-julia> @btime f($q_fast, i) setup=(i=rand(1:10));
-  10.594 ns (0 allocations: 0 bytes)
+julia> @btime f($q32);
+  8.417 μs (2 allocations: 39.11 KiB)
 ```
 
 ## Vectors
