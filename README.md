@@ -29,11 +29,11 @@ julia> unitful = convert(Unitful.Quantity, dyn_uni)
 
 julia> f(x, i) = x ^ i * 0.3;
 
-julia> @btime f($dyn_uni, i) setup=(i=rand(1:10));
-  10.719 ns (0 allocations: 0 bytes)
+julia> @btime f($dyn_uni, 1);
+  8.759 ns (0 allocations: 0 bytes)
 
-julia> @btime f($unitful, i) setup=(i=rand(1:10));
-  30.583 μs (42 allocations: 1.91 KiB)
+julia> @btime f($unitful, 1);
+  30.083 μs (42 allocations: 1.91 KiB)
 ```
 
 **(Note the μ and n.)**
