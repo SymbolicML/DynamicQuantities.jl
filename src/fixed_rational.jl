@@ -18,6 +18,8 @@ Base.:-(l::F, r::F) where {T,den,F<:FixedRational{T,den}} = unsafe_fixed_rationa
 Base.:-(x::F) where {T,den,F<:FixedRational{T,den}} = unsafe_fixed_rational(-x.num, T, Val(den))
 Base.inv(x::F) where {T,den,F<:FixedRational{T,den}} = unsafe_fixed_rational(widemul(den, den) ÷ x.num, T, Val(den))
 
+Base.:(==)(x::FixedRational, y::FixedRational) = x.num == y.num
+Base.iszero(x::FixedRational) = iszero(x.num)
 Base.isinteger(x::F) where {T,den,F<:FixedRational{T,den}} = iszero(x.num % den)
 Base.convert(::Type{FixedRational{T,den}}, x::Integer) where {T,den} = unsafe_fixed_rational(x * den, T, Val(den))
 Base.convert(::Type{FixedRational{T,den}}, x::Rational) where {T,den} = FixedRational{T,den}(x)
