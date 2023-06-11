@@ -168,16 +168,31 @@ By default, dimensions are stored as a `DynamicQuantities.FixedRational{Int32,C}
 object, which represents a rational number
 with a fixed denominator `C`. This is much faster than `Rational`.
 
-However, for many applications, `FixedRational{Int8,6}` will suffice,
-and can be faster as it means the entire `Dimensions`
-struct will fit into 64 bits. Let's see an example:
+```julia
+julia> typeof(Quantity(0.5, mass=1))
+Quantity{Float64, FixedRational{Int32, 25200}
+```
+
+You can change the type of the value field by initializing with a value
+of the desired type.
 
 ```julia
-julia> using DynamicQuantities; using DynamicQuantities: FixedRational
+julia> typeof(Quantity(Float16(0.5), mass=1, length=1))
+Quantity{Float16, FixedRational{Int32, 25200}}
+```
 
-julia> R8 = FixedRational{Int8,6};
+For many applications, `FixedRational{Int8,6}` will suffice,
+and can be faster as it means the entire `Dimensions`
+struct will fit into 64 bits.
+You can change the type of the dimensions field by passing
+the type you wish to use as the second argument to `Quantity`:
 
-julia> R32 = FixedRational{Int32,2^4 * 3^2 * 5^2 * 7};  # Default
+```julia
+julia> using DynamicQuantities
+
+julia> R8 = DynamicQuantities.FixedRational{Int8,6};
+
+julia> R32 = DynamicQuantities.FixedRational{Int32,2^4 * 3^2 * 5^2 * 7};  # Default
 
 julia> q8 = [Quantity(randn(), R8, length=rand(-2:2)) for i in 1:1000];
 
@@ -199,7 +214,7 @@ like so:
 
 ```julia
 julia> randn(5) .* Dimensions(mass=2/5, length=2)
-5-element Vector{Quantity{Float64}}:
+5-element Vector{Quantity{Float64, FixedRational{Int32, 25200}}}:
  -0.6450221578668845 𝐋 ² 𝐌 ²ᐟ⁵
  0.4024829670050946 𝐋 ² 𝐌 ²ᐟ⁵
  0.21478863605789672 𝐋 ² 𝐌 ²ᐟ⁵
@@ -211,7 +226,7 @@ Because it is type stable, you can have mixed units in a vector too:
 
 ```julia
 julia> v = [Quantity(randn(), mass=rand(0:5), length=rand(0:5)) for _=1:5]
-5-element Vector{Quantity{Float64}}:
+5-element Vector{Quantity{Float64, FixedRational{Int32, 25200}}}:
  2.2054411324716865 𝐌 ³
  -0.01603602425887379 𝐋 ⁴ 𝐌 ³
  1.4388184352393647 
