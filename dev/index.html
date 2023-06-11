@@ -64,11 +64,13 @@ julia&gt; x2 = convert(Unitful.Quantity, y2)
 75000.0 m² s⁻²
 
 julia&gt; x^2*0.3 == x2
-true</code></pre><h2 id="Types"><a class="docs-heading-anchor" href="#Types">Types</a><a id="Types-1"></a><a class="docs-heading-anchor-permalink" href="#Types" title="Permalink"></a></h2><p>Both the <code>Quantity</code>&#39;s values and dimensions are of arbitrary type. By default, dimensions are stored as a <code>DynamicQuantities.FixedRational{Int32,C}</code> object, which represents a rational number with a fixed denominator <code>C</code>. This is much faster than <code>Rational</code>.</p><p>However, for many applications, <code>FixedRational{Int8,6}</code> will suffice, and can be faster as it means the entire <code>Dimensions</code> struct will fit into 64 bits. Let&#39;s see an example:</p><pre><code class="language-julia hljs">julia&gt; using DynamicQuantities; using DynamicQuantities: FixedRational
+true</code></pre><h2 id="Types"><a class="docs-heading-anchor" href="#Types">Types</a><a id="Types-1"></a><a class="docs-heading-anchor-permalink" href="#Types" title="Permalink"></a></h2><p>Both the <code>Quantity</code>&#39;s values and dimensions are of arbitrary type. By default, dimensions are stored as a <code>DynamicQuantities.FixedRational{Int32,C}</code> object, which represents a rational number with a fixed denominator <code>C</code>. This is much faster than <code>Rational</code>.</p><pre><code class="language-julia hljs">julia&gt; typeof(Quantity(0.5, mass=1))
+Quantity{Float64, FixedRational{Int32, 25200}</code></pre><p>You can change the type of the value field by initializing with a value of the desired type.</p><pre><code class="language-julia hljs">julia&gt; typeof(Quantity(Float16(0.5), mass=1, length=1))
+Quantity{Float16, FixedRational{Int32, 25200}}</code></pre><p>For many applications, <code>FixedRational{Int8,6}</code> will suffice, and can be faster as it means the entire <code>Dimensions</code> struct will fit into 64 bits. You can change the type of the dimensions field by passing the type you wish to use as the second argument to <code>Quantity</code>:</p><pre><code class="language-julia hljs">julia&gt; using DynamicQuantities
 
-julia&gt; R8 = FixedRational{Int8,6};
+julia&gt; R8 = DynamicQuantities.FixedRational{Int8,6};
 
-julia&gt; R32 = FixedRational{Int32,2^4 * 3^2 * 5^2 * 7};  # Default
+julia&gt; R32 = DynamicQuantities.FixedRational{Int32,2^4 * 3^2 * 5^2 * 7};  # Default
 
 julia&gt; q8 = [Quantity(randn(), R8, length=rand(-2:2)) for i in 1:1000];
 
@@ -81,15 +83,15 @@ julia&gt; @btime f($q8);
 
 julia&gt; @btime f($q32);
   8.417 μs (2 allocations: 39.11 KiB)</code></pre><h2 id="Vectors"><a class="docs-heading-anchor" href="#Vectors">Vectors</a><a id="Vectors-1"></a><a class="docs-heading-anchor-permalink" href="#Vectors" title="Permalink"></a></h2><p>There is not a separate class for vectors, but you can create units like so:</p><pre><code class="language-julia hljs">julia&gt; randn(5) .* Dimensions(mass=2/5, length=2)
-5-element Vector{Quantity{Float64}}:
+5-element Vector{Quantity{Float64, FixedRational{Int32, 25200}}}:
  -0.6450221578668845 𝐋 ² 𝐌 ²ᐟ⁵
  0.4024829670050946 𝐋 ² 𝐌 ²ᐟ⁵
  0.21478863605789672 𝐋 ² 𝐌 ²ᐟ⁵
  0.0719774550969669 𝐋 ² 𝐌 ²ᐟ⁵
  -1.4231241943420674 𝐋 ² 𝐌 ²ᐟ⁵</code></pre><p>Because it is type stable, you can have mixed units in a vector too:</p><pre><code class="language-julia hljs">julia&gt; v = [Quantity(randn(), mass=rand(0:5), length=rand(0:5)) for _=1:5]
-5-element Vector{Quantity{Float64}}:
+5-element Vector{Quantity{Float64, FixedRational{Int32, 25200}}}:
  2.2054411324716865 𝐌 ³
  -0.01603602425887379 𝐋 ⁴ 𝐌 ³
  1.4388184352393647 
  2.382303019892503 𝐋 ² 𝐌 ¹
- 0.6071392594021706 𝐋 ⁴ 𝐌 ⁴</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Sunday 11 June 2023 01:36">Sunday 11 June 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ 0.6071392594021706 𝐋 ⁴ 𝐌 ⁴</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Sunday 11 June 2023 02:01">Sunday 11 June 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
