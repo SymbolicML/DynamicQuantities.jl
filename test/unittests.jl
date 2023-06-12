@@ -229,4 +229,9 @@ end
     z = u"yr"
     @test utime(z) == 1
     @test ustrip(z) ≈ 60 * 60 * 24 * 365.25
+
+    id = u"1"
+    @test typeof(id) == Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
+
+    @test_throws LoadError eval(:(u":x"))
 end
