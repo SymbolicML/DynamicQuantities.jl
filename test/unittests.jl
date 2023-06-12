@@ -35,8 +35,8 @@ using Test
         @test ustrip(y) ≈ T(0.4)
 
         if R <: Rational
-            @test string(x) == "0.2 𝐋 ¹ 𝐌 ⁵ᐟ²"
-            @test string(inv(x)) == "5.0 𝐋 ⁻¹ 𝐌 ⁻⁵ᐟ²"
+            @test string(x) == "0.2 m kg⁵ᐟ²"
+            @test string(inv(x)) == "5.0 m⁻¹ kg⁻⁵ᐟ²"
         end
 
         @test_throws DimensionError x^2 + x
@@ -175,4 +175,58 @@ end
     d = Dimensions(length=-0.2, luminosity=2)
     q = Quantity(0.5, inv(d))
     @test q == Quantity(0.5, length=0.2, luminosity=-2)
+end
+
+@testset "Conversions" begin
+    d = Dimensions(Rational{Int16}, mass=2)
+    d32 = convert(Dimensions{Rational{Int32}}, d)
+    @test typeof(d) == Dimensions{Rational{Int16}}
+    @test typeof(d32) == Dimensions{Rational{Int32}}
+    @test umass(d) == 2
+    @test umass(d32) == 2
+    @test typeof(umass(d32)) == Rational{Int32}
+
+    # Should not change:
+    @test convert(Dimensions, d) === d
+
+    q = Quantity(0.5, d)
+    q32_32 = convert(Quantity{Float32,Rational{Int32}}, q)
+    @test typeof(q) == Quantity{Float64,Rational{Int16}}
+    @test typeof(q32_32) == Quantity{Float32,Rational{Int32}}
+    @test ustrip(q) == 0.5
+    @test ustrip(q32_32) == 0.5
+    @test typeof(ustrip(q)) == Float64
+    @test typeof(ustrip(q32_32)) == Float32
+    @test dimension(q32_32) == dimension(q)
+    @test umass(q) == 2
+    @test umass(q32_32) == 2
+    @test typeof(umass(q32_32)) == Rational{Int32}
+    @test typeof(convert(Quantity{Float16}, q)) == Quantity{Float16,Rational{Int16}}
+    @test convert(Quantity, q) === q
+end
+
+@testset "Units" begin
+    x = 1.3u"km/s^2"
+    @test ustrip(x) == 1300  # SI base units
+    @test ulength(x) == 1
+    @test utime(x) == -2
+
+    y = 0.9u"sqrt(mΩ)"
+    @test typeof(y) == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test ustrip(y) ≈ 0.02846049894151541
+    @test ucurrent(y) == -1
+    @test ulength(y) == 1
+
+    y = BigFloat(0.3) * u"mΩ"
+    @test typeof(y) == Quantity{BigFloat,DEFAULT_DIM_TYPE}
+    @test ustrip(y) ≈ 0.0003
+    @test ulength(y) == 2
+
+    y32 = convert(Quantity{Float32,Rational{Int16}}, y)
+    @test typeof(y32) == Quantity{Float32,Rational{Int16}}
+    @test ustrip(y32) ≈ 0.0003
+
+    z = u"yr"
+    @test utime(z) == 1
+    @test ustrip(z) ≈ 60 * 60 * 24 * 365.25
 end
