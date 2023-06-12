@@ -4,6 +4,12 @@ const DEFAULT_VALUE_TYPE = Float64
 abstract type AbstractQuantity{T,R} end
 abstract type AbstractDimensions{R} end
 
+constructor_of(::Type{D}) where {D<:AbstractDimensions} = D
+constructor_of(::Type{D}) where {R,D<:AbstractDimensions{R}} = D.name.wrapper
+constructor_of(::Type{Q}) where {Q<:AbstractQuantity} = Q
+constructor_of(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = Q.body.name.wrapper
+constructor_of(::Type{Q}) where {T,R,Q<:AbstractQuantity{T,R}} = Q.name.wrapper
+
 """
     Dimensions
 
@@ -29,30 +35,14 @@ struct Dimensions{R<:Real} <: AbstractDimensions{R}
     temperature::R
     luminosity::R
     amount::R
-
-    function Dimensions(length::_R,
-                        mass::_R,
-                        time::_R,
-                        current::_R,
-                        temperature::_R,
-                        luminosity::_R,
-                        amount::_R) where {_R<:Real}
-        new{_R}(length, mass, time, current, temperature, luminosity, amount)
-    end
-    Dimensions(; kws...) = Dimensions(DEFAULT_DIM_TYPE; kws...)
-    Dimensions(::Type{_R}; kws...) where {_R} = Dimensions(
-        tryrationalize(_R, get(kws, :length,      zero(_R))),
-        tryrationalize(_R, get(kws, :mass,        zero(_R))),
-        tryrationalize(_R, get(kws, :time,        zero(_R))),
-        tryrationalize(_R, get(kws, :current,     zero(_R))),
-        tryrationalize(_R, get(kws, :temperature, zero(_R))),
-        tryrationalize(_R, get(kws, :luminosity,  zero(_R))),
-        tryrationalize(_R, get(kws, :amount,      zero(_R))),
-    )
-    Dimensions{_R}(; kws...) where {_R} = Dimensions(_R; kws...)
-    Dimensions{_R}(args...) where {_R} = Dimensions(Base.Fix1(convert, _R).(args)...)
-    Dimensions{_R}(d::Dimensions) where {_R} = Dimensions{_R}(d.length, d.mass, d.time, d.current, d.temperature, d.luminosity, d.amount)
 end
+
+(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = D{R}((tryrationalize(R, get(kws, k, zero(R))) for k in fieldnames(D))...)
+(::Type{D})(; kws...) where {D<:AbstractDimensions} = D(DEFAULT_DIM_TYPE; kws...)
+
+(::Type{D})(args...) where {R,D<:AbstractDimensions{R}} = constructor_of(D)(Base.Fix1(convert, R).(args)...)
+(::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = constructor_of(D)(R; kws...)
+(::Type{D})(d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D((getfield(d, k) for k in fieldnames(D))...)
 
 
 """
