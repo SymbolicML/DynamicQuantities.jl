@@ -17,7 +17,13 @@ Base.:/(l::Dimensions, r::Number) = Quantity(inv(r), l)
 Base.:/(l::Number, r::Dimensions) = Quantity(l, inv(r))
 
 Base.:+(l::Quantity, r::Quantity) = dimension(l) == dimension(r) ? Quantity(l.value + r.value, l.dimensions) : throw(DimensionError(l, r))
-Base.:-(l::Quantity, r::Quantity) = dimension(l) == dimension(r) ? Quantity(l.value - r.value, l.dimensions) : throw(DimensionError(l, r))
+Base.:-(l::Quantity) = Quantity(-l.value, l.dimensions)
+Base.:-(l::Quantity, r::Quantity) = l + (-r)
+
+Base.:+(l::Quantity, r::Number) = dimension(l) == dimension(r) ? Quantity(l.value + r, l.dimensions) : throw(DimensionError(l, r))
+Base.:+(l::Number, r::Quantity) = dimension(l) == dimension(r) ? Quantity(l + r.value, r.dimensions) : throw(DimensionError(l, r))
+Base.:-(l::Quantity, r::Number) = l + (-r)
+Base.:-(l::Number, r::Quantity) = l + (-r)
 
 _pow(l::Dimensions{R}, r::R) where {R} = @map_dimensions(Base.Fix1(*, r), l)
 _pow(l::Quantity{T,R}, r::R) where {T,R} = Quantity(l.value^convert(T, r), _pow(l.dimensions, r))
