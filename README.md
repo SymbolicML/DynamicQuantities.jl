@@ -14,7 +14,6 @@ This is done to allow for calculations where physical dimensions are not known a
 
 - [Performance](#performance)
 - [Usage](#usage)
-- [Units](#units)
 - [Types](#types)
 - [Vectors](#vectors)
 
@@ -148,7 +147,7 @@ julia> ustrip(x)
 0.2
 ```
 
-## Unitful
+### Unitful
 
 DynamicQuantities works with quantities that are exclusively
 represented by their SI base units. This gives us type stability
@@ -160,16 +159,16 @@ Thus, you can use Unitful to parse units,
 and then use the DynamicQuantities->Unitful extension for conversion:
 
 ```julia
-julia> using Unitful: Unitful, @u_str
+julia> using Unitful: Unitful, @u_str; import DynamicQuantities
 
 julia> x = 0.5u"km/s"
 0.5 km s⁻¹
 
 julia> y = convert(DynamicQuantities.Quantity, x)
-500.0 𝐋 ¹ 𝐓 ⁻¹
+500.0 m s⁻¹
 
 julia> y2 = y^2 * 0.3
-75000.0 𝐋 ² 𝐓 ⁻²
+75000.0 m² s⁻²
 
 julia> x2 = convert(Unitful.Quantity, y2)
 75000.0 m² s⁻²
@@ -180,7 +179,7 @@ true
 
 ## Types
 
-Both the `Quantity`'s values and dimensions are of arbitrary type.
+Both a `Quantity`'s values and dimensions are of arbitrary type.
 By default, dimensions are stored as a `DynamicQuantities.FixedRational{Int32,C}`
 object, which represents a rational number
 with a fixed denominator `C`. This is much faster than `Rational`.
