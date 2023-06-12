@@ -51,7 +51,7 @@ Base.one(::Type{Quantity{T}}) where {T} = one(Quantity{T,DEFAULT_DIM_TYPE})
 Base.one(::Type{Quantity}) = one(Quantity{DEFAULT_VALUE_TYPE})
 Base.one(::Type{Dimensions{R}}) where {R} = Dimensions{R}()
 Base.one(::Type{Dimensions}) = one(Dimensions{DEFAULT_DIM_TYPE})
-Base.one(q::Quantity) = Quantity(one(ustrip(q)), dimension(q))
+Base.one(q::Quantity) = Quantity(one(ustrip(q)), one(dimension(q)))
 Base.one(d::Dimensions) = one(typeof(d))
 
 # Additive identities:
