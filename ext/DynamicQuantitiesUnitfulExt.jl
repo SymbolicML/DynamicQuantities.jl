@@ -13,7 +13,12 @@ end
 # This lets the user override the preferred units:
 function unitful_equivalences()
     si_units = (length=u"m", mass=u"kg", time=u"s", current=u"A", temperature=u"K", luminosity=u"cd", amount=u"mol")
-    return NamedTuple((k => Unitful.upreferred(si_units[k]) for k in keys(si_units)))
+    for k in keys(si_units)
+        if Unitful.upreferred(si_units[k]) !== si_units[k]
+            error("Found custom `Unitful.preferunits`. This is not supported when interfacing Unitful and DynamicQuantities: you must leave the default `Unitful.upreferred`, which is the SI base units.")
+        end
+    end
+    return NamedTuple((k => si_units[k] for k in keys(si_units)))
 end
 
 Base.convert(::Type{Unitful.Quantity}, x::DynamicQuantities.Quantity) =
