@@ -37,6 +37,11 @@ Base.iszero(q::Quantity) = iszero(q.value)
 Base.getindex(d::Dimensions, k::Symbol) = getfield(d, k)
 Base.:(==)(l::Dimensions, r::Dimensions) = @all_dimensions(==, l, r)
 Base.:(==)(l::Quantity, r::Quantity) = l.value == r.value && l.dimensions == r.dimensions
+Base.:(==)(l, r::Quantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+Base.:(==)(l::Quantity, r) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+Base.isless(l::Quantity, r::Quantity) = dimension(l) == dimension(r) ? isless(ustrip(l), ustrip(r)) : throw(DimensionError(l, r))
+Base.isless(l::Quantity, r) = dimension(l) == dimension(r) ? isless(ustrip(l), r) : throw(DimensionError(l, r))
+Base.isless(l, r::Quantity) = dimension(l) == dimension(r) ? isless(l, ustrip(r)) : throw(DimensionError(l, r))
 Base.isapprox(l::Quantity, r::Quantity; kws...) = isapprox(l.value, r.value; kws...) && l.dimensions == r.dimensions
 Base.length(::Dimensions) = 1
 Base.length(::Quantity) = 1

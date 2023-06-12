@@ -220,6 +220,19 @@ end
     @test cbrt(z) == Quantity(cbrt(-52), length=1 // 3, mass=2 // 3)
 
     @test 1.0 * (Dimensions(length=3)^2) == Quantity(1.0, length=6)
+
+    x = 0.9u"km/s"
+    y = 0.3 * x
+    @test x > y
+    @test y < x
+
+    x = Quantity(1.0)
+
+    @test x == 1.0
+    @test x >= 1.0
+    @test x < 2.0
+
+    @test_throws DimensionError x < 1.0u"m"
 end
 
 @testset "Manual construction" begin
