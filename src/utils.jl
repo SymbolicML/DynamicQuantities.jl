@@ -107,7 +107,7 @@ Base.convert(::Type{Dimensions}, d::Dimensions) = d
 Base.convert(::Type{Dimensions{R}}, d::Dimensions) where {R} = Dimensions{R}(d)
 
 """
-    ustrip(q::Quantity)
+    ustrip(q::AbstractQuantity)
 
 Remove the units from a quantity.
 """
@@ -116,7 +116,7 @@ ustrip(::AbstractDimensions) = error("Cannot remove units from a `Dimensions` ob
 ustrip(q) = q
 
 """
-    dimension(q::Quantity)
+    dimension(q::AbstractQuantity)
 
 Get the dimensions of a quantity, returning a `Dimensions` object.
 """
@@ -162,7 +162,7 @@ ucurrent(q::AbstractQuantity) = ucurrent(dimension(q))
 ucurrent(d::AbstractDimensions) = d.current
 
 """
-    utemperature(q::Quantity)
+    utemperature(q::AbstractQuantity)
     utemperature(d::AbstractDimensions)
 
 Get the temperature dimension of a quantity (e.g., K^(utemperature)).
@@ -171,7 +171,7 @@ utemperature(q::AbstractQuantity) = utemperature(dimension(q))
 utemperature(d::AbstractDimensions) = d.temperature
 
 """
-    uluminosity(q::Quantity)
+    uluminosity(q::AbstractQuantity)
     uluminosity(d::AbstractDimensions)
 
 Get the luminosity dimension of a quantity (e.g., cd^(uluminosity)).
