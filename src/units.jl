@@ -70,7 +70,6 @@ const T = N / (A * m)
 const min = 60 * s
 const h = 60 * min
 const day = 24 * h
-const wk = 7 * day
 const yr = 365.25 * day
 
 @add_prefixes yr (k, M, G)
