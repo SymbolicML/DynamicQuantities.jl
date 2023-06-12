@@ -55,16 +55,16 @@ Base.one(q::Quantity) = one(typeof(q))
 Base.one(d::Dimensions) = one(typeof(d))
 
 # Additive identities:
-Base.zero(q::Q) where {T,Q<:Quantity{T}} = Quantity(zero(ustrip(q)), dimension(q))
-Base.zero(::D) where {D<:Dimensions} = error("There is no such thing as an additive identity for a `Dimensions` object, as + is only defined for `Quantity`.")
-Base.zero(::Type{Q}) where {Q<:Quantity} = error("Cannot create an additive identity for a `Quantity` type, as the dimensions are unknown. Please use `zero(::Quantity)` instead.")
-Base.zero(::Type{D}) where {D<:Dimensions} = error("There is no such thing as an additive identity for a `Dimensions` type, as + is only defined for `Quantity`.")
+Base.zero(q::Quantity) = Quantity(zero(ustrip(q)), dimension(q))
+Base.zero(::Dimensions) = error("There is no such thing as an additive identity for a `Dimensions` object, as + is only defined for `Quantity`.")
+Base.zero(::Type{<:Quantity}) = error("Cannot create an additive identity for a `Quantity` type, as the dimensions are unknown. Please use `zero(::Quantity)` instead.")
+Base.zero(::Type{<:Dimensions}) = error("There is no such thing as an additive identity for a `Dimensions` type, as + is only defined for `Quantity`.")
 
 # Dimensionful 1:
-Base.oneunit(q::Q) where {T,Q<:Quantity{T}} = Quantity(oneunit(ustrip(q)), dimension(q))
-Base.oneunit(::Type{Q}) where {Q<:Quantity} = error("Cannot create a dimensionful 1 for a `Quantity` type without knowing the dimensions. Please use `oneunit(::Quantity)` instead.")
-Base.oneunit(::D) where {D<:Dimensions} = error("There is no such thing as a dimensionful 1 for a `Dimensions` object, as + is only defined for `Quantity`.")
-Base.oneunit(::Type{D}) where {D<:Dimensions} = error("There is no such thing as a dimensionful 1 for a `Dimensions` type, as + is only defined for `Quantity`.")
+Base.oneunit(q::Quantity) = Quantity(oneunit(ustrip(q)), dimension(q))
+Base.oneunit(::Dimensions) = error("There is no such thing as a dimensionful 1 for a `Dimensions` object, as + is only defined for `Quantity`.")
+Base.oneunit(::Type{<:Quantity}) = error("Cannot create a dimensionful 1 for a `Quantity` type without knowing the dimensions. Please use `oneunit(::Quantity)` instead.")
+Base.oneunit(::Type{<:Dimensions}) = error("There is no such thing as a dimensionful 1 for a `Dimensions` type, as + is only defined for `Quantity`.")
 
 Base.show(io::IO, d::Dimensions) =
     let tmp_io = IOBuffer()
