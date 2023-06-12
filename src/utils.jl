@@ -111,7 +111,8 @@ Base.convert(::Type{Dimensions{R}}, d::Dimensions) where {R} = Dimensions{R}(d)
 Remove the units from a quantity.
 """
 ustrip(q::Quantity) = q.value
-ustrip(q::Number) = q
+ustrip(::Dimensions) = error("Cannot remove units from a `Dimensions` object.")
+ustrip(q) = q
 
 """
     dimension(q::Quantity)
@@ -119,7 +120,8 @@ ustrip(q::Number) = q
 Get the dimensions of a quantity, returning a `Dimensions` object.
 """
 dimension(q::Quantity) = q.dimensions
-dimension(::Number) = Dimensions()
+dimension(d::Dimensions) = d
+dimension(_) = Dimensions()
 
 """
     ulength(q::Quantity)

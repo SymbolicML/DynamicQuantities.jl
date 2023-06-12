@@ -129,7 +129,12 @@ end
 
 @testset "Fallbacks" begin
     @test ustrip(0.5) == 0.5
+    @test ustrip(ones(32)) == ones(32)
     @test dimension(0.5) == Dimensions()
+    @test dimension(ones(32)) == Dimensions()
+    @test dimension(Dimensions()) === Dimensions()
+
+    @test_throws ErrorException ustrip(Dimensions())
 end
 
 @testset "Arrays" begin
@@ -147,6 +152,14 @@ end
 
         uX = X .* Quantity(2, length=2.5, luminosity=0.5)
         @test sum(X) == 0.5 * ustrip(sum(uX))
+
+        x = Quantity(ones(T, 32))
+        @test ustrip(x + ones(T, 32))[32] == 2
+        @test typeof(x + ones(T, 32)) <: Quantity{Vector{T}}
+        @test typeof(x - ones(T, 32)) <: Quantity{Vector{T}}
+        @test typeof(ones(T, 32) * Dimensions(length=1)) <: Quantity{Vector{T}}
+        @test typeof(ones(T, 32) / Dimensions(length=1)) <: Quantity{Vector{T}}
+        @test ones(T, 32) / Dimensions(length=1) == Quantity(ones(T, 32), length=-1)
     end
 end
 
