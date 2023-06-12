@@ -35,6 +35,7 @@ Base.inv(x::F) where {F<:FixedRational} = unsafe_fixed_rational(widemul(denom(F)
 
 Base.:(==)(x::F, y::F) where {F<:FixedRational} = x.num == y.num
 Base.iszero(x::FixedRational) = iszero(x.num)
+Base.isone(x::F) where {F<:FixedRational} = x.num == denom(F)
 Base.isinteger(x::F) where {F<:FixedRational} = iszero(x.num % denom(F))
 Base.convert(::Type{F}, x::Integer) where {F<:FixedRational} = unsafe_fixed_rational(x * denom(F), eltype(F), val_denom(F))
 Base.convert(::Type{F}, x::Rational) where {F<:FixedRational} = F(x)

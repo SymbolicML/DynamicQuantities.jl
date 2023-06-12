@@ -61,7 +61,7 @@ Base.show(io::IO, d::Dimensions) =
         for k in keys(d)
             if !iszero(d[k])
                 print(tmp_io, SYNONYM_MAPPING[k])
-                pretty_print_exponent(tmp_io, d[k])
+                isone(d[k]) || pretty_print_exponent(tmp_io, d[k])
                 print(tmp_io, " ")
             end
         end
