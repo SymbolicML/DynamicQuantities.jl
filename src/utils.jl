@@ -73,7 +73,7 @@ Base.show(io::IO, d::Dimensions) =
 Base.show(io::IO, q::Quantity) = print(io, q.value, " ", q.dimensions)
 
 string_rational(x) = isinteger(x) ? string(round(Int, x)) : string(x)
-pretty_print_exponent(io::IO, x) = print(io, " ", to_superscript(string_rational(x)))
+pretty_print_exponent(io::IO, x) = print(io, to_superscript(string_rational(x)))
 const SUPERSCRIPT_MAPPING = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
 const INTCHARS = ['0' + i for i = 0:9]
 to_superscript(s::AbstractString) = join(

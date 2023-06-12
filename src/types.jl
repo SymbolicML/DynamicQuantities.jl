@@ -51,7 +51,7 @@ struct Dimensions{R <: Real}
 end
 
 const DIMENSION_NAMES = Base.fieldnames(Dimensions)
-const DIMENSION_SYNONYMS = (:𝐋, :𝐌, :𝐓, :𝐈, :𝚯, :𝐉, :𝐍)
+const DIMENSION_SYNONYMS = (:m, :kg, :s, :A, :K, :cd, :mol)
 const SYNONYM_MAPPING = NamedTuple(DIMENSION_NAMES .=> DIMENSION_SYNONYMS)
 
 """
