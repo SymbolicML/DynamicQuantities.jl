@@ -200,6 +200,7 @@ end
     @test one(Dimensions()) == Dimensions()
     @test typeof(one(Quantity)) == Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
     @test ustrip(one(Quantity)) === one(DEFAULT_VALUE_TYPE)
+    @test typeof(one(Quantity(ones(32, 32)))) == Quantity{Matrix{Float64},DEFAULT_DIM_TYPE}
 
     x = Quantity(1, length=1)
 
