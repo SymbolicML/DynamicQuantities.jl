@@ -87,7 +87,8 @@ struct Quantity{T,R} <: AbstractQuantity{T,R}
     Quantity{T,R}(q::Quantity) where {T,R} = Quantity(convert(T, q.value), Dimensions{R}(dimension(q)))
 end
 
-quantity(l, r) = Quantity(l, r)
+quantity(::Type{<:Quantity}, l, r) = Quantity(l, r)
+quantity(::Type{<:Dimensions}, l, r) = Quantity(l, r)
 
 struct DimensionError{Q1,Q2} <: Exception
     q1::Q1
