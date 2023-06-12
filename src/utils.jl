@@ -1,26 +1,28 @@
-macro map_dimensions(f, l...)
-    # Create a new Dimensions object by applying f to each key
-    output = :(Dimensions())
-    for dim in DIMENSION_NAMES
-        f_expr = :($f())
-        for arg in l
-            push!(f_expr.args, :($arg.$dim))
+@generated function map_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
+    dimension_type = first(args)
+    dimension_names = Base.fieldnames(dimension_type)
+    output = :(new_dimensions($dimension_type))
+    for dim in dimension_names
+        f_expr = :(f())
+        for i=1:length(args)
+            push!(f_expr.args, :(args[$i].$dim))
         end
         push!(output.args, f_expr)
     end
-    return output |> esc
+    return output
 end
-macro all_dimensions(f, l...)
-    # Test a function over all dimensions
+@generated function all_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
+    dimension_type = first(args)
+    dimension_names = Base.fieldnames(dimension_type)
     output = Expr(:&&)
-    for dim in DIMENSION_NAMES
-        f_expr = :($f())
-        for arg in l
-            push!(f_expr.args, :($arg.$dim))
+    for dim in dimension_names
+        f_expr = :(f())
+        for i=1:length(args)
+            push!(f_expr.args, :(args[$i].$dim))
         end
         push!(output.args, f_expr)
     end
-    return output |> esc
+    return output
 end
 
 Base.float(q::AbstractQuantity{T}) where {T<:AbstractFloat} = convert(T, q)
@@ -31,12 +33,12 @@ Base.convert(::Type{T}, q::AbstractQuantity) where {T<:Real} =
     end
 
 Base.isfinite(q::AbstractQuantity) = isfinite(ustrip(q))
-Base.keys(::D) where {D<:AbstractDimensions} = DIMENSION_NAMES
+Base.keys(d::AbstractDimensions) = Base.fieldnames(typeof(d))
 # TODO: Make this more generic.
-Base.iszero(d::AbstractDimensions) = @all_dimensions(iszero, d)
+Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
 Base.iszero(q::AbstractQuantity) = iszero(ustrip(q))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
-Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = @all_dimensions(==, l, r)
+Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 Base.:(==)(l::AbstractQuantity, r::AbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
 Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...) = isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
 Base.length(::AbstractDimensions) = 1
@@ -67,11 +69,12 @@ Base.oneunit(::Dimensions) = error("There is no such thing as a dimensionful 1 f
 Base.oneunit(::Type{<:Quantity}) = error("Cannot create a dimensionful 1 for a `Quantity` type without knowing the dimensions. Please use `oneunit(::Quantity)` instead.")
 Base.oneunit(::Type{<:Dimensions}) = error("There is no such thing as a dimensionful 1 for a `Dimensions` type, as + is only defined for `Quantity`.")
 
+dimension_name(::Dimensions, k::Symbol) = SYNONYM_MAPPING[k]
 Base.show(io::IO, d::AbstractDimensions) =
     let tmp_io = IOBuffer()
         for k in keys(d)
             if !iszero(d[k])
-                print(tmp_io, SYNONYM_MAPPING[k])
+                print(tmp_io, dimension_name(d, k))
                 isone(d[k]) || pretty_print_exponent(tmp_io, d[k])
                 print(tmp_io, " ")
             end
