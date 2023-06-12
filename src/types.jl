@@ -48,6 +48,7 @@ struct Dimensions{R <: Real}
     )
     Dimensions{_R}(; kws...) where {_R} = Dimensions(_R; kws...)
     Dimensions{_R}(args...) where {_R} = Dimensions(Base.Fix1(convert, _R).(args)...)
+    Dimensions{_R}(d::Dimensions) where {_R} = Dimensions{_R}(d.length, d.mass, d.time, d.current, d.temperature, d.luminosity, d.amount)
 end
 
 const DIMENSION_NAMES = Base.fieldnames(Dimensions)
@@ -79,6 +80,8 @@ struct Quantity{T, R}
     Quantity(x; kws...) = new{typeof(x), DEFAULT_DIM_TYPE}(x, Dimensions(; kws...))
     Quantity(x, ::Type{_R}; kws...) where {_R}  = new{typeof(x), _R}(x, Dimensions(_R; kws...))
     Quantity(x, d::Dimensions{_R}) where {_R}  = new{typeof(x), _R}(x, d)
+    Quantity{T}(q::Quantity) where {T} = Quantity(convert(T, q.value), dimension(q))
+    Quantity{T,R}(q::Quantity) where {T,R} = Quantity(convert(T, q.value), Dimensions{R}(dimension(q)))
 end
 
 struct DimensionError{Q1,Q2} <: Exception

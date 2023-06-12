@@ -88,6 +88,13 @@ tryrationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)
 
 Base.showerror(io::IO, e::DimensionError) = print(io, "DimensionError: ", e.q1, " and ", e.q2, " have incompatible dimensions")
 
+Base.convert(::Type{Quantity}, q::Quantity) = q
+Base.convert(::Type{Quantity{T}}, q::Quantity) where {T} = Quantity(convert(T, q.value), dimension(q))
+Base.convert(::Type{Quantity{T,R}}, q::Quantity) where {T,R} = Quantity(convert(T, q.value), convert(Dimensions{R}, dimension(q)))
+
+Base.convert(::Type{Dimensions}, d::Dimensions) = d
+Base.convert(::Type{Dimensions{R}}, d::Dimensions) where {R} = Dimensions{R}(d)
+
 """
     ustrip(q::Quantity)
 
@@ -106,49 +113,63 @@ dimension(::Number) = Dimensions()
 
 """
     ulength(q::Quantity)
+    ulength(d::Dimensions)
 
 Get the length dimension of a quantity (e.g., meters^(ulength)).
 """
-ulength(q::Quantity) = q.dimensions.length
+ulength(q::Quantity) = ulength(dimension(q))
+ulength(d::Dimensions) = d.length
 
 """
     umass(q::Quantity)
+    umass(d::Dimensions)
 
 Get the mass dimension of a quantity (e.g., kg^(umass)).
 """
-umass(q::Quantity) = q.dimensions.mass
+umass(q::Quantity) = umass(dimension(q))
+umass(d::Dimensions) = d.mass
 
 """
     utime(q::Quantity)
+    utime(d::Dimensions)
 
 Get the time dimension of a quantity (e.g., s^(utime))
 """
-utime(q::Quantity) = q.dimensions.time
+utime(q::Quantity) = utime(dimension(q))
+utime(d::Dimensions) = d.time
 
 """
     ucurrent(q::Quantity)
+    ucurrent(d::Dimensions)
 
 Get the current dimension of a quantity (e.g., A^(ucurrent)).
 """
-ucurrent(q::Quantity) = q.dimensions.current
+ucurrent(q::Quantity) = ucurrent(dimension(q))
+ucurrent(d::Dimensions) = d.current
 
 """
     utemperature(q::Quantity)
+    utemperature(d::Dimensions)
 
 Get the temperature dimension of a quantity (e.g., K^(utemperature)).
 """
-utemperature(q::Quantity) = q.dimensions.temperature
+utemperature(q::Quantity) = utemperature(dimension(q))
+utemperature(d::Dimensions) = d.temperature
 
 """
     uluminosity(q::Quantity)
+    uluminosity(d::Dimensions)
 
 Get the luminosity dimension of a quantity (e.g., cd^(uluminosity)).
 """
-uluminosity(q::Quantity) = q.dimensions.luminosity
+uluminosity(q::Quantity) = uluminosity(dimension(q))
+uluminosity(d::Dimensions) = d.luminosity
 
 """
     uamount(q::Quantity)
+    uamount(d::Dimensions)
 
 Get the amount dimension of a quantity (e.g., mol^(uamount)).
 """
-uamount(q::Quantity) = q.dimensions.amount
+uamount(q::Quantity) = uamount(dimension(q))
+uamount(d::Dimensions) = d.amount
