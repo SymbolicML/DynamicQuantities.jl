@@ -1,6 +1,9 @@
 const DEFAULT_DIM_TYPE = FixedRational{Int32, 2^4 * 3^2 * 5^2 * 7}
 const DEFAULT_VALUE_TYPE = Float64
 
+abstract type AbstractQuantity{T,R} end
+abstract type AbstractDimensions{R} end
+
 """
     Dimensions
 
@@ -18,7 +21,7 @@ example, the dimensions of velocity are `Dimensions(length=1, time=-1)`.
 - `luminosity`: luminosity dimension (i.e., cd^(luminosity))
 - `amount`: amount dimension (i.e., mol^(amount))
 """
-struct Dimensions{R <: Real}
+struct Dimensions{R<:Real} <: AbstractDimensions{R}
     length::R
     mass::R
     time::R
@@ -73,7 +76,7 @@ including `*`, `+`, `-`, `/`, `^`, `sqrt`, and `cbrt`.
 - `value::T`: value of the quantity of some type `T`
 - `dimensions::Dimensions`: dimensions of the quantity
 """
-struct Quantity{T, R}
+struct Quantity{T,R} <: AbstractQuantity{T,R}
     value::T
     dimensions::Dimensions{R}
 
@@ -83,6 +86,8 @@ struct Quantity{T, R}
     Quantity{T}(q::Quantity) where {T} = Quantity(convert(T, q.value), dimension(q))
     Quantity{T,R}(q::Quantity) where {T,R} = Quantity(convert(T, q.value), Dimensions{R}(dimension(q)))
 end
+
+quantity(l, r) = Quantity(l, r)
 
 struct DimensionError{Q1,Q2} <: Exception
     q1::Q1

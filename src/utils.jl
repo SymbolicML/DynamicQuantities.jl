@@ -23,27 +23,28 @@ macro all_dimensions(f, l...)
     return output |> esc
 end
 
-Base.float(q::Quantity{T}) where {T<:AbstractFloat} = convert(T, q)
-Base.convert(::Type{T}, q::Quantity) where {T<:Real} =
+Base.float(q::AbstractQuantity{T}) where {T<:AbstractFloat} = convert(T, q)
+Base.convert(::Type{T}, q::AbstractQuantity) where {T<:Real} =
     let
         @assert iszero(q.dimensions) "Quantity $(q) has dimensions! Use `ustrip` instead."
         return convert(T, q.value)
     end
 
-Base.isfinite(q::Quantity) = isfinite(q.value)
-Base.keys(::Dimensions) = DIMENSION_NAMES
-Base.iszero(d::Dimensions) = @all_dimensions(iszero, d)
-Base.iszero(q::Quantity) = iszero(q.value)
-Base.getindex(d::Dimensions, k::Symbol) = getfield(d, k)
-Base.:(==)(l::Dimensions, r::Dimensions) = @all_dimensions(==, l, r)
-Base.:(==)(l::Quantity, r::Quantity) = l.value == r.value && l.dimensions == r.dimensions
-Base.isapprox(l::Quantity, r::Quantity; kws...) = isapprox(l.value, r.value; kws...) && l.dimensions == r.dimensions
-Base.length(::Dimensions) = 1
-Base.length(::Quantity) = 1
-Base.iterate(d::Dimensions) = (d, nothing)
-Base.iterate(::Dimensions, ::Nothing) = nothing
-Base.iterate(q::Quantity) = (q, nothing)
-Base.iterate(::Quantity, ::Nothing) = nothing
+Base.isfinite(q::AbstractQuantity) = isfinite(ustrip(q))
+Base.keys(::D) where {D<:AbstractDimensions} = DIMENSION_NAMES
+# TODO: Make this more generic.
+Base.iszero(d::AbstractDimensions) = @all_dimensions(iszero, d)
+Base.iszero(q::AbstractQuantity) = iszero(ustrip(q))
+Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
+Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = @all_dimensions(==, l, r)
+Base.:(==)(l::AbstractQuantity, r::AbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...) = isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
+Base.length(::AbstractDimensions) = 1
+Base.length(::AbstractQuantity) = 1
+Base.iterate(d::AbstractDimensions) = (d, nothing)
+Base.iterate(::AbstractDimensions, ::Nothing) = nothing
+Base.iterate(q::AbstractQuantity) = (q, nothing)
+Base.iterate(::AbstractQuantity, ::Nothing) = nothing
 
 # Multiplicative identities:
 Base.one(::Type{Quantity{T,R}}) where {T,R} = Quantity(one(T), R)
@@ -66,7 +67,7 @@ Base.oneunit(::Dimensions) = error("There is no such thing as a dimensionful 1 f
 Base.oneunit(::Type{<:Quantity}) = error("Cannot create a dimensionful 1 for a `Quantity` type without knowing the dimensions. Please use `oneunit(::Quantity)` instead.")
 Base.oneunit(::Type{<:Dimensions}) = error("There is no such thing as a dimensionful 1 for a `Dimensions` type, as + is only defined for `Quantity`.")
 
-Base.show(io::IO, d::Dimensions) =
+Base.show(io::IO, d::AbstractDimensions) =
     let tmp_io = IOBuffer()
         for k in keys(d)
             if !iszero(d[k])
@@ -80,7 +81,7 @@ Base.show(io::IO, d::Dimensions) =
         s = replace(s, r"\s*$" => "")
         print(io, s)
     end
-Base.show(io::IO, q::Quantity) = print(io, q.value, " ", q.dimensions)
+Base.show(io::IO, q::AbstractQuantity) = print(io, ustrip(q), " ", dimension(q))
 
 string_rational(x) = isinteger(x) ? string(round(Int, x)) : string(x)
 pretty_print_exponent(io::IO, x) = print(io, to_superscript(string_rational(x)))
@@ -110,8 +111,8 @@ Base.convert(::Type{Dimensions{R}}, d::Dimensions) where {R} = Dimensions{R}(d)
 
 Remove the units from a quantity.
 """
-ustrip(q::Quantity) = q.value
-ustrip(::Dimensions) = error("Cannot remove units from a `Dimensions` object.")
+ustrip(q::AbstractQuantity) = q.value
+ustrip(::AbstractDimensions) = error("Cannot remove units from a `Dimensions` object.")
 ustrip(q) = q
 
 """
@@ -119,69 +120,70 @@ ustrip(q) = q
 
 Get the dimensions of a quantity, returning a `Dimensions` object.
 """
-dimension(q::Quantity) = q.dimensions
-dimension(d::Dimensions) = d
+dimension(q::AbstractQuantity) = q.dimensions
+dimension(d::AbstractDimensions) = d
 dimension(_) = Dimensions()
+# TODO: Should we throw an error instead, because this is assuming a type?
 
 """
-    ulength(q::Quantity)
-    ulength(d::Dimensions)
+    ulength(q::AbstractQuantity)
+    ulength(d::AbstractDimensions)
 
 Get the length dimension of a quantity (e.g., meters^(ulength)).
 """
-ulength(q::Quantity) = ulength(dimension(q))
-ulength(d::Dimensions) = d.length
+ulength(q::AbstractQuantity) = ulength(dimension(q))
+ulength(d::AbstractDimensions) = d.length
 
 """
-    umass(q::Quantity)
-    umass(d::Dimensions)
+    umass(q::AbstractQuantity)
+    umass(d::AbstractDimensions)
 
 Get the mass dimension of a quantity (e.g., kg^(umass)).
 """
-umass(q::Quantity) = umass(dimension(q))
-umass(d::Dimensions) = d.mass
+umass(q::AbstractQuantity) = umass(dimension(q))
+umass(d::AbstractDimensions) = d.mass
 
 """
-    utime(q::Quantity)
-    utime(d::Dimensions)
+    utime(q::AbstractQuantity)
+    utime(d::AbstractDimensions)
 
 Get the time dimension of a quantity (e.g., s^(utime))
 """
-utime(q::Quantity) = utime(dimension(q))
-utime(d::Dimensions) = d.time
+utime(q::AbstractQuantity) = utime(dimension(q))
+utime(d::AbstractDimensions) = d.time
 
 """
-    ucurrent(q::Quantity)
-    ucurrent(d::Dimensions)
+    ucurrent(q::AbstractQuantity)
+    ucurrent(d::AbstractDimensions)
 
 Get the current dimension of a quantity (e.g., A^(ucurrent)).
 """
-ucurrent(q::Quantity) = ucurrent(dimension(q))
-ucurrent(d::Dimensions) = d.current
+ucurrent(q::AbstractQuantity) = ucurrent(dimension(q))
+ucurrent(d::AbstractDimensions) = d.current
 
 """
     utemperature(q::Quantity)
-    utemperature(d::Dimensions)
+    utemperature(d::AbstractDimensions)
 
 Get the temperature dimension of a quantity (e.g., K^(utemperature)).
 """
-utemperature(q::Quantity) = utemperature(dimension(q))
-utemperature(d::Dimensions) = d.temperature
+utemperature(q::AbstractQuantity) = utemperature(dimension(q))
+utemperature(d::AbstractDimensions) = d.temperature
 
 """
     uluminosity(q::Quantity)
-    uluminosity(d::Dimensions)
+    uluminosity(d::AbstractDimensions)
 
 Get the luminosity dimension of a quantity (e.g., cd^(uluminosity)).
 """
-uluminosity(q::Quantity) = uluminosity(dimension(q))
-uluminosity(d::Dimensions) = d.luminosity
+uluminosity(q::AbstractQuantity) = uluminosity(dimension(q))
+uluminosity(d::AbstractDimensions) = d.luminosity
 
 """
-    uamount(q::Quantity)
-    uamount(d::Dimensions)
+    uamount(q::AbstractQuantity)
+    uamount(d::AbstractDimensions)
 
 Get the amount dimension of a quantity (e.g., mol^(uamount)).
 """
-uamount(q::Quantity) = uamount(dimension(q))
-uamount(d::Dimensions) = d.amount
+uamount(q::AbstractQuantity) = uamount(dimension(q))
+uamount(d::AbstractDimensions) = d.amount

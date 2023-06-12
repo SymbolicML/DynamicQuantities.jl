@@ -1,5 +1,6 @@
 module DynamicQuantities
 
+export AbstractQuantity, AbstractDimensions
 export Quantity, Dimensions, DimensionError, ustrip, dimension, valid
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 export uparse, @u_str
