@@ -45,16 +45,26 @@ Base.iterate(::Dimensions, ::Nothing) = nothing
 Base.iterate(q::Quantity) = (q, nothing)
 Base.iterate(::Quantity, ::Nothing) = nothing
 
-Base.zero(::Type{Quantity{T,R}}) where {T,R} = Quantity(zero(T), R)
+# Multiplicative identities:
 Base.one(::Type{Quantity{T,R}}) where {T,R} = Quantity(one(T), R)
-Base.one(::Type{Dimensions{R}}) where {R} = Dimensions{R}()
-
-Base.zero(::Type{Quantity{T}}) where {T} = zero(Quantity{T,DEFAULT_DIM_TYPE})
 Base.one(::Type{Quantity{T}}) where {T} = one(Quantity{T,DEFAULT_DIM_TYPE})
-
-Base.zero(::Type{Quantity}) = zero(Quantity{DEFAULT_VALUE_TYPE})
 Base.one(::Type{Quantity}) = one(Quantity{DEFAULT_VALUE_TYPE})
+Base.one(::Type{Dimensions{R}}) where {R} = Dimensions{R}()
 Base.one(::Type{Dimensions}) = one(Dimensions{DEFAULT_DIM_TYPE})
+Base.one(q::Quantity) = one(typeof(q))
+Base.one(d::Dimensions) = one(typeof(d))
+
+# Additive identities:
+Base.zero(q::Q) where {T,Q<:Quantity{T}} = Quantity(zero(ustrip(q)), dimension(q))
+Base.zero(::D) where {D<:Dimensions} = error("There is no such thing as an additive identity for a `Dimensions` object, as + is only defined for `Quantity`.")
+Base.zero(::Type{Q}) where {Q<:Quantity} = error("Cannot create an additive identity for a `Quantity` type, as the dimensions are unknown. Please use `zero(::Quantity)` instead.")
+Base.zero(::Type{D}) where {D<:Dimensions} = error("There is no such thing as an additive identity for a `Dimensions` type, as + is only defined for `Quantity`.")
+
+# Dimensionful 1:
+Base.oneunit(q::Q) where {T,Q<:Quantity{T}} = Quantity(oneunit(ustrip(q)), dimension(q))
+Base.oneunit(::Type{Q}) where {Q<:Quantity} = error("Cannot create a dimensionful 1 for a `Quantity` type without knowing the dimensions. Please use `oneunit(::Quantity)` instead.")
+Base.oneunit(::D) where {D<:Dimensions} = error("There is no such thing as a dimensionful 1 for a `Dimensions` object, as + is only defined for `Quantity`.")
+Base.oneunit(::Type{D}) where {D<:Dimensions} = error("There is no such thing as a dimensionful 1 for a `Dimensions` type, as + is only defined for `Quantity`.")
 
 Base.show(io::IO, d::Dimensions) =
     let tmp_io = IOBuffer()
