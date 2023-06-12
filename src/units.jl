@@ -90,6 +90,11 @@ const bar = 100 * kPa
 
 @add_prefixes bar ()
 
+## Energy
+const eV = 1.602176634e-19 * J
+
+@add_prefixes eV (m, k, M, G, T)
+
 # Do not wish to define Gaussian units, as it changes
 # some formulas. Safer to force user to work exclusively in one unit system.
 
