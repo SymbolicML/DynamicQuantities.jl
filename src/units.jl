@@ -14,7 +14,7 @@ end
 
 function _add_prefixes(base_unit::Symbol, prefixes)
     all_prefixes = (
-        f=1e-15, p=1e-12, n=1e-9, μ=1e-6, u=1e-6, m=1e-3, c=1e-2,
+        f=1e-15, p=1e-12, n=1e-9, μ=1e-6, u=1e-6, m=1e-3, c=1e-2, d=1e-1,
         k=1e3, M=1e6, G=1e9, T=1e12, P=1e15
     )
     expr = Expr(:block)
@@ -35,7 +35,7 @@ const K = Quantity(1.0, temperature=1)
 const cd = Quantity(1.0, luminosity=1)
 const mol = Quantity(1.0, amount=1)
 
-@add_prefixes m (f, p, n, μ, u, c, m, k, M, G)
+@add_prefixes m (f, p, n, μ, u, c, d, m, k, M, G)
 @add_prefixes g (μ, u, m, k)
 @add_prefixes s (f, p, n, μ, u, m)
 @add_prefixes A (n, μ, u, m, k)
@@ -58,7 +58,7 @@ const T = N / (A * m)
 @add_prefixes Hz (k, M, G)
 @add_prefixes N ()
 @add_prefixes Pa (k,)
-@add_prefixes J ()
+@add_prefixes J (k,)
 @add_prefixes W (k, M, G)
 @add_prefixes C ()
 @add_prefixes V (m, k, M, G)
@@ -66,13 +66,29 @@ const T = N / (A * m)
 @add_prefixes Ω (m,)
 @add_prefixes T ()
 
-# Assorted units
+# Common assorted units
+## Time
 const min = 60 * s
 const h = 60 * min
+const hr = h
 const day = 24 * h
 const yr = 365.25 * day
 
+@add_prefixes min ()
+@add_prefixes h ()
+@add_prefixes hr ()
+@add_prefixes day ()
 @add_prefixes yr (k, M, G)
+
+## Volume
+const L = dm^3
+
+@add_prefixes L (m, d)
+
+## Pressure
+const bar = 100 * kPa
+
+@add_prefixes bar ()
 
 # Do not wish to define Gaussian units, as it changes
 # some formulas. Safer to force user to work exclusively in one unit system.
