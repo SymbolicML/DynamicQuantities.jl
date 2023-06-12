@@ -63,10 +63,23 @@ const T = N / (A * m)
 @add_prefixes C ()
 @add_prefixes V (m, k, M, G)
 @add_prefixes F ()
-@add_prefixes Ω ()
+@add_prefixes Ω (m,)
+@add_prefixes T ()
+
+# Assorted units
+const min = 60 * s
+const hour = 60 * min
+const day = 24 * hour
+const wk = 7 * day
+const yr = 365.25 * day
+
+@add_prefixes yr (k, M, G)
 
 # Do not wish to define Gaussian units, as it changes
 # some formulas. Safer to force user to work exclusively in one unit system.
+
+# Do not wish to define physical constants, as the number of symbols might lead to ambiguity.
+# The user should define these instead.
 
 """
     uparse(s::AbstractString)
