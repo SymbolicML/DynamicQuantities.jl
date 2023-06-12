@@ -98,6 +98,27 @@ using Test
         @test uluminosity(y) == R(0)
         @test uamount(y) == R(0)
         @test ustrip(y) ≈ T(0.2^2.1)
+
+        dimensionless = Quantity(one(T), R)
+        y = T(2) + dimensionless
+        @test ustrip(y) == T(3)
+        @test dimension(y) == Dimensions(R)
+        @test typeof(y) == Quantity{T,R}
+
+        y = T(2) - dimensionless
+        @test ustrip(y) == T(1)
+        @test dimension(y) == Dimensions(R)
+        @test typeof(y) == Quantity{T,R}
+
+        y = dimensionless + T(2)
+        @test ustrip(y) == T(3)
+        y = dimensionless - T(2)
+        @test ustrip(y) == T(-1)
+
+        @test_throws DimensionError Quantity(one(T), R,  length=1) + 1.0
+        @test_throws DimensionError Quantity(one(T), R, length=1) - 1.0
+        @test_throws DimensionError 1.0 + Quantity(one(T), R, length=1)
+        @test_throws DimensionError 1.0 - Quantity(one(T), R, length=1)
     end
 
     x = Quantity(-1.2, length=2 // 5)
@@ -150,20 +171,35 @@ end
 
     @test Dimensions{Int8}([0 for i=1:length(DIMENSION_NAMES)]...) == Dimensions{Int8}()
 
-    @test zero(Quantity{ComplexF64,Int8}) + Quantity(1) == Quantity(1.0+0.0im, length=Int8(0))
-    @test one(Quantity{ComplexF64,Int8}) - Quantity(1) == Quantity(0.0+0.0im, length=Int8(0))
+    @test zero(Quantity(0.0+0.0im)) + Quantity(1) == Quantity(1.0+0.0im, length=Int8(0))
+    @test oneunit(Quantity(0.0+0.0im)) - Quantity(1) == Quantity(0.0+0.0im, length=Int8(0))
     @test typeof(one(Dimensions{Int16})) == Dimensions{Int16}
     @test one(Dimensions{Int16}) == Dimensions(mass=Int16(0))
 
-    @test zero(Quantity{ComplexF64}) == Quantity(0.0+0.0im)
+    @test zero(Quantity(0.0im)) == Quantity(0.0+0.0im)
     @test one(Quantity{ComplexF64}) == Quantity(1.0+0.0im)
 
-    @test zero(Quantity) == Quantity(0.0)
-    @test typeof(zero(Quantity)) == Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
-    @test one(Quantity) - Quantity(1) == Quantity(0.0)
-    @test typeof(one(Quantity)) == Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
-    @test typeof(one(Dimensions)) == Dimensions{DEFAULT_DIM_TYPE}
+    @test zero(Quantity(0.0)) == Quantity(0.0)
+    @test typeof(zero(Quantity(0.0))) == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test oneunit(Quantity(1.0)) - Quantity(1.0) == Quantity(0.0)
+    @test typeof(one(Quantity(1.0))) == Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
     @test one(Dimensions) == Dimensions()
+    @test one(Dimensions()) == Dimensions()
+    @test typeof(one(Quantity)) == Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
+    @test ustrip(one(Quantity)) === one(DEFAULT_VALUE_TYPE)
+
+    x = Quantity(1, length=1)
+
+    @test zero(x) == Quantity(0, length=1)
+    @test typeof(zero(x)) == Quantity{Int64,DEFAULT_DIM_TYPE}
+    
+    # Invalid calls:
+    @test_throws ErrorException zero(Quantity)
+    @test_throws ErrorException zero(Dimensions())
+    @test_throws ErrorException zero(Dimensions)
+    @test_throws ErrorException oneunit(Quantity)
+    @test_throws ErrorException oneunit(Dimensions())
+    @test_throws ErrorException oneunit(Dimensions)
 
     @test sqrt(z * -1) == Quantity(sqrt(52), length=1 // 2, mass=1)
     @test cbrt(z) == Quantity(cbrt(-52), length=1 // 3, mass=2 // 3)
