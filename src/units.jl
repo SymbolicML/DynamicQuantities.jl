@@ -95,7 +95,7 @@ end
     @u_str(s::AbstractString)
 
 Parse a string containing an expression of units and return the
-corresponding `Quantity` object. For example, `q"km/s^2"`
+corresponding `Quantity` object. For example, `u"km/s^2"`
 would be parsed to `Quantity(1000.0, length=1, time=-2)`.
 """
 macro u_str(s)
