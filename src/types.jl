@@ -54,11 +54,6 @@ struct Dimensions{R<:Real} <: AbstractDimensions{R}
     Dimensions{_R}(d::Dimensions) where {_R} = Dimensions{_R}(d.length, d.mass, d.time, d.current, d.temperature, d.luminosity, d.amount)
 end
 
-new_dimensions(::Type{<:Dimensions}, l...) = Dimensions(l...)
-
-const DIMENSION_NAMES = Base.fieldnames(Dimensions)
-const DIMENSION_SYNONYMS = (:m, :kg, :s, :A, :K, :cd, :mol)
-const SYNONYM_MAPPING = NamedTuple(DIMENSION_NAMES .=> DIMENSION_SYNONYMS)
 
 """
     Quantity{T}
@@ -89,8 +84,10 @@ struct Quantity{T,R} <: AbstractQuantity{T,R}
     Quantity{T,R}(q::Quantity) where {T,R} = Quantity(convert(T, q.value), Dimensions{R}(dimension(q)))
 end
 
-new_quantity(::Type{<:Quantity}, value, dim) = Quantity(value, dim)
-new_quantity(::Type{<:Dimensions}, value, dim) = Quantity(value, dim)
+# All that is needed to make an `AbstractQuantity` work:
+dimension_name(::Dimensions, k::Symbol) = (length="m", mass="kg", time="s", current="A", temperature="K", luminosity="cd", amount="mol")[k]
+new_dimensions(::Type{<:Dimensions}, dims...) = Dimensions(dims...)
+new_quantity(::Type{<:Union{<:Quantity,<:Dimensions}}, l, r) = Quantity(l, r)
 
 struct DimensionError{Q1,Q2} <: Exception
     q1::Q1

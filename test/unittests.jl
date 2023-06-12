@@ -1,5 +1,5 @@
 using DynamicQuantities
-using DynamicQuantities: DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE, DIMENSION_NAMES
+using DynamicQuantities: DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using Test
@@ -182,7 +182,7 @@ end
     @test Quantity(0.5, length=2) / Dimensions(length=1) == Quantity(0.5, length=1)
     @test Dimensions(length=1) / Quantity(0.5, length=2, mass=-5) == Quantity(2, length=-1, mass=5)
 
-    @test Dimensions{Int8}([0 for i=1:length(DIMENSION_NAMES)]...) == Dimensions{Int8}()
+    @test Dimensions{Int8}(zeros(Int, 7)...) == Dimensions{Int8}()
 
     @test zero(Quantity(0.0+0.0im)) + Quantity(1) == Quantity(1.0+0.0im, length=Int8(0))
     @test oneunit(Quantity(0.0+0.0im)) - Quantity(1) == Quantity(0.0+0.0im, length=Int8(0))

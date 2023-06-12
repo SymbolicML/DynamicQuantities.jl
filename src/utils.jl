@@ -69,7 +69,6 @@ Base.oneunit(::Dimensions) = error("There is no such thing as a dimensionful 1 f
 Base.oneunit(::Type{<:Quantity}) = error("Cannot create a dimensionful 1 for a `Quantity` type without knowing the dimensions. Please use `oneunit(::Quantity)` instead.")
 Base.oneunit(::Type{<:Dimensions}) = error("There is no such thing as a dimensionful 1 for a `Dimensions` type, as + is only defined for `Quantity`.")
 
-dimension_name(::Dimensions, k::Symbol) = SYNONYM_MAPPING[k]
 Base.show(io::IO, d::AbstractDimensions) =
     let tmp_io = IOBuffer()
         for k in keys(d)
