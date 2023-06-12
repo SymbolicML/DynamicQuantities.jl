@@ -26,8 +26,8 @@ when the compiler cannot infer dimensions in a function:
 ```julia
 julia> using BenchmarkTools, DynamicQuantities; import Unitful
 
-julia> dyn_uni = Quantity(0.2, mass=1, length=0.5, amount=3)
-0.2 𝐋 ¹ᐟ² 𝐌 ¹ 𝐍 ³
+julia> dyn_uni = 0.2u"m^0.5 * kg * mol^3"
+0.2 m¹ᐟ² kg mol³
 
 julia> unitful = convert(Unitful.Quantity, dyn_uni)
 0.2 kg m¹ᐟ² mol³
@@ -64,56 +64,71 @@ to units and the compiler can optimize away units from the code.
 
 ## Usage
 
-You can create a `Quantity` object with a value and keyword arguments for the powers of the physical dimensions
+You can create a `Quantity` object 
+by using the convenience macro `u"..."`:
+
+```julia
+julia> x = 0.3u"km/s"
+300.0 m s⁻¹
+
+julia> y = 42 * u"kg"
+42.0 kg
+
+julia> room_temp = 100u"kPa"
+100000.0 m⁻¹ kg s⁻²
+```
+
+This supports a wide range of SI base and derived units, with common
+prefixes.
+
+You can also construct values explicitly with the `Quantity` type,
+with a value and keyword arguments for the powers of the physical dimensions
 (`mass`, `length`, `time`, `current`, `temperature`, `luminosity`, `amount`):
 
 ```julia
-julia> x = Quantity(0.3, mass=1, length=0.5)
-0.3 𝐋 ¹ᐟ² 𝐌 ¹
-
-julia> y = Quantity(10.2, mass=2, time=-2)
-10.2 𝐌 ² 𝐓 ⁻²
+julia> x = Quantity(300.0, length=1, time=-1)
+300.0 m s⁻¹
 ```
 
-Elementary calculations with `+, -, *, /, ^, sqrt, cbrt` are supported:
+Elementary calculations with `+, -, *, /, ^, sqrt, cbrt, abs` are supported:
 
 ```julia
 julia> x * y
-3.0599999999999996 𝐋 ¹ᐟ² 𝐌 ³ 𝐓 ⁻²
+12600.0 m kg s⁻¹
 
 julia> x / y
-0.029411764705882353 𝐋 ¹ᐟ² 𝐌 ⁻¹ 𝐓 ²
+7.142857142857143 m kg⁻¹ s⁻¹
 
 julia> x ^ 3
-0.027 𝐋 ³ᐟ² 𝐌 ³
+2.7e7 m³ s⁻³
 
 julia> x ^ -1
-3.3333333333333335 𝐋 ⁻¹ᐟ² 𝐌 ⁻¹
+0.0033333333333333335 m⁻¹ s
 
 julia> sqrt(x)
-0.5477225575051661 𝐋 ¹ᐟ⁴ 𝐌 ¹ᐟ²
+17.320508075688775 m¹ᐟ² s⁻¹ᐟ²
 
 julia> x ^ 1.5
-0.1643167672515498 𝐋 ³ᐟ⁴ 𝐌 ³ᐟ²
+5196.152422706632 m³ᐟ² s⁻³ᐟ²
 ```
 
-Each of these values has the same type, thus obviating the need for type inference at runtime.
+Each of these values has the same type, which means we don't need to perform type inference at runtime.
 
 Furthermore, we can do dimensional analysis by detecting `DimensionError`:
 
 ```julia
 julia> x + 3 * x
-1.2 𝐋 ¹ᐟ² 𝐌 ¹
+1.2 m¹ᐟ² kg
 
 julia> x + y
-ERROR: DimensionError: 0.3 𝐋 ¹ᐟ² 𝐌 ¹ and 10.2 𝐌 ² 𝐓 ⁻² have different dimensions
+ERROR: DimensionError: 0.3 m¹ᐟ² kg and 10.2 kg² s⁻² have incompatible dimensions
 ```
 
 The dimensions of a `Quantity` can be accessed either with `dimension(quantity)` for the entire `Dimensions` object:
 
 ```julia
 julia> dimension(x)
-𝐋 ¹ᐟ² 𝐌 ¹
+m¹ᐟ² kg
 ```
 
 or with `umass`, `ulength`, etc., for the various dimensions:
@@ -133,10 +148,12 @@ julia> ustrip(x)
 0.2
 ```
 
-## Units
+## Unitful
 
-DynamicQuantities works with quantities which store physical dimensions and a value,
-and does not directly provide a unit system.
+DynamicQuantities works with quantities that are exclusively
+represented by their SI base units. This gives us type stability
+and greatly improves performance.
+
 However, performing calculations with physical dimensions
 is actually equivalent to working with a standardized unit system.
 Thus, you can use Unitful to parse units,
@@ -169,16 +186,23 @@ object, which represents a rational number
 with a fixed denominator `C`. This is much faster than `Rational`.
 
 ```julia
-julia> typeof(Quantity(0.5, mass=1))
+julia> typeof(0.5u"kg")
 Quantity{Float64, FixedRational{Int32, 25200}
 ```
 
 You can change the type of the value field by initializing with a value
-of the desired type.
+explicitly of the desired type.
 
 ```julia
 julia> typeof(Quantity(Float16(0.5), mass=1, length=1))
 Quantity{Float16, FixedRational{Int32, 25200}}
+```
+
+or by conversion:
+
+```julia
+julia> typeof(convert(Quantity{Float16}, 0.5u"m/s"))
+Quantity{Float16, DynamicQuantities.FixedRational{Int32, 25200}}
 ```
 
 For many applications, `FixedRational{Int8,6}` will suffice,
@@ -213,23 +237,23 @@ There is not a separate class for vectors, but you can create units
 like so:
 
 ```julia
-julia> randn(5) .* Dimensions(mass=2/5, length=2)
-5-element Vector{Quantity{Float64, FixedRational{Int32, 25200}}}:
- -0.6450221578668845 𝐋 ² 𝐌 ²ᐟ⁵
- 0.4024829670050946 𝐋 ² 𝐌 ²ᐟ⁵
- 0.21478863605789672 𝐋 ² 𝐌 ²ᐟ⁵
- 0.0719774550969669 𝐋 ² 𝐌 ²ᐟ⁵
- -1.4231241943420674 𝐋 ² 𝐌 ²ᐟ⁵
+julia> randn(5) .* u"m/s"
+5-element Vector{Quantity{Float64, DynamicQuantities.FixedRational{Int32, 25200}}}:
+ 1.1762086954956399 m s⁻¹
+ 1.320811324040591 m s⁻¹
+ 0.6519033652437799 m s⁻¹
+ 0.7424822374423569 m s⁻¹
+ 0.33536928068133726 m s⁻¹
 ```
 
 Because it is type stable, you can have mixed units in a vector too:
 
 ```julia
 julia> v = [Quantity(randn(), mass=rand(0:5), length=rand(0:5)) for _=1:5]
-5-element Vector{Quantity{Float64, FixedRational{Int32, 25200}}}:
- 2.2054411324716865 𝐌 ³
- -0.01603602425887379 𝐋 ⁴ 𝐌 ³
- 1.4388184352393647 
- 2.382303019892503 𝐋 ² 𝐌 ¹
- 0.6071392594021706 𝐋 ⁴ 𝐌 ⁴
+5-element Vector{Quantity{Float64, DynamicQuantities.FixedRational{Int32, 25200}}}:
+ 0.4309293892461158 kg⁵
+ 1.415520139801276
+ 1.2179414706524276 m³ kg⁴
+ -0.18804207255117408 m³ kg⁵
+ 0.52123911329638 m³ kg²
 ```
