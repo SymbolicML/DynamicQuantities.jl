@@ -57,7 +57,7 @@ const T = N / (A * m)
 
 @add_prefixes Hz (k, M, G)
 @add_prefixes N ()
-@add_prefixes Pa ()
+@add_prefixes Pa (k,)
 @add_prefixes J ()
 @add_prefixes W (k, M, G)
 @add_prefixes C ()
