@@ -68,8 +68,8 @@ const T = N / (A * m)
 
 # Assorted units
 const min = 60 * s
-const hour = 60 * min
-const day = 24 * hour
+const h = 60 * min
+const day = 24 * h
 const wk = 7 * day
 const yr = 365.25 * day
 
