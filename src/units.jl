@@ -13,10 +13,10 @@ macro add_prefixes(base_unit, prefixes)
 end
 
 function _add_prefixes(base_unit::Symbol, prefixes)
-    all_prefixes = (
+    all_prefixes = map(rationalize, (
         f=1e-15, p=1e-12, n=1e-9, μ=1e-6, u=1e-6, m=1e-3, c=1e-2, d=1e-1,
         k=1e3, M=1e6, G=1e9, T=1e12, P=1e15
-    )
+    ))
     expr = Expr(:block)
     for (prefix, value) in zip(keys(all_prefixes), values(all_prefixes))
         prefix in prefixes || continue
@@ -27,13 +27,13 @@ function _add_prefixes(base_unit::Symbol, prefixes)
 end
 
 # SI base units
-const m = Quantity(1.0, length=1)
-const g = Quantity(1e-3, mass=1)
-const s = Quantity(1.0, time=1)
-const A = Quantity(1.0, current=1)
-const K = Quantity(1.0, temperature=1)
-const cd = Quantity(1.0, luminosity=1)
-const mol = Quantity(1.0, amount=1)
+const m = Quantity(1//1, length=1)
+const g = Quantity(1//1000, mass=1)
+const s = Quantity(1//1, time=1)
+const A = Quantity(1//1, current=1)
+const K = Quantity(1//1, temperature=1)
+const cd = Quantity(1//1, luminosity=1)
+const mol = Quantity(1//1, amount=1)
 
 @add_prefixes m (f, p, n, μ, u, c, d, m, k, M, G)
 @add_prefixes g (μ, u, m, k)
@@ -72,7 +72,7 @@ const min = 60 * s
 const h = 60 * min
 const hr = h
 const day = 24 * h
-const yr = 365.25 * day
+const yr = rationalize(365.25) * day
 
 @add_prefixes min ()
 @add_prefixes h ()
@@ -91,7 +91,7 @@ const bar = 100 * kPa
 @add_prefixes bar ()
 
 ## Energy
-const eV = 1.602176634e-19 * J
+const eV = rationalize(1.602176634e-19) * J
 
 @add_prefixes eV (m, k, M, G, T)
 
@@ -113,7 +113,7 @@ function uparse(s::AbstractString)
 end
 
 as_quantity(q::Quantity) = q
-as_quantity(x::Number) = Quantity(convert(DEFAULT_VALUE_TYPE, x), DEFAULT_DIM_TYPE)
+as_quantity(x::Number) = Quantity(x, DEFAULT_DIM_TYPE)
 as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 
 """
