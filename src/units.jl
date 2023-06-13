@@ -15,7 +15,7 @@ end
 function _add_prefixes(base_unit::Symbol, prefixes)
     all_prefixes = (
         f=1e-15, p=1e-12, n=1e-9, μ=1e-6, u=1e-6, m=1e-3, c=1e-2, d=1e-1,
-        k=1e3, M=1e6, G=1e9, T=1e12, P=1e15
+        k=1e3, M=1e6, G=1e9
     )
     expr = Expr(:block)
     for (prefix, value) in zip(keys(all_prefixes), values(all_prefixes))
@@ -90,11 +90,6 @@ const bar = 100 * kPa
 
 @add_prefixes bar ()
 
-## Energy
-const eV = 1.602176634e-19 * J
-
-@add_prefixes eV (m, k, M, G, T)
-
 # Do not wish to define Gaussian units, as it changes
 # some formulas. Safer to force user to work exclusively in one unit system.
 
@@ -109,8 +104,12 @@ corresponding `Quantity` object. For example, `uparse("m/s")`
 would be parsed to `Quantity(1.0, length=1, time=-1)`.
 """
 function uparse(s::AbstractString)
-    return eval(Meta.parse(s))::Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
+    return as_quantity(eval(Meta.parse(s)))::Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
 end
+
+as_quantity(q::Quantity) = q
+as_quantity(x::Number) = Quantity(convert(DEFAULT_VALUE_TYPE, x), DEFAULT_DIM_TYPE)
+as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 
 """
     @u_str(s::AbstractString)

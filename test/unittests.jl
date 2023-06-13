@@ -293,4 +293,15 @@ end
     z = u"yr"
     @test utime(z) == 1
     @test ustrip(z) ≈ 60 * 60 * 24 * 365.25
+
+    # Test type stability of extreme range of units
+    @test typeof(u"1") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"1f0") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"s"^2) == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"Ω") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"Gyr") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"fm") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"fm"^2) == Quantity{Float64,DEFAULT_DIM_TYPE}
+
+    @test_throws LoadError eval(:(u":x"))
 end
