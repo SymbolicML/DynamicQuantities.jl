@@ -15,7 +15,7 @@ end
 function _add_prefixes(base_unit::Symbol, prefixes)
     all_prefixes = map(rationalize, (
         f=1e-15, p=1e-12, n=1e-9, μ=1e-6, u=1e-6, m=1e-3, c=1e-2, d=1e-1,
-        k=1e3, M=1e6, G=1e9, T=1e12, P=1e15
+        k=1e3, M=1e6, G=1e9
     ))
     expr = Expr(:block)
     for (prefix, value) in zip(keys(all_prefixes), values(all_prefixes))
@@ -89,11 +89,6 @@ const L = dm^3
 const bar = 100 * kPa
 
 @add_prefixes bar ()
-
-## Energy
-const eV = rationalize(1.602176634e-19) * J
-
-@add_prefixes eV (m, k, M, G, T)
 
 # Do not wish to define Gaussian units, as it changes
 # some formulas. Safer to force user to work exclusively in one unit system.

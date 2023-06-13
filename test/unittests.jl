@@ -240,5 +240,9 @@ end
     z3 = 1f0u"yr"
     @test typeof(z3) == Quantity{Float32,DEFAULT_DIM_TYPE}
 
+    # Test type stability of extreme range of units
+    @test typeof(u"Gyr") == Quantity{Rational{Int64},DEFAULT_DIM_TYPE}
+    @test typeof(u"fm") == Quantity{Rational{Int64},DEFAULT_DIM_TYPE}
+
     @test_throws LoadError eval(:(u":x"))
 end
