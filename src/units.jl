@@ -13,10 +13,10 @@ macro add_prefixes(base_unit, prefixes)
 end
 
 function _add_prefixes(base_unit::Symbol, prefixes)
-    all_prefixes = map(rationalize, (
+    all_prefixes = (
         f=1e-15, p=1e-12, n=1e-9, μ=1e-6, u=1e-6, m=1e-3, c=1e-2, d=1e-1,
         k=1e3, M=1e6, G=1e9
-    ))
+    )
     expr = Expr(:block)
     for (prefix, value) in zip(keys(all_prefixes), values(all_prefixes))
         prefix in prefixes || continue
@@ -27,13 +27,13 @@ function _add_prefixes(base_unit::Symbol, prefixes)
 end
 
 # SI base units
-const m = Quantity(1//1, length=1)
-const g = Quantity(1//1000, mass=1)
-const s = Quantity(1//1, time=1)
-const A = Quantity(1//1, current=1)
-const K = Quantity(1//1, temperature=1)
-const cd = Quantity(1//1, luminosity=1)
-const mol = Quantity(1//1, amount=1)
+const m = Quantity(1.0, length=1)
+const g = Quantity(1e-3, mass=1)
+const s = Quantity(1.0, time=1)
+const A = Quantity(1.0, current=1)
+const K = Quantity(1.0, temperature=1)
+const cd = Quantity(1.0, luminosity=1)
+const mol = Quantity(1.0, amount=1)
 
 @add_prefixes m (f, p, n, μ, u, c, d, m, k, M, G)
 @add_prefixes g (μ, u, m, k)
@@ -45,15 +45,15 @@ const mol = Quantity(1//1, amount=1)
 
 # SI derived units
 const Hz = inv(s)
-const N = kg * m * inv(s^2)
-const Pa = N * inv(m^2)
+const N = kg * m / s^2
+const Pa = N / m^2
 const J = N * m
-const W = J * inv(s)
+const W = J / s
 const C = A * s
-const V = W * inv(A)
-const F = C * inv(V)
-const Ω = V * inv(A)
-const T = N * inv(A * m)
+const V = W / A
+const F = C / V
+const Ω = V / A
+const T = N / (A * m)
 
 @add_prefixes Hz (k, M, G)
 @add_prefixes N ()
@@ -72,7 +72,7 @@ const min = 60 * s
 const h = 60 * min
 const hr = h
 const day = 24 * h
-const yr = rationalize(365.25) * day
+const yr = 365.25 * day
 
 @add_prefixes min ()
 @add_prefixes h ()
@@ -104,11 +104,11 @@ corresponding `Quantity` object. For example, `uparse("m/s")`
 would be parsed to `Quantity(1.0, length=1, time=-1)`.
 """
 function uparse(s::AbstractString)
-    return as_quantity(eval(Meta.parse(s)))
+    return as_quantity(eval(Meta.parse(s)))::Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
 end
 
 as_quantity(q::Quantity) = q
-as_quantity(x::Number) = Quantity(x, DEFAULT_DIM_TYPE)
+as_quantity(x::Number) = Quantity(convert(DEFAULT_VALUE_TYPE, x), DEFAULT_DIM_TYPE)
 as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 
 """
