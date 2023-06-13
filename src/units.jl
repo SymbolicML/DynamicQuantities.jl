@@ -45,15 +45,15 @@ const mol = Quantity(1//1, amount=1)
 
 # SI derived units
 const Hz = inv(s)
-const N = kg * m / s^2
-const Pa = N / m^2
+const N = kg * m * inv(s^2)
+const Pa = N * inv(m^2)
 const J = N * m
-const W = J / s
+const W = J * inv(s)
 const C = A * s
-const V = W / A
-const F = C / V
-const Ω = V / A
-const T = N / (A * m)
+const V = W * inv(A)
+const F = C * inv(V)
+const Ω = V * inv(A)
+const T = N * inv(A * m)
 
 @add_prefixes Hz (k, M, G)
 @add_prefixes N ()

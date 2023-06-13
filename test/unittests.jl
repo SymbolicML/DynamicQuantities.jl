@@ -241,6 +241,8 @@ end
     @test typeof(z3) == Quantity{Float32,DEFAULT_DIM_TYPE}
 
     # Test type stability of extreme range of units
+    @test typeof(u"s"^2) == Quantity{Rational{Int64},DEFAULT_DIM_TYPE}
+    @test typeof(u"Ω") == Quantity{Rational{Int64},DEFAULT_DIM_TYPE}
     @test typeof(u"Gyr") == Quantity{Rational{Int64},DEFAULT_DIM_TYPE}
     @test typeof(u"fm") == Quantity{Rational{Int64},DEFAULT_DIM_TYPE}
 
