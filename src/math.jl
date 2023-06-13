@@ -25,10 +25,13 @@ Base.:+(l, r::AbstractQuantity) = dimension(l) == dimension(r) ? new_quantity(ty
 Base.:-(l::AbstractQuantity, r) = l + (-r)
 Base.:-(l, r::AbstractQuantity) = l + (-r)
 
-_pow(l::AbstractDimensions{R}, r::R) where {R} = map_dimensions(Base.Fix1(*, r), l)
-_pow(l::AbstractQuantity{T,R}, r::R) where {T,R} = new_quantity(typeof(l), ustrip(l)^convert(T, r), _pow(dimension(l), r))
+_pow(l::AbstractDimensions, r) = map_dimensions(Base.Fix1(*, r), l)
+_pow(l::AbstractQuantity{T}, r) where {T} = new_quantity(typeof(l), ustrip(l)^r, _pow(dimension(l), r))
+_pow_as_T(l::AbstractQuantity{T}, r) where {T} = new_quantity(typeof(l), ustrip(l)^convert(T, r), _pow(l.dimensions, r))
+Base.:^(l::AbstractDimensions{R}, r::Integer) where {R} = _pow(l, r)
 Base.:^(l::AbstractDimensions{R}, r::Number) where {R} = _pow(l, tryrationalize(R, r))
-Base.:^(l::AbstractQuantity{T,R}, r::Number) where {T,R} = _pow(l, tryrationalize(R, r))
+Base.:^(l::AbstractQuantity{T,R}, r::Integer) where {T,R} = _pow(l, r)
+Base.:^(l::AbstractQuantity{T,R}, r::Number) where {T,R} = _pow_as_T(l, tryrationalize(R, r))
 
 Base.inv(d::AbstractDimensions) = map_dimensions(-, d)
 Base.inv(q::AbstractQuantity) = new_quantity(typeof(q), inv(ustrip(q)), inv(dimension(q)))

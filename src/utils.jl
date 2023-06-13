@@ -40,6 +40,11 @@ Base.iszero(q::AbstractQuantity) = iszero(ustrip(q))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
 Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 Base.:(==)(l::AbstractQuantity, r::AbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+Base.:(==)(l, r::AbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+Base.:(==)(l::AbstractQuantity, r) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+Base.isless(l::AbstractQuantity, r::AbstractQuantity) = dimension(l) == dimension(r) ? isless(ustrip(l), ustrip(r)) : throw(DimensionError(l, r))
+Base.isless(l::AbstractQuantity, r) = dimension(l) == dimension(r) ? isless(ustrip(l), r) : throw(DimensionError(l, r))
+Base.isless(l, r::AbstractQuantity) = dimension(l) == dimension(r) ? isless(l, ustrip(r)) : throw(DimensionError(l, r))
 Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...) = isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
 Base.length(::AbstractDimensions) = 1
 Base.length(::AbstractQuantity) = 1
@@ -54,7 +59,7 @@ Base.one(::Type{Quantity{T}}) where {T} = one(Quantity{T,DEFAULT_DIM_TYPE})
 Base.one(::Type{Quantity}) = one(Quantity{DEFAULT_VALUE_TYPE})
 Base.one(::Type{Dimensions{R}}) where {R} = Dimensions{R}()
 Base.one(::Type{Dimensions}) = one(Dimensions{DEFAULT_DIM_TYPE})
-Base.one(q::Quantity) = one(typeof(q))
+Base.one(q::Quantity) = Quantity(one(ustrip(q)), one(dimension(q)))
 Base.one(d::Dimensions) = one(typeof(d))
 
 # Additive identities:

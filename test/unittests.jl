@@ -200,6 +200,8 @@ end
     @test one(Dimensions()) == Dimensions()
     @test typeof(one(Quantity)) == Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
     @test ustrip(one(Quantity)) === one(DEFAULT_VALUE_TYPE)
+    @test typeof(one(Quantity(ones(32, 32)))) == Quantity{Matrix{Float64},DEFAULT_DIM_TYPE}
+    @test dimension(one(Quantity(ones(32, 32), length=1))) == Dimensions()
 
     x = Quantity(1, length=1)
 
@@ -218,6 +220,19 @@ end
     @test cbrt(z) == Quantity(cbrt(-52), length=1 // 3, mass=2 // 3)
 
     @test 1.0 * (Dimensions(length=3)^2) == Quantity(1.0, length=6)
+
+    x = 0.9u"km/s"
+    y = 0.3 * x
+    @test x > y
+    @test y < x
+
+    x = Quantity(1.0)
+
+    @test x == 1.0
+    @test x >= 1.0
+    @test x < 2.0
+
+    @test_throws DimensionError x < 1.0u"m"
 end
 
 @testset "Manual construction" begin
@@ -278,4 +293,15 @@ end
     z = u"yr"
     @test utime(z) == 1
     @test ustrip(z) ≈ 60 * 60 * 24 * 365.25
+
+    # Test type stability of extreme range of units
+    @test typeof(u"1") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"1f0") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"s"^2) == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"Ω") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"Gyr") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"fm") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"fm"^2) == Quantity{Float64,DEFAULT_DIM_TYPE}
+
+    @test_throws LoadError eval(:(u":x"))
 end
