@@ -44,9 +44,9 @@ Base.convert(::Type{Rational}, x::F) where {F<:FixedRational} = Rational{eltype(
 Base.convert(::Type{AF}, x::F) where {AF<:AbstractFloat,F<:FixedRational} = convert(AF, x.num) / convert(AF, denom(F))
 Base.round(::Type{T}, x::F) where {T,F<:FixedRational} = div(convert(T, x.num), convert(T, denom(F)), RoundNearest)
 Base.promote(x::Integer, y::F) where {F<:FixedRational} = (F(x), y)
-Base.promote(x::F, y::Integer) where {F<:FixedRational} = (x, F(y))
+Base.promote(x::F, y::Integer) where {F<:FixedRational} = reverse(promote(y, x))
 Base.promote(x, y::F) where {F<:FixedRational} = promote(x, convert(Rational, y))
-Base.promote(x::F, y) where {F<:FixedRational} = promote(convert(Rational, x), y)
+Base.promote(x::F, y) where {F<:FixedRational} = reverse(promote(y, x))
 Base.show(io::IO, x::F) where {F<:FixedRational} = show(io, convert(Rational, x))
 Base.zero(::Type{F}) where {F<:FixedRational} = unsafe_fixed_rational(0, eltype(F), val_denom(F))
 
