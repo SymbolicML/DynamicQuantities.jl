@@ -1,28 +1,23 @@
-@generated function map_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
-    dimension_type = first(args)
-    dimension_names = Base.fieldnames(dimension_type)
-    output = :(new_dimensions($dimension_type))
-    for dim in dimension_names
-        f_expr = :(f())
-        for i=1:length(args)
-            push!(f_expr.args, :(args[$i].$dim))
-        end
-        push!(output.args, f_expr)
-    end
-    return output
+import Tricks: static_fieldnames
+
+function map_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
+    dimension_type = promote_type(typeof(args).parameters...)
+    dimension_names = static_fieldnames(dimension_type)
+    return new_dimensions(
+        dimension_type,
+        (
+            f((getfield(arg, dim) for arg in args)...)
+            for dim in dimension_names
+        )...
+    )
 end
-@generated function all_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
-    dimension_type = first(args)
-    dimension_names = Base.fieldnames(dimension_type)
-    output = Expr(:&&)
+function all_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
+    dimension_type = promote_type(typeof(args).parameters...)
+    dimension_names = static_fieldnames(dimension_type)
     for dim in dimension_names
-        f_expr = :(f())
-        for i=1:length(args)
-            push!(f_expr.args, :(args[$i].$dim))
-        end
-        push!(output.args, f_expr)
+        f((getfield(arg, dim) for arg in args)...) || return false
     end
-    return output
+    return true
 end
 
 Base.float(q::AbstractQuantity{T}) where {T<:AbstractFloat} = convert(T, q)
@@ -33,7 +28,7 @@ Base.convert(::Type{T}, q::AbstractQuantity) where {T<:Real} =
     end
 
 Base.isfinite(q::AbstractQuantity) = isfinite(ustrip(q))
-Base.keys(d::AbstractDimensions) = Base.fieldnames(typeof(d))
+Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))
 # TODO: Make this more generic.
 Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
 Base.iszero(q::AbstractQuantity) = iszero(ustrip(q))

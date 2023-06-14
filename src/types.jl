@@ -1,14 +1,10 @@
+import Tricks: static_fieldnames
+
 const DEFAULT_DIM_TYPE = FixedRational{Int32, 2^4 * 3^2 * 5^2 * 7}
 const DEFAULT_VALUE_TYPE = Float64
 
 abstract type AbstractQuantity{T,R} end
 abstract type AbstractDimensions{R} end
-
-constructor_of(::Type{D}) where {D<:AbstractDimensions} = D
-constructor_of(::Type{D}) where {R,D<:AbstractDimensions{R}} = D.name.wrapper
-constructor_of(::Type{Q}) where {Q<:AbstractQuantity} = Q
-constructor_of(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = Q.body.name.wrapper
-constructor_of(::Type{Q}) where {T,R,Q<:AbstractQuantity{T,R}} = Q.name.wrapper
 
 """
     Dimensions{R}
@@ -36,7 +32,6 @@ which is by default a rational number.
 - `Dimensions(::Type{R}; kws...)` or `Dimensions{R}(; kws...)`: Pass a subset of dimensions as keyword arguments, with the output type set to `Dimensions{R}`.
 - `Dimensions{R}(args...)`: Pass all the dimensions as arguments, with the output type set to `Dimensions{R}`.
 - `Dimensions{R}(d::Dimensions)`: Copy the dimensions from another `Dimensions` object, with the output type set to `Dimensions{R}`.
-
 """
 struct Dimensions{R<:Real} <: AbstractDimensions{R}
     length::R
@@ -48,12 +43,14 @@ struct Dimensions{R<:Real} <: AbstractDimensions{R}
     amount::R
 end
 
-(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = D{R}((tryrationalize(R, get(kws, k, zero(R))) for k in fieldnames(D))...)
+(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = D{R}((tryrationalize(R, get(kws, k, zero(R))) for k in static_fieldnames(D))...)
 (::Type{D})(; kws...) where {D<:AbstractDimensions} = D(DEFAULT_DIM_TYPE; kws...)
 
-(::Type{D})(args...) where {R,D<:AbstractDimensions{R}} = constructor_of(D)(Base.Fix1(convert, R).(args)...)
-(::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = constructor_of(D)(R; kws...)
-(::Type{D})(d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D((getfield(d, k) for k in fieldnames(D))...)
+(::Type{D})(args...) where {R,D<:AbstractDimensions{R}} = dimension_constructor(D)(Base.Fix1(convert, R).(args)...)
+(::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = dimension_constructor(D)(R; kws...)
+(::Type{D})(d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D((getfield(d, k) for k in static_fieldnames(D))...)
+
+new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = dimension_constructor(D)(dims...)
 
 
 """
@@ -94,10 +91,12 @@ struct Quantity{T,R} <: AbstractQuantity{T,R}
     Quantity{T,R}(q::Quantity) where {T,R} = Quantity(convert(T, q.value), Dimensions{R}(dimension(q)))
 end
 
+new_quantity(::Type{QD}, l, r) where {QD<:Union{AbstractQuantity,AbstractDimensions}} = quantity_constructor(QD)(l, r)
+
 # All that is needed to make an `AbstractQuantity` work:
 dimension_name(::Dimensions, k::Symbol) = (length="m", mass="kg", time="s", current="A", temperature="K", luminosity="cd", amount="mol")[k]
-new_dimensions(::Type{<:Dimensions}, dims...) = Dimensions(dims...)
-new_quantity(::Type{<:Union{<:Quantity,<:Dimensions}}, l, r) = Quantity(l, r)
+quantity_constructor(::Type{<:Union{Quantity,Dimensions}}) = Quantity
+dimension_constructor(::Type{<:Union{Quantity,Dimensions}}) = Dimensions
 
 struct DimensionError{Q1,Q2} <: Exception
     q1::Q1
