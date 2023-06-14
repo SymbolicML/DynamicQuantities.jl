@@ -4,6 +4,11 @@
 A rational number with a fixed denominator. Significantly
 faster than `Rational{T}`, as it never needs to compute
 the `gcd` apart from when printing.
+Access the denominator with `denom(F)` (which converts to `T`).
+
+# Fields
+
+- `num`: numerator of type `T`. The denominator is fixed to the type parameter `den`.
 """
 struct FixedRational{T<:Integer,den} <: Real
     num::T
