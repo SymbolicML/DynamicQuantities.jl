@@ -33,15 +33,15 @@ end
 const m = Quantity(1.0, length=1)
 "Mass in grams. Available variants: `μg` (/`ug`), `mg`, `kg`."
 const g = Quantity(1e-3, mass=1)
-"Time in seconds. Available variants: fs, ps, ns, μs (/us), ms, min, h (/hr), day, yr, kyr, Myr, Gyr."
+"Time in seconds. Available variants: `fs`, `ps`, `ns`, `μs` (/`us`), `ms`, `min`, `h` (/`hr`), `day`, `yr`, `kyr`, `Myr`, `Gyr`."
 const s = Quantity(1.0, time=1)
-"Current in Amperes. Available variants: nA, μA (/uA), mA, kA."
+"Current in Amperes. Available variants: `nA`, `μA` (/`uA`), `mA`, `kA`."
 const A = Quantity(1.0, current=1)
-"Temperature in Kelvin. Available variant: mK."
+"Temperature in Kelvin. Available variant: `mK`."
 const K = Quantity(1.0, temperature=1)
-"Luminosity in candela. Available variant: mcd."
+"Luminosity in candela. Available variant: `mcd`."
 const cd = Quantity(1.0, luminosity=1)
-"Amount in moles. Available variant: mmol."
+"Amount in moles. Available variant: `mmol`."
 const mol = Quantity(1.0, amount=1)
 
 @add_prefixes m (f, p, n, μ, u, c, d, m, k, M, G)
@@ -53,23 +53,23 @@ const mol = Quantity(1.0, amount=1)
 @add_prefixes mol (m,)
 
 # SI derived units
-"Frequency in Hertz. Available variants: kHz, MHz, GHz."
+"Frequency in Hertz. Available variants: `kHz`, `MHz`, `GHz`."
 const Hz = inv(s)
 "Force in Newtons."
 const N = kg * m / s^2
-"Pressure in Pascals. Available variant: kPa."
+"Pressure in Pascals. Available variant: `kPa`."
 const Pa = N / m^2
-"Energy in Joules. Available variant: kJ."
+"Energy in Joules. Available variant: `kJ`."
 const J = N * m
-"Power in Watts. Available variants: kW, MW, GW."
+"Power in Watts. Available variants: `kW`, `MW`, `GW`."
 const W = J / s
 "Charge in Coulombs."
 const C = A * s
-"Voltage in Volts. Available variants: kV, MV, GV."
+"Voltage in Volts. Available variants: `kV`, `MV`, `GV`."
 const V = W / A
 "Capacitance in Farads."
 const F = C / V
-"Resistance in Ohms. Available variant: mΩ. Also available is ASCII `ohm` (with variant `mohm`)."
+"Resistance in Ohms. Available variant: `mΩ`. Also available is ASCII `ohm` (with variant `mohm`)."
 const Ω = V / A
 const ohm = Ω
 "Magnetic flux density in Teslas."
@@ -102,7 +102,7 @@ const yr = 365.25 * day
 @add_prefixes yr (k, M, G)
 
 ## Volume
-"Volume in liters. Available variants: mL, dL."
+"Volume in liters. Available variants: `mL`, `dL`."
 const L = dm^3
 
 @add_prefixes L (m, d)
