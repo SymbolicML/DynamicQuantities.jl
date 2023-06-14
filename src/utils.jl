@@ -11,13 +11,18 @@ function map_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
         )...
     )
 end
-function all_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
-    dimension_type = promote_type(typeof(args).parameters...)
-    dimension_names = static_fieldnames(dimension_type)
-    for dim in dimension_names
-        f((getfield(arg, dim) for arg in args)...) || return false
+@generated function all_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
+    # Test a function over all dimensions
+    output = Expr(:&&)
+    dimension_type = promote_type(args...)
+    for dim in Base.fieldnames(dimension_type)
+        f_expr = :(f())
+        for i=1:length(args)
+            push!(f_expr.args, :(args[$i].$dim))
+        end
+        push!(output.args, f_expr)
     end
-    return true
+    return output
 end
 
 Base.float(q::AbstractQuantity{T}) where {T<:AbstractFloat} = convert(T, q)
