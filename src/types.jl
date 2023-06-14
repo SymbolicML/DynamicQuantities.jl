@@ -2,11 +2,13 @@ const DEFAULT_DIM_TYPE = FixedRational{Int32, 2^4 * 3^2 * 5^2 * 7}
 const DEFAULT_VALUE_TYPE = Float64
 
 """
-    Dimensions
+    Dimensions{R}
 
 A type representing the dimensions of a quantity, with each
 field giving the power of the corresponding dimension. For
 example, the dimensions of velocity are `Dimensions(length=1, time=-1)`.
+Each of the 7 dimensions are stored using the type `R`,
+which is by default a rational number.
 
 # Fields
 
@@ -56,9 +58,9 @@ const DIMENSION_SYNONYMS = (:m, :kg, :s, :A, :K, :cd, :mol)
 const SYNONYM_MAPPING = NamedTuple(DIMENSION_NAMES .=> DIMENSION_SYNONYMS)
 
 """
-    Quantity{T}
+    Quantity{T,R}
 
-Physical quantity with value `value` of type `T` and dimensions `dimensions`.
+Physical quantity with value `value` of type `T` and dimensions `dimensions` of type `Dimensions{R}`.
 For example, the velocity of an object with mass 1 kg and velocity
 2 m/s is `Quantity(2, mass=1, length=1, time=-1)`.
 You should access these fields with `ustrip(q)`, and `dimensions(q)`.
