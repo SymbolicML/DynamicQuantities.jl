@@ -37,6 +37,11 @@ Base.iszero(q::Quantity) = iszero(q.value)
 Base.getindex(d::Dimensions, k::Symbol) = getfield(d, k)
 Base.:(==)(l::Dimensions, r::Dimensions) = @all_dimensions(==, l, r)
 Base.:(==)(l::Quantity, r::Quantity) = l.value == r.value && l.dimensions == r.dimensions
+Base.:(==)(l, r::Quantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+Base.:(==)(l::Quantity, r) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+Base.isless(l::Quantity, r::Quantity) = dimension(l) == dimension(r) ? isless(ustrip(l), ustrip(r)) : throw(DimensionError(l, r))
+Base.isless(l::Quantity, r) = dimension(l) == dimension(r) ? isless(ustrip(l), r) : throw(DimensionError(l, r))
+Base.isless(l, r::Quantity) = dimension(l) == dimension(r) ? isless(l, ustrip(r)) : throw(DimensionError(l, r))
 Base.isapprox(l::Quantity, r::Quantity; kws...) = isapprox(l.value, r.value; kws...) && l.dimensions == r.dimensions
 Base.length(::Dimensions) = 1
 Base.length(::Quantity) = 1
@@ -45,16 +50,26 @@ Base.iterate(::Dimensions, ::Nothing) = nothing
 Base.iterate(q::Quantity) = (q, nothing)
 Base.iterate(::Quantity, ::Nothing) = nothing
 
-Base.zero(::Type{Quantity{T,R}}) where {T,R} = Quantity(zero(T), R)
+# Multiplicative identities:
 Base.one(::Type{Quantity{T,R}}) where {T,R} = Quantity(one(T), R)
-Base.one(::Type{Dimensions{R}}) where {R} = Dimensions{R}()
-
-Base.zero(::Type{Quantity{T}}) where {T} = zero(Quantity{T,DEFAULT_DIM_TYPE})
 Base.one(::Type{Quantity{T}}) where {T} = one(Quantity{T,DEFAULT_DIM_TYPE})
-
-Base.zero(::Type{Quantity}) = zero(Quantity{DEFAULT_VALUE_TYPE})
 Base.one(::Type{Quantity}) = one(Quantity{DEFAULT_VALUE_TYPE})
+Base.one(::Type{Dimensions{R}}) where {R} = Dimensions{R}()
 Base.one(::Type{Dimensions}) = one(Dimensions{DEFAULT_DIM_TYPE})
+Base.one(q::Quantity) = Quantity(one(ustrip(q)), one(dimension(q)))
+Base.one(d::Dimensions) = one(typeof(d))
+
+# Additive identities:
+Base.zero(q::Quantity) = Quantity(zero(ustrip(q)), dimension(q))
+Base.zero(::Dimensions) = error("There is no such thing as an additive identity for a `Dimensions` object, as + is only defined for `Quantity`.")
+Base.zero(::Type{<:Quantity}) = error("Cannot create an additive identity for a `Quantity` type, as the dimensions are unknown. Please use `zero(::Quantity)` instead.")
+Base.zero(::Type{<:Dimensions}) = error("There is no such thing as an additive identity for a `Dimensions` type, as + is only defined for `Quantity`.")
+
+# Dimensionful 1:
+Base.oneunit(q::Quantity) = Quantity(oneunit(ustrip(q)), dimension(q))
+Base.oneunit(::Dimensions) = error("There is no such thing as a dimensionful 1 for a `Dimensions` object, as + is only defined for `Quantity`.")
+Base.oneunit(::Type{<:Quantity}) = error("Cannot create a dimensionful 1 for a `Quantity` type without knowing the dimensions. Please use `oneunit(::Quantity)` instead.")
+Base.oneunit(::Type{<:Dimensions}) = error("There is no such thing as a dimensionful 1 for a `Dimensions` type, as + is only defined for `Quantity`.")
 
 Base.show(io::IO, d::Dimensions) =
     let tmp_io = IOBuffer()
@@ -101,7 +116,8 @@ Base.convert(::Type{Dimensions{R}}, d::Dimensions) where {R} = Dimensions{R}(d)
 Remove the units from a quantity.
 """
 ustrip(q::Quantity) = q.value
-ustrip(q::Number) = q
+ustrip(::Dimensions) = error("Cannot remove units from a `Dimensions` object.")
+ustrip(q) = q
 
 """
     dimension(q::Quantity)
@@ -109,7 +125,8 @@ ustrip(q::Number) = q
 Get the dimensions of a quantity, returning a `Dimensions` object.
 """
 dimension(q::Quantity) = q.dimensions
-dimension(::Number) = Dimensions()
+dimension(d::Dimensions) = d
+dimension(_) = Dimensions()
 
 """
     ulength(q::Quantity)
