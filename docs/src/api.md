@@ -17,6 +17,8 @@ ustrip
 dimension
 ```
 
+### Accessing dimensions
+
 Utility functions to extract specific dimensions are as follows:
 
 ```@docs
@@ -43,6 +45,8 @@ The two main functions for working with units are `uparse` and `u_str`:
 @u_str
 uparse
 ```
+
+### Available units
 
 The base SI units are as follows.
 Instead of calling directly, it is recommended to access them via
