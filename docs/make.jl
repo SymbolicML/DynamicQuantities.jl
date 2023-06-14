@@ -1,4 +1,5 @@
 using DynamicQuantities
+import DynamicQuantities.Units
 using Documenter
 
 DocMeta.setdocmeta!(DynamicQuantities, :DocTestSetup, :(using DynamicQuantities); recursive=true)
@@ -26,7 +27,7 @@ open(dirname(@__FILE__) * "/src/index.md", "w") do io
 end
 
 makedocs(;
-    modules=[DynamicQuantities],
+    modules=[DynamicQuantities, DynamicQuantities.Units],
     authors="MilesCranmer <miles.cranmer@gmail.com> and contributors",
     repo="https://github.com/SymbolicML/DynamicQuantities.jl/blob/{commit}{path}#{line}",
     sitename="DynamicQuantities.jl",

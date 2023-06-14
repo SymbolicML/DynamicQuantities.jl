@@ -1,5 +1,7 @@
 module Units
 
+export uparse, @u_str
+
 import ..DEFAULT_DIM_TYPE
 import ..DEFAULT_VALUE_TYPE
 import ..Quantity
@@ -27,12 +29,19 @@ function _add_prefixes(base_unit::Symbol, prefixes)
 end
 
 # SI base units
+"Length in meters. Available variants: `fm`, `pm`, `nm`, `μm` (/`um`), `cm`, `dm`, `mm`, `km`, `Mm`, `Gm`."
 const m = Quantity(1.0, length=1)
+"Mass in grams. Available variants: `μg` (/`ug`), `mg`, `kg`."
 const g = Quantity(1e-3, mass=1)
+"Time in seconds. Available variants: `fs`, `ps`, `ns`, `μs` (/`us`), `ms`, `min`, `h` (/`hr`), `day`, `yr`, `kyr`, `Myr`, `Gyr`."
 const s = Quantity(1.0, time=1)
+"Current in Amperes. Available variants: `nA`, `μA` (/`uA`), `mA`, `kA`."
 const A = Quantity(1.0, current=1)
+"Temperature in Kelvin. Available variant: `mK`."
 const K = Quantity(1.0, temperature=1)
+"Luminosity in candela. Available variant: `mcd`."
 const cd = Quantity(1.0, luminosity=1)
+"Amount in moles. Available variant: `mmol`."
 const mol = Quantity(1.0, amount=1)
 
 @add_prefixes m (f, p, n, μ, u, c, d, m, k, M, G)
@@ -44,15 +53,26 @@ const mol = Quantity(1.0, amount=1)
 @add_prefixes mol (m,)
 
 # SI derived units
+"Frequency in Hertz. Available variants: `kHz`, `MHz`, `GHz`."
 const Hz = inv(s)
+"Force in Newtons."
 const N = kg * m / s^2
+"Pressure in Pascals. Available variant: `kPa`."
 const Pa = N / m^2
+"Energy in Joules. Available variant: `kJ`."
 const J = N * m
+"Power in Watts. Available variants: `kW`, `MW`, `GW`."
 const W = J / s
+"Charge in Coulombs."
 const C = A * s
+"Voltage in Volts. Available variants: `kV`, `MV`, `GV`."
 const V = W / A
+"Capacitance in Farads."
 const F = C / V
+"Resistance in Ohms. Available variant: `mΩ`. Also available is ASCII `ohm` (with variant `mohm`)."
 const Ω = V / A
+const ohm = Ω
+"Magnetic flux density in Teslas."
 const T = N / (A * m)
 
 @add_prefixes Hz (k, M, G)
@@ -64,6 +84,7 @@ const T = N / (A * m)
 @add_prefixes V (m, k, M, G)
 @add_prefixes F ()
 @add_prefixes Ω (m,)
+@add_prefixes ohm (m,)
 @add_prefixes T ()
 
 # Common assorted units
@@ -81,11 +102,13 @@ const yr = 365.25 * day
 @add_prefixes yr (k, M, G)
 
 ## Volume
+"Volume in liters. Available variants: `mL`, `dL`."
 const L = dm^3
 
 @add_prefixes L (m, d)
 
 ## Pressure
+"Pressure in bars."
 const bar = 100 * kPa
 
 @add_prefixes bar ()
@@ -100,8 +123,8 @@ const bar = 100 * kPa
     uparse(s::AbstractString)
 
 Parse a string containing an expression of units and return the
-corresponding `Quantity` object. For example, `uparse("m/s")`
-would be parsed to `Quantity(1.0, length=1, time=-1)`.
+corresponding `Quantity` object with `Float64` value. For example,
+`uparse("m/s")` would be parsed to `Quantity(1.0, length=1, time=-1)`.
 """
 function uparse(s::AbstractString)
     return as_quantity(eval(Meta.parse(s)))::Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
@@ -112,11 +135,11 @@ as_quantity(x::Number) = Quantity(convert(DEFAULT_VALUE_TYPE, x), DEFAULT_DIM_TY
 as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 
 """
-    @u_str(s::AbstractString)
+    u"[unit expression]"
 
 Parse a string containing an expression of units and return the
-corresponding `Quantity` object. For example, `u"km/s^2"`
-would be parsed to `Quantity(1000.0, length=1, time=-2)`.
+corresponding `Quantity` object with `Float64` value. For example,
+`u"km/s^2"` would be parsed to `Quantity(1000.0, length=1, time=-2)`.
 """
 macro u_str(s)
     return esc(uparse(s))
