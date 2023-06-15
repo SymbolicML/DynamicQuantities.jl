@@ -17,7 +17,7 @@ end
 function _add_prefixes(base_unit::Symbol, prefixes)
     all_prefixes = (
         f=1e-15, p=1e-12, n=1e-9, μ=1e-6, u=1e-6, m=1e-3, c=1e-2, d=1e-1,
-        k=1e3, M=1e6, G=1e9
+        k=1e3, M=1e6, G=1e9, T=1e12
     )
     expr = Expr(:block)
     for (prefix, value) in zip(keys(all_prefixes), values(all_prefixes))
@@ -144,5 +144,8 @@ corresponding `Quantity` object with `Float64` value. For example,
 macro u_str(s)
     return esc(uparse(s))
 end
+
+include("constants.jl")
+import .Const
 
 end
