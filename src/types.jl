@@ -112,15 +112,44 @@ end
     return :($out)
 end
 
+"""
+    dimension_constructor(::Type{<:AbstractDimensions})
+
+This function returns the container for a particular `AbstractDimensions`.
+For example, `Dimensions` will get returned as `Dimensions`, and
+`Dimensions{Rational{Int64}}` will also get returned as `Dimensions`.
+"""
 dimension_constructor(::Type{D}) where {D<:AbstractDimensions} = get_container_type(D)
+
+"""
+    dimension_constructor(::Type{<:AbstractQuantity})
+
+This function returns the `Dimensions` type used inside
+a particular `Quantity` type by reading the `.dimensions` field.
+It also strips the type parameter (i.e., `Dimensions{R} -> Dimensions`).
+"""
 dimension_constructor(::Type{Q}) where {Q<:AbstractQuantity} = get_dim_type(Q)
 
+"""
+    quantity_constructor(::Type{<:AbstractQuantity})
+
+This function returns the container for a particular `AbstractQuantity`.
+For example, `Quantity` gets returned as `Quantity`, `Quantity{Float32}` also
+as `Quantity`, and `Quantity{Float32,Rational{Int64}}` also as `Quantity`.
+"""
 quantity_constructor(::Type{Q}) where {Q<:AbstractQuantity} = get_container_type(Q)
 
-# This requires user override, as we don't know which Quantity
-# to make from which Dimensions type:
-quantity_constructor(::Type{D}) where {D<:Dimensions} = Quantity
+"""
+    quantity_constructor(::Type{<:AbstractDimensions})
 
+This function returns the `<:AbstractQuantity` type corresponding to
+a given `<:AbstractDimensions`. For example, `Dimensions -> Quantity`.
+If you define a custom dimensions type, you should overload this function
+so it returns your custom quantity type that uses that dimensions type.
+This is only needed if you wish to use the `(*)(::AbstractDimensions, ::Number)`
+function; otherwise it won't be necessary.
+"""
+quantity_constructor(::Type{D}) where {D<:Dimensions} = Quantity
 
 struct DimensionError{Q1,Q2} <: Exception
     q1::Q1
