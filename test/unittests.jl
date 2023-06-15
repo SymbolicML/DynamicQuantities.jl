@@ -316,8 +316,6 @@ struct MyQuantity{T,R} <: AbstractQuantity{T,R}
     value::T
     dimensions::MyDimensions{R}
 end
-quantity_constructor(::Type{<:Union{MyQuantity,MyDimensions}}) = MyQuantity
-dimension_constructor(::Type{<:Union{MyQuantity,MyDimensions}}) = MyDimensions
 
 @testset "Custom dimensions" begin
     for T in [Float32, Float64], R in [Rational{Int64}, Rational{Int32}]
@@ -327,4 +325,12 @@ dimension_constructor(::Type{<:Union{MyQuantity,MyDimensions}}) = MyDimensions
     end
     @test MyQuantity(0.1, DEFAULT_DIM_TYPE, length=0.5) == MyQuantity(0.1, length=0.5)
     @test MyQuantity(0.1, DEFAULT_DIM_TYPE, length=0.5) == MyQuantity(0.1, length=1//2)
+
+    # Before we define `quantity_constructor`, we get an error:
+    @test_throws MethodError MyQuantity(0.1) + 0.1 * MyDimensions()
+
+    # This is because it is still constructing `Quantity` from `0.1 * MyDimensions()`,
+    # so we need to override it:
+    @eval quantity_constructor(::Type{<:MyDimensions}) = MyQuantity
+    @test MyQuantity(0.1) + 0.1 * MyDimensions() ≈ MyQuantity(0.2)
 end

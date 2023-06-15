@@ -1,4 +1,4 @@
-import Tricks: static_fieldnames
+import Tricks: static_fieldnames, static_fieldtypes
 
 const DEFAULT_DIM_TYPE = FixedRational{Int32, 2^4 * 3^2 * 5^2 * 7}
 const DEFAULT_VALUE_TYPE = Float64
@@ -92,9 +92,35 @@ end
 
 new_quantity(::Type{QD}, l, r) where {QD<:Union{AbstractQuantity,AbstractDimensions}} = quantity_constructor(QD)(l, r)
 
-# All that is needed to make an `AbstractQuantity` work:
-quantity_constructor(::Type{<:Union{Quantity,Dimensions}}) = Quantity
-dimension_constructor(::Type{<:Union{Quantity,Dimensions}}) = Dimensions
+function _container_type(T::Type)
+    if isa(T, UnionAll)
+        return _container_type(T.body)
+    elseif isa(T, DataType)
+        return T.name.wrapper
+    else
+        error("Could not infer container of type: $(T)")
+    end
+end
+@generated function get_container_type(::Type{T}) where {T}
+    container = _container_type(T)
+    return :($container)
+end
+@generated function get_dim_type(::Type{Q}) where {Q<:AbstractQuantity}
+    quantity_type = get_container_type(Q)
+    field_type = NamedTuple(static_fieldnames(quantity_type) .=> static_fieldtypes(quantity_type))[:dimensions]
+    out = get_container_type(field_type)
+    return :($out)
+end
+
+dimension_constructor(::Type{D}) where {D<:AbstractDimensions} = get_container_type(D)
+dimension_constructor(::Type{Q}) where {Q<:AbstractQuantity} = get_dim_type(Q)
+
+quantity_constructor(::Type{Q}) where {Q<:AbstractQuantity} = get_container_type(Q)
+
+# This requires user override, as we don't know which Quantity
+# to make from which Dimensions type:
+quantity_constructor(::Type{D}) where {D<:AbstractDimensions} = Quantity
+
 
 struct DimensionError{Q1,Q2} <: Exception
     q1::Q1
