@@ -6,7 +6,7 @@ function map_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
     return new_dimensions(
         dimension_type,
         (
-            f((getfield(arg, dim) for arg in args)...)
+            f((getproperty(arg, dim) for arg in args)...)
             for dim in dimension_names
         )...
     )

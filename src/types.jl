@@ -48,7 +48,7 @@ end
 
 (::Type{D})(args...) where {R,D<:AbstractDimensions{R}} = dimension_constructor(D)(Base.Fix1(convert, R).(args)...)
 (::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = dimension_constructor(D)(R; kws...)
-(::Type{D})(d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D((getfield(d, k) for k in static_fieldnames(D))...)
+(::Type{D})(d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D((getproperty(d, k) for k in static_fieldnames(D))...)
 
 new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = dimension_constructor(D)(dims...)
 
