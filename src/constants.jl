@@ -9,13 +9,13 @@ import ..@add_prefixes
 "Speed of light in a vacuum. Standard."
 const c = 299792458u"m/s"
 "Planck constant. Standard."
-const h = 6.62607015e−34u"J/Hz"
+const h = 6.62607015e-34u"J/Hz"
 "Reduced Planck constant (h/2π). Standard."
 const hbar = h / (2π)
 "Elementary charge. Standard."
-const e = 1.602176634e−19u"C"
+const e = 1.602176634e-19u"C"
 "Boltzmann constant. Standard."
-const k_B = 1.380649e−23u"J/K"
+const k_B = 1.380649e-23u"J/K"
 "Avogadro constant. Standard."
 const N_A = 6.02214076e+23u"mol^-1"
 
@@ -32,7 +32,7 @@ const sigma_sb = (π^2/60) * k_B^4/(hbar^3 * c^2)
 
 # Measured
 "Fine-structure constant. Measured."
-const alpha = 7.2973525693e−3
+const alpha = 7.2973525693e-3
 "Atomic mass unit (1/12th the mass of Carbon-12). Measured."
 const u = 1.66053906660e-27u"kg"
 "Newtonian constant of gravitation. Measured."
@@ -42,9 +42,9 @@ const mu_0 = 4π * alpha * hbar / (e^2 * c)
 "Vacuum electric permittivity. Measured."
 const eps_0 = 8.8541878128e-12u"F/m"
 "Electron mass. Measured."
-const m_e = 9.1093837015e−31u"kg"
+const m_e = 9.1093837015e-31u"kg"
 "Proton mass. Measured."
-const m_p = 1.67262192369e−27u"kg"
+const m_p = 1.67262192369e-27u"kg"
 "Neutron mass. Measured."
 const m_n = 1.67492749804e-27u"kg"
 "Bohr radius. Measured."
