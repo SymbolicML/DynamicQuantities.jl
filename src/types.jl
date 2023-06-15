@@ -92,23 +92,13 @@ end
 
 new_quantity(::Type{QD}, l, r) where {QD<:Union{AbstractQuantity,AbstractDimensions}} = quantity_constructor(QD)(l, r)
 
-function _container_type(T::Type)
-    if isa(T, UnionAll)
-        return _container_type(T.body)
-    elseif isa(T, DataType)
-        return T.name.wrapper
-    else
-        error("Could not infer container of type: $(T)")
-    end
-end
-@generated function get_container_type(::Type{T}) where {T}
-    container = _container_type(T)
-    return :($container)
+function container_type(::Type{T}) where {T}
+    return Base.typename(T).wrapper
 end
 @generated function get_dim_type(::Type{Q}) where {Q<:AbstractQuantity}
-    quantity_type = get_container_type(Q)
+    quantity_type = container_type(Q)
     field_type = NamedTuple(static_fieldnames(quantity_type) .=> static_fieldtypes(quantity_type))[:dimensions]
-    out = get_container_type(field_type)
+    out = container_type(field_type)
     return :($out)
 end
 
@@ -119,7 +109,7 @@ This function returns the container for a particular `AbstractDimensions`.
 For example, `Dimensions` will get returned as `Dimensions`, and
 `Dimensions{Rational{Int64}}` will also get returned as `Dimensions`.
 """
-dimension_constructor(::Type{D}) where {D<:AbstractDimensions} = get_container_type(D)
+dimension_constructor(::Type{D}) where {D<:AbstractDimensions} = container_type(D)
 
 """
     dimension_constructor(::Type{<:AbstractQuantity})
@@ -137,7 +127,7 @@ This function returns the container for a particular `AbstractQuantity`.
 For example, `Quantity` gets returned as `Quantity`, `Quantity{Float32}` also
 as `Quantity`, and `Quantity{Float32,Rational{Int64}}` also as `Quantity`.
 """
-quantity_constructor(::Type{Q}) where {Q<:AbstractQuantity} = get_container_type(Q)
+quantity_constructor(::Type{Q}) where {Q<:AbstractQuantity} = container_type(Q)
 
 """
     quantity_constructor(::Type{<:AbstractDimensions})
