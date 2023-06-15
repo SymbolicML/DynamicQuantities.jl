@@ -119,7 +119,7 @@ quantity_constructor(::Type{Q}) where {Q<:AbstractQuantity} = get_container_type
 
 # This requires user override, as we don't know which Quantity
 # to make from which Dimensions type:
-quantity_constructor(::Type{D}) where {D<:AbstractDimensions} = Quantity
+quantity_constructor(::Type{D}) where {D<:Dimensions} = Quantity
 
 
 struct DimensionError{Q1,Q2} <: Exception
