@@ -90,6 +90,11 @@ Base.show(io::IO, d::AbstractDimensions) =
     end
 Base.show(io::IO, q::AbstractQuantity) = print(io, ustrip(q), " ", dimension(q))
 
+function dimension_name(::AbstractDimensions, k::Symbol)
+    default_dimensions = (length="m", mass="kg", time="s", current="A", temperature="K", luminosity="cd", amount="mol")
+    return get(default_dimensions, k, string(k))
+end
+
 string_rational(x) = isinteger(x) ? string(round(Int, x)) : string(x)
 pretty_print_exponent(io::IO, x) = print(io, to_superscript(string_rational(x)))
 const SUPERSCRIPT_MAPPING = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
