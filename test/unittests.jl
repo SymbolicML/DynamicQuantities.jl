@@ -1,5 +1,6 @@
 using DynamicQuantities
 using DynamicQuantities: DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
+import DynamicQuantities: quantity_constructor, dimension_constructor
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using Test
@@ -304,4 +305,26 @@ end
     @test typeof(u"fm"^2) == Quantity{Float64,DEFAULT_DIM_TYPE}
 
     @test_throws LoadError eval(:(u":x"))
+end
+
+struct MyDimensions{R} <: AbstractDimensions{R}
+    length::R
+    mass::R
+    time::R
+end
+struct MyQuantity{T,R} <: AbstractQuantity{T,R}
+    value::T
+    dimensions::MyDimensions{R}
+end
+quantity_constructor(::Type{<:Union{MyQuantity,MyDimensions}}) = MyQuantity
+dimension_constructor(::Type{<:Union{MyQuantity,MyDimensions}}) = MyDimensions
+
+@testset "Custom dimensions" begin
+    for T in [Float32, Float64], R in [Rational{Int64}, Rational{Int32}]
+        x = MyQuantity(T(0.1), R, length=0.5)
+        @test x * x ≈ MyQuantity(T(0.01), R, length=1)
+        @test typeof(x * x) == MyQuantity{T,R}
+    end
+    @test MyQuantity(0.1, DEFAULT_DIM_TYPE, length=0.5) == MyQuantity(0.1, length=0.5)
+    @test MyQuantity(0.1, DEFAULT_DIM_TYPE, length=0.5) == MyQuantity(0.1, length=1//2)
 end

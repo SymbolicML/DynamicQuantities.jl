@@ -50,7 +50,7 @@ end
 (::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = dimension_constructor(D)(R; kws...)
 (::Type{D})(d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D((getproperty(d, k) for k in static_fieldnames(D))...)
 
-new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = dimension_constructor(D)(dims...)
+new_dimensions(::Type{QD}, dims...) where {QD<:Union{AbstractQuantity,AbstractDimensions}} = dimension_constructor(QD)(dims...)
 
 
 """
@@ -83,18 +83,16 @@ dimensions according to the operation.
 struct Quantity{T,R} <: AbstractQuantity{T,R}
     value::T
     dimensions::Dimensions{R}
-
-    Quantity(x; kws...) = new{typeof(x), DEFAULT_DIM_TYPE}(x, Dimensions(; kws...))
-    Quantity(x, ::Type{_R}; kws...) where {_R}  = new{typeof(x), _R}(x, Dimensions(_R; kws...))
-    Quantity(x, d::Dimensions{_R}) where {_R}  = new{typeof(x), _R}(x, d)
-    Quantity{T}(q::Quantity) where {T} = Quantity(convert(T, q.value), dimension(q))
-    Quantity{T,R}(q::Quantity) where {T,R} = Quantity(convert(T, q.value), Dimensions{R}(dimension(q)))
 end
+
+(::Type{Q})(x, ::Type{R}; kws...) where {R,Q<:AbstractQuantity} = quantity_constructor(Q){typeof(x), R}(x, dimension_constructor(Q)(R; kws...))
+(::Type{Q})(x; kws...) where {Q<:AbstractQuantity} = Q(x, DEFAULT_DIM_TYPE; kws...)
+(::Type{Q})(q::AbstractQuantity) where {T,Q<:AbstractQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
+(::Type{Q})(q::AbstractQuantity) where {T,R,Q<:AbstractQuantity{T,R}} = new_quantity(Q, convert(T, ustrip(q)), dimension_constructor(Q){R}(dimension(q)))
 
 new_quantity(::Type{QD}, l, r) where {QD<:Union{AbstractQuantity,AbstractDimensions}} = quantity_constructor(QD)(l, r)
 
 # All that is needed to make an `AbstractQuantity` work:
-dimension_name(::Dimensions, k::Symbol) = (length="m", mass="kg", time="s", current="A", temperature="K", luminosity="cd", amount="mol")[k]
 quantity_constructor(::Type{<:Union{Quantity,Dimensions}}) = Quantity
 dimension_constructor(::Type{<:Union{Quantity,Dimensions}}) = Dimensions
 
