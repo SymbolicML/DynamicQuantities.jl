@@ -28,7 +28,7 @@ end
 Base.float(q::AbstractQuantity{T}) where {T<:AbstractFloat} = convert(T, q)
 Base.convert(::Type{T}, q::AbstractQuantity) where {T<:Real} =
     let
-        @assert iszero(q.dimensions) "Quantity $(q) has dimensions! Use `ustrip` instead."
+        @assert iszero(q.dimensions) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
         return convert(T, q.value)
     end
 
@@ -40,11 +40,11 @@ Base.iszero(q::AbstractQuantity) = iszero(ustrip(q))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
 Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 Base.:(==)(l::AbstractQuantity, r::AbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
-Base.:(==)(l, r::AbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
-Base.:(==)(l::AbstractQuantity, r) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+Base.:(==)(l, r::AbstractQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
+Base.:(==)(l::AbstractQuantity, r) = ustrip(l) == ustrip(r) && iszero(dimension(l))
 Base.isless(l::AbstractQuantity, r::AbstractQuantity) = dimension(l) == dimension(r) ? isless(ustrip(l), ustrip(r)) : throw(DimensionError(l, r))
-Base.isless(l::AbstractQuantity, r) = dimension(l) == dimension(r) ? isless(ustrip(l), r) : throw(DimensionError(l, r))
-Base.isless(l, r::AbstractQuantity) = dimension(l) == dimension(r) ? isless(l, ustrip(r)) : throw(DimensionError(l, r))
+Base.isless(l::AbstractQuantity, r) = iszero(dimension(l)) ? isless(ustrip(l), r) : throw(DimensionError(l, r))
+Base.isless(l, r::AbstractQuantity) = iszero(dimension(r)) ? isless(l, ustrip(r)) : throw(DimensionError(l, r))
 Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...) = isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
 Base.length(::AbstractDimensions) = 1
 Base.length(::AbstractQuantity) = 1
@@ -54,25 +54,24 @@ Base.iterate(q::AbstractQuantity) = (q, nothing)
 Base.iterate(::AbstractQuantity, ::Nothing) = nothing
 
 # Multiplicative identities:
-Base.one(::Type{Quantity{T,R}}) where {T,R} = Quantity(one(T), R)
-Base.one(::Type{Quantity{T}}) where {T} = one(Quantity{T,DEFAULT_DIM_TYPE})
-Base.one(::Type{Quantity}) = one(Quantity{DEFAULT_VALUE_TYPE})
-Base.one(::Type{Dimensions{R}}) where {R} = Dimensions{R}()
-Base.one(::Type{Dimensions}) = one(Dimensions{DEFAULT_DIM_TYPE})
-Base.one(q::Quantity) = Quantity(one(ustrip(q)), one(dimension(q)))
-Base.one(d::Dimensions) = one(typeof(d))
+Base.one(::Type{Q}) where {T,R,Q<:AbstractQuantity{T,R}} = new_quantity(Q, one(T), R)
+Base.one(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = new_quantity(Q, one(T), DEFAULT_DIM_TYPE)
+Base.one(::Type{Q}) where {Q<:AbstractQuantity} = new_quantity(Q, one(DEFAULT_VALUE_TYPE), DEFAULT_DIM_TYPE)
+Base.one(::Type{D}) where {D<:AbstractDimensions} = D()
+Base.one(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, one(ustrip(q)), one(dimension(q)))
+Base.one(::D) where {D<:AbstractDimensions} = one(D)
 
 # Additive identities:
-Base.zero(q::Quantity) = Quantity(zero(ustrip(q)), dimension(q))
-Base.zero(::Dimensions) = error("There is no such thing as an additive identity for a `Dimensions` object, as + is only defined for `Quantity`.")
-Base.zero(::Type{<:Quantity}) = error("Cannot create an additive identity for a `Quantity` type, as the dimensions are unknown. Please use `zero(::Quantity)` instead.")
-Base.zero(::Type{<:Dimensions}) = error("There is no such thing as an additive identity for a `Dimensions` type, as + is only defined for `Quantity`.")
+Base.zero(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, zero(ustrip(q)), dimension(q))
+Base.zero(::AbstractDimensions) = error("There is no such thing as an additive identity for a `AbstractDimensions` object, as + is only defined for `AbstractQuantity`.")
+Base.zero(::Type{<:AbstractQuantity}) = error("Cannot create an additive identity for a `AbstractQuantity` type, as the dimensions are unknown. Please use `zero(::AbstractQuantity)` instead.")
+Base.zero(::Type{<:AbstractDimensions}) = error("There is no such thing as an additive identity for a `AbstractDimensions` type, as + is only defined for `AbstractQuantity`.")
 
 # Dimensionful 1:
-Base.oneunit(q::Quantity) = Quantity(oneunit(ustrip(q)), dimension(q))
-Base.oneunit(::Dimensions) = error("There is no such thing as a dimensionful 1 for a `Dimensions` object, as + is only defined for `Quantity`.")
-Base.oneunit(::Type{<:Quantity}) = error("Cannot create a dimensionful 1 for a `Quantity` type without knowing the dimensions. Please use `oneunit(::Quantity)` instead.")
-Base.oneunit(::Type{<:Dimensions}) = error("There is no such thing as a dimensionful 1 for a `Dimensions` type, as + is only defined for `Quantity`.")
+Base.oneunit(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, oneunit(ustrip(q)), dimension(q))
+Base.oneunit(::AbstractDimensions) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` object, as + is only defined for `AbstractQuantity`.")
+Base.oneunit(::Type{<:AbstractQuantity}) = error("Cannot create a dimensionful 1 for a `AbstractQuantity` type without knowing the dimensions. Please use `oneunit(::AbstractQuantity)` instead.")
+Base.oneunit(::Type{<:AbstractDimensions}) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` type, as + is only defined for `AbstractQuantity`.")
 
 Base.show(io::IO, d::AbstractDimensions) =
     let tmp_io = IOBuffer()
@@ -124,18 +123,16 @@ Base.convert(::Type{Dimensions{R}}, d::Dimensions) where {R} = Dimensions{R}(d)
 Remove the units from a quantity.
 """
 ustrip(q::AbstractQuantity) = q.value
-ustrip(::AbstractDimensions) = error("Cannot remove units from a `Dimensions` object.")
+ustrip(::AbstractDimensions) = error("Cannot remove units from an `AbstractDimensions` object.")
 ustrip(q) = q
 
 """
     dimension(q::AbstractQuantity)
 
-Get the dimensions of a quantity, returning a `Dimensions` object.
+Get the dimensions of a quantity, returning an `AbstractDimensions` object.
 """
 dimension(q::AbstractQuantity) = q.dimensions
 dimension(d::AbstractDimensions) = d
-dimension(_) = Dimensions()
-# TODO: Should we throw an error instead, because this is assuming a type?
 
 """
     ulength(q::AbstractQuantity)

@@ -20,8 +20,8 @@ Base.:+(l::AbstractQuantity, r::AbstractQuantity) = dimension(l) == dimension(r)
 Base.:-(l::AbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 Base.:-(l::AbstractQuantity, r::AbstractQuantity) = l + (-r)
 
-Base.:+(l::AbstractQuantity, r) = dimension(l) == dimension(r) ? new_quantity(typeof(l), ustrip(l) + r, dimension(l)) : throw(DimensionError(l, r))
-Base.:+(l, r::AbstractQuantity) = dimension(l) == dimension(r) ? new_quantity(typeof(r), l + ustrip(r), dimension(r)) : throw(DimensionError(l, r))
+Base.:+(l::AbstractQuantity, r) = iszero(dimension(l)) ? new_quantity(typeof(l), ustrip(l) + r, dimension(l)) : throw(DimensionError(l, r))
+Base.:+(l, r::AbstractQuantity) = iszero(dimension(r)) ? new_quantity(typeof(r), l + ustrip(r), dimension(r)) : throw(DimensionError(l, r))
 Base.:-(l::AbstractQuantity, r) = l + (-r)
 Base.:-(l, r::AbstractQuantity) = l + (-r)
 

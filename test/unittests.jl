@@ -131,10 +131,9 @@ end
 @testset "Fallbacks" begin
     @test ustrip(0.5) == 0.5
     @test ustrip(ones(32)) == ones(32)
-    @test dimension(0.5) == Dimensions()
-    @test dimension(ones(32)) == Dimensions()
     @test dimension(Dimensions()) === Dimensions()
 
+    @test_throws MethodError Dimensions(1.0)
     @test_throws ErrorException ustrip(Dimensions())
 end
 
@@ -149,7 +148,6 @@ end
         @test dimension(prod(uX)) == prod([Dimensions(length=2.5, luminosity=0.5) for i in 1:10])
         @test dimension(prod(uX)) == prod([Dimensions(R, length=2.5, luminosity=0.5) for i in 1:10])
         @test typeof(dimension(prod(uX))) <: Dimensions{R}
-        @test dimension(X[1]) == Dimensions()
 
         uX = X .* Quantity(2, length=2.5, luminosity=0.5)
         @test sum(X) == 0.5 * ustrip(sum(uX))
@@ -322,6 +320,13 @@ end
         x = MyQuantity(T(0.1), R, length=0.5)
         @test x * x ≈ MyQuantity(T(0.01), R, length=1)
         @test typeof(x * x) == MyQuantity{T,R}
+        @test one(MyQuantity{T,R}) == MyQuantity(one(T), MyDimensions(R))
+        @test zero(x) == MyQuantity(zero(T), R, length=0.5)
+        @test oneunit(x) + x == MyQuantity(T(1.1), R, length=0.5)
+        @test typeof(oneunit(x) + x) == MyQuantity{T,R}
+
+        @test_throws ErrorException zero(MyQuantity{T,R})
+        @test_throws ErrorException oneunit(MyQuantity{T,R})
     end
     @test MyQuantity(0.1, DEFAULT_DIM_TYPE, length=0.5) == MyQuantity(0.1, length=0.5)
     @test MyQuantity(0.1, DEFAULT_DIM_TYPE, length=0.5) == MyQuantity(0.1, length=1//2)
