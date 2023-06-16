@@ -50,8 +50,6 @@ end
 (::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = dimension_constructor(D)(R; kws...)
 (::Type{D})(d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D((getproperty(d, k) for k in static_fieldnames(D))...)
 
-new_dimensions(::Type{QD}, dims...) where {QD<:Union{AbstractQuantity,AbstractDimensions}} = dimension_constructor(QD)(dims...)
-
 
 """
     Quantity{T,R}
@@ -90,15 +88,16 @@ end
 (::Type{Q})(q::AbstractQuantity) where {T,Q<:AbstractQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
 (::Type{Q})(q::AbstractQuantity) where {T,R,Q<:AbstractQuantity{T,R}} = new_quantity(Q, convert(T, ustrip(q)), dimension_constructor(Q){R}(dimension(q)))
 
+new_dimensions(::Type{QD}, dims...) where {QD<:Union{AbstractQuantity,AbstractDimensions}} = dimension_constructor(QD)(dims...)
 new_quantity(::Type{QD}, l, r) where {QD<:Union{AbstractQuantity,AbstractDimensions}} = quantity_constructor(QD)(l, r)
 
-function container_type(::Type{T}) where {T}
+function constructor_of(::Type{T}) where {T}
     return Base.typename(T).wrapper
 end
 @generated function get_dim_type(::Type{Q}) where {Q<:AbstractQuantity}
-    quantity_type = container_type(Q)
+    quantity_type = constructor_of(Q)
     field_type = NamedTuple(static_fieldnames(quantity_type) .=> static_fieldtypes(quantity_type))[:dimensions]
-    out = container_type(field_type)
+    out = constructor_of(field_type)
     return :($out)
 end
 
@@ -109,7 +108,7 @@ This function returns the container for a particular `AbstractDimensions`.
 For example, `Dimensions` will get returned as `Dimensions`, and
 `Dimensions{Rational{Int64}}` will also get returned as `Dimensions`.
 """
-dimension_constructor(::Type{D}) where {D<:AbstractDimensions} = container_type(D)
+dimension_constructor(::Type{D}) where {D<:AbstractDimensions} = constructor_of(D)
 
 """
     dimension_constructor(::Type{<:AbstractQuantity})
@@ -127,7 +126,7 @@ This function returns the container for a particular `AbstractQuantity`.
 For example, `Quantity` gets returned as `Quantity`, `Quantity{Float32}` also
 as `Quantity`, and `Quantity{Float32,Rational{Int64}}` also as `Quantity`.
 """
-quantity_constructor(::Type{Q}) where {Q<:AbstractQuantity} = container_type(Q)
+quantity_constructor(::Type{Q}) where {Q<:AbstractQuantity} = constructor_of(Q)
 
 """
     quantity_constructor(::Type{<:AbstractDimensions})
