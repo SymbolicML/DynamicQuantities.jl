@@ -1,4 +1,4 @@
-module Const
+module Constants
 
 import ..@u_str
 import ..@add_prefixes

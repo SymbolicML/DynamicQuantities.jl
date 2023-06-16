@@ -146,6 +146,6 @@ macro u_str(s)
 end
 
 include("constants.jl")
-import .Const
+import .Constants
 
 end
