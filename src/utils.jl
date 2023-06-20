@@ -38,6 +38,12 @@ Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))
 Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
 Base.iszero(q::AbstractQuantity) = iszero(ustrip(q))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
+
+# Compatibility with `.*`
+Base.length(::Union{AbstractQuantity,AbstractDimensions}) = 1
+Base.iterate(qd::Union{AbstractQuantity,AbstractDimensions}) = (qd, nothing)
+Base.iterate(::Union{AbstractQuantity,AbstractDimensions}, ::Nothing) = nothing
+
 Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 Base.:(==)(l::AbstractQuantity, r::AbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
 Base.:(==)(l, r::AbstractQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
