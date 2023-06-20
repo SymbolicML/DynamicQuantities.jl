@@ -94,12 +94,10 @@ Base.oneunit(::Type{<:AbstractDimensions}) = error("There is no such thing as a 
 
 Base.show(io::IO, d::AbstractDimensions) =
     let tmp_io = IOBuffer()
-        for k in keys(d)
-            if !iszero(d[k])
-                print(tmp_io, dimension_name(d, k))
-                isone(d[k]) || pretty_print_exponent(tmp_io, d[k])
-                print(tmp_io, " ")
-            end
+        for k in filter(k -> !iszero(d[k]), keys(d))
+            print(tmp_io, dimension_name(d, k))
+            isone(d[k]) || pretty_print_exponent(tmp_io, d[k])
+            print(tmp_io, " ")
         end
         s = String(take!(tmp_io))
         s = replace(s, r"^\s*" => "")
