@@ -1,4 +1,5 @@
 import Tricks: static_fieldnames
+import LinearAlgebra: norm
 
 function map_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
     dimension_type = promote_type(typeof(args).parameters...)
@@ -57,21 +58,35 @@ for f in (:iszero, :isfinite, :isinf, :isnan, :isreal, :sign, :signbit, :eps)
 end
 Base.eps(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = eps(T)
 
-# Multiplicative identities:
-Base.one(::Type{Q}) where {T,R,Q<:AbstractQuantity{T,R}} = new_quantity(Q, one(T), R)
-Base.one(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = new_quantity(Q, one(T), DEFAULT_DIM_TYPE)
-Base.one(::Type{Q}) where {Q<:AbstractQuantity} = new_quantity(Q, one(DEFAULT_VALUE_TYPE), DEFAULT_DIM_TYPE)
+# Simple operations which return a full quantity (same dimensions)
+norm(q::AbstractQuantity, p::Real=2) = new_quantity(typeof(q), norm(ustrip(q), p), dimension(q))
+for f in (:real, :imag, :conj, :adjoint, :unsigned, :nextfloat, :prevfloat)
+    @eval Base.$f(q::AbstractQuantity) = new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
+end
+
+# Base.one, typemin, typemax
+for f in (:one, :typemin, :typemax)
+    @eval begin
+        Base.$f(::Type{Q}) where {T,R,Q<:AbstractQuantity{T,R}} = new_quantity(Q, $f(T), R)
+        Base.$f(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = $f(Q{T, DEFAULT_DIM_TYPE})
+        Base.$f(::Type{Q}) where {Q<:AbstractQuantity} = $f(Q{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE})
+    end
+    if f == :one  # Return empty dimensions, as should be multiplicative identity.
+        @eval Base.$f(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, $f(ustrip(q)), one(dimension(q)))
+    else
+        @eval Base.$f(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, $f(ustrip(q)), dimension(q))
+    end
+end
 Base.one(::Type{D}) where {D<:AbstractDimensions} = D()
-Base.one(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, one(ustrip(q)), one(dimension(q)))
 Base.one(::D) where {D<:AbstractDimensions} = one(D)
 
-# Additive identities:
+# Additive identities (zero)
 Base.zero(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, zero(ustrip(q)), dimension(q))
 Base.zero(::AbstractDimensions) = error("There is no such thing as an additive identity for a `AbstractDimensions` object, as + is only defined for `AbstractQuantity`.")
 Base.zero(::Type{<:AbstractQuantity}) = error("Cannot create an additive identity for a `AbstractQuantity` type, as the dimensions are unknown. Please use `zero(::AbstractQuantity)` instead.")
 Base.zero(::Type{<:AbstractDimensions}) = error("There is no such thing as an additive identity for a `AbstractDimensions` type, as + is only defined for `AbstractQuantity`.")
 
-# Dimensionful 1:
+# Dimensionful 1 (oneunit)
 Base.oneunit(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, oneunit(ustrip(q)), dimension(q))
 Base.oneunit(::AbstractDimensions) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` object, as + is only defined for `AbstractQuantity`.")
 Base.oneunit(::Type{<:AbstractQuantity}) = error("Cannot create a dimensionful 1 for a `AbstractQuantity` type without knowing the dimensions. Please use `oneunit(::AbstractQuantity)` instead.")

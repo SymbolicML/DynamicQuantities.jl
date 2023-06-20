@@ -42,3 +42,5 @@ Base.cbrt(d::AbstractDimensions{R}) where {R} = d^inv(convert(R, 3))
 Base.cbrt(q::AbstractQuantity) = new_quantity(typeof(q), cbrt(ustrip(q)), cbrt(dimension(q)))
 
 Base.abs(q::AbstractQuantity) = new_quantity(typeof(q), abs(ustrip(q)), dimension(q))
+Base.abs2(q::AbstractQuantity) = new_quantity(typeof(q), abs2(ustrip(q)), dimension(q)^2)
+Base.angle(q::AbstractQuantity{T}) where {T<:Complex} = angle(ustrip(q))
