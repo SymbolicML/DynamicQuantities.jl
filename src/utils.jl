@@ -68,7 +68,7 @@ end
 for f in (:one, :typemin, :typemax)
     @eval begin
         Base.$f(::Type{Q}) where {T,R,Q<:AbstractQuantity{T,R}} = new_quantity(Q, $f(T), R)
-        Base.$f(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = $f(Q{T, DEFAULT_DIM_TYPE})
+        Base.$f(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = $f(constructor_of(Q){T, DEFAULT_DIM_TYPE})
         Base.$f(::Type{Q}) where {Q<:AbstractQuantity} = $f(Q{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE})
     end
     if f == :one  # Return empty dimensions, as should be multiplicative identity.
@@ -117,13 +117,11 @@ pretty_print_exponent(io::IO, x) = print(io, to_superscript(string_rational(x)))
 const SUPERSCRIPT_MAPPING = ('⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹')
 const INTCHARS = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 to_superscript(s::AbstractString) = join(
-    map(s) do c
+    map(replace(s, "//" => "ᐟ")) do c
         if c ∈ INTCHARS
             SUPERSCRIPT_MAPPING[parse(Int, c)+1]
-        elseif c == "-"
+        elseif c == '-'
             '⁻'
-        elseif c == "/"
-            'ᐟ'
         else
             c
         end
