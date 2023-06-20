@@ -88,6 +88,7 @@ Base.show(io::IO, d::AbstractDimensions) =
         print(io, s)
     end
 Base.show(io::IO, q::AbstractQuantity) = print(io, ustrip(q), " ", dimension(q))
+Base.show(io::IO, q::AbstractQuantity{<:Complex}) = print(io, "(", ustrip(q), ") ", dimension(q))
 
 function dimension_name(::AbstractDimensions, k::Symbol)
     default_dimensions = (length="m", mass="kg", time="s", current="A", temperature="K", luminosity="cd", amount="mol")
