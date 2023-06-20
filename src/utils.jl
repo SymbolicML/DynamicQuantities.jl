@@ -32,11 +32,7 @@ Base.convert(::Type{T}, q::AbstractQuantity) where {T<:Real} =
         return convert(T, q.value)
     end
 
-Base.isfinite(q::AbstractQuantity) = isfinite(ustrip(q))
 Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))
-# TODO: Make this more generic.
-Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
-Base.iszero(q::AbstractQuantity) = iszero(ustrip(q))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
 
 # Compatibility with `.*`
@@ -44,6 +40,9 @@ Base.length(::Union{AbstractQuantity,AbstractDimensions}) = 1
 Base.iterate(qd::Union{AbstractQuantity,AbstractDimensions}) = (qd, nothing)
 Base.iterate(::Union{AbstractQuantity,AbstractDimensions}, ::Nothing) = nothing
 
+# Numeric checks
+Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...) = isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
+Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
 Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 Base.:(==)(l::AbstractQuantity, r::AbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
 Base.:(==)(l, r::AbstractQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
@@ -51,13 +50,12 @@ Base.:(==)(l::AbstractQuantity, r) = ustrip(l) == ustrip(r) && iszero(dimension(
 Base.isless(l::AbstractQuantity, r::AbstractQuantity) = dimension(l) == dimension(r) ? isless(ustrip(l), ustrip(r)) : throw(DimensionError(l, r))
 Base.isless(l::AbstractQuantity, r) = iszero(dimension(l)) ? isless(ustrip(l), r) : throw(DimensionError(l, r))
 Base.isless(l, r::AbstractQuantity) = iszero(dimension(r)) ? isless(l, ustrip(r)) : throw(DimensionError(l, r))
-Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...) = isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
-Base.length(::AbstractDimensions) = 1
-Base.length(::AbstractQuantity) = 1
-Base.iterate(d::AbstractDimensions) = (d, nothing)
-Base.iterate(::AbstractDimensions, ::Nothing) = nothing
-Base.iterate(q::AbstractQuantity) = (q, nothing)
-Base.iterate(::AbstractQuantity, ::Nothing) = nothing
+
+# Simple operations which return a number by itself:
+for f in (:iszero, :isfinite, :isinf, :isnan, :isreal, :sign, :signbit, :eps)
+    @eval Base.$f(q::AbstractQuantity) = $f(ustrip(q))
+end
+Base.eps(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = eps(T)
 
 # Multiplicative identities:
 Base.one(::Type{Q}) where {T,R,Q<:AbstractQuantity{T,R}} = new_quantity(Q, one(T), R)
