@@ -117,8 +117,16 @@ pretty_print_exponent(io::IO, x) = print(io, to_superscript(string_rational(x)))
 const SUPERSCRIPT_MAPPING = ('⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹')
 const INTCHARS = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 to_superscript(s::AbstractString) = join(
-    map(replace(replace(s, "-" => "⁻"), r"//" => "ᐟ")) do c
-        c ∈ INTCHARS ? SUPERSCRIPT_MAPPING[parse(Int, c)+1] : c
+    map(s) do c
+        if c ∈ INTCHARS
+            SUPERSCRIPT_MAPPING[parse(Int, c)+1]
+        elseif c == "-"
+            '⁻'
+        elseif c == "/"
+            'ᐟ'
+        else
+            c
+        end
     end
 )
 
