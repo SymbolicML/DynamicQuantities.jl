@@ -71,11 +71,14 @@ dimensions according to the operation.
 
 # Constructors
 
-- `Quantity(x; kws...)`: Construct a quantity with value `x` and dimensions given by the keyword arguments. The value type is inferred from `x`. `R` is set to `DEFAULT_DIM_TYPE`.
-- `Quantity(x, ::Type{D}; kws...)`: Construct a quantity with value `x` with no dimensions, and the dimensions type set to `D`.
+- `Quantity(x; kws...)`: Construct a quantity with value `x` and dimensions given by the keyword arguments. The value
+   type is inferred from `x`. `R` is set to `DEFAULT_DIM_TYPE`.
+- `Quantity(x, ::Type{D}; kws...)`: Construct a quantity with value `x` with dimensions given by the keyword arguments,
+   and the dimensions type set to `D`.
 - `Quantity(x, d::D)`: Construct a quantity with value `x` and dimensions `d` of type `D`.
 - `Quantity{T}(...)`: As above, but converting the value to type `T`. You may also pass a `Quantity` as input.
-- `Quantity{T,D}(...)`: As above, but converting the value to type `T` and dimensions to `D`. You may also pass a `Quantity` as input.
+- `Quantity{T,D}(...)`: As above, but converting the value to type `T` and dimensions to `D`. You may also pass a
+  `Quantity` as input.
 """
 struct Quantity{T,D<:AbstractDimensions} <: AbstractQuantity{T,D}
     value::T
