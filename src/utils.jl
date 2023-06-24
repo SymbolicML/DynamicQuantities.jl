@@ -29,17 +29,17 @@ end
 Base.float(q::AbstractQuantity{T}) where {T<:AbstractFloat} = convert(T, q)
 Base.convert(::Type{T}, q::AbstractQuantity) where {T<:Real} =
     let
-        @assert iszero(q.dimensions) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
-        return convert(T, q.value)
+        @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
+        return convert(T, ustrip(q))
     end
 
 Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
 
 # Compatibility with `.*`
-Base.length(::Union{AbstractQuantity,AbstractDimensions}) = 1
-Base.iterate(qd::Union{AbstractQuantity,AbstractDimensions}) = (qd, nothing)
-Base.iterate(::Union{AbstractQuantity,AbstractDimensions}, ::Nothing) = nothing
+Base.length(::AbstractQuantity) = 1
+Base.iterate(qd::AbstractQuantity) = (qd, nothing)
+Base.iterate(::AbstractQuantity, ::Nothing) = nothing
 
 # Numeric checks
 Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...) = isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
@@ -67,7 +67,7 @@ end
 # Base.one, typemin, typemax
 for f in (:one, :typemin, :typemax)
     @eval begin
-        Base.$f(::Type{Q}) where {T,R,Q<:AbstractQuantity{T,R}} = new_quantity(Q, $f(T), R)
+        Base.$f(::Type{Q}) where {T,D,Q<:AbstractQuantity{T,D}} = new_quantity(Q, $f(T), D)
         Base.$f(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = $f(constructor_of(Q){T, DEFAULT_DIM_TYPE})
         Base.$f(::Type{Q}) where {Q<:AbstractQuantity} = $f(Q{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE})
     end
@@ -134,12 +134,12 @@ tryrationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)
 
 Base.showerror(io::IO, e::DimensionError) = print(io, "DimensionError: ", e.q1, " and ", e.q2, " have incompatible dimensions")
 
-Base.convert(::Type{Quantity}, q::Quantity) = q
-Base.convert(::Type{Quantity{T}}, q::Quantity) where {T} = Quantity{T}(q)
-Base.convert(::Type{Quantity{T,R}}, q::Quantity) where {T,R} = Quantity{T,R}(q)
+Base.convert(::Type{Q}, q::AbstractQuantity) where {Q<:AbstractQuantity} = q
+Base.convert(::Type{Q}, q::AbstractQuantity) where {T,Q<:AbstractQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
+Base.convert(::Type{Q}, q::AbstractQuantity) where {T,D,Q<:AbstractQuantity{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))
 
-Base.convert(::Type{Dimensions}, d::Dimensions) = d
-Base.convert(::Type{Dimensions{R}}, d::Dimensions) where {R} = Dimensions{R}(d)
+Base.convert(::Type{D}, d::AbstractDimensions) where {D<:AbstractDimensions} = d
+Base.convert(::Type{D}, d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D(d)
 
 """
     ustrip(q::AbstractQuantity)

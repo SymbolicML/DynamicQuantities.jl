@@ -4,8 +4,8 @@ Base.:*(l::AbstractQuantity, r::AbstractDimensions) = new_quantity(typeof(l), us
 Base.:*(l::AbstractDimensions, r::AbstractQuantity) = new_quantity(typeof(r), ustrip(r), l * dimension(r))
 Base.:*(l::AbstractQuantity, r) = new_quantity(typeof(l), ustrip(l) * r, dimension(l))
 Base.:*(l, r::AbstractQuantity) = new_quantity(typeof(r), l * ustrip(r), dimension(r))
-Base.:*(l::AbstractDimensions, r) = new_quantity(typeof(l), r, l)
-Base.:*(l, r::AbstractDimensions) = new_quantity(typeof(r), l, r)
+Base.:*(l::AbstractDimensions, r) = error("Please use an `AbstractQuantity` for multiplication. You used multiplication on types: $(typeof(l)) and $(typeof(r)).")
+Base.:*(l, r::AbstractDimensions) = error("Please use an `AbstractQuantity` for multiplication. You used multiplication on types: $(typeof(l)) and $(typeof(r)).")
 
 Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 Base.:/(l::AbstractQuantity, r::AbstractQuantity) = new_quantity(typeof(l), ustrip(l) / ustrip(r), dimension(l) / dimension(r))
@@ -13,8 +13,8 @@ Base.:/(l::AbstractQuantity, r::AbstractDimensions) = new_quantity(typeof(l), us
 Base.:/(l::AbstractDimensions, r::AbstractQuantity) = new_quantity(typeof(r), inv(ustrip(r)), l / dimension(r))
 Base.:/(l::AbstractQuantity, r) = new_quantity(typeof(l), ustrip(l) / r, dimension(l))
 Base.:/(l, r::AbstractQuantity) = l * inv(r)
-Base.:/(l::AbstractDimensions, r) = new_quantity(typeof(l), inv(r), l)
-Base.:/(l, r::AbstractDimensions) = new_quantity(typeof(r), l, inv(r))
+Base.:/(l::AbstractDimensions, r) = error("Please use an `AbstractQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
+Base.:/(l, r::AbstractDimensions) = error("Please use an `AbstractQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
 
 Base.:+(l::AbstractQuantity, r::AbstractQuantity) = dimension(l) == dimension(r) ? new_quantity(typeof(l), ustrip(l) + ustrip(r), dimension(l)) : throw(DimensionError(l, r))
 Base.:-(l::AbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
@@ -30,8 +30,8 @@ _pow(l::AbstractQuantity{T}, r) where {T} = new_quantity(typeof(l), ustrip(l)^r,
 _pow_as_T(l::AbstractQuantity{T}, r) where {T} = new_quantity(typeof(l), ustrip(l)^convert(T, r), _pow(l.dimensions, r))
 Base.:^(l::AbstractDimensions{R}, r::Integer) where {R} = _pow(l, r)
 Base.:^(l::AbstractDimensions{R}, r::Number) where {R} = _pow(l, tryrationalize(R, r))
-Base.:^(l::AbstractQuantity{T,R}, r::Integer) where {T,R} = _pow(l, r)
-Base.:^(l::AbstractQuantity{T,R}, r::Number) where {T,R} = _pow_as_T(l, tryrationalize(R, r))
+Base.:^(l::AbstractQuantity{T,D}, r::Integer) where {T,R,D<:AbstractDimensions{R}} = _pow(l, r)
+Base.:^(l::AbstractQuantity{T,D}, r::Number) where {T,R,D<:AbstractDimensions{R}} = _pow_as_T(l, tryrationalize(R, r))
 
 Base.inv(d::AbstractDimensions) = map_dimensions(-, d)
 Base.inv(q::AbstractQuantity) = new_quantity(typeof(q), inv(ustrip(q)), inv(dimension(q)))
