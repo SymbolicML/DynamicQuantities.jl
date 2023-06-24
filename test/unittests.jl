@@ -1,4 +1,5 @@
 using DynamicQuantities
+using DynamicQuantities: FixedRational
 using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
@@ -133,7 +134,7 @@ end
     @test ustrip(ones(32)) == ones(32)
     @test dimension(Dimensions()) === Dimensions()
 
-    @test_throws AssertionError Dimensions(1.0)
+    @test_throws MethodError Dimensions(1.0)
     @test_throws ErrorException ustrip(Dimensions())
 end
 
@@ -329,6 +330,11 @@ end
     @test_throws LoadError eval(:(u":x"))
 end
 
+@testset "Additional tests of FixedRational" begin
+    @test convert(Int64, FixedRational{Int64,1000}(2 // 1)) == 2
+    @test convert(Int32, FixedRational{Int64,1000}(3 // 1)) == 3
+end
+
 struct MyDimensions{R} <: AbstractDimensions{R}
     length::R
     mass::R
@@ -376,6 +382,10 @@ end
     end
     @test MyQuantity(0.1, DEFAULT_DIM_TYPE, length=0.5) == MyQuantity(0.1, length=0.5)
     @test MyQuantity(0.1, DEFAULT_DIM_TYPE, length=0.5) == MyQuantity(0.1, length=1//2)
+
+    # Can construct using args directly:
+    @test typeof(MyDimensions(1, 1, 1)) == MyDimensions{Int}
+    @test typeof(MyDimensions{Float64}(1, 1, 1)) == MyDimensions{Float64}
 
     # But, we always need to use a quantity when mixing with mathematical operations:
     @test_throws ErrorException MyQuantity(0.1) + 0.1 * MyDimensions()

@@ -43,12 +43,6 @@ struct Dimensions{R<:Real} <: AbstractDimensions{R}
     amount::R
 end
 
-(::Type{D})(args...) where {R,D<:AbstractDimensions{R}} =
-    begin
-        @assert length(args) == length(static_fieldnames(D))  # (just to prevent stack overflows from misuse)
-        constructor_of(D){R}(Base.Fix1(convert, R).(args)...)
-    end
-(::Type{D})(args...) where {D<:AbstractDimensions} = constructor_of(D){DEFAULT_DIM_BASE_TYPE}(args...)
 (::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = constructor_of(D){R}((tryrationalize(R, get(kws, k, zero(R))) for k in static_fieldnames(D))...)
 (::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = constructor_of(D)(R; kws...)
 (::Type{D})(; kws...) where {D<:AbstractDimensions} = D(DEFAULT_DIM_BASE_TYPE; kws...)
