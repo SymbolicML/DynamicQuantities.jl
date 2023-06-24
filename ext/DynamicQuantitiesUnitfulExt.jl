@@ -35,10 +35,10 @@ Base.convert(::Type{Unitful.Quantity}, x::DynamicQuantities.Quantity) =
     end
 
 Base.convert(::Type{DynamicQuantities.Quantity}, x::Unitful.Quantity{T}) where {T} = convert(DynamicQuantities.Quantity{T,DynamicQuantities.DEFAULT_DIM_TYPE}, x)
-Base.convert(::Type{DynamicQuantities.Quantity{T,R}}, x::Unitful.Quantity) where {T,R} =
+Base.convert(::Type{DynamicQuantities.Quantity{T,D}}, x::Unitful.Quantity) where {T,R,D<:DynamicQuantities.AbstractDimensions{R}} =
     let
         value = Unitful.ustrip(Unitful.upreferred(x))
-        dimension = convert(DynamicQuantities.Dimensions{R}, Unitful.dimension(x))
+        dimension = convert(D, Unitful.dimension(x))
         return DynamicQuantities.Quantity(convert(T, value), dimension)
     end
 

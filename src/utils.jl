@@ -54,7 +54,7 @@ Base.iterate(q::AbstractQuantity) = (q, nothing)
 Base.iterate(::AbstractQuantity, ::Nothing) = nothing
 
 # Multiplicative identities:
-Base.one(::Type{Q}) where {T,R,Q<:AbstractQuantity{T,R}} = new_quantity(Q, one(T), R)
+Base.one(::Type{Q}) where {T,D,Q<:AbstractQuantity{T,D}} = new_quantity(Q, one(T), D)
 Base.one(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = new_quantity(Q, one(T), DEFAULT_DIM_TYPE)
 Base.one(::Type{Q}) where {Q<:AbstractQuantity} = new_quantity(Q, one(DEFAULT_VALUE_TYPE), DEFAULT_DIM_TYPE)
 Base.one(::Type{D}) where {D<:AbstractDimensions} = D()
@@ -110,12 +110,12 @@ tryrationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)
 
 Base.showerror(io::IO, e::DimensionError) = print(io, "DimensionError: ", e.q1, " and ", e.q2, " have incompatible dimensions")
 
-Base.convert(::Type{Quantity}, q::Quantity) = q
-Base.convert(::Type{Quantity{T}}, q::Quantity) where {T} = Quantity{T}(q)
-Base.convert(::Type{Quantity{T,R}}, q::Quantity) where {T,R} = Quantity{T,R}(q)
+Base.convert(::Type{Q}, q::AbstractQuantity) where {Q<:AbstractQuantity} = q
+Base.convert(::Type{Q}, q::AbstractQuantity) where {T,Q<:AbstractQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
+Base.convert(::Type{Q}, q::AbstractQuantity) where {T,D,Q<:AbstractQuantity{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))
 
-Base.convert(::Type{Dimensions}, d::Dimensions) = d
-Base.convert(::Type{Dimensions{R}}, d::Dimensions) where {R} = Dimensions{R}(d)
+Base.convert(::Type{D}, d::AbstractDimensions) where {D<:AbstractDimensions} = d
+Base.convert(::Type{D}, d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D(d)
 
 """
     ustrip(q::AbstractQuantity)
