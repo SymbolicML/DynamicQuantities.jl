@@ -272,6 +272,13 @@ end
     @test typeof(convert(Quantity{Float16}, q)) == Quantity{Float16,Dimensions{Rational{Int16}}}
     @test convert(Quantity, q) === q
 
+    # Test that regular type promotion applies:
+    q = Quantity(2, d)
+    @test typeof(q) == Quantity{Int64,typeof(d)}
+    @test typeof(q ^ 2) == Quantity{Int64,typeof(d)}
+    @test typeof(0.5 * q) == Quantity{Float64,typeof(d)}
+    @test typeof(inv(q)) == Quantity{Float64,typeof(d)}
+
     # Automatic conversions via constructor:
     for T in [Float16, Float32, Float64, BigFloat], R in [DEFAULT_DIM_BASE_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
         D = Dimensions{R}
