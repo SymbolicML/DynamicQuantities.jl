@@ -1,16 +1,18 @@
 using DynamicQuantities
-using DynamicQuantities: DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE, DIMENSION_NAMES
+using DynamicQuantities: FixedRational
+using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using Test
 
 @testset "Basic utilities" begin
 
-    for T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
-        x = Quantity(T(0.2), R, length=1, mass=2.5)
+    for T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_BASE_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
+        D = Dimensions{R}
+        x = Quantity(T(0.2), D, length=1, mass=2.5)
 
         @test typeof(x).parameters[1] == T
-        @test typeof(x).parameters[2] == R
+        @test typeof(x).parameters[2] == D
         @test ulength(x) == R(1 // 1)
         @test umass(x) == R(5 // 2)
         @test ustrip(x) ≈ T(0.2)
@@ -23,7 +25,7 @@ using Test
         y = x^2
 
         @test typeof(x).parameters[1] == T
-        @test typeof(x).parameters[2] == R
+        @test typeof(x).parameters[2] == D
         @test ulength(y) == R(2 // 1)
         @test umass(y) == (5 // 1)
         @test ustrip(y) ≈ T(0.04)
@@ -71,25 +73,25 @@ using Test
         @test iszero(x.dimensions) == false
         @test iszero(y.dimensions) == true
 
-        y = Quantity(T(2 // 10), R, length=1, mass=5 // 2)
+        y = Quantity(T(2 // 10), D, length=1, mass=5 // 2)
 
         @test y ≈ x
 
-        y = Quantity(T(2 // 10), R, length=1, mass=6 // 2)
+        y = Quantity(T(2 // 10), D, length=1, mass=6 // 2)
 
         @test !(y ≈ x)
 
         y = x * Inf32
 
         @test typeof(y).parameters[1] == promote_type(T, Float32)
-        @test typeof(y).parameters[2] == R
+        @test typeof(y).parameters[2] == D
         @test isfinite(x)
         @test !isfinite(y)
 
         y = x^2.1
 
         @test typeof(y).parameters[1] == T  # Should not promote! Expect 2.1 to be converted to 21//10
-        @test typeof(y).parameters[2] == R
+        @test typeof(y).parameters[2] == D
         @test ulength(y) == R(1 * (21 // 10))
         @test umass(y) == R((5 // 2) * (21 // 10))
         @test utime(y) == R(0)
@@ -99,26 +101,26 @@ using Test
         @test uamount(y) == R(0)
         @test ustrip(y) ≈ T(0.2^2.1)
 
-        dimensionless = Quantity(one(T), R)
+        dimensionless = Quantity(one(T), D)
         y = T(2) + dimensionless
         @test ustrip(y) == T(3)
         @test dimension(y) == Dimensions(R)
-        @test typeof(y) == Quantity{T,R}
+        @test typeof(y) == Quantity{T,D}
 
         y = T(2) - dimensionless
         @test ustrip(y) == T(1)
         @test dimension(y) == Dimensions(R)
-        @test typeof(y) == Quantity{T,R}
+        @test typeof(y) == Quantity{T,D}
 
         y = dimensionless + T(2)
         @test ustrip(y) == T(3)
         y = dimensionless - T(2)
         @test ustrip(y) == T(-1)
 
-        @test_throws DimensionError Quantity(one(T), R,  length=1) + 1.0
-        @test_throws DimensionError Quantity(one(T), R, length=1) - 1.0
-        @test_throws DimensionError 1.0 + Quantity(one(T), R, length=1)
-        @test_throws DimensionError 1.0 - Quantity(one(T), R, length=1)
+        @test_throws DimensionError Quantity(one(T), D,  length=1) + 1.0
+        @test_throws DimensionError Quantity(one(T), D, length=1) - 1.0
+        @test_throws DimensionError 1.0 + Quantity(one(T), D, length=1)
+        @test_throws DimensionError 1.0 - Quantity(one(T), D, length=1)
     end
 
     x = Quantity(-1.2, length=2 // 5)
@@ -130,25 +132,25 @@ end
 @testset "Fallbacks" begin
     @test ustrip(0.5) == 0.5
     @test ustrip(ones(32)) == ones(32)
-    @test dimension(0.5) == Dimensions()
-    @test dimension(ones(32)) == Dimensions()
     @test dimension(Dimensions()) === Dimensions()
 
+    @test_throws MethodError Dimensions(1.0)
     @test_throws ErrorException ustrip(Dimensions())
 end
 
 @testset "Arrays" begin
     for T in [Float16, Float32, Float64], R in [Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
-        X = randn(T, 10)
-        uX = X .* Dimensions{R}(length=2.5, luminosity=0.5)
+        D = Dimensions{R}
 
-        @test eltype(uX) <: Quantity{T,R}
-        @test typeof(sum(uX)) <: Quantity{T,R}
+        X = randn(T, 10)
+        uX = X .* Quantity{T,D}(1, length=2.5, luminosity=0.5)
+
+        @test eltype(uX) <: Quantity{T,D}
+        @test typeof(sum(uX)) <: Quantity{T,D}
         @test sum(X) == ustrip(sum(uX))
-        @test dimension(prod(uX)) == prod([Dimensions(length=2.5, luminosity=0.5) for i in 1:10])
-        @test dimension(prod(uX)) == prod([Dimensions(R, length=2.5, luminosity=0.5) for i in 1:10])
-        @test typeof(dimension(prod(uX))) <: Dimensions{R}
-        @test dimension(X[1]) == Dimensions()
+        @test dimension(prod(uX)) == dimension(prod([Quantity(T(1), D, length=2.5, luminosity=0.5) for i in 1:10]))
+        @test dimension(prod(uX)) == dimension(prod([Quantity(T(1), D, length=2.5, luminosity=0.5) for i in 1:10]))
+        @test typeof(dimension(prod(uX))) <: D
 
         uX = X .* Quantity(2, length=2.5, luminosity=0.5)
         @test sum(X) == 0.5 * ustrip(sum(uX))
@@ -157,9 +159,9 @@ end
         @test ustrip(x + ones(T, 32))[32] == 2
         @test typeof(x + ones(T, 32)) <: Quantity{Vector{T}}
         @test typeof(x - ones(T, 32)) <: Quantity{Vector{T}}
-        @test typeof(ones(T, 32) * Dimensions(length=1)) <: Quantity{Vector{T}}
-        @test typeof(ones(T, 32) / Dimensions(length=1)) <: Quantity{Vector{T}}
-        @test ones(T, 32) / Dimensions(length=1) == Quantity(ones(T, 32), length=-1)
+        @test typeof(ones(T, 32) * Quantity(T(1), D, length=1)) <: Quantity{Vector{T}}
+        @test typeof(ones(T, 32) / Quantity(T(1), D, length=1)) <: Quantity{Vector{T}}
+        @test ones(T, 32) / Quantity(T(1), length=1) == Quantity(ones(T, 32), length=-1)
     end
 end
 
@@ -173,16 +175,18 @@ end
     @test dimension(z) == Dimensions(length=1, mass=2)
     @test float(z / (z * -1 / 52)) ≈ ustrip(z)
 
-    @test Dimensions(length=1) / 0.5 == Quantity(2.0, length=1)
-    @test 0.5 / Dimensions(length=1) == Quantity(0.5, length=-1)
-    @test Dimensions(length=1) * 0.5 == Quantity(0.5, length=1)
+    # Invalid ways to make a quantity:
+    @test_throws ErrorException Dimensions(length=1) / 0.5 == Quantity(2.0, length=1)
+    @test_throws ErrorException 0.5 / Dimensions(length=1)
+    @test_throws ErrorException Dimensions(length=1) * 0.5
+
     @test 0.5 / Quantity(1, length=1) == Quantity(0.5, length=-1)
     @test 0.5 * Quantity(1, length=1) == Quantity(0.5, length=1)
     @test Quantity(0.5) / Dimensions(length=1) == Quantity(0.5, length=-1)
     @test Quantity(0.5, length=2) / Dimensions(length=1) == Quantity(0.5, length=1)
     @test Dimensions(length=1) / Quantity(0.5, length=2, mass=-5) == Quantity(2, length=-1, mass=5)
 
-    @test Dimensions{Int8}([0 for i=1:length(DIMENSION_NAMES)]...) == Dimensions{Int8}()
+    @test Dimensions{Int8}(zeros(Int, 7)...) == Dimensions{Int8}()
 
     @test zero(Quantity(0.0+0.0im)) + Quantity(1) == Quantity(1.0+0.0im, length=Int8(0))
     @test oneunit(Quantity(0.0+0.0im)) - Quantity(1) == Quantity(0.0+0.0im, length=Int8(0))
@@ -219,7 +223,7 @@ end
     @test sqrt(z * -1) == Quantity(sqrt(52), length=1 // 2, mass=1)
     @test cbrt(z) == Quantity(cbrt(-52), length=1 // 3, mass=2 // 3)
 
-    @test 1.0 * (Dimensions(length=3)^2) == Quantity(1.0, length=6)
+    @test_throws ErrorException 1.0 * (Dimensions(length=3)^2)
 
     x = 0.9u"km/s"
     y = 0.3 * x
@@ -254,9 +258,9 @@ end
     @test convert(Dimensions, d) === d
 
     q = Quantity(0.5, d)
-    q32_32 = convert(Quantity{Float32,Rational{Int32}}, q)
-    @test typeof(q) == Quantity{Float64,Rational{Int16}}
-    @test typeof(q32_32) == Quantity{Float32,Rational{Int32}}
+    q32_32 = convert(Quantity{Float32,Dimensions{Rational{Int32}}}, q)
+    @test typeof(q) == Quantity{Float64,Dimensions{Rational{Int16}}}
+    @test typeof(q32_32) == Quantity{Float32,Dimensions{Rational{Int32}}}
     @test ustrip(q) == 0.5
     @test ustrip(q32_32) == 0.5
     @test typeof(ustrip(q)) == Float64
@@ -265,8 +269,28 @@ end
     @test umass(q) == 2
     @test umass(q32_32) == 2
     @test typeof(umass(q32_32)) == Rational{Int32}
-    @test typeof(convert(Quantity{Float16}, q)) == Quantity{Float16,Rational{Int16}}
+    @test typeof(convert(Quantity{Float16}, q)) == Quantity{Float16,Dimensions{Rational{Int16}}}
     @test convert(Quantity, q) === q
+
+    # Automatic conversions via constructor:
+    for T in [Float16, Float32, Float64, BigFloat], R in [DEFAULT_DIM_BASE_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
+        D = Dimensions{R}
+        q = Quantity{T,D}(2, length=1.5)
+        @test typeof(q) == Quantity{T,D}
+        @test typeof(ustrip(q)) == T
+        @test typeof(ulength(q)) == R
+
+        # Now, without R, the default will be DEFAULT_DIM_BASE_TYPE:
+        q = Quantity{T}(2, length=1.5)
+        @test typeof(q) == Quantity{T,DEFAULT_DIM_TYPE}
+        @test typeof(ustrip(q)) == T
+        @test typeof(ulength(q)) == DEFAULT_DIM_BASE_TYPE
+
+        # Just dimensions:
+        d = D(length=1.5)
+        @test typeof(d) == D
+        @test typeof(ulength(d)) == R
+    end
 end
 
 @testset "Units" begin
@@ -286,8 +310,8 @@ end
     @test ustrip(y) ≈ 0.0003
     @test ulength(y) == 2
 
-    y32 = convert(Quantity{Float32,Rational{Int16}}, y)
-    @test typeof(y32) == Quantity{Float32,Rational{Int16}}
+    y32 = convert(Quantity{Float32,Dimensions{Rational{Int16}}}, y)
+    @test typeof(y32) == Quantity{Float32,Dimensions{Rational{Int16}}}
     @test ustrip(y32) ≈ 0.0003
 
     z = u"yr"
@@ -304,4 +328,65 @@ end
     @test typeof(u"fm"^2) == Quantity{Float64,DEFAULT_DIM_TYPE}
 
     @test_throws LoadError eval(:(u":x"))
+end
+
+@testset "Additional tests of FixedRational" begin
+    @test convert(Int64, FixedRational{Int64,1000}(2 // 1)) == 2
+    @test convert(Int32, FixedRational{Int64,1000}(3 // 1)) == 3
+end
+
+struct MyDimensions{R} <: AbstractDimensions{R}
+    length::R
+    mass::R
+    time::R
+end
+struct MyQuantity{T,D<:AbstractDimensions} <: AbstractQuantity{T,D}
+    value::T
+    dimensions::D
+end
+
+@testset "Custom dimensions" begin
+    for T in [Float32, Float64], R in [Rational{Int64}, Rational{Int32}]
+        D = MyDimensions{R}
+        x = MyQuantity(T(0.1), D, length=0.5)
+        @test x * x ≈ MyQuantity(T(0.01), D, length=1)
+        @test typeof(x * x) == MyQuantity{T,D}
+        @test one(MyQuantity{T,D}) == MyQuantity(one(T), MyDimensions(R))
+        @test zero(x) == MyQuantity(zero(T), D, length=0.5)
+        @test oneunit(x) + x == MyQuantity(T(1.1), D, length=0.5)
+        @test typeof(oneunit(x) + x) == MyQuantity{T,D}
+
+        # Automatic conversions:
+        @test typeof(MyQuantity(1, MyDimensions, length=0.5)) == MyQuantity{typeof(1),MyDimensions{DEFAULT_DIM_BASE_TYPE}}
+        @test typeof(MyQuantity{T}(1, MyDimensions, length=0.5)) == MyQuantity{T,MyDimensions{DEFAULT_DIM_BASE_TYPE}}
+        @test typeof(MyQuantity{T}(1, D, length=0.5)) == MyQuantity{T,D}
+        @test typeof(MyQuantity{T,D}(0.1, length=0.5)) == MyQuantity{T,D}
+        @test typeof(0.5 * MyQuantity{T,D}(0.1, length=0.5)) == MyQuantity{promote_type(T,Float64),D}
+
+        x = MyQuantity(big(0.1), length=1)
+        @test typeof(x) == MyQuantity{BigFloat,DEFAULT_DIM_TYPE}
+        @test typeof(MyQuantity{T}(x)) == MyQuantity{T,DEFAULT_DIM_TYPE}
+        @test typeof(MyQuantity{T,D}(x)) == MyQuantity{T,D}
+
+        # Using MyDimensions inside regular Quantity:
+        x = Quantity(T(0.1), MyDimensions(R, length=0.5))
+        @test typeof(x) == Quantity{T,MyDimensions{R}}
+        @test typeof(x * x) == Quantity{T,MyDimensions{R}}
+        @test ulength(x * x) == 1
+        @test dimension(x * x) == MyDimensions(R, length=1)
+
+        # Errors:
+        @test_throws ErrorException zero(MyQuantity{T,D})
+        @test_throws ErrorException oneunit(MyQuantity{T,D})
+        @test_throws ErrorException 1.0 * MyDimensions()
+    end
+    @test MyQuantity(0.1, DEFAULT_DIM_TYPE, length=0.5) == MyQuantity(0.1, length=0.5)
+    @test MyQuantity(0.1, DEFAULT_DIM_TYPE, length=0.5) == MyQuantity(0.1, length=1//2)
+
+    # Can construct using args directly:
+    @test typeof(MyDimensions(1, 1, 1)) == MyDimensions{Int}
+    @test typeof(MyDimensions{Float64}(1, 1, 1)) == MyDimensions{Float64}
+
+    # But, we always need to use a quantity when mixing with mathematical operations:
+    @test_throws ErrorException MyQuantity(0.1) + 0.1 * MyDimensions()
 end
