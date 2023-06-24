@@ -46,10 +46,7 @@ Base.isless(l::AbstractQuantity, r::AbstractQuantity) = dimension(l) == dimensio
 Base.isless(l::AbstractQuantity, r) = iszero(dimension(l)) ? isless(ustrip(l), r) : throw(DimensionError(l, r))
 Base.isless(l, r::AbstractQuantity) = iszero(dimension(r)) ? isless(l, ustrip(r)) : throw(DimensionError(l, r))
 Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...) = isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
-Base.length(::AbstractDimensions) = 1
 Base.length(::AbstractQuantity) = 1
-Base.iterate(d::AbstractDimensions) = (d, nothing)
-Base.iterate(::AbstractDimensions, ::Nothing) = nothing
 Base.iterate(q::AbstractQuantity) = (q, nothing)
 Base.iterate(::AbstractQuantity, ::Nothing) = nothing
 

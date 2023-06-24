@@ -1,6 +1,5 @@
 using DynamicQuantities
 using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
-import DynamicQuantities: quantity_constructor, dimension_constructor
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using Test
@@ -134,7 +133,7 @@ end
     @test ustrip(ones(32)) == ones(32)
     @test dimension(Dimensions()) === Dimensions()
 
-    @test_throws MethodError Dimensions(1.0)
+    @test_throws AssertionError Dimensions(1.0)
     @test_throws ErrorException ustrip(Dimensions())
 end
 
@@ -352,8 +351,16 @@ end
         @test typeof(oneunit(x) + x) == MyQuantity{T,D}
 
         # Automatic conversions:
+        @test typeof(MyQuantity(1, MyDimensions, length=0.5)) == MyQuantity{typeof(1),MyDimensions{DEFAULT_DIM_BASE_TYPE}}
+        @test typeof(MyQuantity{T}(1, MyDimensions, length=0.5)) == MyQuantity{T,MyDimensions{DEFAULT_DIM_BASE_TYPE}}
+        @test typeof(MyQuantity{T}(1, D, length=0.5)) == MyQuantity{T,D}
         @test typeof(MyQuantity{T,D}(0.1, length=0.5)) == MyQuantity{T,D}
         @test typeof(0.5 * MyQuantity{T,D}(0.1, length=0.5)) == MyQuantity{promote_type(T,Float64),D}
+
+        x = MyQuantity(big(0.1), length=1)
+        @test typeof(x) == MyQuantity{BigFloat,DEFAULT_DIM_TYPE}
+        @test typeof(MyQuantity{T}(x)) == MyQuantity{T,DEFAULT_DIM_TYPE}
+        @test typeof(MyQuantity{T,D}(x)) == MyQuantity{T,D}
 
         # Using MyDimensions inside regular Quantity:
         x = Quantity(T(0.1), MyDimensions(R, length=0.5))

@@ -1,6 +1,6 @@
 import Tricks: static_fieldnames, static_fieldtypes
 
-const DEFAULT_DIM_BASE_TYPE = FixedRational{Int32, 2^4 * 3^2 * 5^2 * 7}
+const DEFAULT_DIM_BASE_TYPE = FixedRational{Int32,2^4 * 3^2 * 5^2 * 7}
 const DEFAULT_VALUE_TYPE = Float64
 
 abstract type AbstractQuantity{T,D} end
@@ -43,11 +43,15 @@ struct Dimensions{R<:Real} <: AbstractDimensions{R}
     amount::R
 end
 
-(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = D{R}((tryrationalize(R, get(kws, k, zero(R))) for k in static_fieldnames(D))...)
-(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions{R}} = constructor_of(D)(R; kws...)
+(::Type{D})(args...) where {R,D<:AbstractDimensions{R}} =
+    begin
+        @assert length(args) == length(static_fieldnames(D))  # (just to prevent stack overflows from misuse)
+        constructor_of(D){R}(Base.Fix1(convert, R).(args)...)
+    end
+(::Type{D})(args...) where {D<:AbstractDimensions} = constructor_of(D){DEFAULT_DIM_BASE_TYPE}(args...)
+(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = constructor_of(D){R}((tryrationalize(R, get(kws, k, zero(R))) for k in static_fieldnames(D))...)
+(::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = constructor_of(D)(R; kws...)
 (::Type{D})(; kws...) where {D<:AbstractDimensions} = D(DEFAULT_DIM_BASE_TYPE; kws...)
-(::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = dimension_constructor(D)(R; kws...)
-(::Type{D})(args...) where {R,D<:AbstractDimensions{R}} = dimension_constructor(D)(Base.Fix1(convert, R).(args)...)
 (::Type{D})(d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D((getproperty(d, k) for k in static_fieldnames(D))...)
 
 const DEFAULT_DIM_TYPE = Dimensions{DEFAULT_DIM_BASE_TYPE}
@@ -83,52 +87,20 @@ struct Quantity{T,D<:AbstractDimensions} <: AbstractQuantity{T,D}
     value::T
     dimensions::D
 end
-(::Type{Q})(x, ::Type{D}; kws...) where {R,D<:AbstractDimensions{R},T,Q<:AbstractQuantity{T}} = quantity_constructor(Q){T, D}(convert(T, x), D(R; kws...))
-(::Type{Q})(x, ::Type{D}; kws...) where {R,D<:AbstractDimensions{R},Q<:AbstractQuantity} = quantity_constructor(Q){typeof(x), D}(x, D(R; kws...))
+(::Type{Q})(x::T, ::Type{D}; kws...) where {D<:AbstractDimensions,T,T2,Q<:AbstractQuantity{T2}} = constructor_of(Q)(convert(T2, x), D(; kws...))
+(::Type{Q})(x, ::Type{D}; kws...) where {D<:AbstractDimensions,Q<:AbstractQuantity} = constructor_of(Q)(x, D(; kws...))
+(::Type{Q})(x::T; kws...) where {T,T2,Q<:AbstractQuantity{T2}} = constructor_of(Q)(convert(T2, x), dim_type(Q)(; kws...))
+(::Type{Q})(x; kws...) where {Q<:AbstractQuantity} = constructor_of(Q)(x, dim_type(Q)(; kws...))
 
-(::Type{Q})(x, ::Type{D}; kws...) where {D<:AbstractDimensions,T,Q<:AbstractQuantity{T}} = quantity_constructor(Q){T, D}(convert(T, x), D(DEFAULT_DIM_BASE_TYPE; kws...))
-(::Type{Q})(x, ::Type{D}; kws...) where {D<:AbstractDimensions,Q<:AbstractQuantity} = quantity_constructor(Q){typeof(x), D}(x, D(DEFAULT_DIM_BASE_TYPE; kws...))
+(::Type{Q})(q::AbstractQuantity) where {T,D<:AbstractDimensions,Q<:AbstractQuantity{T,D}} = constructor_of(Q)(convert(T, ustrip(q)), convert(D, dimension(q)))
+(::Type{Q})(q::AbstractQuantity) where {T,Q<:AbstractQuantity{T}} = constructor_of(Q)(convert(T, ustrip(q)), dimension(q))
 
-(::Type{Q})(x; kws...) where {T,D<:AbstractDimensions,Q<:AbstractQuantity{T,D}} = quantity_constructor(Q)(convert(T, x), D; kws...)
-(::Type{Q})(x; kws...) where {T,Q<:AbstractQuantity{T}} = quantity_constructor(Q)(convert(T, x), DEFAULT_DIM_TYPE; kws...)
-(::Type{Q})(x; kws...) where {Q<:AbstractQuantity} = quantity_constructor(Q)(x, DEFAULT_DIM_TYPE; kws...)
+new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = constructor_of(D)(dims...)
+new_quantity(::Type{Q}, l, r) where {Q<:AbstractQuantity} = constructor_of(Q)(l, r)
 
-(::Type{Q})(q::AbstractQuantity) where {T,Q<:AbstractQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
-(::Type{Q})(q::AbstractQuantity) where {T,D<:AbstractDimensions,Q<:AbstractQuantity{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))
-
-new_dimensions(::Type{QD}, dims...) where {QD<:Union{AbstractQuantity,AbstractDimensions}} = dimension_constructor(QD)(dims...)
-new_quantity(::Type{QD}, l, r) where {QD<:Union{AbstractQuantity}} = quantity_constructor(QD)(l, r)
-
-function constructor_of(::Type{T}) where {T}
-    return Base.typename(T).wrapper
-end
-
-"""
-    dimension_constructor(::Type{<:AbstractDimensions})
-
-This function returns the container for a particular `AbstractDimensions`.
-For example, `Dimensions` will get returned as `Dimensions`, and
-`Dimensions{Rational{Int64}}` will also get returned as `Dimensions`.
-"""
-dimension_constructor(::Type{D}) where {D<:AbstractDimensions} = constructor_of(D)
-
-"""
-    dimension_constructor(::Type{<:AbstractQuantity})
-
-This function returns the `Dimensions` type used inside
-a particular `Quantity` type by reading the `.dimensions` field.
-It also strips the type parameter (i.e., `Dimensions{R} -> Dimensions`).
-"""
-dimension_constructor(::Type{Q}) where {T,D<:AbstractDimensions,Q<:AbstractQuantity{T,D}} = constructor_of(D)
-
-"""
-    quantity_constructor(::Type{<:AbstractQuantity})
-
-This function returns the container for a particular `AbstractQuantity`.
-For example, `Quantity` gets returned as `Quantity`, `Quantity{Float32}` also
-as `Quantity`, and `Quantity{Float32,Rational{Int64}}` also as `Quantity`.
-"""
-quantity_constructor(::Type{Q}) where {Q<:AbstractQuantity} = constructor_of(Q)
+dim_type(::Type{Q}) where {T,D<:AbstractDimensions,Q<:AbstractQuantity{T,D}} = D
+dim_type(::Type{<:AbstractQuantity}) = DEFAULT_DIM_TYPE
+constructor_of(::Type{T}) where {T} = Base.typename(T).wrapper
 
 struct DimensionError{Q1,Q2} <: Exception
     q1::Q1
