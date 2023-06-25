@@ -123,12 +123,19 @@ using Test
         @test_throws DimensionError 1.0 - Quantity(one(T), D, length=1)
     end
 
-    @test string((0.5 + 0.5im)*u"km/s") == "(500.0 + 500.0im) m s⁻¹"
-
     x = Quantity(-1.2, length=2 // 5)
 
     @test abs(x) == Quantity(1.2, length=2 // 5)
     @test abs(x) == abs(Quantity(1.2, length=2 // 5))
+end
+
+@testset "Complex numbers" begin
+    x = (0.5 + 0.5im) * u"km/s"
+    @test string(x) == "(500.0 + 500.0im) m s⁻¹"
+    @test typeof(x) == Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test typeof(x^2) == Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test x^2/u"km/s"^2 == Quantity(0.5im)
+    @test x^2.5 ≈ (-5.088059320440205e6 + 1.2283661817565577e7im) * u"m^(5/2) * s^(-5/2)"
 end
 
 @testset "Fallbacks" begin
