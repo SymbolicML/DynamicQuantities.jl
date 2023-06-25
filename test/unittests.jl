@@ -123,6 +123,8 @@ using Test
         @test_throws DimensionError 1.0 - Quantity(one(T), D, length=1)
     end
 
+    @test string((0.5 + 0.5im)*u"km/s") == "(500.0 + 500.0im) m s⁻¹"
+
     x = Quantity(-1.2, length=2 // 5)
 
     @test abs(x) == Quantity(1.2, length=2 // 5)

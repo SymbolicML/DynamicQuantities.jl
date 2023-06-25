@@ -84,7 +84,8 @@ Base.show(io::IO, d::AbstractDimensions) =
         s = replace(s, r"\s*$" => "")
         print(io, s)
     end
-Base.show(io::IO, q::AbstractQuantity) = print(io, ustrip(q), " ", dimension(q))
+Base.show(io::IO, q::AbstractQuantity{<:Real}) = print(io, ustrip(q), " ", dimension(q))
+Base.show(io::IO, q::AbstractQuantity) = print(io, "(", ustrip(q), ") ", dimension(q))
 
 function dimension_name(::AbstractDimensions, k::Symbol)
     default_dimensions = (length="m", mass="kg", time="s", current="A", temperature="K", luminosity="cd", amount="mol")
