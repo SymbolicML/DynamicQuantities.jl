@@ -2,6 +2,7 @@ module DynamicQuantities
 
 export AbstractQuantity, AbstractDimensions
 export Quantity, Dimensions, DimensionError, ustrip, dimension, valid
+export QuantityArray
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 export uparse, @u_str
 
@@ -9,6 +10,7 @@ include("fixed_rational.jl")
 include("types.jl")
 include("utils.jl")
 include("math.jl")
+include("arrays.jl")
 include("units.jl")
 
 import Requires: @init, @require
