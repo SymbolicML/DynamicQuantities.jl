@@ -1,27 +1,3 @@
-# A type representing the dimensions of a quantity, with each
-# field giving the power of the corresponding dimension. For
-# example, the dimensions of velocity are `Dimensions(length=1, time=-1)`.
-# Each of the 7 dimensions are stored using the type `R`,
-# which is by default a rational number.
-
-# # Fields
-
-# - `length`: length dimension (i.e., meters^(length))
-# - `mass`: mass dimension (i.e., kg^(mass))
-# - `time`: time dimension (i.e., s^(time))
-# - `current`: current dimension (i.e., A^(current))
-# - `temperature`: temperature dimension (i.e., K^(temperature))
-# - `luminosity`: luminosity dimension (i.e., cd^(luminosity))
-# - `amount`: amount dimension (i.e., mol^(amount))
-
-# # Constructors
-
-# - `Dimensions(args...)`: Pass all the dimensions as arguments. `R` is set to `DEFAULT_DIM_BASE_TYPE`.
-# - `Dimensions(; kws...)`: Pass a subset of dimensions as keyword arguments. `R` is set to `DEFAULT_DIM_BASE_TYPE`.
-# - `Dimensions(::Type{R}; kws...)` or `Dimensions{R}(; kws...)`: Pass a subset of dimensions as keyword arguments, with the output type set to `Dimensions{R}`.
-# - `Dimensions{R}()`: Create a dimensionless object typed as `Dimensions{R}`.
-# - `Dimensions{R}(d::Dimensions)`: Copy the dimensions from another `Dimensions` object, with the output type set to `Dimensions{R}`.
-
 """
     QuantityArray{T,N,D,V}
 
