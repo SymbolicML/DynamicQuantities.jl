@@ -25,13 +25,15 @@ Base.:+(l, r::AbstractQuantity) = iszero(dimension(r)) ? new_quantity(typeof(r),
 Base.:-(l::AbstractQuantity, r) = l + (-r)
 Base.:-(l, r::AbstractQuantity) = l + (-r)
 
-_pow(l::AbstractDimensions, r) = map_dimensions(Base.Fix1(*, r), l)
-_pow(l::AbstractQuantity{T}, r) where {T} = new_quantity(typeof(l), ustrip(l)^r, _pow(dimension(l), r))
-_pow_as_T(l::AbstractQuantity{T}, r) where {T} = new_quantity(typeof(l), ustrip(l)^convert(T, r), _pow(l.dimensions, r))
-Base.:^(l::AbstractDimensions{R}, r::Integer) where {R} = _pow(l, r)
+# We don't promote on the dimension types:
+_pow(l::AbstractDimensions{R}, r::R) where {R} = map_dimensions(Base.Fix1(*, r), l)
 Base.:^(l::AbstractDimensions{R}, r::Number) where {R} = _pow(l, tryrationalize(R, r))
-Base.:^(l::AbstractQuantity{T,D}, r::Integer) where {T,R,D<:AbstractDimensions{R}} = _pow(l, r)
-Base.:^(l::AbstractQuantity{T,D}, r::Number) where {T,R,D<:AbstractDimensions{R}} = _pow_as_T(l, tryrationalize(R, r))
+Base.:^(l::AbstractQuantity{T,D}, r::Integer) where {T,R,D<:AbstractDimensions{R}} = new_quantity(typeof(l), ustrip(l)^r, dimension(l)^r)
+Base.:^(l::AbstractQuantity{T,D}, r::Number) where {T,R,D<:AbstractDimensions{R}} =
+    let dim_pow = tryrationalize(R, r), val_pow = convert(T, dim_pow)
+        # Need to ensure we take the numerical power by the rationalized quantity:
+        return new_quantity(typeof(l), ustrip(l)^val_pow, dimension(l)^dim_pow)
+    end
 
 Base.inv(d::AbstractDimensions) = map_dimensions(-, d)
 Base.inv(q::AbstractQuantity) = new_quantity(typeof(q), inv(ustrip(q)), inv(dimension(q)))
