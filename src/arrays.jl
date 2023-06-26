@@ -1,3 +1,5 @@
+const DEFAULT_QUANTITY_TYPE = Quantity
+
 """
     QuantityArray{T,N,D,V}
 
@@ -27,29 +29,38 @@ is forced to be aware of it.
   julia> A = QuantityArray(randn(32) .* 1u"km/s")
   ```
 """
-struct QuantityArray{T,N,D<:AbstractDimensions,V<:AbstractArray{T,N}} <: AbstractArray{T,N}
+struct QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractQuantity,V<:AbstractArray{T,N}} <: AbstractArray{Q,N}
     value::V
     dimensions::D
+
+    QuantityArray(v::_V, d::_D) where {_T,_N,_D<:AbstractDimensions,_V<:AbstractArray{_T,_N}} = new{_T,_N,_D,DEFAULT_QUANTITY_TYPE{_T,DEFAULT_DIM_TYPE},_V}(v, d)
+    QuantityArray(v::_V, d::_D, ::Type{_Q}) where {_T,_N,_D<:AbstractDimensions,_Q<:AbstractQuantity,_V<:AbstractArray{_T,_N}} = new{_T,_N,_D,_Q,_V}(v, d)
 end
 
 # Construct with a Quantity (easier, as you can use the units):
-QuantityArray(v::AbstractArray, q::Quantity) = QuantityArray(v .* ustrip(q), dimension(q))
-QuantityArray(v::QA) where {Q<:AbstractQuantity,QA<:AbstractArray{Q}} = QuantityArray(ustrip.(v), dimension(first(v)))
+QuantityArray(v::AbstractArray; kws...) = QuantityArray(v, DEFAULT_DIM_TYPE(; kws...))
+QuantityArray(v::AbstractArray, q::AbstractQuantity) = QuantityArray(v .* ustrip(q), dimension(q), typeof(q))
+QuantityArray(v::QA) where {Q<:AbstractQuantity,QA<:AbstractArray{Q}} = allequal(dimension.(v)) ? QuantityArray(ustrip.(v), dimension(first(v)), Q) : throw(DimensionError(first(v), v))
 # TODO: Should this check that the dimensions are the same?
 
 ustrip(A::QuantityArray) = A.value
 dimension(A::QuantityArray) = A.dimensions
 
-array_type(::Type{Q}) where {T,N,D,V,Q<:QuantityArray{T,N,D,V}} = V
+array_type(::Type{A}) where {T,N,D,Q,V,A<:QuantityArray{T,N,D,Q,V}} = V
+quantity_type(::Type{A}) where {T,N,D,Q,A<:QuantityArray{T,N,D,Q}} = Q
+quantity_type(A) = quantity_type(typeof(A))
 
 # One field:
 for f in (:size, :length, :axes)
     @eval Base.$f(A::QuantityArray) = $f(ustrip(A))
 end
 
-Base.getindex(A::QuantityArray, i...) = Quantity(getindex(ustrip(A), i...), dimension(A))
-Base.setindex!(A::QuantityArray, v, i...) = setindex!(ustrip(A), v, i...)
-Base.setindex!(::QuantityArray, ::Quantity, i...) = error("Cannot set a Quantity into a QuantityArray, you must `ustrip` it first. You can use `dimension(A) == dimension(v)` to verify that the dimensions match. This is not done automatically as it would be slow.")
+Base.getindex(A::QuantityArray, i...) = quantity_type(A)(getindex(ustrip(A), i...), dimension(A))
+Base.setindex!(A::QuantityArray{T,N,D,Q}, v::Q, i...) where {T,N,D,Q<:AbstractQuantity} = dimension(A) == dimension(v) ? unsafe_setindex!(A, v, i...) : throw(DimensionError(A, v))
+# TODO: Should this dimension check be removed?
+# TODO: This does not allow for efficient broadcasting; as the dimension calculation is repeated...
+
+unsafe_setindex!(A, v, i...) = setindex!(ustrip(A), ustrip(v), i...)
 
 Base.IndexStyle(::Type{Q}) where {Q<:QuantityArray} = IndexStyle(array_type(Q))
 Base.similar(A::QuantityArray, args...) = QuantityArray(similar(ustrip(A), args...), dimension(A))
