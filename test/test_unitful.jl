@@ -22,4 +22,19 @@ for T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_BASE
 
     @test isapprox(convert(DynamicQuantities.Quantity{T,D}, x_unitful), x; atol=1e-6)
     @test risapprox(convert(Unitful.Quantity, convert(DynamicQuantities.Quantity{T,D}, x_unitful)), Unitful.upreferred(x_unitful); atol=1e-6)
+
+    @test typeof(convert(DynamicQuantities.Dimensions, Unitful.dimension(x_unitful))) == DynamicQuantities.Dimensions{DEFAULT_DIM_BASE_TYPE}
 end
+
+module MyScaleUnit
+    using Unitful
+    @dimension(𝐒, "𝐒", Scale)
+    @refunit(scale, "scale", Scale, 𝐒, false)
+end
+
+Unitful.register(MyScaleUnit)
+
+x = 1.0u"scale"
+@test typeof(x) <: Unitful.Quantity{Float64, MyScaleUnit.𝐒}
+@test_throws ErrorException convert(DynamicQuantities.Quantity, x)
+# These are not supported because there is no SI equivalency

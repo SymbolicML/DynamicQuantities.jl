@@ -129,6 +129,15 @@ using Test
     @test abs(x) == abs(Quantity(1.2, length=2 // 5))
 end
 
+@testset "Complex numbers" begin
+    x = (0.5 + 0.5im) * u"km/s"
+    @test string(x) == "(500.0 + 500.0im) m s⁻¹"
+    @test typeof(x) == Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test typeof(x^2) == Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test x^2/u"km/s"^2 == Quantity(0.5im)
+    @test x^2.5 ≈ (-5.088059320440205e6 + 1.2283661817565577e7im) * u"m^(5/2) * s^(-5/2)"
+end
+
 @testset "Fallbacks" begin
     @test ustrip(0.5) == 0.5
     @test ustrip(ones(32)) == ones(32)
@@ -271,6 +280,13 @@ end
     @test typeof(umass(q32_32)) == Rational{Int32}
     @test typeof(convert(Quantity{Float16}, q)) == Quantity{Float16,Dimensions{Rational{Int16}}}
     @test convert(Quantity, q) === q
+
+    # Test that regular type promotion applies:
+    q = Quantity(2, d)
+    @test typeof(q) == Quantity{Int64,typeof(d)}
+    @test typeof(q ^ 2) == Quantity{Int64,typeof(d)}
+    @test typeof(0.5 * q) == Quantity{Float64,typeof(d)}
+    @test typeof(inv(q)) == Quantity{Float64,typeof(d)}
 
     # Automatic conversions via constructor:
     for T in [Float16, Float32, Float64, BigFloat], R in [DEFAULT_DIM_BASE_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
