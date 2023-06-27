@@ -29,12 +29,14 @@ is forced to be aware of it.
   julia> A = QuantityArray(randn(32) .* 1u"km/s")
   ```
 """
-struct QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractQuantity,V<:AbstractArray{T,N}} <: AbstractArray{Q,N}
+struct QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractQuantity{T,D},V<:AbstractArray{T,N}} <: AbstractArray{Q,N}
     value::V
     dimensions::D
 
-    QuantityArray(v::_V, d::_D) where {_T,_N,_D<:AbstractDimensions,_V<:AbstractArray{_T,_N}} = new{_T,_N,_D,DEFAULT_QUANTITY_TYPE{_T,DEFAULT_DIM_TYPE},_V}(v, d)
-    QuantityArray(v::_V, d::_D, ::Type{_Q}) where {_T,_N,_D<:AbstractDimensions,_Q<:AbstractQuantity,_V<:AbstractArray{_T,_N}} = new{_T,_N,_D,_Q,_V}(v, d)
+    QuantityArray(v::_V, d::_D) where {_T,_N,_D<:AbstractDimensions,_V<:AbstractArray{_T,_N}} = new{_T,_N,_D,DEFAULT_QUANTITY_TYPE{_T,_D},_V}(v, d)
+    QuantityArray(v::_V, d::_D, ::Type{_Q}) where {_T,_N,_D<:AbstractDimensions,_Q<:AbstractQuantity{_T,_D},_V<:AbstractArray{_T,_N}} = new{_T,_N,_D,_Q,_V}(v, d)
+    QuantityArray(v::_V, d::_D, ::Type{_Q}) where {_T,_N,_D<:AbstractDimensions,_Q<:AbstractQuantity{_T},_V<:AbstractArray{_T,_N}} = QuantityArray(v, d, constructor_of(_Q){_T,_D})
+    QuantityArray(v::_V, d::_D, ::Type{_Q}) where {_T,_N,_D<:AbstractDimensions,_Q<:AbstractQuantity,_V<:AbstractArray{_T,_N}} = QuantityArray(v, d, _Q{_T,_D})
 end
 
 # Construct with a Quantity (easier, as you can use the units):
@@ -46,9 +48,15 @@ QuantityArray(v::QA) where {Q<:AbstractQuantity,QA<:AbstractArray{Q}} = allequal
 ustrip(A::QuantityArray) = A.value
 dimension(A::QuantityArray) = A.dimensions
 
+array_type(::Type{A}) where {T,A<:QuantityArray{T}} = Array{T,1}
+array_type(::Type{A}) where {T,N,A<:QuantityArray{T,N}} = Array{T,N}
 array_type(::Type{A}) where {T,N,D,Q,V,A<:QuantityArray{T,N,D,Q,V}} = V
+
 quantity_type(::Type{A}) where {T,N,D,Q,A<:QuantityArray{T,N,D,Q}} = Q
 quantity_type(A) = quantity_type(typeof(A))
+
+dim_type(::Type{A}) where {A<:QuantityArray} = DEFAULT_DIM_TYPE
+dim_type(::Type{A}) where {T,N,D,A<:QuantityArray{T,N,D}} = D
 
 # One field:
 for f in (:size, :length, :axes)
@@ -57,10 +65,34 @@ end
 
 Base.getindex(A::QuantityArray, i...) = quantity_type(A)(getindex(ustrip(A), i...), dimension(A))
 Base.setindex!(A::QuantityArray{T,N,D,Q}, v::Q, i...) where {T,N,D,Q<:AbstractQuantity} = dimension(A) == dimension(v) ? unsafe_setindex!(A, v, i...) : throw(DimensionError(A, v))
+Base.setindex!(A::QuantityArray{T,N,D,Q}, v::AbstractQuantity, i...) where {T,N,D,Q<:AbstractQuantity} = error("Cannot set values in a quantity array with element type $(Q) with different element type: $(typeof(v)).")
 # TODO: Should this dimension check be removed?
 # TODO: This does not allow for efficient broadcasting; as the dimension calculation is repeated...
 
 unsafe_setindex!(A, v, i...) = setindex!(ustrip(A), ustrip(v), i...)
 
 Base.IndexStyle(::Type{Q}) where {Q<:QuantityArray} = IndexStyle(array_type(Q))
-Base.similar(A::QuantityArray, args...) = QuantityArray(similar(ustrip(A), args...), dimension(A))
+
+Base.similar(A::QuantityArray) = QuantityArray(similar(ustrip(A)), dimension(A))
+Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustrip(A), S), dimension(A))
+Base.similar(A::QuantityArray, dims::Dims) = QuantityArray(similar(ustrip(A), dims), dimension(A))
+Base.similar(A::QuantityArray, ::Type{S}, dims::Dims) where {S} = QuantityArray(similar(ustrip(A), S, dims), dimension(A))
+
+Base.similar(::Type{QA}) where {T,QA<:QuantityArray{T}} = QuantityArray(similar(array_type(QA)), dim_type(QA)())
+Base.similar(::Type{QA}, ::Type{S}) where {T,QA<:QuantityArray{T},S} = QuantityArray(similar(array_type(QA), S), dim_type(QA)())
+Base.similar(::Type{QA}, dims::Dims) where {T,QA<:QuantityArray{T}} = QuantityArray(similar(array_type(QA), dims), dim_type(QA)())
+Base.similar(::Type{QA}, ::Type{S}, dims::Dims) where {T,QA<:QuantityArray{T},S} = QuantityArray(similar(array_type(QA), S, dims), dim_type(QA)())
+
+Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray} = Broadcast.ArrayStyle{QA}()
+function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType}
+    q = find_q(bc)
+    return QuantityArray(similar(array_type(QA), axes(bc)), dimension(q))
+end
+# https://discourse.julialang.org/t/defining-broadcast-for-custom-types-the-example-in-the-docs-fails/32291/2
+find_q(x::Base.Broadcast.Extruded) = x.x
+find_q(bc::Base.Broadcast.Broadcasted) = find_q(bc.args)
+find_q(args::Tuple) = find_q(find_q(first(args)), Base.tail(args))
+find_q(x) = x
+find_q(::Tuple{}) = error("Unexpected.")
+find_q(q::QuantityArray, rest) = q
+find_q(::Any, rest) = find_q(rest)
