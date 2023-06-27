@@ -83,7 +83,21 @@ Base.similar(::Type{QA}, ::Type{S}) where {T,QA<:QuantityArray{T},S} = QuantityA
 Base.similar(::Type{QA}, dims::Dims) where {T,QA<:QuantityArray{T}} = QuantityArray(similar(array_type(QA), dims), dim_type(QA)())
 Base.similar(::Type{QA}, ::Type{S}, dims::Dims) where {T,QA<:QuantityArray{T},S} = QuantityArray(similar(array_type(QA), S, dims), dim_type(QA)())
 
-Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray} = Broadcast.ArrayStyle{QA}()
+function Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray}
+    return Broadcast.ArrayStyle{QA}()
+end
+function Base.BroadcastStyle(
+    ::Broadcast.ArrayStyle{QA1}, ::Broadcast.ArrayStyle{QA2}
+) where {
+    T1,T2,N,V1<:AbstractArray{T1,N},V2<:AbstractArray{T2,N},D<:AbstractDimensions,
+    Q1<:AbstractQuantity{T1,D},Q2<:AbstractQuantity{T2,D},
+    QA1<:QuantityArray{T1,N,D,Q1,V1},QA2<:QuantityArray{T2,N,D,Q2,V2}
+}
+    T = promote_type(T1,T2)
+    V = promote_type(V1,V2)
+    Q = constructor_of(Q1){T,D}
+    return Broadcast.ArrayStyle{QuantityArray{T,N,D,Q,V}}()
+end
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType}
     q = find_q(bc)
     return QuantityArray(similar(array_type(QA), axes(bc)), dimension(q))
