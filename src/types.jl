@@ -85,7 +85,7 @@ const DEFAULT_DIM_TYPE = Dimensions{DEFAULT_DIM_BASE_TYPE}
 Physical quantity with value `value` of type `T` and dimensions `dimensions` of type `D`.
 For example, the velocity of an object with mass 1 kg and velocity
 2 m/s is `Quantity(2, mass=1, length=1, time=-1)`.
-You should access these fields with `ustrip(q)`, and `dimensions(q)`.
+You should access these fields with `ustrip(q)`, and `dimension(q)`.
 You can access specific dimensions with `ulength(q)`, `umass(q)`, `utime(q)`,
 `ucurrent(q)`, `utemperature(q)`, `uluminosity(q)`, and `uamount(q)`.
 
