@@ -7,7 +7,7 @@ abstract type AbstractQuantity{T,D} end
 abstract type AbstractDimensions{R} end
 
 """
-    Dimensions{R}
+    Dimensions{R} <: AbstractDimensions{R}
 
 A type representing the dimensions of a quantity, with each
 field giving the power of the corresponding dimension. For
@@ -51,7 +51,7 @@ end
 const DEFAULT_DIM_TYPE = Dimensions{DEFAULT_DIM_BASE_TYPE}
 
 """
-    Quantity{T,D}
+    Quantity{T,D} <: AbstractQuantity{T,D}
 
 Physical quantity with value `value` of type `T` and dimensions `dimensions` of type `D`.
 For example, the velocity of an object with mass 1 kg and velocity
