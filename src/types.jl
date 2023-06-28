@@ -36,7 +36,7 @@ object is stored in the `:dimensions` field. These fields can be accessed with
 abstract type AbstractQuantity{T,D} end
 
 """
-    Dimensions{R} <: AbstractDimensions{R}
+    Dimensions{R<:Real} <: AbstractDimensions{R}
 
 A type representing the dimensions of a quantity, with each
 field giving the power of the corresponding dimension. For
@@ -80,7 +80,7 @@ end
 const DEFAULT_DIM_TYPE = Dimensions{DEFAULT_DIM_BASE_TYPE}
 
 """
-    Quantity{T,D} <: AbstractQuantity{T,D}
+    Quantity{T,D<:AbstractDimensions} <: AbstractQuantity{T,D}
 
 Physical quantity with value `value` of type `T` and dimensions `dimensions` of type `D`.
 For example, the velocity of an object with mass 1 kg and velocity
