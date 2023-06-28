@@ -33,10 +33,10 @@ jobs:
       - uses: julia-actions/cache@v1
       - uses: julia-actions/julia-buildpkg@v1
       - name: "Run tests"
-        shell: bash
         run: |
           julia --color=yes --project=. -e 'import Pkg; Pkg.add("Coverage")'
           julia --color=yes --threads=auto --check-bounds=yes --depwarn=yes --code-coverage=user --project=. -e 'import Pkg; Pkg.test(coverage=true)'
+          DQ_TEST_UPREFERRED=true julia --color=yes --threads=auto --check-bounds=yes --depwarn=yes --code-coverage=user --project=. -e 'import Pkg; Pkg.test(coverage=true)'
           julia --color=yes --project=. coverage.jl
       - name: "Coveralls"
         uses: coverallsapp/github-action@v2
