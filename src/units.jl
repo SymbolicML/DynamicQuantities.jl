@@ -10,9 +10,11 @@ import ..ustrip
 import ..dimension
 import ..AbstractDimensions
 
-const _UNIT_SYMBOLS = Symbol[]
 
 @assert DEFAULT_VALUE_TYPE == Float64 "`units.jl` must be updated to support a different default value type."
+
+const _UNIT_SYMBOLS = Symbol[]
+const _UNIT_VALUES = Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}[]
 
 macro register_unit(name, value)
     return esc(_register_unit(name, value))
@@ -28,6 +30,7 @@ function _register_unit(name::Symbol, value)
     return quote
         const $name = $value
         push!(_UNIT_SYMBOLS, Symbol($s))
+        push!(_UNIT_VALUES, $name)
     end
 end
 
@@ -145,7 +148,7 @@ end
 
 """A tuple of all possible unit symbols."""
 const UNIT_SYMBOLS = Tuple(_UNIT_SYMBOLS)
-const UNIT_VALUES = Tuple([eval(s) for s in UNIT_SYMBOLS])
+const UNIT_VALUES = Tuple(_UNIT_VALUES)
 
 """
     UnitSymbols
@@ -168,19 +171,29 @@ module UnitSymbols
         for symb in UNIT_SYMBOLS
             push!(fields, :($(symb)::R))
         end
-        return struct_def
+        return struct_def |> esc
     end
 
-    # An AbstractDimensions containing all symbols:
     @create_unit_dimensions UnitDimensions
 
-    # Create all unit symbols
-    for unit in UNIT_SYMBOLS
-        @eval const $unit = Quantity(1.0, UnitDimensions, $(unit)=1)
+    function generate_unit_symbols()
+        for unit in UNIT_SYMBOLS
+            @eval const $unit = Quantity(1.0, UnitDimensions; $(unit)=1)
+        end
+        return nothing
     end
 
-    function uparse(s::AbstractString)
-        return as_quantity(eval(Meta.parse(s)))::Quantity{DEFAULT_VALUE_TYPE,UnitDimensions{DEFAULT_DIM_BASE_TYPE}}
+    const UNIT_SYMBOLS_EXIST = Ref{Bool}(false)
+    const UNIT_SYMBOLS_LOCK = Threads.SpinLock()
+
+    function uparse(raw_string::AbstractString)
+        UNIT_SYMBOLS_EXIST[] || lock(UNIT_SYMBOLS_LOCK) do
+            UNIT_SYMBOLS_EXIST[] && return nothing
+            generate_unit_symbols()
+            UNIT_SYMBOLS_EXIST[] = true
+        end
+        raw_result = eval(Meta.parse(raw_string))
+        return as_quantity(raw_result)::Quantity{DEFAULT_VALUE_TYPE,UnitDimensions{DEFAULT_DIM_BASE_TYPE}}
     end
 
     as_quantity(q::Quantity) = q
