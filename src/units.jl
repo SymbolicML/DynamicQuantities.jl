@@ -5,6 +5,9 @@ export uparse, @u_str
 import ..DEFAULT_DIM_TYPE
 import ..DEFAULT_VALUE_TYPE
 import ..Quantity
+import ..Dimensions
+import ..ustrip
+import ..dimension
 import ..AbstractDimensions
 
 const _UNIT_SYMBOLS = Symbol[]
@@ -140,6 +143,10 @@ macro u_str(s)
     return esc(uparse(s))
 end
 
+"""A tuple of all possible unit symbols."""
+const UNIT_SYMBOLS = Tuple(_UNIT_SYMBOLS)
+const UNIT_VALUES = Tuple([eval(s) for s in UNIT_SYMBOLS])
+
 """
     UnitSymbols
 
@@ -153,22 +160,19 @@ module UnitSymbols
     import ...DEFAULT_VALUE_TYPE
     import ...DEFAULT_DIM_BASE_TYPE
 
-    import .._UNIT_SYMBOLS
+    import ..UNIT_SYMBOLS
 
-    """A tuple of all possible unit symbols."""
-    const UNIT_SYMBOLS = Tuple(_UNIT_SYMBOLS)
-
-    function _create_unit_dimensions()
-        struct_def = :(struct UnitDimensions{R} <: AbstractDimensions{R}; end)
+    macro create_unit_dimensions(struct_name)
+        struct_def = :(struct $(struct_name){R} <: AbstractDimensions{R}; end)
         fields = struct_def.args[3].args
-        for unit in UNIT_SYMBOLS
-            push!(fields, :($(unit)::R))
+        for symb in UNIT_SYMBOLS
+            push!(fields, :($(symb)::R))
         end
         return struct_def
     end
 
-    # Create an AbstractDimensions containing all symbols:
-    @eval $(_create_unit_dimensions())
+    # An AbstractDimensions containing all symbols:
+    @create_unit_dimensions UnitDimensions
 
     # Create all unit symbols
     for unit in UNIT_SYMBOLS
@@ -183,6 +187,17 @@ module UnitSymbols
     as_quantity(x::Number) = Quantity(convert(DEFAULT_VALUE_TYPE, x), UnitDimensions{DEFAULT_DIM_BASE_TYPE})
     as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 
+end
+
+function Base.convert(::Type{Q}, q::Quantity{<:Any,<:UnitSymbols.UnitDimensions}) where {T,D,Q<:Quantity{T,D}}
+    result = one(Q) * ustrip(q)
+    d = dimension(q)
+    for (unit_symb, unit_val) in zip(UNIT_SYMBOLS, UNIT_VALUES)
+        dim = getproperty(d, unit_symb)
+        dim == 0 && continue
+        result = result * unit_val ^ dim
+    end
+    return result
 end
 
 end
