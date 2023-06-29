@@ -1,6 +1,6 @@
 using DynamicQuantities
 using DynamicQuantities: FixedRational
-using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
+using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE, DEFAULT_UNIT_TYPE
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using Test
@@ -335,13 +335,22 @@ end
     @test ustrip(z) ≈ 60 * 60 * 24 * 365.25
 
     # Test type stability of extreme range of units
-    @test typeof(u"1") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"1f0") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"s"^2) == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"Ω") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"Gyr") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"fm") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"fm"^2) == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"1") == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
+    @test typeof(u"1f0") == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
+    @test typeof(u"s"^2) == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
+    @test typeof(u"Ω") == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
+    @test typeof(u"Gyr") == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
+    @test typeof(u"fm") == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
+    @test typeof(u"fm"^2) == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
+
+    # Test type demotion
+    @test typeof(1u"m") == Quantity{Int64,DEFAULT_DIM_TYPE}
+    @test typeof(1f0u"m") == Quantity{Float32,DEFAULT_DIM_TYPE}
+    @test typeof(1.0u"m") == Quantity{Float64,DEFAULT_DIM_TYPE}
+
+    @test typeof(1u"m^2/s") == Quantity{Int64,DEFAULT_DIM_TYPE}
+    @test typeof(1f0u"m^2/s") == Quantity{Float32,DEFAULT_DIM_TYPE}
+    @test typeof(1.0u"m^2/s") == Quantity{Float64,DEFAULT_DIM_TYPE}
 
     @test_throws LoadError eval(:(u":x"))
 end
