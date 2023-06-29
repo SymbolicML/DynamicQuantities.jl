@@ -57,9 +57,9 @@ const mol = Quantity(DEFAULT_UNIT_TYPE(1.0), amount=1)
 "Frequency in Hertz. Available variants: `kHz`, `MHz`, `GHz`."
 const Hz = inv(s)
 "Force in Newtons."
-const N = kg * m / (s * s)
+const N = kg * m / s^2
 "Pressure in Pascals. Available variant: `kPa`."
-const Pa = N / (m * m)
+const Pa = N / m^2
 "Energy in Joules. Available variant: `kJ`."
 const J = N * m
 "Power in Watts. Available variants: `kW`, `MW`, `GW`."
@@ -104,7 +104,7 @@ const yr = DEFAULT_UNIT_TYPE(365.25) * day
 
 ## Volume
 "Volume in liters. Available variants: `mL`, `dL`."
-const L = dm * dm * dm
+const L = dm^3
 
 @add_prefixes L (m, d)
 
@@ -127,12 +127,12 @@ Parse a string containing an expression of units and return the
 corresponding `Quantity` object with `Float64` value. For example,
 `uparse("m/s")` would be parsed to `Quantity(1.0, length=1, time=-1)`.
 """
-function uparse(s::AbstractString)::Quantity{LazyFloat64,DEFAULT_DIM_TYPE}
+function uparse(s::AbstractString)::Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
     return as_quantity(eval(Meta.parse(s)))
 end
 
 as_quantity(q::Quantity) = q
-as_quantity(x::Number) = Quantity(convert(LazyFloat64, x), DEFAULT_DIM_TYPE)
+as_quantity(x::Number) = Quantity(convert(DEFAULT_UNIT_TYPE, x), DEFAULT_DIM_TYPE)
 as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 
 """
