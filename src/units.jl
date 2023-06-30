@@ -187,7 +187,7 @@ UnitDimensions{R}(d::UnitDimensions) where {R} = UnitDimensions{R}(data(d))
         return constructor(data)
     end
 
-function Base.convert(::Type{Q}, q::Quantity{<:Any,<:UnitDimensions}) where {T,D,Q<:Quantity{T,D}}
+function Base.convert(::Type{Q}, q::Quantity{<:Any,<:UnitDimensions}) where {T,D<:Dimensions,Q<:Quantity{T,D}}
     result = one(Q) * ustrip(q)
     d = dimension(q)
     for (idx, value) in zip(SA.findnz(data(d))...)
@@ -195,6 +195,10 @@ function Base.convert(::Type{Q}, q::Quantity{<:Any,<:UnitDimensions}) where {T,D
     end
     return result
 end
+function expand_units(q::Q) where {T,R,D<:UnitDimensions{R},Q<:Quantity{T,D}}
+    return convert(Quantity{T,Dimensions{R}}, q)
+end
+
 
 static_fieldnames(::Type{<:UnitDimensions}) = UNIT_SYMBOLS
 Base.getproperty(d::UnitDimensions{R}, s::Symbol) where {R} = data(d)[UNIT_MAPPING[s]]
@@ -237,7 +241,7 @@ module UnitSymbols
         return nothing
     end
 
-    function uparse(raw_string::AbstractString)
+    function sym_uparse(raw_string::AbstractString)
         _generate_unit_symbols()
         raw_result = eval(Meta.parse(raw_string))
         return copy(as_quantity(raw_result))::Quantity{DEFAULT_VALUE_TYPE,UnitDimensions{DEFAULT_DIM_BASE_TYPE}}
@@ -246,6 +250,12 @@ module UnitSymbols
     as_quantity(q::Quantity) = q
     as_quantity(x::Number) = Quantity(convert(DEFAULT_VALUE_TYPE, x), UnitDimensions{DEFAULT_DIM_BASE_TYPE})
     as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
+end
+
+import .UnitSymbols: sym_uparse
+
+macro us_str(s)
+    return esc(UnitSymbols.sym_uparse(s))
 end
 
 end
