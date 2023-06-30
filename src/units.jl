@@ -2,6 +2,9 @@ module Units
 
 export uparse, @u_str
 
+import SparseArrays as SA
+import Tricks: static_fieldnames
+
 import ..DEFAULT_DIM_TYPE
 import ..DEFAULT_VALUE_TYPE
 import ..Quantity
@@ -9,6 +12,9 @@ import ..Dimensions
 import ..ustrip
 import ..dimension
 import ..AbstractDimensions
+import .._pow
+import ..constructor_of
+import ..tryrationalize
 
 
 @assert DEFAULT_VALUE_TYPE == Float64 "`units.jl` must be updated to support a different default value type."
@@ -149,6 +155,58 @@ end
 """A tuple of all possible unit symbols."""
 const UNIT_SYMBOLS = Tuple(_UNIT_SYMBOLS)
 const UNIT_VALUES = Tuple(_UNIT_VALUES)
+const UNIT_MAPPING = NamedTuple([s => i for (i, s) in enumerate(UNIT_SYMBOLS)])
+
+
+"""
+    UnitDimensions{R} <: AbstractDimensions{R}
+
+An `AbstractDimensions` with one dimension for every unit symbol.
+This is to allow for lazily reducing to SI base units, whereas
+`Dimensions` is always in SI base units. Furthermore, `UnitDimensions`
+stores dimensions using a sparse vector for efficiency (since there
+are so many unit symbols).
+"""
+struct UnitDimensions{R} <: AbstractDimensions{R}
+    _data::SA.SparseVector{R}
+
+    UnitDimensions(data::SA.SparseVector) = new{eltype(data)}(data)
+    UnitDimensions{_R}(data::SA.SparseVector) where {_R} = new{_R}(data)
+end
+
+data(d::UnitDimensions) = getfield(d, :_data)
+constructor_of(::Type{<:UnitDimensions}) = UnitDimensions
+
+UnitDimensions{R}(d::UnitDimensions) where {R} = UnitDimensions{R}(data(d))
+(::Type{D})(::Type{R}; kws...) where {R,D<:UnitDimensions} =
+    let constructor=constructor_of(D){R}
+        length(kws) == 0 && return constructor(SA.spzeros(R, length(UNIT_SYMBOLS)))
+        I = [UNIT_MAPPING[s] for s in keys(kws)]
+        V = [tryrationalize(R, v) for v in values(kws)]
+        data = SA.sparsevec(I, V, length(UNIT_SYMBOLS))
+        return constructor(data)
+    end
+
+function Base.convert(::Type{Q}, q::Quantity{<:Any,<:UnitDimensions}) where {T,D,Q<:Quantity{T,D}}
+    result = one(Q) * ustrip(q)
+    d = dimension(q)
+    for (idx, value) in zip(SA.findnz(data(d))...)
+        result = result * UNIT_VALUES[idx] ^ value
+    end
+    return result
+end
+
+static_fieldnames(::Type{<:UnitDimensions}) = UNIT_SYMBOLS
+Base.getproperty(d::UnitDimensions{R}, s::Symbol) where {R} = data(d)[UNIT_MAPPING[s]]
+Base.getindex(d::UnitDimensions{R}, k::Symbol) where {R} = getproperty(d, k)
+Base.copy(d::UnitDimensions) = UnitDimensions(copy(data(d)))
+Base.:(==)(l::UnitDimensions, r::UnitDimensions) = data(l) == data(r)
+Base.iszero(d::UnitDimensions) = iszero(data(d))
+Base.:*(l::UnitDimensions, r::UnitDimensions) = UnitDimensions(data(l) + data(r))
+Base.:/(l::UnitDimensions, r::UnitDimensions) = UnitDimensions(data(l) - data(r))
+Base.inv(d::UnitDimensions) = UnitDimensions(-data(d))
+_pow(l::UnitDimensions{R}, r::R) where {R} = UnitDimensions(data(l) * r)
+
 
 """
     UnitSymbols
@@ -158,59 +216,36 @@ to enable pretty-printing of units.
 """
 module UnitSymbols
 
+    import ..UNIT_SYMBOLS
+    import ..UnitDimensions
+
     import ...Quantity
-    import ...AbstractDimensions
     import ...DEFAULT_VALUE_TYPE
     import ...DEFAULT_DIM_BASE_TYPE
 
-    import ..UNIT_SYMBOLS
-
-    macro create_unit_dimensions(struct_name)
-        struct_def = :(struct $(struct_name){R} <: AbstractDimensions{R}; end)
-        fields = struct_def.args[3].args
-        for symb in UNIT_SYMBOLS
-            push!(fields, :($(symb)::R))
-        end
-        return struct_def |> esc
-    end
-
-    @create_unit_dimensions UnitDimensions
-
-    function generate_unit_symbols()
-        for unit in UNIT_SYMBOLS
-            @eval const $unit = Quantity(1.0, UnitDimensions; $(unit)=1)
+    # Lazily create unit symbols (since there are so many)
+    const UNIT_SYMBOLS_EXIST = Ref{Bool}(false)
+    const UNIT_SYMBOLS_LOCK = Threads.SpinLock()
+    function _generate_unit_symbols()
+        UNIT_SYMBOLS_EXIST[] || lock(UNIT_SYMBOLS_LOCK) do
+            UNIT_SYMBOLS_EXIST[] && return nothing
+            for unit in UNIT_SYMBOLS
+                @eval const $unit = Quantity(1.0, UnitDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
+            end
+            UNIT_SYMBOLS_EXIST[] = true
         end
         return nothing
     end
 
-    const UNIT_SYMBOLS_EXIST = Ref{Bool}(false)
-    const UNIT_SYMBOLS_LOCK = Threads.SpinLock()
-
     function uparse(raw_string::AbstractString)
-        UNIT_SYMBOLS_EXIST[] || lock(UNIT_SYMBOLS_LOCK) do
-            UNIT_SYMBOLS_EXIST[] && return nothing
-            generate_unit_symbols()
-            UNIT_SYMBOLS_EXIST[] = true
-        end
+        _generate_unit_symbols()
         raw_result = eval(Meta.parse(raw_string))
-        return as_quantity(raw_result)::Quantity{DEFAULT_VALUE_TYPE,UnitDimensions{DEFAULT_DIM_BASE_TYPE}}
+        return copy(as_quantity(raw_result))::Quantity{DEFAULT_VALUE_TYPE,UnitDimensions{DEFAULT_DIM_BASE_TYPE}}
     end
 
     as_quantity(q::Quantity) = q
     as_quantity(x::Number) = Quantity(convert(DEFAULT_VALUE_TYPE, x), UnitDimensions{DEFAULT_DIM_BASE_TYPE})
     as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
-
-end
-
-function Base.convert(::Type{Q}, q::Quantity{<:Any,<:UnitSymbols.UnitDimensions}) where {T,D,Q<:Quantity{T,D}}
-    result = one(Q) * ustrip(q)
-    d = dimension(q)
-    for (unit_symb, unit_val) in zip(UNIT_SYMBOLS, UNIT_VALUES)
-        dim = getproperty(d, unit_symb)
-        dim == 0 && continue
-        result = result * unit_val ^ dim
-    end
-    return result
 end
 
 end
