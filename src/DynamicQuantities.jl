@@ -23,6 +23,7 @@ import .UnitsParse: uparse, @u_str
 
 if !isdefined(Base, :get_extension)
     @init @require Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d" include("../ext/DynamicQuantitiesUnitfulExt.jl")
+    @init @require ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81" include("../ext/DynamicQuantitiesScientificTypesExt.jl")
 end
 
 end
