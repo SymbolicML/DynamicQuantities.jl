@@ -110,3 +110,7 @@ find_q(x) = x
 find_q(::Tuple{}) = error("Unexpected.")
 find_q(q::QuantityArray, rest) = q
 find_q(::Any, rest) = find_q(rest)
+
+_print_array_type(io::IO, ::Type{QA}) where {QA<:QuantityArray} = print(io, "QuantityArray(::", array_type(QA), ", ::", quantity_type(QA), ")")
+Base.showarg(io::IO, v::QuantityArray, _) = _print_array_type(io, typeof(v))
+Base.show(io::IO, ::MIME"text/plain", ::Type{QA}) where {QA<:QuantityArray} = _print_array_type(io, QA)
