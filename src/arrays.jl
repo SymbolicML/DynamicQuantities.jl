@@ -51,12 +51,14 @@ dimension(A::QuantityArray) = A.dimensions
 array_type(::Type{A}) where {T,A<:QuantityArray{T}} = Array{T,1}
 array_type(::Type{A}) where {T,N,A<:QuantityArray{T,N}} = Array{T,N}
 array_type(::Type{A}) where {T,N,D,Q,V,A<:QuantityArray{T,N,D,Q,V}} = V
+array_type(A) = array_type(typeof(A))
 
 quantity_type(::Type{A}) where {T,N,D,Q,A<:QuantityArray{T,N,D,Q}} = Q
 quantity_type(A) = quantity_type(typeof(A))
 
 dim_type(::Type{A}) where {A<:QuantityArray} = DEFAULT_DIM_TYPE
 dim_type(::Type{A}) where {T,N,D,A<:QuantityArray{T,N,D}} = D
+dim_type(A) = dim_type(typeof(A))
 
 # One field:
 for f in (:size, :length, :axes)
@@ -110,7 +112,7 @@ find_q(bc::Base.Broadcast.Broadcasted) =
     end
 
 find_q(args::Tuple) = find_q(find_q(first(args)), Base.tail(args))
-find_q(x) = (@show x; x)
+find_q(x) = x
 find_q(::Tuple{}) = error("Unexpected.")
 find_q(q::AbstractQuantity) = q
 find_q(q::AbstractQuantity, ::Any) = q
