@@ -99,16 +99,23 @@ function Base.BroadcastStyle(
     return Broadcast.ArrayStyle{QuantityArray{T,N,D,Q,V}}()
 end
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType}
-    q = find_q(bc)
+    q = find_q(bc)::quantity_type(QA)
     return QuantityArray(similar(array_type(QA), axes(bc)), dimension(q))
 end
 # https://discourse.julialang.org/t/defining-broadcast-for-custom-types-the-example-in-the-docs-fails/32291/2
 find_q(x::Base.Broadcast.Extruded) = x.x
-find_q(bc::Base.Broadcast.Broadcasted) = find_q(bc.args)
+find_q(bc::Base.Broadcast.Broadcasted) = 
+    let ar=ntuple(i -> find_q(bc.args[i]), Val(length(bc.args)))
+        bc.f(ar...)
+    end
+
 find_q(args::Tuple) = find_q(find_q(first(args)), Base.tail(args))
-find_q(x) = x
+find_q(x) = (@show x; x)
 find_q(::Tuple{}) = error("Unexpected.")
-find_q(q::QuantityArray, rest) = q
+find_q(q::AbstractQuantity) = q
+find_q(q::AbstractQuantity, ::Any) = q
+find_q(q::QuantityArray) = first(q)
+find_q(q::QuantityArray, ::Any) = first(q)
 find_q(::Any, rest) = find_q(rest)
 
 _print_array_type(io::IO, ::Type{QA}) where {QA<:QuantityArray} = print(io, "QuantityArray(::", array_type(QA), ", ::", quantity_type(QA), ")")
