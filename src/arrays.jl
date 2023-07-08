@@ -45,8 +45,8 @@ QuantityArray(v::AbstractArray, q::AbstractQuantity) = QuantityArray(v .* ustrip
 QuantityArray(v::QA) where {Q<:AbstractQuantity,QA<:AbstractArray{Q}} = allequal(dimension.(v)) ? QuantityArray(ustrip.(v), dimension(first(v)), Q) : throw(DimensionError(first(v), v))
 # TODO: Should this check that the dimensions are the same?
 
-ustrip(A::QuantityArray) = A.value
-dimension(A::QuantityArray) = A.dimensions
+@inline ustrip(A::QuantityArray) = A.value
+@inline dimension(A::QuantityArray) = A.dimensions
 
 array_type(::Type{A}) where {T,A<:QuantityArray{T}} = Array{T,1}
 array_type(::Type{A}) where {T,N,A<:QuantityArray{T,N}} = Array{T,N}

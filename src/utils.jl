@@ -146,17 +146,17 @@ Base.convert(::Type{D}, d::AbstractDimensions) where {R,D<:AbstractDimensions{R}
 
 Remove the units from a quantity.
 """
-ustrip(q::AbstractQuantity) = q.value
+@inline ustrip(q::AbstractQuantity) = q.value
 ustrip(::AbstractDimensions) = error("Cannot remove units from an `AbstractDimensions` object.")
-ustrip(q) = q
+@inline ustrip(q) = q
 
 """
     dimension(q::AbstractQuantity)
 
 Get the dimensions of a quantity, returning an `AbstractDimensions` object.
 """
-dimension(q::AbstractQuantity) = q.dimensions
-dimension(d::AbstractDimensions) = d
+@inline dimension(q::AbstractQuantity) = q.dimensions
+@inline dimension(d::AbstractDimensions) = d
 
 """
     ulength(q::AbstractQuantity)
