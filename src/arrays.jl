@@ -84,11 +84,10 @@ for f in (:size, :length, :axes)
     @eval Base.$f(A::QuantityArray) = $f(ustrip(A))
 end
 
-Base.getindex(A::QuantityArray, i...) = quantity_type(A)(getindex(ustrip(A), i...), dimension(A))
+Base.getindex(A::QuantityArray, i::Number...) = new_quantity(quantity_type(A), getindex(ustrip(A), i...), dimension(A))
+Base.getindex(A::QuantityArray, I...) = QuantityArray(getindex(ustrip(A), I...), dimension(A), quantity_type(A))
 Base.setindex!(A::QuantityArray{T,N,D,Q}, v::Q, i...) where {T,N,D,Q<:AbstractQuantity} = dimension(A) == dimension(v) ? unsafe_setindex!(A, v, i...) : throw(DimensionError(A, v))
-Base.setindex!(A::QuantityArray{T,N,D,Q}, v::AbstractQuantity, i...) where {T,N,D,Q<:AbstractQuantity} = error("Cannot set values in a quantity array with element type $(Q) with different element type: $(typeof(v)).")
-# TODO: Should this dimension check be removed?
-# TODO: This does not allow for efficient broadcasting; as the dimension calculation is repeated...
+Base.setindex!(A::QuantityArray{T,N,D,Q}, v::AbstractQuantity, i...) where {T,N,D,Q<:AbstractQuantity} = setindex!(A, convert(Q, v), i...)
 
 unsafe_setindex!(A, v, i...) = setindex!(ustrip(A), ustrip(v), i...)
 
@@ -107,48 +106,48 @@ Base.similar(::Type{QA}, ::Type{S}, dims::Dims) where {T,QA<:QuantityArray{T},S}
 function Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray}
     return Broadcast.ArrayStyle{QA}()
 end
-function Base.BroadcastStyle(
-    ::Broadcast.ArrayStyle{QA1}, ::Broadcast.ArrayStyle{QA2}
-) where {
-    T1,T2,N,V1<:AbstractArray{T1,N},V2<:AbstractArray{T2,N},D<:AbstractDimensions,
-    Q1<:AbstractQuantity{T1,D},Q2<:AbstractQuantity{T2,D},
-    QA1<:QuantityArray{T1,N,D,Q1,V1},QA2<:QuantityArray{T2,N,D,Q2,V2}
-}
-    T = promote_type(T1,T2)
-    V = promote_type(V1,V2)
-    Q = constructor_of(Q1){T,D}
-    return Broadcast.ArrayStyle{QuantityArray{T,N,D,Q,V}}()
+function Base.BroadcastStyle(::Broadcast.ArrayStyle{QA1}, ::Broadcast.ArrayStyle{QA2}) where {QA1<:QuantityArray,QA2<:QuantityArray}
+    return Broadcast.ArrayStyle{promote_type(QA1, QA2)}()
 end
 # TODO: How can I ustrip after finding the output units?
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType}
+    output_array_type = constructor_of(array_type(QA)){unwrap_quantity(ElType)}
+    output_array = similar(output_array_type, axes(bc))
+
     q = find_q(bc)
+    typeof(q) == ElType || @warn "Materialization of first element likely failed. Please submit a bug report."
+
     if isa(q, AbstractQuantity)
-        return QuantityArray(similar(array_type(QA), axes(bc)), dimension(q))
+        return QuantityArray(output_array, dimension(q))
     else
-        return similar(array_type(QA), axes(bc))
+        return output_array
     end
 end
+unwrap_quantity(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = T
+unwrap_quantity(::Type{T}) where {T} = T
 
-# https://discourse.julialang.org/t/defining-broadcast-for-custom-types-the-example-in-the-docs-fails/32291/2
-# Basically, we want to solve a single element to find the output dimension. Then
-# we can put results in the output `QuantityArray`.
+# Basically, we want to solve a single element to find the output dimension.
+# Then we can put results in the output `QuantityArray`.
 find_q(bc::Base.Broadcast.Broadcasted) = bc.f(find_q.(bc.args)...)
 
-# The rest of these functions are to extract either the quantities, or
-# to materialize the lazy broadcast functions.
-find_q(x) = x
+# Base cases
 find_q(q::AbstractQuantity) = q
+find_q(q::AbstractQuantity, ::Any) = q
+find_q(q::QuantityArray) = first(q)
+find_q(q::QuantityArray, ::Any) = first(q)
+find_q(q::AbstractArray{Q}) where {Q<:AbstractQuantity} = first(q)
+find_q(q::AbstractArray{Q}, ::Any) where {Q<:AbstractQuantity} = first(q)
+
+# Derived calls
 find_q(r::Base.RefValue) = find_q(r.x)
 find_q(x::Base.Broadcast.Extruded) = find_q(x.x)
-find_q(args::Tuple) = find_q(find_q(first(args)), Base.tail(args))
-find_q(args::AbstractArray) = (@assert length(args) >= 1; find_q(find_q(args[begin], args[begin+1:end])))
+find_q(args::Tuple) = find_q(first(args), Base.tail(args))
+find_q(args::AbstractArray) = length(args) >= 1 ? find_q(args[begin], args[begin+1:end]) : error("Unexpected.")
 find_q(::Tuple{}) = error("Unexpected.")
-find_q(q::AbstractQuantity, ::Any) = find_q(q)
-find_q(q::AbstractArray{Q}) where {Q<:AbstractQuantity} = find_q(first(q))
-find_q(q::AbstractArray{Q}, ::Any) where {Q<:AbstractQuantity} = find_q(first(q))
-find_q(q::QuantityArray) = find_q(first(q))
-find_q(q::QuantityArray, ::Any) = find_q(first(q))
-find_q(::Any, rest) = find_q(find_q(rest))
+find_q(::Any, rest) = find_q(rest)
+
+# Everything else:
+find_q(x) = x
 
 _print_array_type(io::IO, ::Type{QA}) where {QA<:QuantityArray} = print(io, "QuantityArray(::", array_type(QA), ", ::", quantity_type(QA), ")")
 Base.showarg(io::IO, v::QuantityArray, _) = _print_array_type(io, typeof(v))
