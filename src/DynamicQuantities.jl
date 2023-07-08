@@ -2,7 +2,7 @@ module DynamicQuantities
 
 export AbstractQuantity, AbstractDimensions
 export Quantity, Dimensions, DimensionError, ustrip, dimension, valid
-export QuantityArray
+export QuantityArray, FixedRational
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 export uparse, @u_str
 
