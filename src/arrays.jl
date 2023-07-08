@@ -30,14 +30,15 @@ struct QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractQuantity{T,D},V<:Abstr
     value::V
     dimensions::D
 
-    QuantityArray(v::_V, d::_D) where {_T,_N,_D<:AbstractDimensions,_V<:AbstractArray{_T,_N}} = new{_T,_N,_D,DEFAULT_QUANTITY_TYPE{_T,_D},_V}(v, d)
-    QuantityArray(v::_V, d::_D, ::Type{_Q}) where {_T,_N,_D<:AbstractDimensions,_Q<:AbstractQuantity{_T,_D},_V<:AbstractArray{_T,_N}} = new{_T,_N,_D,_Q,_V}(v, d)
-    QuantityArray(v::_V, d::_D, ::Type{_Q}) where {_T,_N,_D<:AbstractDimensions,_Q<:AbstractQuantity{_T},_V<:AbstractArray{_T,_N}} = QuantityArray(v, d, constructor_of(_Q){_T,_D})
-    QuantityArray(v::_V, d::_D, ::Type{_Q}) where {_T,_N,_D<:AbstractDimensions,_Q<:AbstractQuantity,_V<:AbstractArray{_T,_N}} = QuantityArray(v, d, _Q{_T,_D})
+    function QuantityArray(v::_V, d::_D, ::Type{_Q}) where {_T,_N,_D<:AbstractDimensions,_Q<:AbstractQuantity,_V<:AbstractArray{_T,_N}}
+        Q_out = constructor_of(_Q){_T,_D}
+        return new{_T,_N,_D,Q_out,_V}(v, d)
+    end
 end
 
 # Construct with a Quantity (easier, as you can use the units):
 QuantityArray(v::AbstractArray; kws...) = QuantityArray(v, DEFAULT_DIM_TYPE(; kws...))
+QuantityArray(v::AbstractArray, d::AbstractDimensions) = QuantityArray(v, d, DEFAULT_QUANTITY_TYPE)
 QuantityArray(v::AbstractArray, q::AbstractQuantity) = QuantityArray(v .* ustrip(q), dimension(q), typeof(q))
 QuantityArray(v::QA) where {Q<:AbstractQuantity,QA<:AbstractArray{Q}} = allequal(dimension.(v)) ? QuantityArray(ustrip.(v), dimension(first(v)), Q) : throw(DimensionError(first(v), v))
 # TODO: Should this check that the dimensions are the same?
@@ -53,7 +54,7 @@ function Base.promote_rule(::Type{QA1}, ::Type{QA2}) where {QA1<:QuantityArray,Q
     @assert(V <: AbstractArray{T}, "Incompatible promotion rules.")
 
     if N != ndims(QA2)
-        return QuantityArray{T,_N,D,Q,V} where _N
+        return QuantityArray{T,_N,D,Q,V} where {_N}
     else
         return QuantityArray{T,N,D,Q,V}
     end
@@ -84,8 +85,14 @@ for f in (:size, :length, :axes)
     @eval Base.$f(A::QuantityArray) = $f(ustrip(A))
 end
 
-Base.getindex(A::QuantityArray, i::Number...) = new_quantity(quantity_type(A), getindex(ustrip(A), i...), dimension(A))
-Base.getindex(A::QuantityArray, I...) = QuantityArray(getindex(ustrip(A), I...), dimension(A), quantity_type(A))
+function Base.getindex(A::QuantityArray, i...)
+    output_value = getindex(ustrip(A), i...)
+    if isa(output_value, AbstractArray)
+        return QuantityArray(output_value, dimension(A), quantity_type(A))
+    else
+        return new_quantity(quantity_type(A), output_value, dimension(A))
+    end
+end
 Base.setindex!(A::QuantityArray{T,N,D,Q}, v::Q, i...) where {T,N,D,Q<:AbstractQuantity} = dimension(A) == dimension(v) ? unsafe_setindex!(A, v, i...) : throw(DimensionError(A, v))
 Base.setindex!(A::QuantityArray{T,N,D,Q}, v::AbstractQuantity, i...) where {T,N,D,Q<:AbstractQuantity} = setindex!(A, convert(Q, v), i...)
 
@@ -93,15 +100,15 @@ unsafe_setindex!(A, v, i...) = setindex!(ustrip(A), ustrip(v), i...)
 
 Base.IndexStyle(::Type{Q}) where {Q<:QuantityArray} = IndexStyle(array_type(Q))
 
-Base.similar(A::QuantityArray) = QuantityArray(similar(ustrip(A)), dimension(A))
-Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustrip(A), S), dimension(A))
-Base.similar(A::QuantityArray, dims::Dims) = QuantityArray(similar(ustrip(A), dims), dimension(A))
-Base.similar(A::QuantityArray, ::Type{S}, dims::Dims) where {S} = QuantityArray(similar(ustrip(A), S, dims), dimension(A))
+Base.similar(A::QuantityArray) = QuantityArray(similar(ustrip(A)), dimension(A), quantity_type(A))
+Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustrip(A), S), dimension(A), quantity_type(A))
+Base.similar(A::QuantityArray, dims::Dims) = QuantityArray(similar(ustrip(A), dims), dimension(A), quantity_type(A))
+Base.similar(A::QuantityArray, ::Type{S}, dims::Dims) where {S} = QuantityArray(similar(ustrip(A), S, dims), dimension(A), quantity_type(A))
 
-Base.similar(::Type{QA}) where {T,QA<:QuantityArray{T}} = QuantityArray(similar(array_type(QA)), dim_type(QA)())
-Base.similar(::Type{QA}, ::Type{S}) where {T,QA<:QuantityArray{T},S} = QuantityArray(similar(array_type(QA), S), dim_type(QA)())
-Base.similar(::Type{QA}, dims::Dims) where {T,QA<:QuantityArray{T}} = QuantityArray(similar(array_type(QA), dims), dim_type(QA)())
-Base.similar(::Type{QA}, ::Type{S}, dims::Dims) where {T,QA<:QuantityArray{T},S} = QuantityArray(similar(array_type(QA), S, dims), dim_type(QA)())
+Base.similar(::Type{QA}) where {T,QA<:QuantityArray{T}} = QuantityArray(similar(array_type(QA)), dim_type(QA)(), quantity_type(QA))
+Base.similar(::Type{QA}, ::Type{S}) where {T,QA<:QuantityArray{T},S} = QuantityArray(similar(array_type(QA), S), dim_type(QA)(), quantity_type(QA))
+Base.similar(::Type{QA}, dims::Dims) where {T,QA<:QuantityArray{T}} = QuantityArray(similar(array_type(QA), dims), dim_type(QA)(), quantity_type(QA))
+Base.similar(::Type{QA}, ::Type{S}, dims::Dims) where {T,QA<:QuantityArray{T},S} = QuantityArray(similar(array_type(QA), S, dims), dim_type(QA)(), quantity_type(QA))
 
 function Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray}
     return Broadcast.ArrayStyle{QA}()
@@ -109,7 +116,6 @@ end
 function Base.BroadcastStyle(::Broadcast.ArrayStyle{QA1}, ::Broadcast.ArrayStyle{QA2}) where {QA1<:QuantityArray,QA2<:QuantityArray}
     return Broadcast.ArrayStyle{promote_type(QA1, QA2)}()
 end
-# TODO: How can I ustrip after finding the output units?
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType}
     output_array_type = constructor_of(array_type(QA)){unwrap_quantity(ElType)}
     output_array = similar(output_array_type, axes(bc))
@@ -117,9 +123,13 @@ function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Typ
     if ElType <: AbstractQuantity
         first_output = materialize_first(bc)
         if typeof(first_output) != ElType
-            @warn "Materialization of first element likely failed. Please submit a bug report."
+            @warn (
+                "Materialization of first element likely failed. "
+                * "Please submit a bug report with information on "
+                * "the function you are broadcasting."
+            )
         end
-        return QuantityArray(output_array, dimension(first_output))
+        return QuantityArray(output_array, dimension(first_output), ElType)
     else
         return output_array
     end
@@ -153,3 +163,15 @@ materialize_first(x) = x
 _print_array_type(io::IO, ::Type{QA}) where {QA<:QuantityArray} = print(io, "QuantityArray(::", array_type(QA), ", ::", quantity_type(QA), ")")
 Base.showarg(io::IO, v::QuantityArray, _) = _print_array_type(io, typeof(v))
 Base.show(io::IO, ::MIME"text/plain", ::Type{QA}) where {QA<:QuantityArray} = _print_array_type(io, QA)
+
+# Other array operations:
+Base.copy(A::QuantityArray) = QuantityArray(copy(ustrip(A)), dimension(A), quantity_type(A))
+function Base.cat(A::QuantityArray...; dims)
+    if !allequal(dimension.(A))
+        throw(DimensionError(A[begin], A[begin+1:end]))
+    end
+    return QuantityArray(cat(ustrip.(A)...; dims=dims), dimension(A[begin]), quantity_type(A[begin]))
+end
+Base.hcat(A::QuantityArray...) = cat(A...; dims=2)
+Base.vcat(A::QuantityArray...) = cat(A...; dims=1)
+Base.fill(x::AbstractQuantity, dims::Dims...) = QuantityArray(fill(ustrip(x), dims...), dimension(x), typeof(x))
