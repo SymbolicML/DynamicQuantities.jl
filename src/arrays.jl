@@ -114,11 +114,12 @@ function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Typ
     output_array_type = constructor_of(array_type(QA)){unwrap_quantity(ElType)}
     output_array = similar(output_array_type, axes(bc))
 
-    q = find_q(bc)
-    typeof(q) == ElType || @warn "Materialization of first element likely failed. Please submit a bug report."
-
-    if isa(q, AbstractQuantity)
-        return QuantityArray(output_array, dimension(q))
+    if ElType <: AbstractQuantity
+        first_output = materialize_first(bc)
+        if typeof(first_output) != ElType
+            @warn "Materialization of first element likely failed. Please submit a bug report."
+        end
+        return QuantityArray(output_array, dimension(first_output))
     else
         return output_array
     end
@@ -128,26 +129,26 @@ unwrap_quantity(::Type{T}) where {T} = T
 
 # Basically, we want to solve a single element to find the output dimension.
 # Then we can put results in the output `QuantityArray`.
-find_q(bc::Base.Broadcast.Broadcasted) = bc.f(find_q.(bc.args)...)
+materialize_first(bc::Base.Broadcast.Broadcasted) = bc.f(materialize_first.(bc.args)...)
 
 # Base cases
-find_q(q::AbstractQuantity) = q
-find_q(q::AbstractQuantity, ::Any) = q
-find_q(q::QuantityArray) = first(q)
-find_q(q::QuantityArray, ::Any) = first(q)
-find_q(q::AbstractArray{Q}) where {Q<:AbstractQuantity} = first(q)
-find_q(q::AbstractArray{Q}, ::Any) where {Q<:AbstractQuantity} = first(q)
+materialize_first(q::AbstractQuantity) = q
+materialize_first(q::AbstractQuantity, ::Any) = q
+materialize_first(q::QuantityArray) = first(q)
+materialize_first(q::QuantityArray, ::Any) = first(q)
+materialize_first(q::AbstractArray{Q}) where {Q<:AbstractQuantity} = first(q)
+materialize_first(q::AbstractArray{Q}, ::Any) where {Q<:AbstractQuantity} = first(q)
 
 # Derived calls
-find_q(r::Base.RefValue) = find_q(r.x)
-find_q(x::Base.Broadcast.Extruded) = find_q(x.x)
-find_q(args::Tuple) = find_q(first(args), Base.tail(args))
-find_q(args::AbstractArray) = length(args) >= 1 ? find_q(args[begin], args[begin+1:end]) : error("Unexpected.")
-find_q(::Tuple{}) = error("Unexpected.")
-find_q(::Any, rest) = find_q(rest)
+materialize_first(r::Base.RefValue) = materialize_first(r.x)
+materialize_first(x::Base.Broadcast.Extruded) = materialize_first(x.x)
+materialize_first(args::Tuple) = materialize_first(first(args), Base.tail(args))
+materialize_first(args::AbstractArray) = length(args) >= 1 ? materialize_first(args[begin], args[begin+1:end]) : error("Unexpected.")
+materialize_first(::Tuple{}) = error("Unexpected.")
+materialize_first(::Any, rest) = materialize_first(rest)
 
 # Everything else:
-find_q(x) = x
+materialize_first(x) = x
 
 _print_array_type(io::IO, ::Type{QA}) where {QA<:QuantityArray} = print(io, "QuantityArray(::", array_type(QA), ", ::", quantity_type(QA), ")")
 Base.showarg(io::IO, v::QuantityArray, _) = _print_array_type(io, typeof(v))
