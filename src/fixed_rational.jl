@@ -22,12 +22,16 @@ Since `den` can be a different type than `T`, this function
 is used to get the denominator as a `T`.
 """
 denom(::Type{F}) where {T,den,F<:FixedRational{T,den}} = convert(T, den)
+denom(x::FixedRational) = denom(typeof(x))
 
 # But, for Val(den), we need to use the same type as at init.
 # Otherwise, we would have type instability.
 val_denom(::Type{F}) where {T,den,F<:FixedRational{T,den}} = Val(den)
 
-Base.eltype(::Type{F}) where {T,den,F<:FixedRational{T,den}} = T
+Base.eltype(::Type{F}) where {T,F<:FixedRational{T}} = T
+
+const DEFAULT_NUMERATOR_TYPE = Int32
+const DEFAULT_DENOM = DEFAULT_NUMERATOR_TYPE(2^4 * 3^2 * 5^2 * 7)
 
 (::Type{F})(x::Integer) where {F<:FixedRational} = unsafe_fixed_rational(x * denom(F), eltype(F), val_denom(F))
 (::Type{F})(x::Rational) where {F<:FixedRational} = unsafe_fixed_rational(widemul(x.num, denom(F)) ÷ x.den, eltype(F), val_denom(F))
@@ -39,6 +43,10 @@ Base.:-(x::F) where {F<:FixedRational} = unsafe_fixed_rational(-x.num, eltype(F)
 Base.inv(x::F) where {F<:FixedRational} = unsafe_fixed_rational(widemul(denom(F), denom(F)) ÷ x.num, eltype(F), val_denom(F))
 
 Base.:(==)(x::F, y::F) where {F<:FixedRational} = x.num == y.num
+Base.isless(x::F, y::F) where {F<:FixedRational} = isless(x.num, y.num)
+Base.:<(x::F, y::F) where {F<:FixedRational} = x.num < y.num
+Base.:<=(x::F, y::F) where {F<:FixedRational} = x.num <= y.num
+Base.isapprox(x::F, y::F; kws...) where {F<:FixedRational} = isapprox(x.num, y.num; kws...)
 Base.iszero(x::FixedRational) = iszero(x.num)
 Base.isone(x::F) where {F<:FixedRational} = x.num == denom(F)
 Base.isinteger(x::F) where {F<:FixedRational} = iszero(x.num % denom(F))
@@ -47,16 +55,28 @@ Base.convert(::Type{F}, x::Rational) where {F<:FixedRational} = F(x)
 Base.convert(::Type{Rational{R}}, x::F) where {R,F<:FixedRational} = Rational{R}(x.num, denom(F))
 Base.convert(::Type{Rational}, x::F) where {F<:FixedRational} = Rational{eltype(F)}(x.num, denom(F))
 Base.convert(::Type{AF}, x::F) where {AF<:AbstractFloat,F<:FixedRational} = convert(AF, x.num) / convert(AF, denom(F))
-Base.convert(::Type{I}, x::F) where {I<:Integer,F<:FixedRational} = convert(I, convert(Rational, x))
+Base.convert(::Type{I}, x::F) where {I<:Integer,F<:FixedRational} = isinteger(x) ? div(x.num, denom(F)) : throw(InexactError(:convert, I, x))
 Base.round(::Type{T}, x::F) where {T,F<:FixedRational} = div(convert(T, x.num), convert(T, denom(F)), RoundNearest)
+Base.decompose(x::F) where {T,F<:FixedRational{T}} = (x.num, zero(T), denom(F))
+
+# Promotion rules:
+Base.promote_rule(::Type{<:FixedRational{T1,den1}}, ::Type{<:FixedRational{T2,den2}}) where {T1,T2,den1,den2} = FixedRational{promote_type(T1,T2),den*den2}
+Base.promote_rule(::Type{<:FixedRational{T1,den}}, ::Type{<:FixedRational{T2,den}}) where {T1,T2,den} = FixedRational{promote_type(T1,T2),den}
+Base.promote_rule(::Type{<:FixedRational{T1}}, ::Type{Rational{T2}}) where {T1,T2} = Rational{promote_type(T1,T2)}
+Base.promote_rule(::Type{<:FixedRational{T1}}, ::Type{T2}) where {T1,T2} = promote_type(Rational{T1}, T2)
+
+# Want to consume integers:
 Base.promote(x::Integer, y::F) where {F<:FixedRational} = (F(x), y)
 Base.promote(x::F, y::Integer) where {F<:FixedRational} = reverse(promote(y, x))
-Base.promote(x, y::F) where {F<:FixedRational} = promote(x, convert(Rational, y))
-Base.promote(x::F, y) where {F<:FixedRational} = reverse(promote(y, x))
-Base.show(io::IO, x::F) where {F<:FixedRational} = show(io, convert(Rational, x))
-Base.zero(::Type{F}) where {F<:FixedRational} = unsafe_fixed_rational(0, eltype(F), val_denom(F))
 
-Base.show(io::IO, ::Type{F}) where {F<:FixedRational} = print(io, "FixedRational{", eltype(F), ", ", denom(F), "}")
+Base.string(x::FixedRational) =
+    let
+        isinteger(x) && return string(convert(eltype(x), x))
+        g = gcd(x.num, denom(x))
+        return string(div(x.num, g)) * "//" * string(div(denom(x), g))
+    end
+Base.show(io::IO, x::FixedRational) = print(io, string(x))
+Base.zero(::Type{F}) where {F<:FixedRational} = unsafe_fixed_rational(0, eltype(F), val_denom(F))
 
 tryrationalize(::Type{F}, x::F) where {F<:FixedRational} = x
 tryrationalize(::Type{F}, x::Union{Rational,Integer}) where {F<:FixedRational} = convert(F, x)

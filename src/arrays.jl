@@ -42,6 +42,23 @@ QuantityArray(v::AbstractArray, q::AbstractQuantity) = QuantityArray(v .* ustrip
 QuantityArray(v::QA) where {Q<:AbstractQuantity,QA<:AbstractArray{Q}} = allequal(dimension.(v)) ? QuantityArray(ustrip.(v), dimension(first(v)), Q) : throw(DimensionError(first(v), v))
 # TODO: Should this check that the dimensions are the same?
 
+function Base.promote_rule(::Type{QA1}, ::Type{QA2}) where {QA1<:QuantityArray,QA2<:QuantityArray}
+    D = promote_type(dim_type.((QA1, QA2))...)
+    Q = promote_type(quantity_type.((QA1, QA2))...)
+    T = promote_type(value_type.((QA1, QA2))...)
+    V = promote_type(array_type.((QA1, QA2))...)
+    N = ndims(QA1)
+
+    @assert(Q <: AbstractQuantity{T,D}, "Incompatible promotion rules.")
+    @assert(V <: AbstractArray{T}, "Incompatible promotion rules.")
+
+    if N != ndims(QA2)
+        return QuantityArray{T,_N,D,Q,V} where _N
+    else
+        return QuantityArray{T,N,D,Q,V}
+    end
+end
+
 @inline ustrip(A::QuantityArray) = A.value
 @inline dimension(A::QuantityArray) = A.dimensions
 
@@ -56,6 +73,11 @@ quantity_type(A) = quantity_type(typeof(A))
 dim_type(::Type{A}) where {A<:QuantityArray} = DEFAULT_DIM_TYPE
 dim_type(::Type{A}) where {T,N,D,A<:QuantityArray{T,N,D}} = D
 dim_type(A) = dim_type(typeof(A))
+
+value_type(::Type{A}) where {A<:QuantityArray} = DEFAULT_VALUE_TYPE
+value_type(::Type{A}) where {T,A<:QuantityArray{T}} = T
+value_type(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = T
+value_type(A) = value_type(typeof(A))
 
 # One field:
 for f in (:size, :length, :axes)
