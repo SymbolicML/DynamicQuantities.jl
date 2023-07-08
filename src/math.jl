@@ -35,6 +35,21 @@ Base.:^(l::AbstractQuantity{T,D}, r::Number) where {T,R,D<:AbstractDimensions{R}
         return new_quantity(typeof(l), ustrip(l)^val_pow, dimension(l)^dim_pow)
     end
 
+@inline Base.literal_pow(::typeof(^), l::AbstractQuantity, ::Val{p}) where {p} = l^p
+
+# Special forms for small integer powers:
+# https://github.com/JuliaLang/julia/blob/b99f251e86c7c09b957a1b362b6408dbba106ff0/base/intfuncs.jl#L332
+for (p, ex) in [
+    (0, :(one(l))),
+    (1, :(l)),
+    (2, :(l * l)),
+    (3, :(l * l * l)),
+    (-1, :(inv(l))),
+    (-2, :((i=inv(l); i*i)))
+]
+    @eval @inline Base.literal_pow(::typeof(^), l::AbstractQuantity, ::Val{$p}) = $ex
+end
+
 Base.inv(d::AbstractDimensions) = map_dimensions(-, d)
 Base.inv(q::AbstractQuantity) = new_quantity(typeof(q), inv(ustrip(q)), inv(dimension(q)))
 
