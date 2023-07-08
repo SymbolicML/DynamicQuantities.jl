@@ -1,14 +1,11 @@
 const DEFAULT_QUANTITY_TYPE = Quantity
 
 """
-    QuantityArray{T,N,D,V}
+    QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractQuantity,V<:AbstractArray}
 
-An array of quantities with value `value` of type `V` and dimensions `dimensions` of type `D` (
-which are shared across all elements of the array). This is a subtype of `AbstractArray{T,N}`,
-and so can be used in most places where a normal array would be used. The one caveat to note
-is that while `getindex` returns `::Quantity`, `setindex!` expects a `::T`. This is done to
-avoid unnecessary dimension checks. This is not performed automatically so that the user
-is forced to be aware of it.
+An array of quantities with value `value` of type `V` and dimensions `dimensions` of type `D`
+(which are shared across all elements of the array). This is a subtype of `AbstractArray{Q,N}`,
+and so can be used in most places where a normal array would be used.
 
 # Fields
 
