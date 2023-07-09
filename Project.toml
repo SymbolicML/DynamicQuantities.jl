@@ -4,6 +4,7 @@ authors = ["MilesCranmer <miles.cranmer@gmail.com> and contributors"]
 version = "0.6.0"
 
 [deps]
+Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
@@ -16,6 +17,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 DynamicQuantitiesUnitfulExt = "Unitful"
 
 [compat]
+Compat = "^3.42, 4"
 Requires = "1"
 Tricks = "0.1"
 Unitful = "1"

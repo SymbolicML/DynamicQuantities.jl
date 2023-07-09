@@ -1,3 +1,5 @@
+import Compat: allequal
+
 """
     QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractQuantity,V<:AbstractArray}
 
