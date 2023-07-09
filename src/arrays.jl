@@ -167,7 +167,7 @@ Base.showarg(io::IO, v::QuantityArray, _) = _print_array_type(io, typeof(v))
 Base.show(io::IO, ::MIME"text/plain", ::Type{QA}) where {QA<:QuantityArray} = _print_array_type(io, QA)
 
 # Other array operations:
-Base.copy(A::QuantityArray) = QuantityArray(copy(ustrip(A)), dimension(A), quantity_type(A))
+Base.copy(A::QuantityArray) = QuantityArray(copy(ustrip(A)), copy(dimension(A)), quantity_type(A))
 function Base.cat(A::QuantityArray...; dims)
     allequal(dimension.(A)) || throw(DimensionError(A[begin], A[begin+1:end]))
     return QuantityArray(cat(ustrip.(A)...; dims=dims), dimension(A[begin]), quantity_type(A[begin]))
