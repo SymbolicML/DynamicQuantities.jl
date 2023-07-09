@@ -420,5 +420,6 @@ end
     @test string(dimension(q)) == "s⁻¹ km"
     @test expand_units(q) == 1.5u"km/s"
     @test string(dimension(us"Constants.au^1.5")) == "au³ᐟ²"
+    @test string(dimension(expand_units(us"Constants.au^1.5"))) == "m³ᐟ²"
     @test expand_units(2.3us"Constants.au^1.5") ≈ 2.3u"Constants.au^1.5"
 end
