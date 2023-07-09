@@ -77,12 +77,12 @@ _pow(l::SymbolicDimensions{R}, r::R) where {R} = SymbolicDimensions(data(l) * r)
 
 
 """
-    SymbolicDimensionsModule
+    SymbolicUnitsParse
 
 A separate module where each unit is treated as a separate dimension,
 to enable pretty-printing of units.
 """
-module SymbolicDimensionsModule
+module SymbolicUnitsParse
 
     import ..UNIT_SYMBOLS
     import ..CONSTANT_SYMBOLS
@@ -143,8 +143,8 @@ module SymbolicDimensionsModule
     as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 end
 
-import .SymbolicDimensionsModule: sym_uparse
+import .SymbolicUnitsParse: sym_uparse
 
 macro us_str(s)
-    return esc(SymbolicDimensionsModule.sym_uparse(s))
+    return esc(SymbolicUnitsParse.sym_uparse(s))
 end

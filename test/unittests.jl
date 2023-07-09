@@ -417,9 +417,16 @@ end
 
 @testset "Symbolic dimensions" begin
     q = 1.5us"km/s"
+    @test q == 1.5 * us"km" / us"s"
+    @test typeof(q) <: Quantity{Float64,<:SymbolicDimensions}
     @test string(dimension(q)) == "s⁻¹ km"
     @test expand_units(q) == 1.5u"km/s"
     @test string(dimension(us"Constants.au^1.5")) == "au³ᐟ²"
     @test string(dimension(expand_units(us"Constants.au^1.5"))) == "m³ᐟ²"
     @test expand_units(2.3us"Constants.au^1.5") ≈ 2.3u"Constants.au^1.5"
+    @test iszero(dimension(us"1.0")) == true
+    @test expand_units(inv(us"Constants.au")) ≈ 1/u"Constants.au"
+    @test dimension(inv(us"s") * us"km") == dimension(us"km/s")
+    @test dimension(inv(us"s") * us"m") != dimension(us"km/s")
+    @test dimension(expand_units(inv(us"s") * us"m")) == dimension(expand_units(us"km/s"))
 end
