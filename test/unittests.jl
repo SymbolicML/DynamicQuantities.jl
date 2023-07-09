@@ -414,3 +414,11 @@ end
     # But, we always need to use a quantity when mixing with mathematical operations:
     @test_throws ErrorException MyQuantity(0.1) + 0.1 * MyDimensions()
 end
+
+@testset "Symbolic dimensions" begin
+    q = 1.5us"km/s"
+    @test string(dimension(q)) == "s⁻¹ km"
+    @test expand_units(q) == 1.5u"km/s"
+    @test string(dimension(us"Constants.au^1.5")) == "au³ᐟ²"
+    @test expand_units(2.3us"Constants.au^1.5") ≈ 2.3u"Constants.au^1.5"
+end
