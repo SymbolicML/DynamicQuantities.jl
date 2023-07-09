@@ -1,5 +1,3 @@
-const DEFAULT_QUANTITY_TYPE = Quantity
-
 """
     QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractQuantity,V<:AbstractArray}
 
@@ -38,7 +36,7 @@ end
 
 # Construct with a Quantity (easier, as you can use the units):
 QuantityArray(v::AbstractArray; kws...) = QuantityArray(v, DEFAULT_DIM_TYPE(; kws...))
-QuantityArray(v::AbstractArray, d::AbstractDimensions) = QuantityArray(v, d, DEFAULT_QUANTITY_TYPE)
+QuantityArray(v::AbstractArray, d::AbstractDimensions) = QuantityArray(v, d, Quantity)
 QuantityArray(v::AbstractArray, q::AbstractQuantity) = QuantityArray(v .* ustrip(q), dimension(q), typeof(q))
 QuantityArray(v::QA) where {Q<:AbstractQuantity,QA<:AbstractArray{Q}} = allequal(dimension.(v)) ? QuantityArray(ustrip.(v), dimension(first(v)), Q) : throw(DimensionError(first(v), v))
 # TODO: Should this check that the dimensions are the same?
