@@ -464,6 +464,8 @@ end
     @test typeof(f.(y_q)) == typeof(y_q)
     @test ulength(f.(y_q)) == ulength(y_q) * 2
 
+    @test fill(u"m/s", 10) == QuantityArray(fill(1.0, 10) .* u"m/s")
+
     @testset "Symbolic units" begin
         z_ar = randn(32)
         z = QuantityArray(z_ar, us"Constants.h * km/s")
@@ -472,6 +474,6 @@ end
         io = IOBuffer()
         Base.showarg(io, z, true)
         msg = String(take!(io))
-        @test msg == "QuantityArray(::Vector{Float64}, ::Quantity{Float64, SymbolicDimensions{DynamicQuantities.FixedRational{Int32, 25200}}})"
+        @test msg == "QuantityArray(::Vector{Float64}, ::DynamicQuantities.Quantity{Float64, DynamicQuantities.SymbolicDimensions{DynamicQuantities.FixedRational{Int32, 25200}}})"
     end
 end
