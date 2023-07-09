@@ -1,5 +1,4 @@
-
-# Units
+# Constants
 
 Many common physical constants are available as well:
 
