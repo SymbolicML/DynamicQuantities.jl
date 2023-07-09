@@ -429,4 +429,6 @@ end
     @test dimension(inv(us"s") * us"km") == dimension(us"km/s")
     @test dimension(inv(us"s") * us"m") != dimension(us"km/s")
     @test dimension(expand_units(inv(us"s") * us"m")) == dimension(expand_units(us"km/s"))
+
+    @test_throws ErrorException sym_uparse("'c'")
 end
