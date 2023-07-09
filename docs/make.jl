@@ -41,6 +41,7 @@ makedocs(;
         "Home" => "index.md",
         "Utilities" => "api.md",
         "Units" => "units.md",
+        "Constants" => "constants.md",
         "Types" => "types.md",
     ]
 )
