@@ -89,8 +89,8 @@ Expand the symbolic units in a quantity to their base SI form.
 In other words, this converts a `Quantity` with `SymbolicDimensions`
 to one with `Dimensions`.
 """
-function expand_units(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:Quantity{T,D}}
-    return convert(Quantity{T,Dimensions{R}}, q)
+function expand_units(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:AbstractQuantity{T,D}}
+    return convert(constructor_of(Q){T,Dimensions{R}}, q)
 end
 
 

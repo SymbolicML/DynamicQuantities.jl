@@ -449,3 +449,29 @@ end
     @test ustrip(us"Constants.h") == ustrip(u"Constants.h")
     @test ustrip(us"Constants.au") != ustrip(u"Constants.au")
 end
+
+@testset "Arrays" begin
+    x = QuantityArray(randn(32), u"km/s")
+    @test ustrip(sum(x)) == sum(ustrip(x))
+
+    y = randn(32)
+    @test ustrip(QuantityArray(y, u"m")) == y
+
+    f(v) = v^2 * 1.5 - v^2
+    @test sum(f.(QuantityArray(y, u"m"))) == sum(f.(y) .* u"m^2")
+
+    y_q = QuantityArray(y, u"m")
+    @test typeof(f.(y_q)) == typeof(y_q)
+    @test ulength(f.(y_q)) == ulength(y_q) * 2
+
+    @testset "Symbolic units" begin
+        z_ar = randn(32)
+        z = QuantityArray(z_ar, us"Constants.h * km/s")
+        z_true = z_ar .* u"Constants.h * km/s"
+        @test all(expand_units.(z) .≈ z_true)
+        io = IOBuffer()
+        Base.showarg(io, z, true)
+        msg = String(take!(io))
+        @test msg == "QuantityArray(::Vector{Float64}, ::Quantity{Float64, SymbolicDimensions{DynamicQuantities.FixedRational{Int32, 25200}}})"
+    end
+end
