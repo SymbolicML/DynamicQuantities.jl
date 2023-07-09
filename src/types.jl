@@ -3,11 +3,40 @@ import Tricks: static_fieldnames, static_fieldtypes
 const DEFAULT_DIM_BASE_TYPE = FixedRational{Int32,2^4 * 3^2 * 5^2 * 7}
 const DEFAULT_VALUE_TYPE = Float64
 
-abstract type AbstractQuantity{T,D} end
+"""
+    AbstractDimensions{R}
+
+An abstract type for dimension types. `R` is the type of the exponents of the dimensions,
+and by default is set to `DynamicQuantities.DEFAULT_DIM_BASE_TYPE`.
+AbstractDimensions are used to store the dimensions of `AbstractQuantity` objects.
+Together these enable many operators in Base to manipulate dimensions.
+This type has generic constructors for creating dimension objects, so user-defined
+dimension types can be created by simply subtyping `AbstractDimensions`, without
+the need to define many other functions.
+
+The key function that one could wish to overload is
+`DynamicQuantities.dimension_name(::AbstractDimensions, k::Symbol)` for mapping from a field name
+to a base unit (e.g., `length` by default maps to `m`). You may also need to overload
+`DynamicQuantities.constructor_of(::Type{T})` in case of non-standard construction.
+"""
 abstract type AbstractDimensions{R} end
 
 """
-    Dimensions{R} <: AbstractDimensions{R}
+    AbstractQuantity{T,D}
+
+An abstract type for quantities. `T` is the type of the value of the quantity,
+and `D` is the type of the dimensions of the quantity. By default, `D` is set to
+`DynamicQuantities.DEFAULT_DIM_TYPE`. `T` is inferred from the value in a calculation,
+but in other cases is defaulted to `DynamicQuantities.DEFAULT_VALUE_TYPE`.
+It is assumed that the value is stored in the `:value` field, and the dimensions
+object is stored in the `:dimensions` field. These fields can be accessed with
+`ustrip` and `dimension`, respectively. Many operators in `Base` are defined on
+`AbstractQuantity` objects, including `+, -, *, /, ^, sqrt, cbrt, abs`.
+"""
+abstract type AbstractQuantity{T,D} end
+
+"""
+    Dimensions{R<:Real} <: AbstractDimensions{R}
 
 A type representing the dimensions of a quantity, with each
 field giving the power of the corresponding dimension. For
@@ -51,12 +80,12 @@ end
 const DEFAULT_DIM_TYPE = Dimensions{DEFAULT_DIM_BASE_TYPE}
 
 """
-    Quantity{T,D} <: AbstractQuantity{T,D}
+    Quantity{T,D<:AbstractDimensions} <: AbstractQuantity{T,D}
 
 Physical quantity with value `value` of type `T` and dimensions `dimensions` of type `D`.
 For example, the velocity of an object with mass 1 kg and velocity
 2 m/s is `Quantity(2, mass=1, length=1, time=-1)`.
-You should access these fields with `ustrip(q)`, and `dimensions(q)`.
+You should access these fields with `ustrip(q)`, and `dimension(q)`.
 You can access specific dimensions with `ulength(q)`, `umass(q)`, `utime(q)`,
 `ucurrent(q)`, `utemperature(q)`, `uluminosity(q)`, and `uamount(q)`.
 
