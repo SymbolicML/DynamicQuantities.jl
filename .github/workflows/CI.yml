@@ -41,6 +41,7 @@ jobs:
           julia --color=yes --project=. coverage.jl
       - name: "Coveralls"
         uses: coverallsapp/github-action@v2
+        if: matrix.version == '1'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: lcov.info
