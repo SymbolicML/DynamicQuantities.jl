@@ -16,13 +16,15 @@ in a namespace with all the units available.
 
 ```@docs
 Units.m
-Units.g
+Units.kg
 Units.s
 Units.A
 Units.K
 Units.cd
 Units.mol
 ```
+
+### Derived units
 
 Several derived SI units are available as well:
 

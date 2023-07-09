@@ -355,6 +355,14 @@ end
     @test_throws LoadError eval(:(u":x"))
 end
 
+@testset "Constants" begin
+    @test Constants.h * Constants.c / (1000.0u"nm") ≈ 1.9864458571489284e-19u"J"
+
+    # Compute period of Earth based on solar mass and semi-major axis:
+    a = u"Constants.au"
+    @test isapprox(sqrt(4π^2 * a^3 / (Constants.G * Constants.M_sun)), 1u"yr"; rtol=1e-3)
+end
+
 @testset "Additional tests of FixedRational" begin
     @test convert(Int64, FixedRational{Int64,1000}(2 // 1)) == 2
     @test convert(Int32, FixedRational{Int64,1000}(3 // 1)) == 3
@@ -414,4 +422,39 @@ end
 
     # But, we always need to use a quantity when mixing with mathematical operations:
     @test_throws ErrorException MyQuantity(0.1) + 0.1 * MyDimensions()
+end
+
+@testset "Symbolic dimensions" begin
+    q = 1.5us"km/s"
+    @test q == 1.5 * us"km" / us"s"
+    @test typeof(q) <: Quantity{Float64,<:SymbolicDimensions}
+    @test string(dimension(q)) == "s⁻¹ km"
+    @test expand_units(q) == 1.5u"km/s"
+    @test string(dimension(us"Constants.au^1.5")) == "au³ᐟ²"
+    @test string(dimension(expand_units(us"Constants.au^1.5"))) == "m³ᐟ²"
+    @test expand_units(2.3us"Constants.au^1.5") ≈ 2.3u"Constants.au^1.5"
+    @test iszero(dimension(us"1.0")) == true
+    @test expand_units(inv(us"Constants.au")) ≈ 1/u"Constants.au"
+    @test dimension(inv(us"s") * us"km") == dimension(us"km/s")
+    @test dimension(inv(us"s") * us"m") != dimension(us"km/s")
+    @test dimension(expand_units(inv(us"s") * us"m")) == dimension(expand_units(us"km/s"))
+
+    @test_throws ErrorException sym_uparse("'c'")
+
+    # For constants which have a namespace collision, the numerical expansion is used:
+    @test dimension(us"Constants.au")[:au] == 1
+    @test dimension(us"Constants.h")[:h] == 0
+    @test dimension(us"h")[:h] == 1
+
+    @test us"Constants.h" != us"h"
+    @test expand_units(us"Constants.h") == u"Constants.h"
+
+    # Actually expands to:
+    @test dimension(us"Constants.h")[:m] == 2
+    @test dimension(us"Constants.h")[:s] == -1
+    @test dimension(us"Constants.h")[:kg] == 1
+
+    # So the numerical value is different from other constants:
+    @test ustrip(us"Constants.h") == ustrip(u"Constants.h")
+    @test ustrip(us"Constants.au") != ustrip(u"Constants.au")
 end
