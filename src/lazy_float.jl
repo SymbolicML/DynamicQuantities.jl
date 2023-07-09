@@ -12,7 +12,8 @@ Base.convert(::Type{LazyFloat64}, x::LazyFloat64) = x
 Base.convert(::Type{LazyFloat64}, x::FixedRational) = LazyFloat64(convert(Float64, x))
 Base.convert(::Type{LazyFloat64}, x::Number) = LazyFloat64(x)
 Base.convert(::Type{T}, x::LazyFloat64) where {T<:Number} = convert(T, float(x))
-Base.promote_rule(::Type{LazyFloat64}, ::Type{T}) where {T} = T
+Base.promote_rule(::Type{LazyFloat64}, ::Type{T}) where {T<:AbstractFloat} = T
+Base.promote_rule(::Type{LazyFloat64}, ::Type{T}) where {T} = promote_type(Float64, T)
 
 (::Type{T})(x::LazyFloat64) where {T<:Number} = T(float(x))
 

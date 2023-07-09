@@ -7,7 +7,7 @@ import ..Quantity
 import ..LazyFloat64
 
 const DEFAULT_UNIT_BASE_TYPE = LazyFloat64
-const DEFAULT_UNIT_TYPE = Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
+const DEFAULT_UNIT_TYPE = Quantity{DEFAULT_UNIT_BASE_TYPE,DEFAULT_DIM_TYPE}
 
 const _UNIT_SYMBOLS = Symbol[]
 const _UNIT_VALUES = DEFAULT_UNIT_TYPE[]
