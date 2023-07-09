@@ -39,9 +39,12 @@ Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
 
 # Compatibility with `.*`
-Base.length(::AbstractQuantity) = 1
-Base.iterate(qd::AbstractQuantity) = (qd, nothing)
-Base.iterate(::AbstractQuantity, ::Nothing) = nothing
+Base.length(q::AbstractQuantity) = length(ustrip(q))
+Base.iterate(qd::AbstractQuantity, maybe_state...) = 
+    let subiterate=iterate(ustrip(qd), maybe_state...)
+        subiterate === nothing && return nothing
+        return new_quantity(typeof(qd), subiterate[1], dimension(qd)), subiterate[2]
+    end
 
 # Numeric checks
 Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...) = isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
