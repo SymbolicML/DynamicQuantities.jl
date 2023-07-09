@@ -36,6 +36,31 @@ end
 @register_constant k_B 1.380649e-23 * U.J/U.K
 @register_constant N_A 6.02214076e+23 / U.mol
 
+@doc(
+    "Speed of light in a vacuum. Standard.",
+    c,
+)
+@doc(
+    "Planck constant. Standard.",
+    h,
+)
+@doc(
+    "Reduced Planck constant (h/2π). Standard.",
+    hbar,
+)
+@doc(
+    "Elementary charge. Standard.",
+    e,
+)
+@doc(
+    "Boltzmann constant. Standard.",
+    k_B,
+)
+@doc(
+    "Avogadro constant. Standard.",
+    N_A,
+)
+
 # Exact, derived:
 @register_constant eV e * U.J/U.C
 @register_constant R N_A * k_B
@@ -43,6 +68,23 @@ end
 @register_constant sigma_sb (π^2/60) * k_B^4/(hbar^3 * c^2)
 
 @add_prefixes eV (m, k, M, G, T)
+
+@doc(
+    "Electron volt. Standard.",
+    eV,
+)
+@doc(
+    "Molar gas constant. Standard.",
+    R,
+)
+@doc(
+    "Faraday constant. Standard.",
+    F,
+)
+@doc(
+    "Stefan-Boltzmann constant. Standard.",
+    sigma_sb,
+)
 
 # Measured
 @register_constant alpha DEFAULT_QUANTITY_TYPE(7.2973525693e-3)
@@ -57,6 +99,50 @@ end
 @register_constant k_e 1/(4π * eps_0)
 @register_constant Ryd alpha^2 * m_e * c^2 / (2 * h)
 
+@doc(
+    "Fine-structure constant. Measured.",
+    alpha,
+)
+@doc(
+    "Atomic mass unit (1/12th the mass of Carbon-12). Measured.",
+    u,
+)
+@doc(
+    "Newtonian constant of gravitation. Measured.",
+    G,
+)
+@doc(
+    "Vacuum magnetic permeability. Measured.",
+    mu_0,
+)
+@doc(
+    "Vacuum electric permittivity. Measured.",
+    eps_0,
+)
+@doc(
+    "Electron mass. Measured.",
+    m_e,
+)
+@doc(
+    "Proton mass. Measured.",
+    m_p,
+)
+@doc(
+    "Neutron mass. Measured.",
+    m_n,
+)
+@doc(
+    "Bohr radius. Measured.",
+    a_0,
+)
+@doc(
+    "Coulomb constant (Note: SI units only!). Measured.",
+    k_e,
+)
+@doc(
+    "Rydberg frequency. Measured.",
+    Ryd,
+)
 
 # Astro constants.
 # Source: https://arxiv.org/abs/1510.07674
@@ -76,6 +162,59 @@ end
 @register_constant atm 101325 * U.Pa
 
 @add_prefixes pc (k, M, G)
+
+@doc(
+    "Earth mass. Measured.",
+    M_earth,
+)
+@doc(
+    "Solar mass. Measured.",
+    M_sun,
+)
+@doc(
+    "Jupiter mass. Measured.",
+    M_jup,
+)
+@doc(
+    "Nominal Earth equatorial radius. Standard.",
+    R_earth,
+)
+@doc(
+    "Nominal Jupiter equatorial radius. Standard.",
+    R_jup,
+)
+@doc(
+    "Nominal solar radius. Standard.",
+    R_sun,
+)
+@doc(
+    "Nominal solar luminosity. Standard.",
+    L_sun,
+)
+@doc(
+    "Standard luminosity at absolute bolometric magnitude 0. Standard.",
+    L_bol0,
+)
+@doc(
+    "Thomson scattering cross-section. Measured.",
+    sigma_T,
+)
+@doc(
+    "Astronomical unit. Standard.",
+    au,
+)
+@doc(
+    "Parsec. Standard.",
+    pc,
+)
+@doc(
+    "Light year. Standard.",
+    ly,
+)
+@doc(
+    "Standard atmosphere. Standard.",
+    atm,
+)
 
 """A tuple of all possible constants."""
 const CONSTANT_SYMBOLS = Tuple(_CONSTANT_SYMBOLS)
