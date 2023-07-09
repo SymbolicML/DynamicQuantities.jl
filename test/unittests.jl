@@ -431,4 +431,21 @@ end
     @test dimension(expand_units(inv(us"s") * us"m")) == dimension(expand_units(us"km/s"))
 
     @test_throws ErrorException sym_uparse("'c'")
+
+    # For constants which have a namespace collision, the numerical expansion is used:
+    @test dimension(us"Constants.au")[:au] == 1
+    @test dimension(us"Constants.h")[:h] == 0
+    @test dimension(us"h")[:h] == 1
+
+    @test us"Constants.h" != us"h"
+    @test expand_units(us"Constants.h") == u"Constants.h"
+
+    # Actually expands to:
+    @test dimension(us"Constants.h")[:m] == 2
+    @test dimension(us"Constants.h")[:s] == -1
+    @test dimension(us"Constants.h")[:kg] == 1
+
+    # So the numerical value is different from other constants:
+    @test ustrip(us"Constants.h") == ustrip(u"Constants.h")
+    @test ustrip(us"Constants.au") != ustrip(u"Constants.au")
 end

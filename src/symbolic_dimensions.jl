@@ -24,7 +24,7 @@ const ALL_MAPPING = NamedTuple([s => i for (i, s) in enumerate(ALL_SYMBOLS)])
 """
     SymbolicDimensions{R} <: AbstractDimensions{R}
 
-An `AbstractDimensions` with one dimension for every unit symbol.
+An `AbstractDimensions` with one dimension for every unit and constant symbol.
 This is to allow for lazily reducing to SI base units, whereas
 `Dimensions` is always in SI base units. Furthermore, `SymbolicDimensions`
 stores dimensions using a sparse vector for efficiency (since there
@@ -58,6 +58,21 @@ SymbolicDimensions{R}(d::SymbolicDimensions) where {R} = SymbolicDimensions{R}(d
         return constructor(data)
     end
 
+function Base.convert(::Type{Qout}, q::Quantity{<:Any,<:Dimensions}) where {T,D<:SymbolicDimensions,Qout<:Quantity{T,D}}
+    output = Qout(
+        convert(T, ustrip(q)),
+        D;
+        m=ulength(q),
+        kg=umass(q),
+        s=utime(q),
+        A=ucurrent(q),
+        K=utemperature(q),
+        cd=uluminosity(q),
+        mol=uamount(q),
+    )
+    SA.dropzeros!(data(dimension(output)))
+    return output
+end
 function Base.convert(::Type{Q}, q::Quantity{<:Any,<:SymbolicDimensions}) where {T,D<:Dimensions,Q<:Quantity{T,D}}
     result = one(Q) * ustrip(q)
     d = dimension(q)
@@ -115,6 +130,8 @@ module SymbolicUnitsParse
         import ..DEFAULT_VALUE_TYPE
         import ..DEFAULT_DIM_BASE_TYPE
 
+        import ...Constants as EagerConstants
+
         const CONSTANT_SYMBOLS_EXIST = Ref{Bool}(false)
         const CONSTANT_SYMBOLS_LOCK = Threads.SpinLock()
         function _generate_unit_symbols()
@@ -122,6 +139,10 @@ module SymbolicUnitsParse
                 CONSTANT_SYMBOLS_EXIST[] && return nothing
                 for unit in setdiff(CONSTANT_SYMBOLS, SYMBOL_CONFLICTS)
                     @eval const $unit = Quantity(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
+                end
+                # Evaluate conflicting symbols to non-symbolic form:
+                for unit in SYMBOL_CONFLICTS
+                    @eval const $unit = convert(Quantity{DEFAULT_VALUE_TYPE,SymbolicDimensions}, EagerConstants.$unit)
                 end
                 CONSTANT_SYMBOLS_EXIST[] = true
             end
