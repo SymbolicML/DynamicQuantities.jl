@@ -121,6 +121,8 @@ end
 (::Type{Q})(q::AbstractQuantity) where {T,D<:AbstractDimensions,Q<:AbstractQuantity{T,D}} = constructor_of(Q)(convert(T, ustrip(q)), convert(D, dimension(q)))
 (::Type{Q})(q::AbstractQuantity) where {T,Q<:AbstractQuantity{T}} = constructor_of(Q)(convert(T, ustrip(q)), dimension(q))
 
+const DEFAULT_QUANTITY_TYPE = Quantity{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE}
+
 new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = constructor_of(D)(dims...)
 new_quantity(::Type{Q}, l, r) where {Q<:AbstractQuantity} = constructor_of(Q)(l, r)
 
