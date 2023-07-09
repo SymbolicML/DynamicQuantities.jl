@@ -13,7 +13,7 @@ include("math.jl")
 include("units.jl")
 include("constants.jl")
 include("uparse.jl")
-include("symbolic_quantity.jl")
+include("symbolic_dimensions.jl")
 
 import Requires: @init, @require
 import .Units
