@@ -178,7 +178,7 @@ module SymbolicUnitsParse
     Note that inside this expression, you also have access to the `Constants`
     module. So, for example, `sym_uparse("Constants.c^2 * Hz^2")` would evaluate to
     `Quantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
-    namespace collisions, a few physical constants are not available.
+    namespace collisions, a few physical constants are automatically converted.
     """
     function sym_uparse(raw_string::AbstractString)
         _generate_unit_symbols()
@@ -207,7 +207,7 @@ For example, `us"km/s^2"` would be parsed to `Quantity(1.0, SymbolicDimensions, 
 Note that inside this expression, you also have access to the `Constants`
 module. So, for example, `us"Constants.c^2 * Hz^2"` would evaluate to
 `Quantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
-namespace collisions, a few physical constants are not available.
+namespace collisions, a few physical constants are automatically converted.
 """
 macro us_str(s)
     return esc(SymbolicUnitsParse.sym_uparse(s))
