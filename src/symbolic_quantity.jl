@@ -34,7 +34,7 @@ function Base.convert(::Type{Q}, q::Quantity{<:Any,<:SymbolicDimensions}) where 
     result = one(Q) * ustrip(q)
     d = dimension(q)
     for (idx, value) in zip(SA.findnz(data(d))...)
-        result = result * UNIT_VALUES[idx] ^ value
+        result = result * convert(Q, UNIT_VALUES[idx]) ^ value
     end
     return result
 end
