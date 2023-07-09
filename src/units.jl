@@ -62,6 +62,35 @@ end
 @add_prefixes cd (m,)
 @add_prefixes mol (m,)
 
+@doc(
+    "Length in meters. Available variants: `fm`, `pm`, `nm`, `μm` (/`um`), `cm`, `dm`, `mm`, `km`, `Mm`, `Gm`.",
+    m,
+)
+@doc(
+    "Mass in kilograms. Available variants: `μg` (/`ug`), `mg`, `g`.",
+    kg,
+)
+@doc(
+    "Time in seconds. Available variants: `fs`, `ps`, `ns`, `μs` (/`us`), `ms`, `min`, `h` (/`hr`), `day`, `yr`, `kyr`, `Myr`, `Gyr`.",
+    s,
+)
+@doc(
+    "Current in Amperes. Available variants: `nA`, `μA` (/`uA`), `mA`, `kA`.",
+    A,
+)
+@doc(
+    "Temperature in Kelvin. Available variant: `mK`.",
+    K,
+)
+@doc(
+    "Luminosity in candela. Available variant: `mcd`.",
+    cd,
+)
+@doc(
+    "Amount in moles. Available variant: `mmol`.",
+    mol,
+)
+
 # SI derived units
 @register_unit Hz inv(s)
 @register_unit N kg * m / s^2
@@ -87,6 +116,48 @@ end
 @add_prefixes ohm (m,)
 @add_prefixes T ()
 
+# SI derived units
+@doc(
+    "Frequency in Hertz. Available variants: `kHz`, `MHz`, `GHz`.",
+    Hz,
+)
+@doc(
+    "Force in Newtons.",
+    N,
+)
+@doc(
+    "Pressure in Pascals. Available variant: `kPa`.",
+    Pa,
+)
+@doc(
+    "Energy in Joules. Available variant: `kJ`.",
+    J,
+)
+@doc(
+    "Power in Watts. Available variants: `kW`, `MW`, `GW`.",
+    W,
+)
+@doc(
+    "Charge in Coulombs.",
+    C,
+)
+@doc(
+    "Voltage in Volts. Available variants: `kV`, `MV`, `GV`.",
+    V,
+)
+@doc(
+    "Capacitance in Farads.",
+    F,
+)
+@doc(
+    "Resistance in Ohms. Available variant: `mΩ`. Also available is ASCII `ohm` (with variant `mohm`).",
+    Ω,
+)
+@doc(
+    "Magnetic flux density in Teslas.",
+    T,
+)
+
 # Common assorted units
 ## Time
 @register_unit min 60 * s
@@ -106,10 +177,20 @@ end
 
 @add_prefixes L (m, d)
 
+@doc(
+    "Volume in liters. Available variants: `mL`, `dL`.",
+    L,
+)
+
 ## Pressure
 @register_unit bar 100 * kPa
 
 @add_prefixes bar ()
+
+@doc(
+    "Pressure in bars.",
+    bar,
+)
 
 # Do not wish to define Gaussian units, as it changes
 # some formulas. Safer to force user to work exclusively in one unit system.
