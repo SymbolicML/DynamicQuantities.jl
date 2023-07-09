@@ -92,6 +92,7 @@ to one with `Dimensions`.
 function expand_units(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:AbstractQuantity{T,D}}
     return convert(constructor_of(Q){T,Dimensions{R}}, q)
 end
+expand_units(q::QuantityArray) = expand_units.(q)
 
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(data(d)))

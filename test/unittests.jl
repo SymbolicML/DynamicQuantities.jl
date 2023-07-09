@@ -469,8 +469,9 @@ end
     @testset "Symbolic units" begin
         z_ar = randn(32)
         z = QuantityArray(z_ar, us"Constants.h * km/s")
-        z_true = z_ar .* u"Constants.h * km/s"
-        @test all(expand_units.(z) .≈ z_true)
+        z_expanded = QuantityArray(z_ar .* u"Constants.h * km/s")
+        @test typeof(expand_units(z)) == typeof(z_expanded)
+        @test all(expand_units(z) .≈ z_expanded)
         io = IOBuffer()
         Base.showarg(io, z, true)
         msg = String(take!(io))

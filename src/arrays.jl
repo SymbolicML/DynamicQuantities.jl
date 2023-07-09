@@ -48,8 +48,10 @@ function Base.promote_rule(::Type{QA1}, ::Type{QA2}) where {QA1<:QuantityArray,Q
     V = promote_type(array_type.((QA1, QA2))...)
     N = ndims(QA1)
 
-    @assert(Q <: AbstractQuantity{T,D}, "Incompatible promotion rules.")
-    @assert(V <: AbstractArray{T}, "Incompatible promotion rules.")
+    @assert(
+        Q <: AbstractQuantity{T,D} && V <: AbstractArray{T},
+        "Incompatible promotion rules between\n    $(QA1)\nand\n    $(QA2)\nPlease convert to a common quantity type first."
+    )
 
     if N != ndims(QA2)
         return QuantityArray{T,_N,D,Q,V} where {_N}
