@@ -153,23 +153,23 @@ materialize_first(q::AbstractArray{Q}, ::Any) where {Q<:AbstractQuantity} = firs
 materialize_first(r::Base.RefValue) = materialize_first(r.x)
 materialize_first(x::Base.Broadcast.Extruded) = materialize_first(x.x)
 materialize_first(args::Tuple) = materialize_first(first(args), Base.tail(args))
-materialize_first(args::AbstractArray) = length(args) >= 1 ? materialize_first(args[begin], args[begin+1:end]) : error("Unexpected.")
-materialize_first(::Tuple{}) = error("Unexpected.")
+materialize_first(args::AbstractArray) = length(args) >= 1 ? materialize_first(args[begin], args[begin+1:end]) : error("Unexpected broadcast format. Please submit a bug report.")
+materialize_first(::Tuple{}) = error("Unexpected broadcast format. Please submit a bug report.")
 materialize_first(::Any, rest) = materialize_first(rest)
 
 # Everything else:
 materialize_first(x) = x
 
-_print_array_type(io::IO, ::Type{QA}) where {QA<:QuantityArray} = print(io, "QuantityArray(::", array_type(QA), ", ::", quantity_type(QA), ")")
+function _print_array_type(io::IO, ::Type{QA}) where {QA<:QuantityArray}
+    return print(io, "QuantityArray(::", array_type(QA), ", ::", quantity_type(QA), ")")
+end
 Base.showarg(io::IO, v::QuantityArray, _) = _print_array_type(io, typeof(v))
 Base.show(io::IO, ::MIME"text/plain", ::Type{QA}) where {QA<:QuantityArray} = _print_array_type(io, QA)
 
 # Other array operations:
 Base.copy(A::QuantityArray) = QuantityArray(copy(ustrip(A)), dimension(A), quantity_type(A))
 function Base.cat(A::QuantityArray...; dims)
-    if !allequal(dimension.(A))
-        throw(DimensionError(A[begin], A[begin+1:end]))
-    end
+    allequal(dimension.(A)) || throw(DimensionError(A[begin], A[begin+1:end]))
     return QuantityArray(cat(ustrip.(A)...; dims=dims), dimension(A[begin]), quantity_type(A[begin]))
 end
 Base.hcat(A::QuantityArray...) = cat(A...; dims=2)
