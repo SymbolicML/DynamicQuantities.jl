@@ -1,8 +1,5 @@
 module Units
 
-import SparseArrays as SA
-import Tricks: static_fieldnames
-
 import ..DEFAULT_DIM_TYPE
 import ..DEFAULT_VALUE_TYPE
 import ..DEFAULT_QUANTITY_TYPE
