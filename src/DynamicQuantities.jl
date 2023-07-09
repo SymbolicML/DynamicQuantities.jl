@@ -2,7 +2,7 @@ module DynamicQuantities
 
 export Units, Constants
 export AbstractQuantity, AbstractDimensions
-export Quantity, Dimensions, SymbolicDimensions, DimensionError
+export Quantity, Dimensions, SymbolicDimensions, QuantityArray, DimensionError
 export ustrip, dimension, valid
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 export uparse, @u_str, sym_uparse, @us_str, expand_units
@@ -11,6 +11,7 @@ include("fixed_rational.jl")
 include("types.jl")
 include("utils.jl")
 include("math.jl")
+include("arrays.jl")
 include("units.jl")
 include("constants.jl")
 include("uparse.jl")
