@@ -29,6 +29,10 @@ This is to allow for lazily reducing to SI base units, whereas
 `Dimensions` is always in SI base units. Furthermore, `SymbolicDimensions`
 stores dimensions using a sparse vector for efficiency (since there
 are so many unit symbols).
+
+You can convert a quantity using `SymbolicDimensions` as its dimensions
+to one which uses `Dimensions` as its dimensions (i.e., base SI units)
+`expand_units`.
 """
 struct SymbolicDimensions{R} <: AbstractDimensions{R}
     _data::SA.SparseVector{R}
@@ -37,7 +41,10 @@ struct SymbolicDimensions{R} <: AbstractDimensions{R}
     SymbolicDimensions{_R}(data::SA.SparseVector) where {_R} = new{_R}(data)
 end
 
+static_fieldnames(::Type{<:SymbolicDimensions}) = ALL_SYMBOLS
 data(d::SymbolicDimensions) = getfield(d, :_data)
+Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R} = data(d)[ALL_MAPPING[s]]
+Base.getindex(d::SymbolicDimensions{R}, k::Symbol) where {R} = getproperty(d, k)
 constructor_of(::Type{<:SymbolicDimensions}) = SymbolicDimensions
 
 SymbolicDimensions{R}(d::SymbolicDimensions) where {R} = SymbolicDimensions{R}(data(d))
@@ -59,14 +66,19 @@ function Base.convert(::Type{Q}, q::Quantity{<:Any,<:SymbolicDimensions}) where 
     end
     return result
 end
+
+"""
+    expand_units(q::Quantity{<:Any,<:SymbolicDimensions})
+
+Expand the symbolic units in a quantity to their base SI form.
+In other words, this converts a `Quantity` with `SymbolicDimensions`
+to one with `Dimensions`.
+"""
 function expand_units(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:Quantity{T,D}}
     return convert(Quantity{T,Dimensions{R}}, q)
 end
 
 
-static_fieldnames(::Type{<:SymbolicDimensions}) = ALL_SYMBOLS
-Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R} = data(d)[ALL_MAPPING[s]]
-Base.getindex(d::SymbolicDimensions{R}, k::Symbol) where {R} = getproperty(d, k)
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(data(d)))
 Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions) = data(l) == data(r)
 Base.iszero(d::SymbolicDimensions) = iszero(data(d))
@@ -131,6 +143,22 @@ module SymbolicUnitsParse
         return nothing
     end
 
+    """
+        sym_uparse(raw_string::AbstractString)
+
+    Parse a string containing an expression of units and return the
+    corresponding `Quantity` object with `Float64` value.
+    However, that unlike the regular `u"..."` macro, this macro uses
+    `SymbolicDimensions` for the dimension type, which means that all units and
+    constants are stored symbolically and will not automatically expand to SI
+    units. For example, `sym_uparse("km/s^2")` would be parsed to
+    `Quantity(1.0, SymbolicDimensions, km=1, s=-2)`.
+
+    Note that inside this expression, you also have access to the `Constants`
+    module. So, for example, `sym_uparse("Constants.c^2 * Hz^2")` would evaluate to
+    `Quantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
+    namespace collisions, a few physical constants are not available.
+    """
     function sym_uparse(raw_string::AbstractString)
         _generate_unit_symbols()
         Constants._generate_unit_symbols()
@@ -145,6 +173,21 @@ end
 
 import .SymbolicUnitsParse: sym_uparse
 
+"""
+    us"[unit expression]"
+
+Parse a string containing an expression of units and return the
+corresponding `Quantity` object with `Float64` value. However,
+unlike the regular `u"..."` macro, this macro uses `SymbolicDimensions`
+for the dimension type, which means that all units and constants
+are stored symbolically and will not automatically expand to SI units.
+For example, `us"km/s^2"` would be parsed to `Quantity(1.0, SymbolicDimensions, km=1, s=-2)`.
+
+Note that inside this expression, you also have access to the `Constants`
+module. So, for example, `us"Constants.c^2 * Hz^2"` would evaluate to
+`Quantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
+namespace collisions, a few physical constants are not available.
+"""
 macro us_str(s)
     return esc(SymbolicUnitsParse.sym_uparse(s))
 end

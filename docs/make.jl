@@ -42,6 +42,7 @@ makedocs(;
         "Utilities" => "api.md",
         "Units" => "units.md",
         "Constants" => "constants.md",
+        "Symbolic Units" => "symbolic_units.md",
         "Types" => "types.md",
     ]
 )
