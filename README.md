@@ -14,6 +14,9 @@ This is done to allow for calculations where physical dimensions are not known a
 
 - [Performance](#performance)
 - [Usage](#usage)
+  - [Constants](#constants)
+  - [Symbolic Units](#symbolic-units)
+  - [Unitful](#unitful)
 - [Types](#types)
 - [Vectors](#vectors)
 
@@ -145,6 +148,61 @@ Finally, you can strip units with `ustrip`:
 ```julia
 julia> ustrip(x)
 0.2
+```
+
+### Constants
+
+There are a variety of physical constants accessible
+via the `Constants` submodule:
+
+```julia
+julia> Constants.c
+2.99792458e8 m s⁻¹
+```
+
+These can also be used inside the `u"..."` macro:
+
+```julia
+julia> u"Constants.c * Hz"
+2.99792458e8 m s⁻²
+```
+
+For the full list, see the [docs](https://symbolicml.org/DynamicQuantities.jl/dev/constants/).
+
+
+### Symbolic Units
+
+You can also choose to not eagerly convert to SI base units,
+instead leaving the units as the user had written them.
+For example:
+
+```julia
+julia> q = 100us"cm * kPa"
+100.0 cm kPa
+
+julia> q^2
+10000.0 cm² kPa²
+```
+
+You can convert to regular SI base units with
+`expand_units`:
+
+```julia
+julia> expand_units(q^2)
+1.0e6 kg² s⁻⁴
+```
+
+This also works with constants:
+
+```julia
+julia> x = us"Constants.c * Hz"
+1.0 Hz c
+
+julia> x^2
+1.0 Hz² c²
+
+julia> expand_units(x^2)
+8.987551787368176e16 m² s⁻⁴
 ```
 
 ### Unitful
