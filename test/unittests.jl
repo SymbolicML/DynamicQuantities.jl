@@ -346,6 +346,14 @@ end
     @test_throws LoadError eval(:(u":x"))
 end
 
+@testset "Constants" begin
+    @test Constants.h * Constants.c / (1000.0u"nm") ≈ 1.9864458571489284e-19u"J"
+
+    # Compute period of Earth based on solar mass and semi-major axis:
+    a = u"Constants.au"
+    @test isapprox(sqrt(4π^2 * a^3 / (Constants.G * Constants.M_sun)), 1u"yr"; rtol=1e-3)
+end
+
 @testset "Additional tests of FixedRational" begin
     @test convert(Int64, FixedRational{Int64,1000}(2 // 1)) == 2
     @test convert(Int32, FixedRational{Int64,1000}(3 // 1)) == 3

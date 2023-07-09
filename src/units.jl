@@ -1,7 +1,5 @@
 module Units
 
-export uparse, @u_str
-
 import ..DEFAULT_DIM_TYPE
 import ..DEFAULT_VALUE_TYPE
 import ..Quantity
@@ -118,34 +116,5 @@ const bar = 100 * kPa
 
 # Do not wish to define physical constants, as the number of symbols might lead to ambiguity.
 # The user should define these instead.
-
-"""
-    uparse(s::AbstractString)
-
-Parse a string containing an expression of units and return the
-corresponding `Quantity` object with `Float64` value. For example,
-`uparse("m/s")` would be parsed to `Quantity(1.0, length=1, time=-1)`.
-"""
-function uparse(s::AbstractString)
-    return as_quantity(eval(Meta.parse(s)))::Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
-end
-
-as_quantity(q::Quantity) = q
-as_quantity(x::Number) = Quantity(convert(DEFAULT_VALUE_TYPE, x), DEFAULT_DIM_TYPE)
-as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
-
-"""
-    u"[unit expression]"
-
-Parse a string containing an expression of units and return the
-corresponding `Quantity` object with `Float64` value. For example,
-`u"km/s^2"` would be parsed to `Quantity(1000.0, length=1, time=-2)`.
-"""
-macro u_str(s)
-    return esc(uparse(s))
-end
-
-include("constants.jl")
-import .Constants
 
 end
