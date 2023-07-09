@@ -231,13 +231,13 @@ true
 ## Types
 
 Both a `Quantity`'s values and dimensions are of arbitrary type.
-By default, dimensions are stored as a `DynamicQuantities.FixedRational{Int32,C}`
-object, which represents a rational number
+By default, dimensions are stored as a `Dimensions{FixedRational{Int32,C}}`
+object, whose exponents are stored as rational numbers
 with a fixed denominator `C`. This is much faster than `Rational`.
 
 ```julia
 julia> typeof(0.5u"kg")
-Quantity{Float64, FixedRational{Int32, 25200}
+Quantity{Float64, Dimensions{FixedRational{Int32, 25200}}}
 ```
 
 You can change the type of the value field by initializing with a value
@@ -252,7 +252,7 @@ or by conversion:
 
 ```julia
 julia> typeof(convert(Quantity{Float16}, 0.5u"m/s"))
-Quantity{Float16, DynamicQuantities.FixedRational{Int32, 25200}}
+Quantity{Float16, Dimensions{FixedRational{Int32, 25200}}}
 ```
 
 For many applications, `FixedRational{Int8,6}` will suffice,
@@ -264,9 +264,9 @@ the type you wish to use as the second argument to `Quantity`:
 ```julia
 julia> using DynamicQuantities
 
-julia> R8 = DynamicQuantities.FixedRational{Int8,6};
+julia> R8 = Dimensions{DynamicQuantities.FixedRational{Int8,6}};
 
-julia> R32 = DynamicQuantities.FixedRational{Int32,2^4 * 3^2 * 5^2 * 7};  # Default
+julia> R32 = Dimensions{DynamicQuantities.FixedRational{Int32,2^4 * 3^2 * 5^2 * 7}};  # Default
 
 julia> q8 = [Quantity(randn(), R8, length=rand(-2:2)) for i in 1:1000];
 
@@ -283,12 +283,12 @@ julia> @btime f($q32);
 
 ## Vectors
 
-There is not a separate class for vectors, but you can create units
+There is not (yet) a separate class for vectors, but you can create units
 like so:
 
 ```julia
 julia> randn(5) .* u"m/s"
-5-element Vector{Quantity{Float64, DynamicQuantities.FixedRational{Int32, 25200}}}:
+5-element Vector{Quantity{Float64, Dimensions{FixedRational{Int32, 25200}}}}:
  1.1762086954956399 m s⁻¹
  1.320811324040591 m s⁻¹
  0.6519033652437799 m s⁻¹
@@ -300,7 +300,7 @@ Because it is type stable, you can have mixed units in a vector too:
 
 ```julia
 julia> v = [Quantity(randn(), mass=rand(0:5), length=rand(0:5)) for _=1:5]
-5-element Vector{Quantity{Float64, DynamicQuantities.FixedRational{Int32, 25200}}}:
+5-element Vector{Quantity{Float64, Dimensions{FixedRational{Int32, 25200}}}}:
  0.4309293892461158 kg⁵
  1.415520139801276
  1.2179414706524276 m³ kg⁴
