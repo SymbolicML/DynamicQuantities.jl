@@ -207,14 +207,7 @@ julia> expand_units(x^2)
 
 ### Unitful
 
-DynamicQuantities works with quantities that are exclusively
-represented by their SI base units. This gives us type stability
-and greatly improves performance.
-
-However, performing calculations with physical dimensions
-is actually equivalent to working with a standardized unit system.
-Thus, you can use Unitful to parse units,
-and then use the DynamicQuantities->Unitful extension for conversion:
+DynamicQuantities allows you to convert back and forth from Unitful.jl:
 
 ```julia
 julia> using Unitful: Unitful, @u_str; import DynamicQuantities
