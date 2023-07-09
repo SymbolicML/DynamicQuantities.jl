@@ -1,4 +1,4 @@
-<div align="center">
+
 
 ![logo](https://github.com/SymbolicML/DynamicQuantities.jl/assets/7593028/a278d0c1-2f95-416b-ba04-82750074146b)
 
@@ -6,7 +6,7 @@
 [![Build Status](https://github.com/SymbolicML/DynamicQuantities.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/SymbolicML/DynamicQuantities.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://coveralls.io/repos/github/SymbolicML/DynamicQuantities.jl/badge.svg?branch=main)](https://coveralls.io/github/SymbolicML/DynamicQuantities.jl?branch=main)
 
-</div>
+
   
 DynamicQuantities defines a simple statically-typed `Quantity` type for Julia.
 Physical dimensions are stored as a *value*, as opposed to a parametric type, as in [Unitful.jl](https://github.com/PainterQubits/Unitful.jl).
@@ -14,9 +14,6 @@ This is done to allow for calculations where physical dimensions are not known a
 
 - [Performance](#performance)
 - [Usage](#usage)
-  - [Constants](#constants)
-  - [Symbolic Units](#symbolic-units)
-  - [Unitful](#unitful)
 - [Types](#types)
 - [Vectors](#vectors)
 
@@ -150,64 +147,16 @@ julia> ustrip(x)
 0.2
 ```
 
-### Constants
-
-There are a variety of physical constants accessible
-via the `Constants` submodule:
-
-```julia
-julia> Constants.c
-2.99792458e8 m s⁻¹
-```
-
-These can also be used inside the `u"..."` macro:
-
-```julia
-julia> u"Constants.c * Hz"
-2.99792458e8 m s⁻²
-```
-
-For the full list, see the [docs](https://symbolicml.org/DynamicQuantities.jl/dev/constants/).
-
-
-### Symbolic Units
-
-You can also choose to not eagerly convert to SI base units,
-instead leaving the units as the user had written them.
-For example:
-
-```julia
-julia> q = 100us"cm * kPa"
-100.0 cm kPa
-
-julia> q^2
-10000.0 cm² kPa²
-```
-
-You can convert to regular SI base units with
-`expand_units`:
-
-```julia
-julia> expand_units(q^2)
-1.0e6 kg² s⁻⁴
-```
-
-This also works with constants:
-
-```julia
-julia> x = us"Constants.c * Hz"
-1.0 Hz c
-
-julia> x^2
-1.0 Hz² c²
-
-julia> expand_units(x^2)
-8.987551787368176e16 m² s⁻⁴
-```
-
 ### Unitful
 
-DynamicQuantities allows you to convert back and forth from Unitful.jl:
+DynamicQuantities works with quantities that are exclusively
+represented by their SI base units. This gives us type stability
+and greatly improves performance.
+
+However, performing calculations with physical dimensions
+is actually equivalent to working with a standardized unit system.
+Thus, you can use Unitful to parse units,
+and then use the DynamicQuantities->Unitful extension for conversion:
 
 ```julia
 julia> using Unitful: Unitful, @u_str; import DynamicQuantities
@@ -231,13 +180,13 @@ true
 ## Types
 
 Both a `Quantity`'s values and dimensions are of arbitrary type.
-By default, dimensions are stored as a `Dimensions{FixedRational{Int32,C}}`
-object, whose exponents are stored as rational numbers
+By default, dimensions are stored as a `DynamicQuantities.FixedRational{Int32,C}`
+object, which represents a rational number
 with a fixed denominator `C`. This is much faster than `Rational`.
 
 ```julia
 julia> typeof(0.5u"kg")
-Quantity{Float64, Dimensions{FixedRational{Int32, 25200}}}
+Quantity{Float64, FixedRational{Int32, 25200}
 ```
 
 You can change the type of the value field by initializing with a value
@@ -245,14 +194,14 @@ explicitly of the desired type.
 
 ```julia
 julia> typeof(Quantity(Float16(0.5), mass=1, length=1))
-Quantity{Float16, Dimensions{FixedRational{Int32, 25200}}}
+Quantity{Float16, FixedRational{Int32, 25200}}
 ```
 
 or by conversion:
 
 ```julia
 julia> typeof(convert(Quantity{Float16}, 0.5u"m/s"))
-Quantity{Float16, Dimensions{FixedRational{Int32, 25200}}}
+Quantity{Float16, DynamicQuantities.FixedRational{Int32, 25200}}
 ```
 
 For many applications, `FixedRational{Int8,6}` will suffice,
@@ -264,9 +213,9 @@ the type you wish to use as the second argument to `Quantity`:
 ```julia
 julia> using DynamicQuantities
 
-julia> R8 = Dimensions{DynamicQuantities.FixedRational{Int8,6}};
+julia> R8 = DynamicQuantities.FixedRational{Int8,6};
 
-julia> R32 = Dimensions{DynamicQuantities.FixedRational{Int32,2^4 * 3^2 * 5^2 * 7}};  # Default
+julia> R32 = DynamicQuantities.FixedRational{Int32,2^4 * 3^2 * 5^2 * 7};  # Default
 
 julia> q8 = [Quantity(randn(), R8, length=rand(-2:2)) for i in 1:1000];
 
@@ -283,12 +232,12 @@ julia> @btime f($q32);
 
 ## Vectors
 
-There is not (yet) a separate class for vectors, but you can create units
+There is not a separate class for vectors, but you can create units
 like so:
 
 ```julia
 julia> randn(5) .* u"m/s"
-5-element Vector{Quantity{Float64, Dimensions{FixedRational{Int32, 25200}}}}:
+5-element Vector{Quantity{Float64, DynamicQuantities.FixedRational{Int32, 25200}}}:
  1.1762086954956399 m s⁻¹
  1.320811324040591 m s⁻¹
  0.6519033652437799 m s⁻¹
@@ -300,10 +249,11 @@ Because it is type stable, you can have mixed units in a vector too:
 
 ```julia
 julia> v = [Quantity(randn(), mass=rand(0:5), length=rand(0:5)) for _=1:5]
-5-element Vector{Quantity{Float64, Dimensions{FixedRational{Int32, 25200}}}}:
+5-element Vector{Quantity{Float64, DynamicQuantities.FixedRational{Int32, 25200}}}:
  0.4309293892461158 kg⁵
  1.415520139801276
  1.2179414706524276 m³ kg⁴
  -0.18804207255117408 m³ kg⁵
  0.52123911329638 m³ kg²
 ```
+
