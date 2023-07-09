@@ -245,7 +245,7 @@ explicitly of the desired type.
 
 ```julia
 julia> typeof(Quantity(Float16(0.5), mass=1, length=1))
-Quantity{Float16, FixedRational{Int32, 25200}}
+Quantity{Float16, Dimensions{FixedRational{Int32, 25200}}}
 ```
 
 or by conversion:
