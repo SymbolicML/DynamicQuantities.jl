@@ -44,6 +44,8 @@ Base.iterate(::AbstractQuantity, ::Nothing) = nothing
 
 # Numeric checks
 Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...) = isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
+Base.isapprox(l, r::AbstractQuantity; kws...) = iszero(dimension(r)) ? isapprox(l, ustrip(r); kws...) : throw(DimensionError(l, r))
+Base.isapprox(l::AbstractQuantity, r; kws...) = iszero(dimension(l)) ? isapprox(ustrip(l), r; kws...) : throw(DimensionError(l, r))
 Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
 Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 Base.:(==)(l::AbstractQuantity, r::AbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
@@ -60,6 +62,7 @@ end
 
 # Simple operations which return a full quantity (same dimensions)
 norm(q::AbstractQuantity, p::Real=2) = new_quantity(typeof(q), norm(ustrip(q), p), dimension(q))
+norm(q::AbstractArray{<:AbstractQuantity}, p::Real=2) = new_quantity(eltype(q), norm(ustrip(q), p), dimension(q))
 for f in (:real, :imag, :conj, :adjoint, :unsigned, :nextfloat, :prevfloat)
     @eval Base.$f(q::AbstractQuantity) = new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
 end
