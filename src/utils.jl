@@ -1,5 +1,6 @@
 import Tricks: static_fieldnames
 import LinearAlgebra: norm
+import Compat: allequal
 
 function map_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
     dimension_type = promote_type(typeof(args).parameters...)
