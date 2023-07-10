@@ -3,6 +3,7 @@ using DynamicQuantities: FixedRational
 using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
+using LinearAlgebra: norm
 using Test
 
 @testset "Basic utilities" begin
@@ -125,17 +126,42 @@ using Test
 
     x = Quantity(-1.2, length=2 // 5)
 
+    @test typemax(x) == Quantity(typemax(-1.2), length=2 // 5)
+    @test typemax(typeof(x)) == Quantity(typemax(typeof(-1.2)))
+
     @test abs(x) == Quantity(1.2, length=2 // 5)
     @test abs(x) == abs(Quantity(1.2, length=2 // 5))
+    @test abs2(x) == Quantity(abs2(-1.2), length=4 // 5)
+
+    @test iszero(x) == false
+    @test iszero(x * 0) == true
+    @test isfinite(x) == true
+    @test isfinite(x * Inf) == false
+    @test isfinite(x * NaN) == false
+    @test isinf(x * Inf) == true
+    @test isnan(x) == false
+    @test isnan(x * NaN) == true
+
+    @test nextfloat(x) == Quantity(nextfloat(-1.2), length=2 // 5)
+    @test prevfloat(x) == Quantity(prevfloat(-1.2), length=2 // 5)
+
+    y = Quantity(-1, mass=1)
+    @test unsigned(y) == Quantity(unsigned(-1), mass=1)
 end
 
 @testset "Complex numbers" begin
-    x = (0.5 + 0.5im) * u"km/s"
-    @test string(x) == "(500.0 + 500.0im) m s⁻¹"
+    x = (0.5 + 0.6im) * u"km/s"
+    @test string(x) == "(500.0 + 600.0im) m s⁻¹"
     @test typeof(x) == Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
     @test typeof(x^2) == Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
-    @test x^2/u"km/s"^2 == Quantity(0.5im)
-    @test x^2.5 ≈ (-5.088059320440205e6 + 1.2283661817565577e7im) * u"m^(5/2) * s^(-5/2)"
+    @test x^2/u"km/s"^2 ≈ (0.5 + 0.6im)^2
+    @test x^2.5 ≈ (-9.896195997465055e6 + 1.38810912834778e7im) * u"m^(5/2) * s^(-5/2)"
+    @test isreal(x) == false
+    @test isreal(abs2(x)) == true
+    @test real(x) == 0.5 * u"km/s"
+    @test imag(x) == 0.6 * u"km/s"
+    @test conj(x) == (0.5 - 0.6im) * u"km/s"
+    @test adjoint(ustrip(x^2)) ≈ adjoint(x^2) / u"m/s"^2
 end
 
 @testset "Fallbacks" begin
@@ -172,6 +198,16 @@ end
         @test typeof(ones(T, 32) / Quantity(T(1), D, length=1)) <: Quantity{Vector{T}}
         @test ones(T, 32) / Quantity(T(1), length=1) == Quantity(ones(T, 32), length=-1)
     end
+
+    x = randn(32) .* u"km/s"
+    @test ustrip(x) == ustrip.(x)
+    @test dimension(x) == dimension(u"km/s")
+    @test_throws DimensionError dimension([u"km/s", u"km"])
+
+    @test norm(x, 2) ≈ norm(ustrip.(x), 2) * u"m/s"
+    @test norm(Quantity(ustrip(x), length=1, time=-1), 2) ≈ norm(ustrip.(x), 2) * u"m/s"
+
+    @test ustrip(x') == ustrip(x)'
 end
 
 @testset "Alternate dimension construction" begin
