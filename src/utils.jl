@@ -148,6 +148,7 @@ Remove the units from a quantity.
 """
 ustrip(q::AbstractQuantity) = q.value
 ustrip(::AbstractDimensions) = error("Cannot remove units from an `AbstractDimensions` object.")
+ustrip(aq::AbstractArray{<:AbstractQuantity}) = ustrip.(aq)
 ustrip(q) = q
 
 """
@@ -157,6 +158,7 @@ Get the dimensions of a quantity, returning an `AbstractDimensions` object.
 """
 dimension(q::AbstractQuantity) = q.dimensions
 dimension(d::AbstractDimensions) = d
+dimension(aq::AbstractArray{<:AbstractQuantity}) = allequal(dimension.(aq)) ? dimension(first(aq)) : throw(DimensionError(aq[begin], aq[begin+1:end]))
 
 """
     ulength(q::AbstractQuantity)
