@@ -206,6 +206,8 @@ end
 
     @test norm(x, 2) ≈ norm(ustrip.(x), 2) * u"m/s"
     @test norm(Quantity(ustrip(x), length=1, time=-1), 2) ≈ norm(ustrip.(x), 2) * u"m/s"
+
+    @test ustrip(x') == ustrip(x)'
 end
 
 @testset "Alternate dimension construction" begin
