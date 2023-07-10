@@ -45,4 +45,3 @@ Base.cbrt(q::AbstractQuantity) = new_quantity(typeof(q), cbrt(ustrip(q)), cbrt(d
 
 Base.abs(q::AbstractQuantity) = new_quantity(typeof(q), abs(ustrip(q)), dimension(q))
 Base.abs2(q::AbstractQuantity) = new_quantity(typeof(q), abs2(ustrip(q)), dimension(q)^2)
-Base.angle(q::AbstractQuantity{T}) where {T<:Complex} = angle(ustrip(q))

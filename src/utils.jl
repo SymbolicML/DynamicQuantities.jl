@@ -53,11 +53,10 @@ Base.isless(l::AbstractQuantity, r::AbstractQuantity) = dimension(l) == dimensio
 Base.isless(l::AbstractQuantity, r) = iszero(dimension(l)) ? isless(ustrip(l), r) : throw(DimensionError(l, r))
 Base.isless(l, r::AbstractQuantity) = iszero(dimension(r)) ? isless(l, ustrip(r)) : throw(DimensionError(l, r))
 
-# Simple operations which return a number by itself:
-for f in (:iszero, :isfinite, :isinf, :isnan, :isreal, :sign, :signbit, :eps)
+# Simple flags:
+for f in (:iszero, :isfinite, :isinf, :isnan, :isreal)
     @eval Base.$f(q::AbstractQuantity) = $f(ustrip(q))
 end
-Base.eps(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = eps(T)
 
 # Simple operations which return a full quantity (same dimensions)
 norm(q::AbstractQuantity, p::Real=2) = new_quantity(typeof(q), norm(ustrip(q), p), dimension(q))
