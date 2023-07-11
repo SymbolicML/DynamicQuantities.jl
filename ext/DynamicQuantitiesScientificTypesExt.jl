@@ -2,15 +2,15 @@ module DynamicQuantitiesScientificTypesExt
 
 if isdefined(Base, :get_extension)
     import DynamicQuantities: AbstractQuantity, ustrip
-    import ScientificTypes
-    import ScientificTypes: scitype
+    import ScientificTypes as ST
+    import ScientificTypesBase as STB
 else
     import ..DynamicQuantities: AbstractQuantity, ustrip
     import ..ScientificTypes
-    import ..ScientificTypes: scitype
+    import ..ScientificTypesBase as STB
 end
 
-scitype(x::AbstractQuantity) = scitype(ustrip(x))
-scitype(x::AbstractArray{<:AbstractQuantity}) = scitype(ustrip.(x))
+STB.scitype(x::AbstractQuantity, C::ST.DefaultConvention) = STB.scitype(ustrip(x), C)
+STB.Scitype(::Type{<:AbstractQuantity{T}}, C::ST.DefaultConvention) where {T} = STB.Scitype(T, C)
 
 end

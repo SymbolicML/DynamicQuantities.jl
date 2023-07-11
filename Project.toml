@@ -12,16 +12,18 @@ Tricks = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
 
 [weakdeps]
 ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
+ScientificTypesBase = "30f210dd-8aff-4c5f-94ba-8e64358c1161"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [extensions]
-DynamicQuantitiesScientificTypesExt = "ScientificTypes"
+DynamicQuantitiesScientificTypesExt = ["ScientificTypes", "ScientificTypesBase"]
 DynamicQuantitiesUnitfulExt = "Unitful"
 
 [compat]
 Compat = "^3.42, 4"
 Requires = "1"
 ScientificTypes = "3"
+ScientificTypesBase = "3"
 Tricks = "0.1"
 Unitful = "1"
 julia = "1.6"
@@ -30,9 +32,10 @@ julia = "1.6"
 Ratios = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SaferIntegers = "88634af6-177f-5301-88b8-7819386cfa38"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
+ScientificTypesBase = "30f210dd-8aff-4c5f-94ba-8e64358c1161"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Test", "Ratios", "SaferIntegers", "SafeTestsets", "ScientificTypes", "Unitful"]
+test = ["Test", "Ratios", "SaferIntegers", "SafeTestsets", "ScientificTypes", "ScientificTypesBase", "Unitful"]
