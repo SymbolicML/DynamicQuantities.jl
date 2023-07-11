@@ -6,7 +6,7 @@ if isdefined(Base, :get_extension)
     import ScientificTypesBase as STB
 else
     import ..DynamicQuantities: AbstractQuantity, ustrip
-    import ..ScientificTypes
+    import ..ScientificTypes as ST
     import ..ScientificTypesBase as STB
 end
 
