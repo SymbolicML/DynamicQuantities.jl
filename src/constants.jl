@@ -1,12 +1,11 @@
 module Constants
 
-import ..DEFAULT_QUANTITY_TYPE
 import ..Quantity
 import ..Units as U
-import ..Units: _add_prefixes
+import ..Units: _add_prefixes, DEFAULT_UNIT_TYPE
 
 const _CONSTANT_SYMBOLS = Symbol[]
-const _CONSTANT_VALUES = DEFAULT_QUANTITY_TYPE[]
+const _CONSTANT_VALUES = DEFAULT_UNIT_TYPE[]
 
 macro register_constant(name, value)
     return esc(_register_constant(name, value))
@@ -20,7 +19,7 @@ end
 function _register_constant(name::Symbol, value)
     s = string(name)
     return quote
-        const $name = $value
+        const $name = convert(DEFAULT_UNIT_TYPE, $value)
         push!(_CONSTANT_SYMBOLS, Symbol($s))
         push!(_CONSTANT_VALUES, $name)
     end
@@ -87,7 +86,7 @@ end
 )
 
 # Measured
-@register_constant alpha DEFAULT_QUANTITY_TYPE(7.2973525693e-3)
+@register_constant alpha DEFAULT_UNIT_TYPE(7.2973525693e-3)
 @register_constant u 1.66053906660e-27 * U.kg
 @register_constant G 6.67430e-11 * U.m^3 / (U.kg * U.s^2)
 @register_constant mu_0 4π * alpha * hbar / (e^2 * c)
