@@ -1,14 +1,8 @@
 module DynamicQuantitiesUnitfulExt
 
-if isdefined(Base, :get_extension)
-    import DynamicQuantities
-    import Unitful
-    import Unitful: @u_str
-else
-    import ..DynamicQuantities
-    import ..Unitful
-    import ..Unitful: @u_str
-end
+import DynamicQuantities
+import Unitful
+import Unitful: @u_str
 
 function get_si_units()
     return (length=u"m", mass=u"kg", time=u"s", current=u"A", temperature=u"K", luminosity=u"cd", amount=u"mol")
