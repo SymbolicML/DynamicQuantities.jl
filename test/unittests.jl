@@ -485,3 +485,27 @@ end
     @test ustrip(us"Constants.h") == ustrip(u"Constants.h")
     @test ustrip(us"Constants.au") != ustrip(u"Constants.au")
 end
+
+@testset "Test ambiguities" begin
+    R = DEFAULT_DIM_BASE_TYPE
+    x = convert(R, 10)
+    y = convert(R, 5)
+    @test promote(x, y) == (x, y)
+    @test_throws AssertionError promote(x, convert(FixedRational{Int32,100}, 10))
+    @test round(Missing, x) === missing
+
+    x = 1.0u"m"
+    y = missing
+    @test isless(x, y) === missing
+    @test isless(y, x) === missing
+    @test (x == y) === missing
+    @test (y == x) === missing
+    @test isapprox(x, y) === missing
+    @test isapprox(y, x) === missing
+
+    x = 1.0u"m"
+    s = "test"
+    y = WeakRef(s)
+    @test_throws ErrorException x == y
+    @test_throws ErrorException y == x
+end
