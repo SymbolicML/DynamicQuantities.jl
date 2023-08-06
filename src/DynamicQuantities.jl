@@ -21,7 +21,7 @@ import .Units
 import .Constants
 import .UnitsParse: uparse, @u_str
 
-if !isdefined(Base, :get_extension)
+function __init__()
     @require_extensions
 end
 
