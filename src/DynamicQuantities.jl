@@ -3,7 +3,7 @@ module DynamicQuantities
 export Units, Constants
 export AbstractQuantity, AbstractDimensions
 export Quantity, Dimensions, SymbolicDimensions, DimensionError
-export ustrip, dimension, valid
+export ustrip, dimension
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 export uparse, @u_str, sym_uparse, @us_str, expand_units
 

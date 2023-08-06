@@ -51,6 +51,7 @@ Base.convert(::Type{I}, x::F) where {I<:Integer,F<:FixedRational} = convert(I, c
 Base.round(::Type{T}, x::F) where {T,F<:FixedRational} = div(convert(T, x.num), convert(T, denom(F)), RoundNearest)
 Base.promote(x::Integer, y::F) where {F<:FixedRational} = (F(x), y)
 Base.promote(x::F, y::Integer) where {F<:FixedRational} = reverse(promote(y, x))
+Base.promote(x::F1, y::F2) where {F1<:FixedRational,F2<:FixedRational} = (@assert denom(F1) == denom(F2); (x, y))
 Base.promote(x, y::F) where {F<:FixedRational} = promote(x, convert(Rational, y))
 Base.promote(x::F, y) where {F<:FixedRational} = reverse(promote(y, x))
 Base.show(io::IO, x::F) where {F<:FixedRational} = show(io, convert(Rational, x))
@@ -59,3 +60,6 @@ Base.zero(::Type{F}) where {F<:FixedRational} = unsafe_fixed_rational(0, eltype(
 tryrationalize(::Type{F}, x::F) where {F<:FixedRational} = x
 tryrationalize(::Type{F}, x::Union{Rational,Integer}) where {F<:FixedRational} = convert(F, x)
 tryrationalize(::Type{F}, x) where {F<:FixedRational} = unsafe_fixed_rational(round(eltype(F), x * denom(F)), eltype(F), val_denom(F))
+
+# Fix method ambiguities
+Base.round(::Type{T}, ::F) where {T>:Missing, F<:FixedRational} = missing
