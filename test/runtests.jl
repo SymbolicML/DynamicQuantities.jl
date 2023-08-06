@@ -19,4 +19,7 @@ else
     @safetestset "Unit tests" begin
         include("unittests.jl")
     end
+    @safetestset "Aqua tests" begin
+        include("test_aqua.jl")
+    end
 end

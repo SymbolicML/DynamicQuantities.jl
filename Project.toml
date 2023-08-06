@@ -29,6 +29,7 @@ Unitful = "1"
 julia = "1.6"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Ratios = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SaferIntegers = "88634af6-177f-5301-88b8-7819386cfa38"
@@ -38,4 +39,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Test", "Ratios", "SaferIntegers", "SafeTestsets", "ScientificTypes", "ScientificTypesBase", "Unitful"]
+test = ["Test", "Aqua", "Ratios", "SaferIntegers", "SafeTestsets", "ScientificTypes", "ScientificTypesBase", "Unitful"]
