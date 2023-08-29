@@ -177,6 +177,7 @@ end
 Base.hcat(A::QuantityArray...) = cat(A...; dims=2)
 Base.vcat(A::QuantityArray...) = cat(A...; dims=1)
 Base.fill(x::AbstractQuantity, dims::Dims...) = QuantityArray(fill(ustrip(x), dims...), dimension(x), typeof(x))
+Base.fill(x::AbstractQuantity, t::Tuple{}) = QuantityArray(fill(ustrip(x), t), dimension(x), typeof(x))
 
 ulength(q::QuantityArray) = ulength(dimension(q))
 umass(q::QuantityArray) = umass(dimension(q))
