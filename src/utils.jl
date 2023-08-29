@@ -1,5 +1,4 @@
 import Tricks: static_fieldnames
-import LinearAlgebra: norm
 import Compat: allequal
 
 function map_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
@@ -78,8 +77,6 @@ for f in (:iszero, :isfinite, :isinf, :isnan, :isreal)
 end
 
 # Simple operations which return a full quantity (same dimensions)
-norm(q::AbstractQuantity, p::Real=2) = new_quantity(typeof(q), norm(ustrip(q), p), dimension(q))
-norm(q::AbstractArray{<:AbstractQuantity}, p::Real=2) = new_quantity(eltype(q), norm(ustrip(q), p), dimension(q))
 for f in (:real, :imag, :conj, :adjoint, :unsigned, :nextfloat, :prevfloat)
     @eval Base.$f(q::AbstractQuantity) = new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
 end
