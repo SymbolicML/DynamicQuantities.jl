@@ -35,10 +35,10 @@ jobs:
       - name: "Run tests"
         shell: bash
         run: |
-          julia --color=yes --project=. -e 'import Pkg; Pkg.add("Coverage")'
-          julia --color=yes --threads=auto --check-bounds=yes --depwarn=yes --code-coverage=user --project=. -e 'import Pkg; Pkg.test(coverage=true)'
-          DQ_TEST_UPREFERRED=true julia --color=yes --threads=auto --check-bounds=yes --depwarn=yes --code-coverage=user --project=. -e 'import Pkg; Pkg.test(coverage=true)'
-          julia --color=yes --project=. coverage.jl
+          julia --color=yes -e 'import Pkg; Pkg.add("Coverage")'
+          julia --color=yes --threads=auto --check-bounds=yes --depwarn=yes --code-coverage=user -e 'import Coverage; import Pkg; Pkg.activate("."); Pkg.test(coverage=true)'
+          DQ_TEST_UPREFERRED=true julia --color=yes --threads=auto --check-bounds=yes --depwarn=yes --code-coverage=user -e 'import Coverage; import Pkg; Pkg.activate("."); Pkg.test(coverage=true)'
+          julia --color=yes coverage.jl
       - name: "Coveralls"
         uses: coverallsapp/github-action@v2
         if: matrix.version == '1'

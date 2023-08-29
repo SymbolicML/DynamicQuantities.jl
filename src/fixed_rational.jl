@@ -68,6 +68,7 @@ Base.promote_rule(::Type{<:FixedRational{T1}}, ::Type{T2}) where {T1,T2} = promo
 # Want to consume integers:
 Base.promote(x::Integer, y::F) where {F<:FixedRational} = (F(x), y)
 Base.promote(x::F, y::Integer) where {F<:FixedRational} = reverse(promote(y, x))
+Base.promote(x::F1, y::F2) where {F1<:FixedRational,F2<:FixedRational} = (@assert denom(F1) == denom(F2); (x, y))
 
 Base.string(x::FixedRational) =
     let
@@ -81,3 +82,6 @@ Base.zero(::Type{F}) where {F<:FixedRational} = unsafe_fixed_rational(0, eltype(
 tryrationalize(::Type{F}, x::F) where {F<:FixedRational} = x
 tryrationalize(::Type{F}, x::Union{Rational,Integer}) where {F<:FixedRational} = convert(F, x)
 tryrationalize(::Type{F}, x) where {F<:FixedRational} = unsafe_fixed_rational(round(eltype(F), x * denom(F)), eltype(F), val_denom(F))
+
+# Fix method ambiguities
+Base.round(::Type{T}, ::F) where {T>:Missing, F<:FixedRational} = missing
