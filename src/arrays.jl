@@ -131,7 +131,8 @@ function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Typ
                 * "the function you are broadcasting."
             )
         end
-        return QuantityArray(output_array, dimension(first_output), ElType)
+        first_output::ElType
+        return QuantityArray(output_array, dimension(first_output)::dim_type(ElType), ElType)
     else
         return output_array
     end

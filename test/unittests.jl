@@ -524,6 +524,9 @@ end
     @test typeof(f.(y_q)) == typeof(y_q)
     @test ulength(f.(y_q)) == ulength(y_q) * 2
 
+    fv(v) = @. f(v)
+    @inferred fv(y_q)
+
     @test fill(u"m/s", 10) == QuantityArray(fill(1.0, 10) .* u"m/s")
 
     @testset "Symbolic units" begin
