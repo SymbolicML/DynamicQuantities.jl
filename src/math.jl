@@ -28,16 +28,7 @@ Base.:-(l, r::AbstractQuantity) = l + (-r)
 # We don't promote on the dimension types:
 _pow(l::AbstractDimensions{R}, r::R) where {R} = map_dimensions(Base.Fix1(*, r), l)
 Base.:^(l::AbstractDimensions{R}, r::Number) where {R} = _pow(l, tryrationalize(R, r))
-Base.:^(l::AbstractQuantity{T,D}, r::Integer) where {T,R,D<:AbstractDimensions{R}} = new_quantity(typeof(l), ustrip(l)^r, dimension(l)^r)
-Base.:^(l::AbstractQuantity{T,D}, r::Number) where {T,R,D<:AbstractDimensions{R}} =
-    let dim_pow = tryrationalize(R, r), val_pow = convert(T, dim_pow)
-        # Need to ensure we take the numerical power by the rationalized quantity:
-        return new_quantity(typeof(l), ustrip(l)^val_pow, dimension(l)^dim_pow)
-    end
-
-@inline Base.literal_pow(::typeof(^), l::AbstractQuantity, ::Val{p}) where {p} = l^p
-
-# Special forms for small integer powers:
+# Special forms for small integer powers (will unroll dimension multiplication into repeated additions)
 # https://github.com/JuliaLang/julia/blob/b99f251e86c7c09b957a1b362b6408dbba106ff0/base/intfuncs.jl#L332
 for (p, ex) in [
     (0, :(one(l))),
@@ -47,8 +38,16 @@ for (p, ex) in [
     (-1, :(inv(l))),
     (-2, :((i=inv(l); i*i)))
 ]
-    @eval @inline Base.literal_pow(::typeof(^), l::AbstractQuantity, ::Val{$p}) = $ex
+    @eval @inline Base.literal_pow(::typeof(^), l::AbstractDimensions, ::Val{$p}) = $ex
 end
+
+Base.:^(l::AbstractQuantity{T,D}, r::Integer) where {T,R,D<:AbstractDimensions{R}} = new_quantity(typeof(l), ustrip(l)^r, dimension(l)^r)
+Base.:^(l::AbstractQuantity{T,D}, r::Number) where {T,R,D<:AbstractDimensions{R}} =
+    let dim_pow = tryrationalize(R, r), val_pow = convert(T, dim_pow)
+        # Need to ensure we take the numerical power by the rationalized quantity:
+        return new_quantity(typeof(l), ustrip(l)^val_pow, dimension(l)^dim_pow)
+    end
+@inline Base.literal_pow(::typeof(^), l::AbstractQuantity, ::Val{p}) where {p} = new_quantity(typeof(l), Base.literal_pow(^, ustrip(l), Val(p)), Base.literal_pow(^, dimension(l), Val(p)))
 
 Base.inv(d::AbstractDimensions) = map_dimensions(-, d)
 Base.inv(q::AbstractQuantity) = new_quantity(typeof(q), inv(ustrip(q)), inv(dimension(q)))
