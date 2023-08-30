@@ -39,6 +39,7 @@ Base.:-(l, r::AbstractQuantity) = l + (-r)
 
 # We don't promote on the dimension types:
 _pow(l::AbstractDimensions{R}, r::R) where {R} = map_dimensions(Base.Fix1(*, r), l)
+Base.:^(l::AbstractDimensions{R}, r::Integer) where {R<:FixedRational} = map_dimensions(Base.Fix1(*, r), l)
 Base.:^(l::AbstractDimensions{R}, r::Number) where {R} = _pow(l, tryrationalize(R, r))
 Base.:^(l::AbstractQuantity{T,D}, r::Integer) where {T,R,D<:AbstractDimensions{R}} = new_quantity(typeof(l), ustrip(l)^r, dimension(l)^r)
 Base.:^(l::AbstractQuantity{T,D}, r::Number) where {T,R,D<:AbstractDimensions{R}} =
