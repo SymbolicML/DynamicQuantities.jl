@@ -40,24 +40,41 @@ Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
 
 # Compatibility with `.*`
 Base.length(q::AbstractQuantity) = length(ustrip(q))
-Base.iterate(qd::AbstractQuantity, maybe_state...) = 
+Base.iterate(qd::AbstractQuantity, maybe_state...) =
     let subiterate=iterate(ustrip(qd), maybe_state...)
         subiterate === nothing && return nothing
         return new_quantity(typeof(qd), subiterate[1], dimension(qd)), subiterate[2]
     end
 
 # Numeric checks
-Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...) = isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
-Base.isapprox(l, r::AbstractQuantity; kws...) = iszero(dimension(r)) ? isapprox(l, ustrip(r); kws...) : throw(DimensionError(l, r))
-Base.isapprox(l::AbstractQuantity, r; kws...) = iszero(dimension(l)) ? isapprox(ustrip(l), r; kws...) : throw(DimensionError(l, r))
+function Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...)
+    return isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
+end
+function Base.isapprox(l, r::AbstractQuantity; kws...)
+    iszero(dimension(r)) || throw(DimensionError(l, r))
+    return isapprox(l, ustrip(r); kws...)
+end
+function Base.isapprox(l::AbstractQuantity, r; kws...)
+    iszero(dimension(l)) || throw(DimensionError(l, r))
+    return isapprox(ustrip(l), r; kws...)
+end
 Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
 Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 Base.:(==)(l::AbstractQuantity, r::AbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
 Base.:(==)(l, r::AbstractQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
 Base.:(==)(l::AbstractQuantity, r) = ustrip(l) == ustrip(r) && iszero(dimension(l))
-Base.isless(l::AbstractQuantity, r::AbstractQuantity) = dimension(l) == dimension(r) ? isless(ustrip(l), ustrip(r)) : throw(DimensionError(l, r))
-Base.isless(l::AbstractQuantity, r) = iszero(dimension(l)) ? isless(ustrip(l), r) : throw(DimensionError(l, r))
-Base.isless(l, r::AbstractQuantity) = iszero(dimension(r)) ? isless(l, ustrip(r)) : throw(DimensionError(l, r))
+function Base.isless(l::AbstractQuantity, r::AbstractQuantity)
+    dimension(l) == dimension(r) || throw(DimensionError(l, r))
+    return isless(ustrip(l), ustrip(r))
+end
+function Base.isless(l::AbstractQuantity, r)
+    iszero(dimension(l)) || throw(DimensionError(l, r))
+    return isless(ustrip(l), r)
+end
+function Base.isless(l, r::AbstractQuantity)
+    iszero(dimension(r)) || throw(DimensionError(l, r))
+    return isless(l, ustrip(r))
+end
 
 # Get rid of method ambiguities:
 Base.isless(::AbstractQuantity, ::Missing) = missing

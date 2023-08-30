@@ -40,7 +40,11 @@ end
 QuantityArray(v::AbstractArray; kws...) = QuantityArray(v, DEFAULT_DIM_TYPE(; kws...))
 QuantityArray(v::AbstractArray, d::AbstractDimensions) = QuantityArray(v, d, Quantity)
 QuantityArray(v::AbstractArray, q::AbstractQuantity) = QuantityArray(v .* ustrip(q), dimension(q), typeof(q))
-QuantityArray(v::QA) where {Q<:AbstractQuantity,QA<:AbstractArray{Q}} = allequal(dimension.(v)) ? QuantityArray(ustrip.(v), dimension(first(v)), Q) : throw(DimensionError(first(v), v))
+QuantityArray(v::QA) where {Q<:AbstractQuantity,QA<:AbstractArray{Q}} =
+    let
+        allequal(dimension.(v)) || throw(DimensionError(first(v), v))
+        QuantityArray(ustrip.(v), dimension(first(v)), Q)
+    end
 # TODO: Should this check that the dimensions are the same?
 
 function Base.promote_rule(::Type{QA1}, ::Type{QA2}) where {QA1<:QuantityArray,QA2<:QuantityArray}
@@ -95,8 +99,13 @@ function Base.getindex(A::QuantityArray, i...)
         return new_quantity(quantity_type(A), output_value, dimension(A))
     end
 end
-Base.setindex!(A::QuantityArray{T,N,D,Q}, v::Q, i...) where {T,N,D,Q<:AbstractQuantity} = dimension(A) == dimension(v) ? unsafe_setindex!(A, v, i...) : throw(DimensionError(A, v))
-Base.setindex!(A::QuantityArray{T,N,D,Q}, v::AbstractQuantity, i...) where {T,N,D,Q<:AbstractQuantity} = setindex!(A, convert(Q, v), i...)
+function Base.setindex!(A::QuantityArray{T,N,D,Q}, v::Q, i...) where {T,N,D,Q<:AbstractQuantity}
+    dimension(A) == dimension(v) || throw(DimensionError(A, v))
+    return unsafe_setindex!(A, v, i...)
+end
+function Base.setindex!(A::QuantityArray{T,N,D,Q}, v::AbstractQuantity, i...) where {T,N,D,Q<:AbstractQuantity}
+    return setindex!(A, convert(Q, v), i...)
+end
 
 unsafe_setindex!(A, v, i...) = setindex!(ustrip(A), ustrip(v), i...)
 
@@ -156,7 +165,11 @@ materialize_first(q::AbstractArray{Q}, ::Any) where {Q<:AbstractQuantity} = firs
 materialize_first(r::Base.RefValue) = materialize_first(r.x)
 materialize_first(x::Base.Broadcast.Extruded) = materialize_first(x.x)
 materialize_first(args::Tuple) = materialize_first(first(args), Base.tail(args))
-materialize_first(args::AbstractArray) = length(args) >= 1 ? materialize_first(args[begin], args[begin+1:end]) : error("Unexpected broadcast format. Please submit a bug report.")
+materialize_first(args::AbstractArray) =
+    let
+        length(args) >= 1 || error("Unexpected broadcast format. Please submit a bug report.")
+        materialize_first(args[begin], args[begin+1:end])
+    end
 materialize_first(::Tuple{}) = error("Unexpected broadcast format. Please submit a bug report.")
 materialize_first(::Any, rest) = materialize_first(rest)
 

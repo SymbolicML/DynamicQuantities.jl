@@ -55,7 +55,11 @@ Base.convert(::Type{F}, x::Rational) where {F<:FixedRational} = F(x)
 Base.convert(::Type{Rational{R}}, x::F) where {R,F<:FixedRational} = Rational{R}(x.num, denom(F))
 Base.convert(::Type{Rational}, x::F) where {F<:FixedRational} = Rational{eltype(F)}(x.num, denom(F))
 Base.convert(::Type{AF}, x::F) where {AF<:AbstractFloat,F<:FixedRational} = convert(AF, x.num) / convert(AF, denom(F))
-Base.convert(::Type{I}, x::F) where {I<:Integer,F<:FixedRational} = isinteger(x) ? div(x.num, denom(F)) : throw(InexactError(:convert, I, x))
+Base.convert(::Type{I}, x::F) where {I<:Integer,F<:FixedRational} =
+    let
+        isinteger(x) || throw(InexactError(:convert, I, x))
+        div(x.num, denom(F))
+    end
 Base.round(::Type{T}, x::F) where {T,F<:FixedRational} = div(convert(T, x.num), convert(T, denom(F)), RoundNearest)
 Base.decompose(x::F) where {T,F<:FixedRational{T}} = (x.num, zero(T), denom(F))
 

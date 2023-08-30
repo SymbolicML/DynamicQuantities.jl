@@ -16,12 +16,24 @@ Base.:/(l, r::AbstractQuantity) = l * inv(r)
 Base.:/(l::AbstractDimensions, r) = error("Please use an `AbstractQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
 Base.:/(l, r::AbstractDimensions) = error("Please use an `AbstractQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
 
-Base.:+(l::AbstractQuantity, r::AbstractQuantity) = dimension(l) == dimension(r) ? new_quantity(typeof(l), ustrip(l) + ustrip(r), dimension(l)) : throw(DimensionError(l, r))
+Base.:+(l::AbstractQuantity, r::AbstractQuantity) =
+    let
+        dimension(l) == dimension(r) || throw(DimensionError(l, r))
+        new_quantity(typeof(l), ustrip(l) + ustrip(r), dimension(l))
+    end
 Base.:-(l::AbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 Base.:-(l::AbstractQuantity, r::AbstractQuantity) = l + (-r)
 
-Base.:+(l::AbstractQuantity, r) = iszero(dimension(l)) ? new_quantity(typeof(l), ustrip(l) + r, dimension(l)) : throw(DimensionError(l, r))
-Base.:+(l, r::AbstractQuantity) = iszero(dimension(r)) ? new_quantity(typeof(r), l + ustrip(r), dimension(r)) : throw(DimensionError(l, r))
+Base.:+(l::AbstractQuantity, r) =
+    let
+        iszero(dimension(l)) || throw(DimensionError(l, r))
+        new_quantity(typeof(l), ustrip(l) + r, dimension(l))
+    end
+Base.:+(l, r::AbstractQuantity) =
+    let
+        iszero(dimension(r)) || throw(DimensionError(l, r))
+        new_quantity(typeof(r), l + ustrip(r), dimension(r))
+    end
 Base.:-(l::AbstractQuantity, r) = l + (-r)
 Base.:-(l, r::AbstractQuantity) = l + (-r)
 
