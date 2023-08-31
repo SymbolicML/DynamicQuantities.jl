@@ -42,8 +42,9 @@ end
 SUITE["with_array"] = let s = BenchmarkGroup()
     N = 10000
     for r in (2, 4)
-        s["arr.^$r"] = @benchmarkable arr.^$r setup = (arr = randn(N)) evals = 1000 # baseline
-        s["qarr.^$r"] = @benchmarkable arr.^$r setup = (arr = QuantityArray(randn(N), u"km/s")) evals = 1000
-        s["arrq.^$r"] = @benchmarkable arr.^$r setup = (arr = randn(N) .* u"km/s") evals = 1000
+        s["arr.^$r"] = @benchmarkable arr.^$r setup = (arr = randn($N)) evals = 1000 # baseline
+        s["qarr.^$r"] = @benchmarkable arr.^$r setup = (arr = QuantityArray(randn($N), u"km/s")) evals = 1000
+        s["arrq.^$r"] = @benchmarkable arr.^$r setup = (arr = randn($N) .* u"km/s") evals = 1000
     end
+    s
 end
