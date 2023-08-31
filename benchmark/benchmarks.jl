@@ -40,9 +40,8 @@ SUITE["with_quantity"] = let s = BenchmarkGroup()
 end
 
 SUITE["with_array"] = let s = BenchmarkGroup()
-    f(x) = x^2 + 0.9 * x / 0.1 * x;
     N = 10000
-    s["arr"] = @benchmarkable $f.(x) setup = (arr = randn(N)) evals = 1000 # baseline
-    s["qarr"] = @benchmarkable $f.(x) setup = (arr = QuantityArray(randn(N), u"km/s")) evals = 1000
-    s["arrq"] = @benchmarkable $f.(x) setup = (arr = randn(N) .* u"km/s") evals = 1000
+    s["arr.^2"] = @benchmarkable arr.^2 setup = (arr = randn(N)) evals = 1000 # baseline
+    s["qarr.^2"] = @benchmarkable arr.^2 setup = (arr = QuantityArray(randn(N), u"km/s")) evals = 1000
+    s["arrq.^2"] = @benchmarkable arr.^2 setup = (arr = randn(N) .* u"km/s") evals = 1000
 end
