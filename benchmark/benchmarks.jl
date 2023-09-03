@@ -41,7 +41,7 @@ SUITE["Quantity"]["with_quantity"] = let s = BenchmarkGroup()
     s
 end
 
-if PACKAGE_VERSION > v"0.7"
+if @isdefined QuantityArray
     SUITE["QuantityArray"] = BenchmarkGroup()
 
     SUITE["QuantityArray"]["broadcasting"] = let s = BenchmarkGroup()
