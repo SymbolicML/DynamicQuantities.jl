@@ -154,6 +154,7 @@ unwrap_quantity(::Type{T}) where {T} = T
 materialize_first(bc::Base.Broadcast.Broadcasted) = bc.f(materialize_first.(bc.args)...)
 
 # Base cases
+materialize_first(q::AbstractQuantity{<:AbstractArray}) = new_quantity(typeof(q), first(ustrip(q)), dimension(q))
 materialize_first(q::AbstractQuantity) = q
 materialize_first(q::QuantityArray) = first(q)
 materialize_first(q::AbstractArray{Q}) where {Q<:AbstractQuantity} = first(q)
