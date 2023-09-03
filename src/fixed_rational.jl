@@ -46,6 +46,9 @@ Base.:-(x::F) where {F<:FixedRational} = unsafe_fixed_rational(-x.num, eltype(F)
 
 Base.inv(x::F) where {F<:FixedRational} = unsafe_fixed_rational(widemul(denom(F), denom(F)) ÷ x.num, eltype(F), val_denom(F))
 
+Base.:*(l::F, r::Integer) where {F<:FixedRational} = unsafe_fixed_rational(l.num * r, eltype(F), val_denom(F))
+Base.:*(l::Integer, r::F) where {F<:FixedRational} = unsafe_fixed_rational(l * r.num, eltype(F), val_denom(F))
+
 Base.:(==)(x::F, y::F) where {F<:FixedRational} = x.num == y.num
 Base.isless(x::F, y::F) where {F<:FixedRational} = isless(x.num, y.num)
 Base.:<(x::F, y::F) where {F<:FixedRational} = x.num < y.num
