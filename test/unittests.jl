@@ -585,6 +585,12 @@ end
         @test g(ar1, array_of_quantities, u"1") == [f(ar1[i], array_of_quantities[i], 1) for i in eachindex(ar1)]
     end
 
+    @testset "Broadcast nd-arrays" begin
+        x = QuantityArray(randn(3, 3), u"A")
+        y = QuantityArray(randn(3, 3), u"cd")
+        @test ustrip(x .* y) == ustrip(x) .* ustrip(y)
+    end
+
     @testset "Symbolic units" begin
         z_ar = randn(32)
         z = QuantityArray(z_ar, us"Constants.h * km/s")
