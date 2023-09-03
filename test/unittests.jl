@@ -540,6 +540,8 @@ end
 
     @testset "Utilities" begin
         @test fill(u"m/s", 10) == QuantityArray(fill(1.0, 10) .* u"m/s")
+        @test ndims(fill(u"m/s", ())) == 0
+        @test fill(u"m/s", ())[begin] == u"m/s"
     end
 
     @testset "Generic literal_pow" begin
