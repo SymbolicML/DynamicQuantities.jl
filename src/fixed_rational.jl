@@ -68,10 +68,18 @@ Base.round(::Type{T}, x::F) where {T,F<:FixedRational} = div(convert(T, x.num), 
 Base.decompose(x::F) where {T,F<:FixedRational{T}} = (x.num, zero(T), denom(F))
 
 # Promotion rules:
-Base.promote_rule(::Type{<:FixedRational{T1,den1}}, ::Type{<:FixedRational{T2,den2}}) where {T1,T2,den1,den2} = FixedRational{promote_type(T1,T2),den*den2}
-Base.promote_rule(::Type{<:FixedRational{T1,den}}, ::Type{<:FixedRational{T2,den}}) where {T1,T2,den} = FixedRational{promote_type(T1,T2),den}
-Base.promote_rule(::Type{<:FixedRational{T1}}, ::Type{Rational{T2}}) where {T1,T2} = Rational{promote_type(T1,T2)}
-Base.promote_rule(::Type{<:FixedRational{T1}}, ::Type{T2}) where {T1,T2} = promote_type(Rational{T1}, T2)
+function Base.promote_rule(::Type{<:FixedRational{T1,den1}}, ::Type{<:FixedRational{T2,den2}}) where {T1,T2,den1,den2}
+    return error("Refusing to promote `FixedRational` types with mixed denominators. Use `Rational` instead.")
+end
+function Base.promote_rule(::Type{<:FixedRational{T1,den}}, ::Type{<:FixedRational{T2,den}}) where {T1,T2,den}
+    return FixedRational{promote_type(T1,T2),den}
+end
+function Base.promote_rule(::Type{<:FixedRational{T1}}, ::Type{Rational{T2}}) where {T1,T2}
+    return Rational{promote_type(T1,T2)}
+end
+function Base.promote_rule(::Type{<:FixedRational{T1}}, ::Type{T2}) where {T1,T2}
+    return promote_type(Rational{T1}, T2)
+end
 
 # Want to consume integers:
 Base.promote(x::Integer, y::F) where {F<:FixedRational} = (F(x), y)
