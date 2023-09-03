@@ -39,7 +39,9 @@ Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
 
 # Compatibility with `.*`
+Base.size(q::AbstractQuantity) = size(ustrip(q))
 Base.length(q::AbstractQuantity) = length(ustrip(q))
+Base.axes(q::AbstractQuantity) = axes(ustrip(q))
 Base.iterate(qd::AbstractQuantity, maybe_state...) =
     let subiterate=iterate(ustrip(qd), maybe_state...)
         subiterate === nothing && return nothing
@@ -47,6 +49,10 @@ Base.iterate(qd::AbstractQuantity, maybe_state...) =
     end
 Base.ndims(::Type{<:AbstractQuantity{T}}) where {T} = ndims(T)
 Base.ndims(q::AbstractQuantity) = ndims(ustrip(q))
+Base.broadcastable(q::AbstractQuantity) = new_quantity(typeof(q), Base.broadcastable(ustrip(q)), dimension(q))
+Base.getindex(q::AbstractQuantity, i...) = new_quantity(typeof(q), getindex(ustrip(q), i...), dimension(q))
+Base.keys(q::AbstractQuantity) = keys(ustrip(q))
+
 
 # Numeric checks
 function Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...)

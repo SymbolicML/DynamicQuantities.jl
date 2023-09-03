@@ -580,9 +580,9 @@ end
 
         @test typeof(Base.broadcasted(f, ar1, array_of_quantities, 1.0).args[end]) == Float64
         q = u"1"
-        # TODO: Seems to be failing to broadcast Quantity{Float64}:
-        @test_skip typeof(Base.broadcasted(f, ar1, array_of_quantities, q).args[end]) == q
+        @test typeof(Base.broadcasted(f, ar1, array_of_quantities, q).args[end]) == typeof(q)
 
+        # TODO: Type inference here needs to be fixed
         @test_skip @inferred g(ar1, array_of_quantities, u"1")
         @test g(ar1, array_of_quantities, u"1") == [f(ar1[i], array_of_quantities[i], 1) for i in eachindex(ar1)]
     end
