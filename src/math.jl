@@ -47,6 +47,7 @@ Base.:^(l::AbstractQuantity{T,D}, r::Number) where {T,R,D<:AbstractDimensions{R}
         # Need to ensure we take the numerical power by the rationalized quantity:
         return new_quantity(typeof(l), ustrip(l)^val_pow, dimension(l)^dim_pow)
     end
+@inline Base.literal_pow(::typeof(^), l::AbstractDimensions, ::Val{p}) where {p} = map_dimensions(Base.Fix1(*, p), l)
 @inline Base.literal_pow(::typeof(^), l::AbstractQuantity, ::Val{p}) where {p} = new_quantity(typeof(l), Base.literal_pow(^, ustrip(l), Val(p)), Base.literal_pow(^, dimension(l), Val(p)))
 
 Base.inv(d::AbstractDimensions) = map_dimensions(-, d)
