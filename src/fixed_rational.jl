@@ -37,9 +37,6 @@ const DEFAULT_DENOM = DEFAULT_NUMERATOR_TYPE(2^4 * 3^2 * 5^2 * 7)
 (::Type{F})(x::Rational) where {F<:FixedRational} = unsafe_fixed_rational(widemul(x.num, denom(F)) ÷ x.den, eltype(F), val_denom(F))
 
 Base.:*(l::F, r::F) where {F<:FixedRational} = unsafe_fixed_rational(widemul(l.num, r.num) ÷ denom(F), eltype(F), val_denom(F))
-Base.:*(l::Integer, r::F) where {F<:FixedRational} = unsafe_fixed_rational(l * r.num, eltype(F), val_denom(F))
-Base.:*(l::F, r::Integer) where {F<:FixedRational} = unsafe_fixed_rational(l.num * r, eltype(F), val_denom(F))
-
 Base.:+(l::F, r::F) where {F<:FixedRational} = unsafe_fixed_rational(l.num + r.num, eltype(F), val_denom(F))
 Base.:-(l::F, r::F) where {F<:FixedRational} = unsafe_fixed_rational(l.num - r.num, eltype(F), val_denom(F))
 Base.:-(x::F) where {F<:FixedRational} = unsafe_fixed_rational(-x.num, eltype(F), val_denom(F))
