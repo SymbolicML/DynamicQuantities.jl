@@ -164,11 +164,11 @@ materialize_first(q::AbstractArray{Q}, ::Any) where {Q<:AbstractQuantity} = firs
 # Derived calls
 materialize_first(r::Base.RefValue) = materialize_first(r.x)
 materialize_first(x::Base.Broadcast.Extruded) = materialize_first(x.x)
-materialize_first(args::Tuple) = materialize_first(first(args), Base.tail(args))
+materialize_first(args::Tuple) = materialize_first(first(args))
 materialize_first(args::AbstractArray) =
     let
         length(args) >= 1 || error("Unexpected broadcast format. Please submit a bug report.")
-        materialize_first(args[begin], args[begin+1:end])
+        materialize_first(args[begin])
     end
 materialize_first(::Tuple{}) = error("Unexpected broadcast format. Please submit a bug report.")
 materialize_first(::Any, rest) = materialize_first(rest)
