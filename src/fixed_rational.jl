@@ -33,6 +33,8 @@ Base.eltype(::Type{F}) where {T,F<:FixedRational{T}} = T
 const DEFAULT_NUMERATOR_TYPE = Int32
 const DEFAULT_DENOM = DEFAULT_NUMERATOR_TYPE(2^4 * 3^2 * 5^2 * 7)
 
+(::Type{F})(x::F) where {F<:FixedRational} = x
+(::Type{F})(x::F2) where {T,T2,den,F<:FixedRational{T,den},F2<:FixedRational{T2,den}} = unsafe_fixed_rational(x.num, eltype(F), val_denom(F))
 (::Type{F})(x::Integer) where {F<:FixedRational} = unsafe_fixed_rational(x * denom(F), eltype(F), val_denom(F))
 (::Type{F})(x::Rational) where {F<:FixedRational} = unsafe_fixed_rational(widemul(x.num, denom(F)) ÷ x.den, eltype(F), val_denom(F))
 
@@ -84,7 +86,6 @@ end
 # Want to consume integers:
 Base.promote(x::Integer, y::F) where {F<:FixedRational} = (F(x), y)
 Base.promote(x::F, y::Integer) where {F<:FixedRational} = reverse(promote(y, x))
-Base.promote(x::F1, y::F2) where {F1<:FixedRational,F2<:FixedRational} = (@assert denom(F1) == denom(F2); (x, y))
 
 Base.string(x::FixedRational) =
     let

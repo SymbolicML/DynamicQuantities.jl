@@ -393,6 +393,14 @@ end
 @testset "Additional tests of FixedRational" begin
     @test convert(Int64, FixedRational{Int64,1000}(2 // 1)) == 2
     @test convert(Int32, FixedRational{Int64,1000}(3 // 1)) == 3
+
+    VERSION >= v"1.8" && @test_throws "Refusing to" promote(FixedRational{Int,10}(2), FixedRational{Int,4}(2))
+
+    f64 = FixedRational{Int,10}(2)
+    f8 = FixedRational{Int8,10}(2)
+    @test promote(f64, f8) == (2, 2)
+    @test typeof(promote(f64, f8)) == typeof((f64, f64))
+    @test typeof(promote(FixedRational{Int8,10}(2), FixedRational{Int8,10}(2))) == typeof((f8, f8))
 end
 
 struct MyDimensions{R} <: AbstractDimensions{R}
@@ -491,7 +499,7 @@ end
     x = convert(R, 10)
     y = convert(R, 5)
     @test promote(x, y) == (x, y)
-    @test_throws AssertionError promote(x, convert(FixedRational{Int32,100}, 10))
+    @test_throws ErrorException promote(x, convert(FixedRational{Int32,100}, 10))
     @test round(Missing, x) === missing
 
     x = 1.0u"m"
