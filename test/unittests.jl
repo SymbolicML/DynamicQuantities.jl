@@ -553,14 +553,36 @@ end
         @inferred f4v(y_q)
     end
 
+    @testset "Broadcast with single number" begin
+        ar1 = QuantityArray(randn(3), u"km/s")
+        @test ustrip(ar1 .* u"m/s") == ustrip(ar1)
+        @test dimension(ar1 .* u"m/s") == dimension(u"m^2/s^2")
+    end
+
     @testset "Multiple arrays" begin
-        ar1 = QuantityArray(randn(32), u"km/s")
-        ar2 = QuantityArray(randn(32, 1), u"km/s")
-        ar3 = randn(32)
+        ar1 = QuantityArray(randn(3), u"km/s")
+        ar2 = QuantityArray(randn(3, 1), u"km/s")
+        ar3 = randn(3)
         f(x, y, z) = x + y * z
         g(x, y, z) = f.(x, y, z)
         @inferred g(ar1, ar2[:, 1], ar3)
-        @test g(ar1, ar2[:, 1], ar3) == [f(ar1[i], ar2[i, 1], ar3[i]) for i in 1:32]
+        @test g(ar1, ar2[:, 1], ar3) == [f(ar1[i], ar2[i, 1], ar3[i]) for i in eachindex(ar1)]
+
+        tuple_array = (1u"km/s", 2u"m/s", 3u"cm/s")
+        @inferred g(ar1, tuple_array, ar3)
+        @test g(ar1, tuple_array, ar3) == [f(ar1[i], tuple_array[i], ar3[i]) for i in eachindex(ar1)]
+
+        array_of_quantities = [1u"km/s", 2u"m/s", 3u"cm/s"]
+        @inferred g(ar1, array_of_quantities, ar3)
+        @test g(ar1, tuple_array, ar3) == g(ar1, array_of_quantities, ar3)
+
+        @test typeof(Base.broadcasted(f, ar1, array_of_quantities, 1.0).args[end]) == Float64
+        q = u"1"
+        # TODO: Seems to be failing to broadcast Quantity{Float64}:
+        @test_skip typeof(Base.broadcasted(f, ar1, array_of_quantities, q).args[end]) == q
+
+        @test_skip @inferred g(ar1, array_of_quantities, u"1")
+        @test g(ar1, array_of_quantities, u"1") == [f(ar1[i], array_of_quantities[i], 1) for i in eachindex(ar1)]
     end
 
     @testset "Symbolic units" begin
