@@ -50,8 +50,8 @@ SUITE["QuantityArray"]["broadcasting"] = let s = BenchmarkGroup()
     s["x^2_quantity_array"] = @benchmarkable $f9.(arr) setup = (arr = QuantityArray(randn($N), u"km/s")) evals = 1000
     s["x^2_array_of_quantities"] = @benchmarkable $f9.(arr) setup = (arr = randn($N) .* u"km/s") evals = 1000
     f10(x) = x^4
-    s["x^4_normal_array"] = @benchmarkable $f9.(arr) setup = (arr = randn($N)) evals = 1000 # baseline
-    s["x^4_quantity_array"] = @benchmarkable $f9.(arr) setup = (arr = QuantityArray(randn($N), u"km/s")) evals = 1000
-    s["x^4_array_of_quantities"] = @benchmarkable $f9.(arr) setup = (arr = randn($N) .* u"km/s") evals = 1000
+    s["x^4_normal_array"] = @benchmarkable $f10.(arr) setup = (arr = randn($N)) evals = 1000 # baseline
+    s["x^4_quantity_array"] = @benchmarkable $f10.(arr) setup = (arr = QuantityArray(randn($N), u"km/s")) evals = 1000
+    s["x^4_array_of_quantities"] = @benchmarkable $f10.(arr) setup = (arr = randn($N) .* u"km/s") evals = 1000
     s
 end
