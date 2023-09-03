@@ -155,11 +155,8 @@ materialize_first(bc::Base.Broadcast.Broadcasted) = bc.f(materialize_first.(bc.a
 
 # Base cases
 materialize_first(q::AbstractQuantity) = q
-materialize_first(q::AbstractQuantity, ::Any) = q
 materialize_first(q::QuantityArray) = first(q)
-materialize_first(q::QuantityArray, ::Any) = first(q)
 materialize_first(q::AbstractArray{Q}) where {Q<:AbstractQuantity} = first(q)
-materialize_first(q::AbstractArray{Q}, ::Any) where {Q<:AbstractQuantity} = first(q)
 
 # Derived calls
 materialize_first(r::Base.RefValue) = materialize_first(r.x)
@@ -171,7 +168,6 @@ materialize_first(args::AbstractArray) =
         materialize_first(args[begin])
     end
 materialize_first(::Tuple{}) = error("Unexpected broadcast format. Please submit a bug report.")
-materialize_first(::Any, rest) = materialize_first(rest)
 
 # Everything else:
 materialize_first(x) = x
