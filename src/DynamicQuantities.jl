@@ -1,5 +1,15 @@
 module DynamicQuantities
 
+import TOML: parsefile
+
+const PACKAGE_VERSION = try
+    let project = parsefile(joinpath(pkgdir(@__MODULE__), "Project.toml"))
+        VersionNumber(project["version"])
+    end
+catch
+    VersionNumber(0, 0, 0)
+end
+
 export Units, Constants
 export AbstractQuantity, AbstractDimensions
 export Quantity, Dimensions, SymbolicDimensions, QuantityArray, DimensionError
