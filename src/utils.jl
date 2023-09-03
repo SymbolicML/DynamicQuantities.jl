@@ -45,6 +45,8 @@ Base.iterate(qd::AbstractQuantity, maybe_state...) =
         subiterate === nothing && return nothing
         return new_quantity(typeof(qd), subiterate[1], dimension(qd)), subiterate[2]
     end
+Base.ndims(::Type{<:AbstractQuantity{T}}) where {T} = ndims(T)
+Base.ndims(q::AbstractQuantity) = ndims(ustrip(q))
 
 # Numeric checks
 function Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...)
