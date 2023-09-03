@@ -161,6 +161,7 @@ end
     @test real(x) == 0.5 * u"km/s"
     @test imag(x) == 0.6 * u"km/s"
     @test conj(x) == (0.5 - 0.6im) * u"km/s"
+    @test angle(x) == angle(ustrip(x))
     @test adjoint(ustrip(x^2)) ≈ adjoint(x^2) / u"m/s"^2
 end
 
@@ -519,23 +520,48 @@ end
 end
 
 @testset "Arrays" begin
-    x = QuantityArray(randn(32), u"km/s")
-    @test ustrip(sum(x)) == sum(ustrip(x))
+    @testset "Basics" begin
+        x = QuantityArray(randn(32), u"km/s")
+        @test ustrip(sum(x)) == sum(ustrip(x))
 
-    y = randn(32)
-    @test ustrip(QuantityArray(y, u"m")) == y
+        y = randn(32)
+        @test ustrip(QuantityArray(y, u"m")) == y
 
-    f(v) = v^2 * 1.5 - v^2
-    @test sum(f.(QuantityArray(y, u"m"))) == sum(f.(y) .* u"m^2")
+        f(v) = v^2 * 1.5 - v^2
+        @test sum(f.(QuantityArray(y, u"m"))) == sum(f.(y) .* u"m^2")
 
-    y_q = QuantityArray(y, u"m")
-    @test typeof(f.(y_q)) == typeof(y_q)
-    @test ulength(f.(y_q)) == ulength(y_q) * 2
+        y_q = QuantityArray(y, u"m")
+        @test typeof(f.(y_q)) == typeof(y_q)
+        @test ulength(f.(y_q)) == ulength(y_q) * 2
 
-    fv(v) = @. f(v)
-    @inferred fv(y_q)
+        fv(v) = f.(v)
+        @inferred fv(y_q)
+    end
 
-    @test fill(u"m/s", 10) == QuantityArray(fill(1.0, 10) .* u"m/s")
+    @testset "Utilities" begin
+        @test fill(u"m/s", 10) == QuantityArray(fill(1.0, 10) .* u"m/s")
+    end
+
+    @testset "Generic literal_pow" begin
+        y = randn(32)
+        y_q = QuantityArray(y, u"m")
+
+        f4(v) = v^4 * 0.3
+        @test sum(f4.(QuantityArray(y, u"m"))) == sum(f4.(y) .* u"m^4")
+
+        f4v(v) = f4.(v)
+        @inferred f4v(y_q)
+    end
+
+    @testset "Multiple arrays" begin
+        ar1 = QuantityArray(randn(32), u"km/s")
+        ar2 = QuantityArray(randn(32, 1), u"km/s")
+        ar3 = randn(32)
+        f(x, y, z) = x + y * z
+        g(x, y, z) = f.(x, y, z)
+        @inferred g(ar1, ar2[:, 1], ar3)
+        @test g(ar1, ar2[:, 1], ar3) == [f(ar1[i], ar2[i, 1], ar3[i]) for i in 1:32]
+    end
 
     @testset "Symbolic units" begin
         z_ar = randn(32)
