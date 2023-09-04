@@ -26,7 +26,7 @@ end
     return output
 end
 
-Base.float(q::AbstractQuantity{T}) where {T<:AbstractFloat} = convert(T, q)
+Base.float(q::AbstractQuantity) = new_quantity(typeof(q), float(ustrip(q)), dimension(q))
 Base.convert(::Type{T}, q::AbstractQuantity) where {T<:Real} =
     let
         @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
@@ -192,7 +192,6 @@ Remove the units from a quantity.
 """
 @inline ustrip(q::AbstractQuantity) = q.value
 ustrip(::AbstractDimensions) = error("Cannot remove units from an `AbstractDimensions` object.")
-ustrip(aq::AbstractArray{<:AbstractQuantity}) = ustrip.(aq)
 @inline ustrip(q) = q
 
 """
