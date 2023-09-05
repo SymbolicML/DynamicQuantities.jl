@@ -69,21 +69,45 @@ end
 @inline ustrip(A::QuantityArray) = A.value
 @inline dimension(A::QuantityArray) = A.dimensions
 
-array_type(::Type{A}) where {T,A<:QuantityArray{T}} = Array{T,1}
+array_type(::Type{A}) where {A<:QuantityArray} = Array{T,N} where {T,N}
+array_type(::Type{A}) where {T,A<:QuantityArray{T}} = Array{T,N} where {N}
 array_type(::Type{A}) where {T,N,A<:QuantityArray{T,N}} = Array{T,N}
+array_type(::Type{A}) where {T,N,D,A<:QuantityArray{T,N,D}} = Array{T,N}
+array_type(::Type{A}) where {T,N,D,Q,A<:QuantityArray{T,N,D,Q}} = Array{T,N}
 array_type(::Type{A}) where {T,N,D,Q,V,A<:QuantityArray{T,N,D,Q,V}} = V
+
 array_type(A) = array_type(typeof(A))
 
+quantity_type(::Type{A}) where {A<:QuantityArray} = DEFAULT_QUANTITY_TYPE
+quantity_type(::Type{A}) where {T,A<:QuantityArray{T}} = Quantity{T,DEFAULT_DIM_TYPE}
+quantity_type(::Type{A}) where {T,N,A<:QuantityArray{T,N}} = Quantity{T,DEFAULT_DIM_TYPE}
+quantity_type(::Type{A}) where {T,N,D,A<:QuantityArray{T,N,D}} = Quantity{T,D}
 quantity_type(::Type{A}) where {T,N,D,Q,A<:QuantityArray{T,N,D,Q}} = Q
+quantity_type(::Type{A}) where {T,N,D,Q,V,A<:QuantityArray{T,N,D,Q,V}} = Q
+
 quantity_type(A) = quantity_type(typeof(A))
 
 dim_type(::Type{A}) where {A<:QuantityArray} = DEFAULT_DIM_TYPE
+dim_type(::Type{A}) where {T,A<:QuantityArray{T}} = DEFAULT_DIM_TYPE
+dim_type(::Type{A}) where {T,N,A<:QuantityArray{T,N}} = DEFAULT_DIM_TYPE
 dim_type(::Type{A}) where {T,N,D,A<:QuantityArray{T,N,D}} = D
+dim_type(::Type{A}) where {T,N,D,Q,A<:QuantityArray{T,N,D,Q}} = D
+dim_type(::Type{A}) where {T,N,D,Q,V,A<:QuantityArray{T,N,D,Q,V}} = D
+
 dim_type(A) = dim_type(typeof(A))
 
+# TODO: Can we avoid this pattern?
 value_type(::Type{A}) where {A<:QuantityArray} = DEFAULT_VALUE_TYPE
 value_type(::Type{A}) where {T,A<:QuantityArray{T}} = T
+value_type(::Type{A}) where {T,N,A<:QuantityArray{T,N}} = T
+value_type(::Type{A}) where {T,N,D,A<:QuantityArray{T,N,D}} = T
+value_type(::Type{A}) where {T,N,D,Q,A<:QuantityArray{T,N,D,Q}} = T
+value_type(::Type{A}) where {T,N,D,Q,V,A<:QuantityArray{T,N,D,Q,V}} = T
+
+value_type(::Type{Q}) where {Q<:AbstractQuantity} = DEFAULT_VALUE_TYPE
 value_type(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = T
+value_type(::Type{Q}) where {T,D,Q<:AbstractQuantity{T,D}} = T
+
 value_type(A) = value_type(typeof(A))
 
 # One field:
