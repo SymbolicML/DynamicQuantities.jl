@@ -201,12 +201,12 @@ end
     end
 
     x = randn(32) .* u"km/s"
-    @test ustrip(x) == ustrip.(x)
-    @test dimension(x) == dimension(u"km/s")
+    @test ustrip.(x) == [ustrip(xi) for xi in x]
+    @test dimension.(x) == [dimension(u"km/s") for xi in x]
     @test_throws DimensionError dimension([u"km/s", u"km"])
 
     @test norm(x, 2) ≈ norm(ustrip.(x), 2) * u"m/s"
-    @test norm(Quantity(ustrip(x), length=1, time=-1), 2) ≈ norm(ustrip.(x), 2) * u"m/s"
+    @test norm(Quantity(ustrip.(x), length=1, time=-1), 2) ≈ norm(ustrip.(x), 2) * u"m/s"
 
     @test ustrip(x') == ustrip(x)'
 end
