@@ -147,6 +147,11 @@ using Test
 
     y = Quantity(-1, mass=1)
     @test unsigned(y) == Quantity(unsigned(-1), mass=1)
+
+    z = Quantity(-0.3)
+    @test float(z) == z
+    @test convert(Float32, z) === convert(Float32, -0.3)
+
 end
 
 @testset "Complex numbers" begin
@@ -404,6 +409,12 @@ end
     @test typeof(promote(FixedRational{Int8,10}(2), FixedRational{Int8,10}(2))) == typeof((f8, f8))
 end
 
+@testset "Quantity promotion" begin
+    q1 = Quantity(1.0, length=1)
+    q2 = Quantity(2, mass=1)
+    @test typeof(promote(q1, q2)) == typeof((q1, q1))
+end
+
 struct MyDimensions{R} <: AbstractDimensions{R}
     length::R
     mass::R
@@ -591,6 +602,19 @@ end
         x = QuantityArray(randn(3, 3), u"A")
         y = QuantityArray(randn(3, 3), u"cd")
         @test ustrip(x .* y) == ustrip(x) .* ustrip(y)
+    end
+
+    @testset "Broadcast scalars" begin
+        for (x, qx) in ((0.5, 0.5u"s"), ([0.5, 0.2], Quantity([0.5, 0.2], time=1)))
+            @test size(qx) == size(x)
+            @test length(qx) == length(x)
+            @test axes(qx) == axes(x)
+            @test iterate(qx)[1] == (iterate(x)[1] * u"s")
+            @test ndims(qx) == ndims(x)
+            @test Base.broadcastable(qx) == qx
+            ustrip(qx) isa Real && @test qx[1] == qx
+            @test keys(qx) == keys(x)
+        end
     end
 
     @testset "Symbolic units" begin
