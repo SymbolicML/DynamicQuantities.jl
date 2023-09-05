@@ -541,9 +541,13 @@ end
         f(v) = v^2 * 1.5 - v^2
         @test sum(f.(QuantityArray(y, u"m"))) == sum(f.(y) .* u"m^2")
 
-        y_q = QuantityArray(y, u"m")
+        y_q = QuantityArray(y, u"m * cd / s")
         @test typeof(f.(y_q)) == typeof(y_q)
-        @test ulength(f.(y_q)) == ulength(y_q) * 2
+
+        for get_u in (ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount)
+            @test get_u(f.(y_q)) == get_u(y_q) * 2
+            @test get_u(f(first(y_q))) == get_u(y_q) * 2
+        end
 
         fv(v) = f.(v)
         @inferred fv(y_q)
