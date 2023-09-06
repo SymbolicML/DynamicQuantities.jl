@@ -559,6 +559,17 @@ end
         @test fill(u"m/s", ())[begin] == u"m/s"
     end
 
+    @testset "Promotion" begin
+        qarr1 = QuantityArray(randn(32), convert(Dimensions{Rational{Int32}}, dimension(u"km/s")))
+        qarr2 = QuantityArray(randn(Float16, 32), convert(Dimensions{Rational{Int64}}, dimension(u"km/s")))
+
+        expected_T = Float64
+        expected_D = Dimensions{Rational{Int64}}
+        expected_type = QuantityArray{expected_T,1,expected_D,Quantity{Float64,expected_D},Array{expected_T,1}}
+
+        @test typeof(promote(qarr1, qarr2)) == Tuple{expected_type, expected_type}
+    end
+
     @testset "Generic literal_pow" begin
         y = randn(32)
         y_q = QuantityArray(y, u"m")

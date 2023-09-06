@@ -45,7 +45,6 @@ QuantityArray(v::QA) where {Q<:AbstractQuantity,QA<:AbstractArray{Q}} =
         allequal(dimension.(v)) || throw(DimensionError(first(v), v))
         QuantityArray(ustrip.(v), dimension(first(v)), Q)
     end
-# TODO: Should this check that the dimensions are the same?
 
 function Base.promote_rule(::Type{QA1}, ::Type{QA2}) where {QA1<:QuantityArray,QA2<:QuantityArray}
     D = promote_type(dim_type.((QA1, QA2))...)
@@ -55,59 +54,53 @@ function Base.promote_rule(::Type{QA1}, ::Type{QA2}) where {QA1<:QuantityArray,Q
     N = ndims(QA1)
 
     @assert(
+        N == ndims(QA2),
+        "Cannot promote quantity arrays with different dimensions."
+    )
+    @assert(
         Q <: AbstractQuantity{T,D} && V <: AbstractArray{T},
         "Incompatible promotion rules between\n    $(QA1)\nand\n    $(QA2)\nPlease convert to a common quantity type first."
     )
 
-    if N != ndims(QA2)
-        return QuantityArray{T,_N,D,Q,V} where {_N}
-    else
-        return QuantityArray{T,N,D,Q,V}
-    end
+    return QuantityArray{T,N,D,Q,V}
+end
+
+function Base.convert(::Type{QA1}, A::QA2) where {QA1<:QuantityArray,QA2<:QuantityArray}
+    Q = quantity_type(QA1)
+    V = array_type(QA1)
+    N = ndims(QA1)
+
+    raw_array = Base.Fix1(convert, Q).(A)
+    output = QuantityArray(convert(constructor_of(V){Q,N}, raw_array))
+    # TODO: This will mess with static arrays
+
+    return output::QA1
 end
 
 @inline ustrip(A::QuantityArray) = A.value
 @inline dimension(A::QuantityArray) = A.dimensions
 
-array_type(::Type{A}) where {A<:QuantityArray} = Array{T,N} where {T,N}
-array_type(::Type{A}) where {T,A<:QuantityArray{T}} = Array{T,N} where {N}
-array_type(::Type{A}) where {T,N,A<:QuantityArray{T,N}} = Array{T,N}
-array_type(::Type{A}) where {T,N,D,A<:QuantityArray{T,N,D}} = Array{T,N}
-array_type(::Type{A}) where {T,N,D,Q,A<:QuantityArray{T,N,D,Q}} = Array{T,N}
-array_type(::Type{A}) where {T,N,D,Q,V,A<:QuantityArray{T,N,D,Q,V}} = V
-
+array_type(::Type{QuantityArray}) = Array{DEFAULT_VALUE_TYPE,N} where {N}
+array_type(::Type{QuantityArray{T}}) where {T} = Array{T,N} where {N}
+array_type(::Type{QuantityArray{T,N}}) where {T,N} = Array{T,N}
+array_type(::Type{QuantityArray{T,N,D}}) where {T,N,D} = Array{T,N}
+array_type(::Type{QuantityArray{T,N,D,Q}}) where {T,N,D,Q} = Array{T,N}
+array_type(::Type{<:QuantityArray{T,N,D,Q,V}}) where {T,N,D,Q,V} = V
 array_type(A) = array_type(typeof(A))
 
-quantity_type(::Type{A}) where {A<:QuantityArray} = DEFAULT_QUANTITY_TYPE
-quantity_type(::Type{A}) where {T,A<:QuantityArray{T}} = Quantity{T,DEFAULT_DIM_TYPE}
-quantity_type(::Type{A}) where {T,N,A<:QuantityArray{T,N}} = Quantity{T,DEFAULT_DIM_TYPE}
-quantity_type(::Type{A}) where {T,N,D,A<:QuantityArray{T,N,D}} = Quantity{T,D}
-quantity_type(::Type{A}) where {T,N,D,Q,A<:QuantityArray{T,N,D,Q}} = Q
-quantity_type(::Type{A}) where {T,N,D,Q,V,A<:QuantityArray{T,N,D,Q,V}} = Q
-
+quantity_type(::Type{QuantityArray}) = DEFAULT_QUANTITY_TYPE
+quantity_type(::Type{QuantityArray{T}}) where {T} = Quantity{T,DEFAULT_DIM_TYPE}
+quantity_type(::Type{QuantityArray{T,N}}) where {T,N} = Quantity{T,DEFAULT_DIM_TYPE}
+quantity_type(::Type{QuantityArray{T,N,D}}) where {T,N,D} = Quantity{T,D}
+quantity_type(::Type{<:QuantityArray{T,N,D,Q}}) where {T,N,D,Q} = Q
 quantity_type(A) = quantity_type(typeof(A))
 
-dim_type(::Type{A}) where {A<:QuantityArray} = DEFAULT_DIM_TYPE
-dim_type(::Type{A}) where {T,A<:QuantityArray{T}} = DEFAULT_DIM_TYPE
-dim_type(::Type{A}) where {T,N,A<:QuantityArray{T,N}} = DEFAULT_DIM_TYPE
-dim_type(::Type{A}) where {T,N,D,A<:QuantityArray{T,N,D}} = D
-dim_type(::Type{A}) where {T,N,D,Q,A<:QuantityArray{T,N,D,Q}} = D
-dim_type(::Type{A}) where {T,N,D,Q,V,A<:QuantityArray{T,N,D,Q,V}} = D
-
+dim_type(::Type) = DEFAULT_DIM_TYPE
+dim_type(::Type{<:QuantityArray{T,N,D}}) where {T,N,D} = D
 dim_type(A) = dim_type(typeof(A))
 
-# TODO: Can we avoid this pattern?
-value_type(::Type{A}) where {A<:QuantityArray} = DEFAULT_VALUE_TYPE
-value_type(::Type{A}) where {T,A<:QuantityArray{T}} = T
-value_type(::Type{A}) where {T,N,A<:QuantityArray{T,N}} = T
-value_type(::Type{A}) where {T,N,D,A<:QuantityArray{T,N,D}} = T
-value_type(::Type{A}) where {T,N,D,Q,A<:QuantityArray{T,N,D,Q}} = T
-value_type(::Type{A}) where {T,N,D,Q,V,A<:QuantityArray{T,N,D,Q,V}} = T
-
-value_type(::Type{Q}) where {Q<:AbstractQuantity} = DEFAULT_VALUE_TYPE
-value_type(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = T
-value_type(::Type{Q}) where {T,D,Q<:AbstractQuantity{T,D}} = T
-
+value_type(::Type{QuantityArray}) = DEFAULT_VALUE_TYPE
+value_type(::Type{<:QuantityArray{T}}) where {T} = T
 value_type(A) = value_type(typeof(A))
 
 # One field:
