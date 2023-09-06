@@ -38,8 +38,9 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SaferIntegers = "88634af6-177f-5301-88b8-7819386cfa38"
 ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
 ScientificTypesBase = "30f210dd-8aff-4c5f-94ba-8e64358c1161"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Test", "Aqua", "LinearAlgebra", "Ratios", "SaferIntegers", "SafeTestsets", "ScientificTypes", "ScientificTypesBase", "Unitful"]
+test = ["Test", "Aqua", "LinearAlgebra", "Ratios", "SaferIntegers", "SafeTestsets", "ScientificTypes", "ScientificTypesBase", "StaticArrays", "Unitful"]

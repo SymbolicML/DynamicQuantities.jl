@@ -3,6 +3,7 @@ using DynamicQuantities: FixedRational
 using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
+using StaticArrays: SArray
 using LinearAlgebra: norm
 using Test
 
@@ -568,6 +569,29 @@ end
         expected_type = QuantityArray{expected_T,1,expected_D,Quantity{Float64,expected_D},Array{expected_T,1}}
 
         @test typeof(promote(qarr1, qarr2)) == Tuple{expected_type, expected_type}
+    end
+
+    @testset "Array concatenation" begin
+        qarr1 = QuantityArray(randn(3) .* u"km/s")
+        qarr2 = QuantityArray(randn(3) .* u"km/s")
+
+        @test ustrip.(hcat(qarr1, qarr2)) == hcat(ustrip(qarr1), ustrip(qarr2))
+        @test ustrip.(vcat(qarr1, qarr2)) == vcat(ustrip(qarr1), ustrip(qarr2))
+        @test ustrip.(cat(qarr1, qarr2, dims=2)) == cat(ustrip(qarr1), ustrip(qarr2), dims=Val(2))
+        @test dimension(hcat(qarr1, qarr2)) == dimension(u"km/s")
+        
+        # type stability:
+        @inferred hcat(qarr1, qarr2)
+        @inferred vcat(qarr1, qarr2)
+        @inferred cat(qarr1, qarr2, dims=2)
+
+        # same array type:
+        s_qarr1 = QuantityArray(SArray{Tuple{3}}(ustrip(qarr1)), dimension(qarr1))
+        s_qarr2 = QuantityArray(SArray{Tuple{3}}(ustrip(qarr2)), dimension(qarr2))
+        @test array_type(hcat(s_qarr1, s_qarr2)) <: SArray
+
+        # Test concatenating different arrays:
+
     end
 
     @testset "Generic literal_pow" begin
