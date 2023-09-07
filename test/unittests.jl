@@ -702,7 +702,7 @@ end
         @test msg == "QuantityArray(::Vector{Float64}, ::DynamicQuantities.Quantity{Float64, DynamicQuantities.SymbolicDimensions{DynamicQuantities.FixedRational{Int32, 25200}}})"
 
         io = IOBuffer()
-        Base.show(io, typeof(z))
+        Base.show(io, MIME"text/plain"(), typeof(z))
         msg2 = String(take!(io))
         @test msg2 == msg
     end
