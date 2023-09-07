@@ -666,6 +666,17 @@ end
         @test ustrip(x .* y) == ustrip(x) .* ustrip(y)
     end
 
+    @testset "Broadcast different arrays" begin
+        f(x, y, z, w) = x * y + z * w
+        g(x, y, z, w) = f.(x, y, z, w)
+
+        x = randn(32)
+        y = QuantityArray(randn(32), u"km/s")
+        z = rand(1:10, 32)
+        w = Quantity{Float32}(u"m/s")
+        @test typeof(g(x, y, z, w)) <: QuantityArray{Float64}
+    end
+
     @testset "Broadcast scalars" begin
         for (x, qx) in ((0.5, 0.5u"s"), ([0.5, 0.2], Quantity([0.5, 0.2], time=1)))
             @test size(qx) == size(x)
