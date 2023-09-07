@@ -195,15 +195,21 @@ Base.show(io::IO, ::MIME"text/plain", ::Type{QA}) where {QA<:QuantityArray} = _p
 # Other array operations:
 Base.copy(A::QuantityArray) = QuantityArray(copy(ustrip(A)), copy(dimension(A)), quantity_type(A))
 for f in (:cat, :hcat, :vcat)
+    preamble = quote
+        allequal(dimension.(A)) || throw(DimensionError(A[begin], A[begin+1:end]))
+        A = promote(A...)
+        dimensions = dimension(A[begin])
+        Q = quantity_type(A[begin])
+    end
     if f == :cat
         @eval function Base.$f(A::QuantityArray...; dims)
-            allequal(dimension.(A)) || throw(DimensionError(A[begin], A[begin+1:end]))
-            return QuantityArray($f(ustrip.(A)...; dims), dimension(A[begin]), quantity_type(A[begin]))
+            $preamble
+            return QuantityArray($f(ustrip.(A)...; dims), dimensions, Q)
         end
     else
         @eval function Base.$f(A::QuantityArray...)
-            allequal(dimension.(A)) || throw(DimensionError(A[begin], A[begin+1:end]))
-            return QuantityArray($f(ustrip.(A)...), dimension(A[begin]), quantity_type(A[begin]))
+            $preamble
+            return QuantityArray($f(ustrip.(A)...), dimensions, Q)
         end
     end
 end
