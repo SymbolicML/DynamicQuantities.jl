@@ -491,6 +491,10 @@ end
     @test dimension(inv(us"s") * us"m") != dimension(us"km/s")
     @test dimension(expand_units(inv(us"s") * us"m")) == dimension(expand_units(us"km/s"))
 
+    f2(i::Int) = us"s"^i
+    @inferred f2(5)
+    @test expand_units(f2(5)) == u"s"^5
+
     @test_throws ErrorException sym_uparse("'c'")
 
     # For constants which have a namespace collision, the numerical expansion is used:
@@ -561,6 +565,7 @@ end
         @test QuantityArray(ones(3), u"m/s") == QuantityArray(ones(3), length=1, time=-1)
 
         fv(v) = f.(v)
+        fv(y_q)
         @inferred fv(y_q)
 
         # Same array type:
