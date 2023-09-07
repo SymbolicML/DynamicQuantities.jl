@@ -577,6 +577,14 @@ end
         @inferred fv_square2(s_x)
     end
 
+    @testset "Copying" begin
+        x = QuantityArray(randn(3), u"km/s")
+        xc = copy(x)
+        @test x == xc
+        xc[2] *= 0.5
+        @test x != xc
+    end
+
     @testset "Utilities" begin
         @test fill(u"m/s", 10) == QuantityArray(fill(1.0, 10) .* u"m/s")
         @test ndims(fill(u"m/s", ())) == 0
