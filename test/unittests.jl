@@ -1,6 +1,7 @@
 using DynamicQuantities
 using DynamicQuantities: FixedRational
 using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
+using DynamicQuantities: array_type
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
@@ -551,30 +552,29 @@ end
         y = randn(32)
         @test ustrip(QuantityArray(y, u"m")) == y
 
-        f(v) = v^2 * 1.5 - v^2
-        @test sum(f.(QuantityArray(y, u"m"))) == sum(f.(y) .* u"m^2")
+        f_square(v) = v^2 * 1.5 - v^2
+        @test sum(f_square.(QuantityArray(y, u"m"))) == sum(f_square.(y) .* u"m^2")
 
         y_q = QuantityArray(y, u"m * cd / s")
-        @test typeof(f.(y_q)) == typeof(y_q)
+        @test typeof(f_square.(y_q)) == typeof(y_q)
 
         for get_u in (ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount)
-            @test get_u(f.(y_q)) == get_u(y_q) * 2
-            @test get_u(f(first(y_q))) == get_u(y_q) * 2
+            @test get_u(f_square.(y_q)) == get_u(y_q) * 2
+            @test get_u(f_square(first(y_q))) == get_u(y_q) * 2
         end
 
         @test QuantityArray(ones(3), u"m/s") == QuantityArray(ones(3), length=1, time=-1)
 
-        fv(v) = f.(v)
-        fv(y_q)
-        @inferred fv(y_q)
+        fv_square(v) = f_square.(v)
+        @inferred fv_square(y_q)
 
         # Same array type:
         s_x = QuantityArray(SArray{Tuple{32}}(ustrip(x)), dimension(x))
         output_s_x = (xi -> xi^2).(s_x)
         @test array_type(output_s_x) <: MArray
         @test dimension(output_s_x) == dimension(x)^2
-        f(x) = (xi -> xi^2).(x)
-        @inferred f(s_x)
+        fv_square2(x) = (xi -> xi^2).(x)
+        @inferred fv_square2(s_x)
     end
 
     @testset "Utilities" begin
