@@ -148,15 +148,7 @@ end
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType<:AbstractQuantity}
     T = value_type(ElType)
     output_array = similar(bc, T)
-    first_output = materialize_first(bc)
-    if typeof(first_output) != ElType
-        @warn (
-            "Materialization of first element likely failed. "
-            * "Please submit a bug report with information on "
-            * "the function you are broadcasting."
-        )
-    end
-    first_output::ElType
+    first_output::ElType = materialize_first(bc)
     return QuantityArray(output_array, dimension(first_output)::dim_type(ElType), ElType)
 end
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QuantityArray{T,N,D,Q,V}}}, ::Type{ElType}) where {T,N,D,Q,V<:Array{T,N},ElType}

@@ -408,6 +408,10 @@ end
     @test promote(f64, f8) == (2, 2)
     @test typeof(promote(f64, f8)) == typeof((f64, f64))
     @test typeof(promote(FixedRational{Int8,10}(2), FixedRational{Int8,10}(2))) == typeof((f8, f8))
+
+    # Required to hit integer branch (otherwise will go to `literal_pow`)
+    f(i::Int) = Dimensions(length=1, mass=-1)^i
+    @test f(2) == Dimensions(length=2, mass=-2)
 end
 
 @testset "Quantity promotion" begin
@@ -535,6 +539,10 @@ end
     @testset "Basics" begin
         x = QuantityArray(randn(32), u"km/s")
         @test ustrip(sum(x)) == sum(ustrip(x))
+
+        # Setting index with different quantity:
+        x[5] = Quantity(5, length=1, time=-1)
+        @test x[5] == Quantity(5, length=1, time=-1)
 
         y = randn(32)
         @test ustrip(QuantityArray(y, u"m")) == y
@@ -676,5 +684,10 @@ end
         Base.showarg(io, z, true)
         msg = String(take!(io))
         @test msg == "QuantityArray(::Vector{Float64}, ::DynamicQuantities.Quantity{Float64, DynamicQuantities.SymbolicDimensions{DynamicQuantities.FixedRational{Int32, 25200}}})"
+
+        io = IOBuffer()
+        Base.show(io, typeof(z))
+        msg2 = String(take!(io))
+        @test msg2 == msg
     end
 end
