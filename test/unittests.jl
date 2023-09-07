@@ -3,7 +3,7 @@ using DynamicQuantities: FixedRational
 using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
-using StaticArrays: SArray
+using StaticArrays: SArray, MArray
 using LinearAlgebra: norm
 using Test
 
@@ -550,8 +550,18 @@ end
             @test get_u(f(first(y_q))) == get_u(y_q) * 2
         end
 
+        @test QuantityArray(ones(3), u"m/s") == QuantityArray(ones(3), length=1, time=-1)
+
         fv(v) = f.(v)
         @inferred fv(y_q)
+
+        # Same array type:
+        s_x = QuantityArray(SArray{Tuple{32}}(ustrip(x)), dimension(x))
+        output_s_x = (xi -> xi^2).(s_x)
+        @test array_type(output_s_x) <: MArray
+        @test dimension(output_s_x) == dimension(x)^2
+        f(x) = (xi -> xi^2).(x)
+        @inferred f(s_x)
     end
 
     @testset "Utilities" begin
@@ -583,7 +593,7 @@ end
         # type stability:
         @inferred hcat(qarr1, qarr2)
         @inferred vcat(qarr1, qarr2)
-        @inferred cat(qarr1, qarr2, dims=2)
+        @inferred cat(qarr1, qarr2, dims=Val(2))
 
         # same array type:
         s_qarr1 = QuantityArray(SArray{Tuple{3}}(ustrip(qarr1)), dimension(qarr1))

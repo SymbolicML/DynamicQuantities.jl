@@ -99,6 +99,7 @@ dim_type(::Type) = DEFAULT_DIM_TYPE
 dim_type(::Type{<:QuantityArray{T,N,D}}) where {T,N,D} = D
 dim_type(A) = dim_type(typeof(A))
 
+value_type(::Type{<:AbstractQuantity{T}}) where {T} = T
 value_type(::Type{QuantityArray}) = DEFAULT_VALUE_TYPE
 value_type(::Type{<:QuantityArray{T}}) where {T} = T
 value_type(A) = value_type(typeof(A))
@@ -144,27 +145,30 @@ end
 function Base.BroadcastStyle(::Broadcast.ArrayStyle{QA1}, ::Broadcast.ArrayStyle{QA2}) where {QA1<:QuantityArray,QA2<:QuantityArray}
     return Broadcast.ArrayStyle{promote_type(QA1, QA2)}()
 end
-function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType}
-    output_array_type = constructor_of(array_type(QA)){unwrap_quantity(ElType)}
-    output_array = similar(output_array_type, axes(bc))
-
-    if ElType <: AbstractQuantity
-        first_output = materialize_first(bc)
-        if typeof(first_output) != ElType
-            @warn (
-                "Materialization of first element likely failed. "
-                * "Please submit a bug report with information on "
-                * "the function you are broadcasting."
-            )
-        end
-        first_output::ElType
-        return QuantityArray(output_array, dimension(first_output)::dim_type(ElType), ElType)
-    else
-        return output_array
+function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType<:AbstractQuantity}
+    T = value_type(ElType)
+    output_array = similar(bc, T)
+    first_output = materialize_first(bc)
+    if typeof(first_output) != ElType
+        @warn (
+            "Materialization of first element likely failed. "
+            * "Please submit a bug report with information on "
+            * "the function you are broadcasting."
+        )
     end
+    first_output::ElType
+    return QuantityArray(output_array, dimension(first_output)::dim_type(ElType), ElType)
 end
-unwrap_quantity(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = T
-unwrap_quantity(::Type{T}) where {T} = T
+function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QuantityArray{T,N,D,Q,V}}}, ::Type{ElType}) where {T,N,D,Q,V<:Array{T,N},ElType}
+    return similar(Array{ElType}, axes(bc))
+end
+function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QuantityArray{T,N,D,Q,V}}}, ::Type{ElType}) where {T,N,D,Q,V,ElType}
+    # To deal with things like StaticArrays, we need to rely on
+    # only `similar(::Type{ArrayType}, axes)`. We can't specify the
+    # element type in `similar` if we only give the array type.
+    # TODO: However, this results in a redundant allocation.
+    return (_ -> zero(ElType)).(similar(V, axes(bc)))
+end
 
 # Basically, we want to solve a single element to find the output dimension.
 # Then we can put results in the output `QuantityArray`.
