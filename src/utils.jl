@@ -183,6 +183,7 @@ Base.convert(::Type{Q}, q::AbstractQuantity) where {T,D,Q<:AbstractQuantity{T,D}
 Base.convert(::Type{D}, d::AbstractDimensions) where {D<:AbstractDimensions} = d
 Base.convert(::Type{D}, d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D(d)
 
+Base.copy(d::D) where {D<:AbstractDimensions} = map_dimensions(copy, d)
 Base.copy(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, copy(ustrip(q)), copy(dimension(q)))
 
 """
