@@ -65,10 +65,10 @@ function Base.promote_rule(::Type{QA1}, ::Type{QA2}) where {QA1<:QuantityArray,Q
     return QuantityArray{T,N,D,Q,V}
 end
 
+function Base.convert(::Type{QA}, A::QA) where {QA<:QuantityArray}
+    return A
+end
 function Base.convert(::Type{QA1}, A::QA2) where {QA1<:QuantityArray,QA2<:QuantityArray}
-    if A isa QA1
-        return A
-    end
     Q = quantity_type(QA1)
     V = array_type(QA1)
     N = ndims(QA1)

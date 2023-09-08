@@ -538,6 +538,10 @@ end
     y = WeakRef(s)
     @test_throws ErrorException x == y
     @test_throws ErrorException y == x
+
+    qarr1 = QuantityArray(randn(3), u"km/s")
+    qarr2 = qarr1
+    @test convert(typeof(qarr2), qarr2) === qarr1
 end
 
 @testset "Arrays" begin
