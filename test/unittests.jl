@@ -1,7 +1,7 @@
 using DynamicQuantities
 using DynamicQuantities: FixedRational
 using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
-using DynamicQuantities: array_type
+using DynamicQuantities: array_type, value_type, dim_type
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
@@ -572,6 +572,8 @@ end
         s_x = QuantityArray(SArray{Tuple{32}}(ustrip(x)), dimension(x))
         output_s_x = (xi -> xi^2).(s_x)
         @test array_type(output_s_x) <: MArray
+        @test dim_type(output_s_x) <: Dimensions{<:FixedRational}
+        @test value_type(output_s_x) == Float64
         @test dimension(output_s_x) == dimension(x)^2
         fv_square2(x) = (xi -> xi^2).(x)
         @inferred fv_square2(s_x)

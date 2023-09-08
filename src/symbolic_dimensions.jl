@@ -101,7 +101,6 @@ Base.iszero(d::SymbolicDimensions) = iszero(data(d))
 Base.:*(l::SymbolicDimensions, r::SymbolicDimensions) = SymbolicDimensions(data(l) + data(r))
 Base.:/(l::SymbolicDimensions, r::SymbolicDimensions) = SymbolicDimensions(data(l) - data(r))
 Base.inv(d::SymbolicDimensions) = SymbolicDimensions(-data(d))
-Base.:^(l::SymbolicDimensions{R}, r::R) where {R} = SymbolicDimensions(data(l) * r)
 Base.:^(l::SymbolicDimensions{R}, r::Integer) where {R} = SymbolicDimensions(data(l) * r)
 Base.:^(l::SymbolicDimensions{R}, r::Number) where {R} = SymbolicDimensions(data(l) * tryrationalize(R, r))
 
