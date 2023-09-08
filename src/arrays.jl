@@ -83,29 +83,18 @@ end
 @inline ustrip(A::QuantityArray) = A.value
 @inline dimension(A::QuantityArray) = A.dimensions
 
-array_type(::Type{QuantityArray}) = Array{DEFAULT_VALUE_TYPE,N} where {N}
-array_type(::Type{QuantityArray{T}}) where {T} = Array{T,N} where {N}
-array_type(::Type{QuantityArray{T,N}}) where {T,N} = Array{T,N}
-array_type(::Type{QuantityArray{T,N,D}}) where {T,N,D} = Array{T,N}
-array_type(::Type{QuantityArray{T,N,D,Q}}) where {T,N,D,Q} = Array{T,N}
 array_type(::Type{<:QuantityArray{T,N,D,Q,V}}) where {T,N,D,Q,V} = V
-array_type(A) = array_type(typeof(A))
+array_type(A::QuantityArray) = array_type(typeof(A))
 
-quantity_type(::Type{QuantityArray}) = DEFAULT_QUANTITY_TYPE
-quantity_type(::Type{QuantityArray{T}}) where {T} = Quantity{T,DEFAULT_DIM_TYPE}
-quantity_type(::Type{QuantityArray{T,N}}) where {T,N} = Quantity{T,DEFAULT_DIM_TYPE}
-quantity_type(::Type{QuantityArray{T,N,D}}) where {T,N,D} = Quantity{T,D}
 quantity_type(::Type{<:QuantityArray{T,N,D,Q}}) where {T,N,D,Q} = Q
-quantity_type(A) = quantity_type(typeof(A))
+quantity_type(A::QuantityArray) = quantity_type(typeof(A))
 
-dim_type(::Type) = DEFAULT_DIM_TYPE
 dim_type(::Type{<:QuantityArray{T,N,D}}) where {T,N,D} = D
-dim_type(A) = dim_type(typeof(A))
+dim_type(A::QuantityArray) = dim_type(typeof(A))
 
 value_type(::Type{<:AbstractQuantity{T}}) where {T} = T
-value_type(::Type{QuantityArray}) = DEFAULT_VALUE_TYPE
 value_type(::Type{<:QuantityArray{T}}) where {T} = T
-value_type(A) = value_type(typeof(A))
+value_type(A::Union{<:QuantityArray,<:AbstractQuantity}) = value_type(typeof(A))
 
 # One field:
 for f in (:size, :length, :axes)
