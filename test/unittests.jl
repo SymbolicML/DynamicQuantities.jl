@@ -742,6 +742,14 @@ end
         a = [randn() * u"km/s" for i=1:32]
         @test typeof(y .* a) <: QuantityArray
         @test typeof(a .* y) <: QuantityArray
+
+        b = Quantity(randn(Float32, 32)) * u"km/s"
+        @test typeof(b) <: Quantity
+        @test typeof(b .* b) <: Vector{<:Quantity}
+        @test typeof(a .* b) <: Vector{<:Quantity}
+        @test typeof(b .* a) <: Vector{<:Quantity}
+        @test typeof(y .* b) <: QuantityArray{Float64}
+        @test typeof(b .* y) <: QuantityArray{Float64}
     end
 
     @testset "Broadcast scalars" begin
@@ -772,5 +780,17 @@ end
         Base.show(io, MIME"text/plain"(), typeof(z))
         msg2 = String(take!(io))
         @test msg2 == msg
+    end
+
+    @testset "Extra test coverage" begin
+        @test_throws ErrorException DynamicQuantities.materialize_first(())
+        VERSION >= v"1.8" &&
+            @test_throws "Unexpected broadcast" DynamicQuantities.materialize_first(())
+
+        # Not sure how to test this otherwise, but method is supposed to be
+        # required for the broadcasting interface
+        x = [1u"km/s"]
+        ref = Base.RefValue(x)
+        @test DynamicQuantities.materialize_first(ref) === x[1]
     end
 end
