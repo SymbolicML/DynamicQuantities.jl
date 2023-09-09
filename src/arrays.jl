@@ -5,12 +5,12 @@ import Compat: allequal
 
 An array of quantities with value `value` of type `V` and dimensions `dimensions` of type `D`
 (which are shared across all elements of the array). This is a subtype of `AbstractArray{Q,N}`,
-and so can be used in most places where a normal array would be used.
+and so can be used in most places where a normal array would be used, including broadcasting operations.
 
 # Fields
 
-- `value`: The underlying array of values.
-- `dimensions`: The dimensions of the array.
+- `value`: The underlying array of values. Access with `ustrip(a)`.
+- `dimensions`: The dimensions of the array. Access with `dimension(a)`.
 
 # Constructors
 
