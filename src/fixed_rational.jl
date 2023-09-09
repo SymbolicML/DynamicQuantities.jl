@@ -63,7 +63,7 @@ Base.convert(::Type{AF}, x::F) where {AF<:AbstractFloat,F<:FixedRational} = conv
 Base.convert(::Type{I}, x::F) where {I<:Integer,F<:FixedRational} =
     let
         isinteger(x) || throw(InexactError(:convert, I, x))
-        div(x.num, denom(F))
+        convert(I, div(x.num, denom(F)))
     end
 Base.round(::Type{T}, x::F) where {T,F<:FixedRational} = div(convert(T, x.num), convert(T, denom(F)), RoundNearest)
 Base.decompose(x::F) where {T,F<:FixedRational{T}} = (x.num, zero(T), denom(F))
