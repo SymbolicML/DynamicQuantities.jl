@@ -21,4 +21,4 @@ sch = schema(X)
 @test first(sch.scitypes) == Continuous
 @test first(sch.types) <: Quantity{Float64}
 
-@test first(schema((; x=rand(1:10) .* Quantity{Int}(u"m/s"))).scitypes) == Count
+@test first(schema((; x=rand(1:10, 5) .* Quantity{Int}(u"m/s"))).scitypes) == Count

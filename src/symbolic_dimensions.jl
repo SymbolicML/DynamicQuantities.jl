@@ -89,9 +89,10 @@ Expand the symbolic units in a quantity to their base SI form.
 In other words, this converts a `Quantity` with `SymbolicDimensions`
 to one with `Dimensions`.
 """
-function expand_units(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:Quantity{T,D}}
-    return convert(Quantity{T,Dimensions{R}}, q)
+function expand_units(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:AbstractQuantity{T,D}}
+    return convert(constructor_of(Q){T,Dimensions{R}}, q)
 end
+expand_units(q::QuantityArray) = expand_units.(q)
 
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(data(d)))
@@ -100,7 +101,8 @@ Base.iszero(d::SymbolicDimensions) = iszero(data(d))
 Base.:*(l::SymbolicDimensions, r::SymbolicDimensions) = SymbolicDimensions(data(l) + data(r))
 Base.:/(l::SymbolicDimensions, r::SymbolicDimensions) = SymbolicDimensions(data(l) - data(r))
 Base.inv(d::SymbolicDimensions) = SymbolicDimensions(-data(d))
-_pow(l::SymbolicDimensions{R}, r::R) where {R} = SymbolicDimensions(data(l) * r)
+Base.:^(l::SymbolicDimensions{R}, r::Integer) where {R} = SymbolicDimensions(data(l) * r)
+Base.:^(l::SymbolicDimensions{R}, r::Number) where {R} = SymbolicDimensions(data(l) * tryrationalize(R, r))
 
 
 """

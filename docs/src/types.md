@@ -17,8 +17,16 @@ AbstractQuantity
 Note also that the `Quantity` object can take a custom `AbstractDimensions`
 as input, so there is often no need to subtype `AbstractQuantity` separately.
 
+## Symbolic dimensions
+
 Another type which subtypes `AbstractDimensions` is `SymbolicDimensions`:
 
 ```@docs
 SymbolicDimensions
+```
+
+## Arrays
+
+```@docs
+QuantityArray
 ```

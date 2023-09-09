@@ -1,5 +1,4 @@
 import Tricks: static_fieldnames
-import LinearAlgebra: norm
 import Compat: allequal
 
 function map_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
@@ -27,33 +26,63 @@ end
     return output
 end
 
-Base.float(q::AbstractQuantity{T}) where {T<:AbstractFloat} = convert(T, q)
+Base.float(q::AbstractQuantity) = new_quantity(typeof(q), float(ustrip(q)), dimension(q))
 Base.convert(::Type{T}, q::AbstractQuantity) where {T<:Real} =
     let
         @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
         return convert(T, ustrip(q))
     end
+Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2} = Dimensions{promote_type(R1,R2)}
+Base.promote_rule(::Type{Q1}, ::Type{Q2}) where {T1,T2,D1,D2,Q1<:Quantity{T1,D1},Q2<:Quantity{T2,D2}} = Quantity{promote_type(T1,T2),promote_type(D1,D2)}
 
 Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
 
 # Compatibility with `.*`
-Base.length(::AbstractQuantity) = 1
-Base.iterate(qd::AbstractQuantity) = (qd, nothing)
-Base.iterate(::AbstractQuantity, ::Nothing) = nothing
+Base.size(q::AbstractQuantity) = size(ustrip(q))
+Base.length(q::AbstractQuantity) = length(ustrip(q))
+Base.axes(q::AbstractQuantity) = axes(ustrip(q))
+Base.iterate(qd::AbstractQuantity, maybe_state...) =
+    let subiterate=iterate(ustrip(qd), maybe_state...)
+        subiterate === nothing && return nothing
+        return new_quantity(typeof(qd), subiterate[1], dimension(qd)), subiterate[2]
+    end
+Base.ndims(::Type{<:AbstractQuantity{T}}) where {T} = ndims(T)
+Base.ndims(q::AbstractQuantity) = ndims(ustrip(q))
+Base.broadcastable(q::AbstractQuantity) = new_quantity(typeof(q), Base.broadcastable(ustrip(q)), dimension(q))
+Base.getindex(q::AbstractQuantity, i...) = new_quantity(typeof(q), getindex(ustrip(q), i...), dimension(q))
+Base.keys(q::AbstractQuantity) = keys(ustrip(q))
+
 
 # Numeric checks
-Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...) = isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
-Base.isapprox(l, r::AbstractQuantity; kws...) = iszero(dimension(r)) ? isapprox(l, ustrip(r); kws...) : throw(DimensionError(l, r))
-Base.isapprox(l::AbstractQuantity, r; kws...) = iszero(dimension(l)) ? isapprox(ustrip(l), r; kws...) : throw(DimensionError(l, r))
+function Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...)
+    return isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
+end
+function Base.isapprox(l, r::AbstractQuantity; kws...)
+    iszero(dimension(r)) || throw(DimensionError(l, r))
+    return isapprox(l, ustrip(r); kws...)
+end
+function Base.isapprox(l::AbstractQuantity, r; kws...)
+    iszero(dimension(l)) || throw(DimensionError(l, r))
+    return isapprox(ustrip(l), r; kws...)
+end
 Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
 Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 Base.:(==)(l::AbstractQuantity, r::AbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
 Base.:(==)(l, r::AbstractQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
 Base.:(==)(l::AbstractQuantity, r) = ustrip(l) == ustrip(r) && iszero(dimension(l))
-Base.isless(l::AbstractQuantity, r::AbstractQuantity) = dimension(l) == dimension(r) ? isless(ustrip(l), ustrip(r)) : throw(DimensionError(l, r))
-Base.isless(l::AbstractQuantity, r) = iszero(dimension(l)) ? isless(ustrip(l), r) : throw(DimensionError(l, r))
-Base.isless(l, r::AbstractQuantity) = iszero(dimension(r)) ? isless(l, ustrip(r)) : throw(DimensionError(l, r))
+function Base.isless(l::AbstractQuantity, r::AbstractQuantity)
+    dimension(l) == dimension(r) || throw(DimensionError(l, r))
+    return isless(ustrip(l), ustrip(r))
+end
+function Base.isless(l::AbstractQuantity, r)
+    iszero(dimension(l)) || throw(DimensionError(l, r))
+    return isless(ustrip(l), r)
+end
+function Base.isless(l, r::AbstractQuantity)
+    iszero(dimension(r)) || throw(DimensionError(l, r))
+    return isless(l, ustrip(r))
+end
 
 # Get rid of method ambiguities:
 Base.isless(::AbstractQuantity, ::Missing) = missing
@@ -73,8 +102,6 @@ for f in (:iszero, :isfinite, :isinf, :isnan, :isreal)
 end
 
 # Simple operations which return a full quantity (same dimensions)
-norm(q::AbstractQuantity, p::Real=2) = new_quantity(typeof(q), norm(ustrip(q), p), dimension(q))
-norm(q::AbstractArray{<:AbstractQuantity}, p::Real=2) = new_quantity(eltype(q), norm(ustrip(q), p), dimension(q))
 for f in (:real, :imag, :conj, :adjoint, :unsigned, :nextfloat, :prevfloat)
     @eval Base.$f(q::AbstractQuantity) = new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
 end
@@ -156,6 +183,7 @@ Base.convert(::Type{Q}, q::AbstractQuantity) where {T,D,Q<:AbstractQuantity{T,D}
 Base.convert(::Type{D}, d::AbstractDimensions) where {D<:AbstractDimensions} = d
 Base.convert(::Type{D}, d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D(d)
 
+Base.copy(d::D) where {D<:AbstractDimensions} = map_dimensions(copy, d)
 Base.copy(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, copy(ustrip(q)), copy(dimension(q)))
 
 """
@@ -163,10 +191,9 @@ Base.copy(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, copy(ustrip(q)), c
 
 Remove the units from a quantity.
 """
-ustrip(q::AbstractQuantity) = q.value
+@inline ustrip(q::AbstractQuantity) = q.value
 ustrip(::AbstractDimensions) = error("Cannot remove units from an `AbstractDimensions` object.")
-ustrip(aq::AbstractArray{<:AbstractQuantity}) = ustrip.(aq)
-ustrip(q) = q
+@inline ustrip(q) = q
 
 """
     dimension(q::AbstractQuantity)

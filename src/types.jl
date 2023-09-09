@@ -1,6 +1,6 @@
 import Tricks: static_fieldnames, static_fieldtypes
 
-const DEFAULT_DIM_BASE_TYPE = FixedRational{Int32,2^4 * 3^2 * 5^2 * 7}
+const DEFAULT_DIM_BASE_TYPE = FixedRational{DEFAULT_NUMERATOR_TYPE,DEFAULT_DENOM}
 const DEFAULT_VALUE_TYPE = Float64
 
 """
