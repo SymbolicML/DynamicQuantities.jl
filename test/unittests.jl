@@ -413,6 +413,21 @@ end
     # Required to hit integer branch (otherwise will go to `literal_pow`)
     f(i::Int) = Dimensions(length=1, mass=-1)^i
     @test f(2) == Dimensions(length=2, mass=-2)
+
+    # Null conversion
+    @test typeof(FixedRational{Int,10}(FixedRational{Int,10}(2))) == FixedRational{Int,10}
+
+    # Conversion to Rational without specifying type
+    @test convert(Rational, FixedRational{UInt8,6}(2)) === Rational{UInt8}(2)
+
+    # Showing rationals
+    function show_string(i)
+        io = IOBuffer()
+        show(io, i)
+        return String(take!(io))
+    end
+    @test show_string(FixedRational{Int,10}(2)) == "2"
+    @test show_string(FixedRational{Int,10}(11//10)) == "11//10"
 end
 
 @testset "Quantity promotion" begin
@@ -514,6 +529,9 @@ end
     # So the numerical value is different from other constants:
     @test ustrip(us"Constants.h") == ustrip(u"Constants.h")
     @test ustrip(us"Constants.au") != ustrip(u"Constants.au")
+
+    # Test conversion
+    @test typeof(SymbolicDimensions{Rational{Int}}(dimension(us"km/s"))) == SymbolicDimensions{Rational{Int}}
 end
 
 @testset "Test ambiguities" begin

@@ -48,11 +48,10 @@ Base.inv(x::F) where {F<:FixedRational} = unsafe_fixed_rational(widemul(denom(F)
 Base.:*(l::F, r::Integer) where {F<:FixedRational} = unsafe_fixed_rational(l.num * r, eltype(F), val_denom(F))
 Base.:*(l::Integer, r::F) where {F<:FixedRational} = unsafe_fixed_rational(l * r.num, eltype(F), val_denom(F))
 
-Base.:(==)(x::F, y::F) where {F<:FixedRational} = x.num == y.num
-Base.isless(x::F, y::F) where {F<:FixedRational} = isless(x.num, y.num)
-Base.:<(x::F, y::F) where {F<:FixedRational} = x.num < y.num
-Base.:<=(x::F, y::F) where {F<:FixedRational} = x.num <= y.num
-Base.isapprox(x::F, y::F; kws...) where {F<:FixedRational} = isapprox(x.num, y.num; kws...)
+for comp in (:(==), :isequal, :<, :(isless), :<=)
+    @eval Base.$comp(x::F, y::F) where {F<:FixedRational} = $comp(x.num, y.num)
+end
+
 Base.iszero(x::FixedRational) = iszero(x.num)
 Base.isone(x::F) where {F<:FixedRational} = x.num == denom(F)
 Base.isinteger(x::F) where {F<:FixedRational} = iszero(x.num % denom(F))
