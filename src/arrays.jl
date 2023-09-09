@@ -121,21 +121,21 @@ unsafe_setindex!(A, v, i...) = setindex!(ustrip(A), ustrip(v), i...)
 
 Base.IndexStyle(::Type{Q}) where {Q<:QuantityArray} = IndexStyle(array_type(Q))
 
+const IntOrOneTo = Union{Integer, Base.OneTo}
+
+# Unfortunately this mess of `similar` is required to avoid ambiguous methods.
+# c.f. base/abstractarray.jl
 Base.similar(A::QuantityArray) = QuantityArray(similar(ustrip(A)), dimension(A), quantity_type(A))
 Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustrip(A), S), dimension(A), quantity_type(A))
-Base.similar(A::QuantityArray, dims::Dims) = QuantityArray(similar(ustrip(A), dims), dimension(A), quantity_type(A))
-Base.similar(A::QuantityArray, ::Type{S}, dims::Dims) where {S} = QuantityArray(similar(ustrip(A), S, dims), dimension(A), quantity_type(A))
-
-Base.similar(::Type{QA}) where {T,QA<:QuantityArray{T}} = QuantityArray(similar(array_type(QA)), dim_type(QA)(), quantity_type(QA))
-Base.similar(::Type{QA}, ::Type{S}) where {T,QA<:QuantityArray{T},S} = QuantityArray(similar(array_type(QA), S), dim_type(QA)(), quantity_type(QA))
-Base.similar(::Type{QA}, dims::Dims) where {T,QA<:QuantityArray{T}} = QuantityArray(similar(array_type(QA), dims), dim_type(QA)(), quantity_type(QA))
-Base.similar(::Type{QA}, ::Type{S}, dims::Dims) where {T,QA<:QuantityArray{T},S} = QuantityArray(similar(array_type(QA), S, dims), dim_type(QA)(), quantity_type(QA))
+Base.similar(A::QuantityArray, dims::Dims{N}) where {N} = QuantityArray(similar(ustrip(A), dims), dimension(A), quantity_type(A))
+Base.similar(A::QuantityArray, dims::Tuple{IntOrOneTo, Vararg{IntOrOneTo}}) = QuantityArray(similar(ustrip(A), dims), dimension(A), quantity_type(A))
+Base.similar(A::QuantityArray, dims::Tuple{Integer, Vararg{Integer}}) = QuantityArray(similar(ustrip(A), dims), dimension(A), quantity_type(A))
+Base.similar(A::QuantityArray, ::Type{S}, dims::Dims{N}) where {S,N} = QuantityArray(similar(ustrip(A), S, dims), dimension(A), quantity_type(A))
+Base.similar(A::QuantityArray, ::Type{S}, dims::Tuple{IntOrOneTo, Vararg{IntOrOneTo}}) where {S} = QuantityArray(similar(ustrip(A), S, dims), dimension(A), quantity_type(A))
+Base.similar(A::QuantityArray, ::Type{S}, dims::Tuple{Integer, Vararg{Integer}}) where {S} = QuantityArray(similar(ustrip(A), S, dims), dimension(A), quantity_type(A))
 
 function Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray}
     return Broadcast.ArrayStyle{QA}()
-end
-function Base.BroadcastStyle(::Broadcast.ArrayStyle{QA1}, ::Broadcast.ArrayStyle{QA2}) where {QA1<:QuantityArray,QA2<:QuantityArray}
-    return Broadcast.ArrayStyle{promote_type(QA1, QA2)}()
 end
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType<:AbstractQuantity}
     T = value_type(ElType)
