@@ -1,7 +1,7 @@
 using DynamicQuantities
 using DynamicQuantities: FixedRational
 using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
-using DynamicQuantities: array_type, value_type, dim_type
+using DynamicQuantities: array_type, value_type, dim_type, quantity_type
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
@@ -264,7 +264,7 @@ end
 
     @test zero(x) == Quantity(0, length=1)
     @test typeof(zero(x)) == Quantity{Int64,DEFAULT_DIM_TYPE}
-    
+
     # Invalid calls:
     @test_throws ErrorException zero(Quantity)
     @test_throws ErrorException zero(Dimensions())
@@ -595,6 +595,52 @@ end
         @test fill(u"m/s", 10) == QuantityArray(fill(1.0, 10) .* u"m/s")
         @test ndims(fill(u"m/s", ())) == 0
         @test fill(u"m/s", ())[begin] == u"m/s"
+    end
+
+    @testset "similar" begin
+        qa = QuantityArray(rand(3, 4), u"m")
+
+        new_qa = similar(qa)
+        @test size(new_qa) == size(qa)
+        @test eltype(new_qa) == eltype(qa)
+        @test dim_type(new_qa) == dim_type(qa)
+        @test quantity_type(new_qa) == eltype(new_qa)
+        @test dimension(new_qa) == dimension(qa)
+        @test isa(ustrip(new_qa), Array{Float64,2})
+        @test !isequal(ustrip(qa), ustrip(new_qa))
+
+        new_qa = similar(qa, Float32)
+        @test eltype(new_qa) <: Quantity{Float32}
+        @test dim_type(new_qa) == dim_type(qa)
+        @test dimension(new_qa) == dimension(qa)
+        @test isa(ustrip(new_qa), Array{Float32,2})
+
+        new_qa = similar(qa, axes(ones(6, 8)))
+        @test size(new_qa) == (6, 8)
+        @test eltype(new_qa) <: Quantity{Float64}
+        @test dim_type(new_qa) == dim_type(qa)
+        @test dimension(new_qa) == dimension(qa)
+        @test isa(ustrip(new_qa), Array{Float64,2})
+
+        new_qa = similar(qa, Float32, axes(ones(6, 8)))
+        @test size(new_qa) == (6, 8)
+        @test eltype(new_qa) <: Quantity{Float32}
+
+        new_qa = similar(qa, Float32, (6,))
+        @test size(new_qa) == (6,)
+        @test eltype(new_qa) <: Quantity{Float32}
+
+        new_qa = similar(qa, (6,))
+        @test size(new_qa) == (6,)
+        @test eltype(new_qa) <: Quantity{Float64}
+
+        new_qa = similar(qa, Float32, (6, UInt(3)))
+        @test size(new_qa) == (6, 3)
+        @test eltype(new_qa) <: Quantity{Float32}
+
+        new_qa = similar(qa, (6, UInt(3)))
+        @test size(new_qa) == (6, 3)
+        @test eltype(new_qa) <: Quantity{Float64}
     end
 
     @testset "Promotion" begin
