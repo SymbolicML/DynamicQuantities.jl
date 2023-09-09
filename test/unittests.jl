@@ -428,6 +428,11 @@ end
     end
     @test show_string(FixedRational{Int,10}(2)) == "2"
     @test show_string(FixedRational{Int,10}(11//10)) == "11//10"
+
+    # Promotion rules
+    @test promote_type(FixedRational{Int64,10},FixedRational{BigInt,10}) == FixedRational{BigInt,10}
+    @test promote_type(Rational{Int8}, FixedRational{Int,12345}) == Rational{Int}
+    @test promote_type(Int8, FixedRational{Int,12345}) == promote_type(Int8, Rational{Int})
 end
 
 @testset "Quantity promotion" begin
@@ -541,6 +546,7 @@ end
     @test promote(x, y) == (x, y)
     @test_throws ErrorException promote(x, convert(FixedRational{Int32,100}, 10))
     @test round(Missing, x) === missing
+    @test promote_type(typeof(u"km/s"), typeof(convert(Quantity{Float32}, u"km/s"))) <: Quantity{Float64}
 
     x = 1.0u"m"
     y = missing
@@ -669,6 +675,7 @@ end
         expected_D = Dimensions{Rational{Int64}}
         expected_type = QuantityArray{expected_T,1,expected_D,Quantity{Float64,expected_D},Array{expected_T,1}}
 
+        @test promote_type(typeof(qarr1), typeof(qarr2)) == expected_type
         @test typeof(promote(qarr1, qarr2)) == Tuple{expected_type, expected_type}
     end
 
