@@ -206,6 +206,49 @@ julia> expand_units(x^2)
 8.987551787368176e16 m² s⁻⁴
 ```
 
+### Arrays
+
+For working with an array of quantities that have the same dimensions,
+you can use a `QuantityArray`:
+
+```julia
+julia> ar = QuantityArray(rand(3), u"m/s")
+3-element QuantityArray(::Vector{Float64}, ::Quantity{Float64, Dimensions{DynamicQuantities.FixedRational{Int32, 25200}}}):
+ 0.2729202669351497 m s⁻¹
+ 0.992546340360901 m s⁻¹
+ 0.16863543422972482 m s⁻¹
+```
+
+This `QuantityArray` is a subtype `<:AbstractArray{Quantity{Float64,Dimensions{...}},1}`,
+meaning that indexing a specific element will return a `Quantity`:
+
+```julia
+julia> ar[2]
+0.992546340360901 m s⁻¹
+
+julia> ar[2] *= 2
+1.985092680721802 m s⁻¹
+
+julia> ar[2] += 0.5u"m/s"
+2.485092680721802 m s⁻¹
+```
+
+This also has a custom broadcasting interface which
+allows the compiler to avoid redundant dimension calculations,
+relative to if you had simply used an array of quantities:
+
+```julia
+julia> f(v) = v^2 * 1.5;
+
+julia> @btime $f.(xa) setup=(xa = randn(100000) .* u"km/s");
+  109.500 μs (2 allocations: 3.81 MiB)
+
+julia> @btime $f.(qa) setup=(xa = randn(100000) .* u"km/s"; qa = QuantityArray(xa));
+  50.917 μs (3 allocations: 781.34 KiB)
+```
+
+So we can see the `QuantityArray` version saves on both time and memory.
+
 ### Unitful
 
 DynamicQuantities allows you to convert back and forth from Unitful.jl:
@@ -280,31 +323,4 @@ julia> @btime f($q8);
 
 julia> @btime f($q32);
   8.417 μs (2 allocations: 39.11 KiB)
-```
-
-## Vectors
-
-There is not (yet) a separate class for vectors, but you can create units
-like so:
-
-```julia
-julia> randn(5) .* u"m/s"
-5-element Vector{Quantity{Float64, Dimensions{FixedRational{Int32, 25200}}}}:
- 1.1762086954956399 m s⁻¹
- 1.320811324040591 m s⁻¹
- 0.6519033652437799 m s⁻¹
- 0.7424822374423569 m s⁻¹
- 0.33536928068133726 m s⁻¹
-```
-
-Because it is type stable, you can have mixed units in a vector too:
-
-```julia
-julia> v = [Quantity(randn(), mass=rand(0:5), length=rand(0:5)) for _=1:5]
-5-element Vector{Quantity{Float64, Dimensions{FixedRational{Int32, 25200}}}}:
- 0.4309293892461158 kg⁵
- 1.415520139801276
- 1.2179414706524276 m³ kg⁴
- -0.18804207255117408 m³ kg⁵
- 0.52123911329638 m³ kg²
 ```
