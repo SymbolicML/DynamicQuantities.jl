@@ -735,6 +735,13 @@ end
         z = rand(1:10, 32)
         w = Quantity{Float32}(u"m/s")
         @test typeof(g(x, y, z, w)) <: QuantityArray{Float64}
+
+        y32 = QuantityArray(ustrip(y), dimension(y))
+        @test typeof(y .* y32) <: QuantityArray{Float64}
+
+        a = [randn() * u"km/s" for i=1:32]
+        @test typeof(y .* a) <: QuantityArray
+        @test typeof(a .* y) <: QuantityArray
     end
 
     @testset "Broadcast scalars" begin
