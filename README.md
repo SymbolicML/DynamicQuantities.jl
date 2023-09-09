@@ -17,6 +17,7 @@ This is done to allow for calculations where physical dimensions are not known a
 - [Usage](#usage)
   - [Constants](#constants)
   - [Symbolic Units](#symbolic-units)
+  - [Arrays](#arrays)
   - [Unitful](#unitful)
 - [Types](#types)
 - [Vectors](#vectors)
