@@ -39,13 +39,13 @@ julia> unitful = convert(Unitful.Quantity, dyn_uni)
 julia> f(x, i) = x ^ i * 0.3;
 
 julia> @btime f($dyn_uni, 1);
-  8.759 ns (0 allocations: 0 bytes)
+  2.750 ns (0 allocations: 0 bytes)
 
 julia> @btime f($unitful, 1);
-  30.083 μs (42 allocations: 1.91 KiB)
+  2.718 μs (30 allocations: 1.34 KiB)
 ```
 
-**(Note the μ and n.)**
+**Note the μ and n: this is a 1000x speedup!**
 Here, the DynamicQuantities quantity object allows the compiler to build a function that is type stable,
 while the Unitful quantity object, which stores its dimensions in the type, requires type inference at runtime.
 
@@ -56,10 +56,10 @@ then you can get better speeds with Unitful:
 julia> g(x) = x ^ 2 * 0.3;
 
 julia> @btime g($dyn_uni);
-  10.051 ns (0 allocations: 0 bytes)
+  1.875 ns (0 allocations: 0 bytes)
 
 julia> @btime g($unitful);
-  2.000 ns (0 allocations: 0 bytes)
+  1.500 ns (0 allocations: 0 bytes)
 ```
 
 While both of these are type stable,
