@@ -30,19 +30,19 @@ when the compiler cannot infer dimensions in a function:
 ```julia
 julia> using BenchmarkTools, DynamicQuantities; import Unitful
 
-julia> dyn_uni = 0.2u"m^0.5 * kg * mol^3"
-0.2 m¹ᐟ² kg mol³
+julia> dyn_uni = 0.2u"m/s"
+0.2 m s⁻¹
 
 julia> unitful = convert(Unitful.Quantity, dyn_uni)
-0.2 kg m¹ᐟ² mol³
+0.2 m s⁻¹
 
 julia> f(x, i) = x ^ i * 0.3;
 
 julia> @btime f($dyn_uni, 1);
-  2.750 ns (0 allocations: 0 bytes)
+  2.708 ns (0 allocations: 0 bytes)
 
 julia> @btime f($unitful, 1);
-  2.718 μs (30 allocations: 1.34 KiB)
+  2.597 μs (30 allocations: 1.33 KiB)
 ```
 
 **Note the μ and n: this is a 1000x speedup!**
@@ -56,7 +56,7 @@ then you can get better speeds with Unitful:
 julia> g(x) = x ^ 2 * 0.3;
 
 julia> @btime g($dyn_uni);
-  1.875 ns (0 allocations: 0 bytes)
+  1.791 ns (0 allocations: 0 bytes)
 
 julia> @btime g($unitful);
   1.500 ns (0 allocations: 0 bytes)
