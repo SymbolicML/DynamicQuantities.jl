@@ -26,7 +26,7 @@ end
     return output
 end
 
-Base.float(q::AbstractQuantity) = new_quantity(typeof(q), float(ustrip(q)), dimension(q))
+Base.float(q::AbstractQuantity) = new_quantity(typeof(q), float(ustrip(q)), copy(dimension(q)))
 Base.convert(::Type{T}, q::AbstractQuantity) where {T<:Real} =
     let
         @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
@@ -45,12 +45,12 @@ Base.axes(q::AbstractQuantity) = axes(ustrip(q))
 Base.iterate(qd::AbstractQuantity, maybe_state...) =
     let subiterate=iterate(ustrip(qd), maybe_state...)
         subiterate === nothing && return nothing
-        return new_quantity(typeof(qd), subiterate[1], dimension(qd)), subiterate[2]
+        return new_quantity(typeof(qd), subiterate[1], copy(dimension(qd))), subiterate[2]
     end
 Base.ndims(::Type{<:AbstractQuantity{T}}) where {T} = ndims(T)
 Base.ndims(q::AbstractQuantity) = ndims(ustrip(q))
-Base.broadcastable(q::AbstractQuantity) = new_quantity(typeof(q), Base.broadcastable(ustrip(q)), dimension(q))
-Base.getindex(q::AbstractQuantity, i...) = new_quantity(typeof(q), getindex(ustrip(q), i...), dimension(q))
+Base.broadcastable(q::AbstractQuantity) = new_quantity(typeof(q), Base.broadcastable(ustrip(q)), copy(dimension(q)))
+Base.getindex(q::AbstractQuantity, i...) = new_quantity(typeof(q), getindex(ustrip(q), i...), copy(dimension(q)))
 Base.keys(q::AbstractQuantity) = keys(ustrip(q))
 
 
@@ -103,7 +103,7 @@ end
 
 # Simple operations which return a full quantity (same dimensions)
 for f in (:real, :imag, :conj, :adjoint, :unsigned, :nextfloat, :prevfloat)
-    @eval Base.$f(q::AbstractQuantity) = new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
+    @eval Base.$f(q::AbstractQuantity) = new_quantity(typeof(q), $f(ustrip(q)), copy(dimension(q)))
 end
 
 # Base.one, typemin, typemax
@@ -116,20 +116,20 @@ for f in (:one, :typemin, :typemax)
     if f == :one  # Return empty dimensions, as should be multiplicative identity.
         @eval Base.$f(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, $f(ustrip(q)), one(dimension(q)))
     else
-        @eval Base.$f(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, $f(ustrip(q)), dimension(q))
+        @eval Base.$f(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, $f(ustrip(q)), copy(dimension(q)))
     end
 end
 Base.one(::Type{D}) where {D<:AbstractDimensions} = D()
 Base.one(::D) where {D<:AbstractDimensions} = one(D)
 
 # Additive identities (zero)
-Base.zero(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, zero(ustrip(q)), dimension(q))
+Base.zero(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, zero(ustrip(q)), copy(dimension(q)))
 Base.zero(::AbstractDimensions) = error("There is no such thing as an additive identity for a `AbstractDimensions` object, as + is only defined for `AbstractQuantity`.")
 Base.zero(::Type{<:AbstractQuantity}) = error("Cannot create an additive identity for a `AbstractQuantity` type, as the dimensions are unknown. Please use `zero(::AbstractQuantity)` instead.")
 Base.zero(::Type{<:AbstractDimensions}) = error("There is no such thing as an additive identity for a `AbstractDimensions` type, as + is only defined for `AbstractQuantity`.")
 
 # Dimensionful 1 (oneunit)
-Base.oneunit(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, oneunit(ustrip(q)), dimension(q))
+Base.oneunit(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, oneunit(ustrip(q)), copy(dimension(q)))
 Base.oneunit(::AbstractDimensions) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` object, as + is only defined for `AbstractQuantity`.")
 Base.oneunit(::Type{<:AbstractQuantity}) = error("Cannot create a dimensionful 1 for a `AbstractQuantity` type without knowing the dimensions. Please use `oneunit(::AbstractQuantity)` instead.")
 Base.oneunit(::Type{<:AbstractDimensions}) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` type, as + is only defined for `AbstractQuantity`.")
@@ -177,14 +177,15 @@ tryrationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)
 Base.showerror(io::IO, e::DimensionError) = print(io, "DimensionError: ", e.q1, " and ", e.q2, " have incompatible dimensions")
 
 Base.convert(::Type{Q}, q::AbstractQuantity) where {Q<:AbstractQuantity} = q
-Base.convert(::Type{Q}, q::AbstractQuantity) where {T,Q<:AbstractQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
-Base.convert(::Type{Q}, q::AbstractQuantity) where {T,D,Q<:AbstractQuantity{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))
+Base.convert(::Type{Q}, q::AbstractQuantity) where {T,Q<:AbstractQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), copy(dimension(q)))
+Base.convert(::Type{Q}, q::AbstractQuantity) where {T,D,Q<:AbstractQuantity{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, copy(dimension(q))))
 
 Base.convert(::Type{D}, d::AbstractDimensions) where {D<:AbstractDimensions} = d
 Base.convert(::Type{D}, d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D(d)
 
-Base.copy(d::D) where {D<:AbstractDimensions} = map_dimensions(copy, d)
-Base.copy(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, copy(ustrip(q)), copy(dimension(q)))
+@inline Base.copy(d::D) where {D<:AbstractDimensions} = map_dimensions(copy, d)
+@inline Base.copy(d::D) where {D<:Dimensions} = d
+@inline Base.copy(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, copy(ustrip(q)), copy(dimension(q)))
 
 """
     ustrip(q::AbstractQuantity)

@@ -104,9 +104,9 @@ end
 function Base.getindex(A::QuantityArray, i...)
     output_value = getindex(ustrip(A), i...)
     if isa(output_value, AbstractArray)
-        return QuantityArray(output_value, dimension(A), quantity_type(A))
+        return QuantityArray(output_value, copy(dimension(A)), quantity_type(A))
     else
-        return new_quantity(quantity_type(A), output_value, dimension(A))
+        return new_quantity(quantity_type(A), output_value, copy(dimension(A)))
     end
 end
 function Base.setindex!(A::QuantityArray{T,N,D,Q}, v::Q, i...) where {T,N,D,Q<:AbstractQuantity}
@@ -122,14 +122,14 @@ unsafe_setindex!(A, v, i...) = setindex!(ustrip(A), ustrip(v), i...)
 Base.IndexStyle(::Type{Q}) where {Q<:QuantityArray} = IndexStyle(array_type(Q))
 
 
-Base.similar(A::QuantityArray) = QuantityArray(similar(ustrip(A)), dimension(A), quantity_type(A))
-Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustrip(A), S), dimension(A), quantity_type(A))
+Base.similar(A::QuantityArray) = QuantityArray(similar(ustrip(A)), copy(dimension(A)), quantity_type(A))
+Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustrip(A), S), copy(dimension(A)), quantity_type(A))
 
 # Unfortunately this mess of `similar` is required to avoid ambiguous methods.
 # c.f. base/abstractarray.jl
 for dim_type in (:(Dims), :(Tuple{Union{Integer,Base.OneTo},Vararg{Union{Integer,Base.OneTo}}}), :(Tuple{Integer, Vararg{Integer}}))
-    @eval Base.similar(A::QuantityArray, dims::$dim_type) = QuantityArray(similar(ustrip(A), dims), dimension(A), quantity_type(A))
-    @eval Base.similar(A::QuantityArray, ::Type{S}, dims::$dim_type) where {S} = QuantityArray(similar(ustrip(A), S, dims), dimension(A), quantity_type(A))
+    @eval Base.similar(A::QuantityArray, dims::$dim_type) = QuantityArray(similar(ustrip(A), dims), copy(dimension(A)), quantity_type(A))
+    @eval Base.similar(A::QuantityArray, ::Type{S}, dims::$dim_type) where {S} = QuantityArray(similar(ustrip(A), S, dims), copy(dimension(A)), quantity_type(A))
 end
 
 Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray} = Broadcast.ArrayStyle{QA}()
@@ -138,7 +138,7 @@ function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Typ
     T = value_type(ElType)
     output_array = similar(bc, T)
     first_output::ElType = materialize_first(bc)
-    return QuantityArray(output_array, dimension(first_output)::dim_type(ElType), ElType)
+    return QuantityArray(output_array, copy(dimension(first_output))::dim_type(ElType), ElType)
 end
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QuantityArray{T,N,D,Q,V}}}, ::Type{ElType}) where {T,N,D,Q,V<:Array{T,N},ElType}
     return similar(Array{ElType}, axes(bc))
@@ -187,7 +187,7 @@ for f in (:cat, :hcat, :vcat)
     preamble = quote
         allequal(dimension.(A)) || throw(DimensionError(A[begin], A[begin+1:end]))
         A = promote(A...)
-        dimensions = dimension(A[begin])
+        dimensions = copy(dimension(A[begin]))
         Q = quantity_type(A[begin])
     end
     if f == :cat
@@ -202,8 +202,8 @@ for f in (:cat, :hcat, :vcat)
         end
     end
 end
-Base.fill(x::AbstractQuantity, dims::Dims...) = QuantityArray(fill(ustrip(x), dims...), dimension(x), typeof(x))
-Base.fill(x::AbstractQuantity, t::Tuple{}) = QuantityArray(fill(ustrip(x), t), dimension(x), typeof(x))
+Base.fill(x::AbstractQuantity, dims::Dims...) = QuantityArray(fill(ustrip(x), dims...), copy(dimension(x)), typeof(x))
+Base.fill(x::AbstractQuantity, t::Tuple{}) = QuantityArray(fill(ustrip(x), t), copy(dimension(x)), typeof(x))
 
 ulength(q::QuantityArray) = ulength(dimension(q))
 umass(q::QuantityArray) = umass(dimension(q))
