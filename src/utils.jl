@@ -114,7 +114,8 @@ for f in (:one, :typemin, :typemax)
         Base.$f(::Type{Q}) where {Q<:AbstractQuantity} = $f(Q{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE})
     end
     if f == :one  # Return empty dimensions, as should be multiplicative identity.
-        @eval Base.$f(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, $f(ustrip(q)), one(dimension(q)))
+        # Special behavior as packages use `one` to get an element of the value type:
+        @eval Base.$f(q::Q) where {Q<:AbstractQuantity} = $f(ustrip(q))
     else
         @eval Base.$f(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, $f(ustrip(q)), dimension(q))
     end
