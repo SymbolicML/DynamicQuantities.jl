@@ -615,6 +615,30 @@ end
         @test x != xc
     end
 
+    @testset "Array resizing" begin
+        qa = QuantityArray([1., 2., 3.], u"m/s")
+
+        @test size(qa) == (3,)
+        @test size(empty(qa)) == (0,)
+        @test typeof(empty(qa)) == typeof(qa)
+
+        push!(qa, 4.0u"m/s")
+
+        @test qa[4] == 4.0u"m/s"
+
+        @test size(zero(qa)) == (4,)
+        @test dimension(zero(qa)) == dimension(qa)
+        @test dimension(empty(qa)) == dimension(qa)
+
+        empty!(qa)
+
+        @test size(qa) == (0,)
+
+        resize!(qa, 3)
+
+        @test size(qa) == (3,)
+    end
+
     @testset "Utilities" begin
         @test fill(u"m/s", 10) == QuantityArray(fill(1.0, 10) .* u"m/s")
         @test ndims(fill(u"m/s", ())) == 0
