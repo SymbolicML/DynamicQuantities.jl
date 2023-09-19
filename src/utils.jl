@@ -27,7 +27,7 @@ end
 end
 
 Base.float(q::AbstractQuantity) = new_quantity(typeof(q), float(ustrip(q)), dimension(q))
-Base.convert(::Type{T}, q::AbstractQuantity) where {T<:Real} =
+Base.convert(::Type{T}, q::AbstractQuantity) where {T<:Number} =
     let
         @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
         return convert(T, ustrip(q))

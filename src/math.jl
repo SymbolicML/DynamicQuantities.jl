@@ -2,19 +2,19 @@ Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
 Base.:*(l::AbstractQuantity, r::AbstractQuantity) = new_quantity(typeof(l), ustrip(l) * ustrip(r), dimension(l) * dimension(r))
 Base.:*(l::AbstractQuantity, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) * r)
 Base.:*(l::AbstractDimensions, r::AbstractQuantity) = new_quantity(typeof(r), ustrip(r), l * dimension(r))
-Base.:*(l::AbstractQuantity, r) = new_quantity(typeof(l), ustrip(l) * r, dimension(l))
-Base.:*(l, r::AbstractQuantity) = new_quantity(typeof(r), l * ustrip(r), dimension(r))
-Base.:*(l::AbstractDimensions, r) = error("Please use an `AbstractQuantity` for multiplication. You used multiplication on types: $(typeof(l)) and $(typeof(r)).")
-Base.:*(l, r::AbstractDimensions) = error("Please use an `AbstractQuantity` for multiplication. You used multiplication on types: $(typeof(l)) and $(typeof(r)).")
+Base.:*(l::AbstractQuantity, r::Number) = new_quantity(typeof(l), ustrip(l) * r, dimension(l))
+Base.:*(l::Number, r::AbstractQuantity) = new_quantity(typeof(r), l * ustrip(r), dimension(r))
+Base.:*(l::AbstractDimensions, r::Number) = error("Please use an `AbstractQuantity` for multiplication. You used multiplication on types: $(typeof(l)) and $(typeof(r)).")
+Base.:*(l::Number, r::AbstractDimensions) = error("Please use an `AbstractQuantity` for multiplication. You used multiplication on types: $(typeof(l)) and $(typeof(r)).")
 
 Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 Base.:/(l::AbstractQuantity, r::AbstractQuantity) = new_quantity(typeof(l), ustrip(l) / ustrip(r), dimension(l) / dimension(r))
 Base.:/(l::AbstractQuantity, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) / r)
 Base.:/(l::AbstractDimensions, r::AbstractQuantity) = new_quantity(typeof(r), inv(ustrip(r)), l / dimension(r))
-Base.:/(l::AbstractQuantity, r) = new_quantity(typeof(l), ustrip(l) / r, dimension(l))
-Base.:/(l, r::AbstractQuantity) = l * inv(r)
-Base.:/(l::AbstractDimensions, r) = error("Please use an `AbstractQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
-Base.:/(l, r::AbstractDimensions) = error("Please use an `AbstractQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
+Base.:/(l::AbstractQuantity, r::Number) = new_quantity(typeof(l), ustrip(l) / r, dimension(l))
+Base.:/(l::Number, r::AbstractQuantity) = l * inv(r)
+Base.:/(l::AbstractDimensions, r::Number) = error("Please use an `AbstractQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
+Base.:/(l::Number, r::AbstractDimensions) = error("Please use an `AbstractQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
 
 Base.:+(l::AbstractQuantity, r::AbstractQuantity) =
     let
@@ -24,18 +24,18 @@ Base.:+(l::AbstractQuantity, r::AbstractQuantity) =
 Base.:-(l::AbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 Base.:-(l::AbstractQuantity, r::AbstractQuantity) = l + (-r)
 
-Base.:+(l::AbstractQuantity, r) =
+Base.:+(l::AbstractQuantity, r::Number) =
     let
         iszero(dimension(l)) || throw(DimensionError(l, r))
         new_quantity(typeof(l), ustrip(l) + r, dimension(l))
     end
-Base.:+(l, r::AbstractQuantity) =
+Base.:+(l::Number, r::AbstractQuantity) =
     let
         iszero(dimension(r)) || throw(DimensionError(l, r))
         new_quantity(typeof(r), l + ustrip(r), dimension(r))
     end
-Base.:-(l::AbstractQuantity, r) = l + (-r)
-Base.:-(l, r::AbstractQuantity) = l + (-r)
+Base.:-(l::AbstractQuantity, r::Number) = l + (-r)
+Base.:-(l::Number, r::AbstractQuantity) = l + (-r)
 
 # We don't promote on the dimension types:
 function Base.:^(l::AbstractDimensions{R}, r::Integer) where {R}

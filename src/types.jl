@@ -22,7 +22,7 @@ to a base unit (e.g., `length` by default maps to `m`). You may also need to ove
 abstract type AbstractDimensions{R} end
 
 """
-    AbstractQuantity{T,D}
+    AbstractQuantity{T,D} <: Number
 
 An abstract type for quantities. `T` is the type of the value of the quantity,
 and `D` is the type of the dimensions of the quantity. By default, `D` is set to
@@ -33,7 +33,7 @@ object is stored in the `:dimensions` field. These fields can be accessed with
 `ustrip` and `dimension`, respectively. Many operators in `Base` are defined on
 `AbstractQuantity` objects, including `+, -, *, /, ^, sqrt, cbrt, abs`.
 """
-abstract type AbstractQuantity{T,D} end
+abstract type AbstractQuantity{T,D} <: Number end
 
 """
     Dimensions{R<:Real} <: AbstractDimensions{R}
