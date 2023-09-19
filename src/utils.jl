@@ -58,42 +58,31 @@ Base.keys(q::AbstractQuantity) = keys(ustrip(q))
 function Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...)
     return isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
 end
-function Base.isapprox(l, r::AbstractQuantity; kws...)
+function Base.isapprox(l::Number, r::AbstractQuantity; kws...)
     iszero(dimension(r)) || throw(DimensionError(l, r))
     return isapprox(l, ustrip(r); kws...)
 end
-function Base.isapprox(l::AbstractQuantity, r; kws...)
+function Base.isapprox(l::AbstractQuantity, r::Number; kws...)
     iszero(dimension(l)) || throw(DimensionError(l, r))
     return isapprox(ustrip(l), r; kws...)
 end
 Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
 Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 Base.:(==)(l::AbstractQuantity, r::AbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
-Base.:(==)(l, r::AbstractQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
-Base.:(==)(l::AbstractQuantity, r) = ustrip(l) == ustrip(r) && iszero(dimension(l))
+Base.:(==)(l::Number, r::AbstractQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
+Base.:(==)(l::AbstractQuantity, r::Number) = ustrip(l) == ustrip(r) && iszero(dimension(l))
 function Base.isless(l::AbstractQuantity, r::AbstractQuantity)
     dimension(l) == dimension(r) || throw(DimensionError(l, r))
     return isless(ustrip(l), ustrip(r))
 end
-function Base.isless(l::AbstractQuantity, r)
+function Base.isless(l::AbstractQuantity, r::Number)
     iszero(dimension(l)) || throw(DimensionError(l, r))
     return isless(ustrip(l), r)
 end
-function Base.isless(l, r::AbstractQuantity)
+function Base.isless(l::Number, r::AbstractQuantity)
     iszero(dimension(r)) || throw(DimensionError(l, r))
     return isless(l, ustrip(r))
 end
-
-# Get rid of method ambiguities:
-Base.isless(::AbstractQuantity, ::Missing) = missing
-Base.isless(::Missing, ::AbstractQuantity) = missing
-Base.:(==)(::AbstractQuantity, ::Missing) = missing
-Base.:(==)(::Missing, ::AbstractQuantity) = missing
-Base.isapprox(::AbstractQuantity, ::Missing; kws...) = missing
-Base.isapprox(::Missing, ::AbstractQuantity; kws...) = missing
-
-Base.:(==)(::AbstractQuantity, ::WeakRef) = error("Cannot compare a quantity to a weakref")
-Base.:(==)(::WeakRef, ::AbstractQuantity) = error("Cannot compare a weakref to a quantity")
 
 
 # Simple flags:
