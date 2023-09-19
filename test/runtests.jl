@@ -22,4 +22,7 @@ else
     @safetestset "Aqua tests" begin
         include("test_aqua.jl")
     end
+    @safetestset "QuadGK integration tests" begin
+        include("test_quadgk.jl")
+    end
 end
