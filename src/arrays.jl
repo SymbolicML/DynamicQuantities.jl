@@ -182,6 +182,10 @@ Base.showarg(io::IO, v::QuantityArray, _) = _print_array_type(io, typeof(v))
 Base.show(io::IO, ::MIME"text/plain", ::Type{QA}) where {QA<:QuantityArray} = _print_array_type(io, QA)
 
 # Other array operations:
+Base.resize!(A::QuantityArray, n) = (resize!(ustrip(A), n); A)
+Base.empty!(A::QuantityArray) = (empty!(ustrip(A)); A)
+Base.empty(A::QuantityArray) = QuantityArray(empty(ustrip(A)), copy(dimension(A)), quantity_type(A))
+Base.zero(A::QuantityArray) = QuantityArray(zero(ustrip(A)), copy(dimension(A)), quantity_type(A))
 Base.copy(A::QuantityArray) = QuantityArray(copy(ustrip(A)), copy(dimension(A)), quantity_type(A))
 for f in (:cat, :hcat, :vcat)
     preamble = quote
