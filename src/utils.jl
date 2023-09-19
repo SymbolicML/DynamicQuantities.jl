@@ -107,20 +107,17 @@ for f in (:real, :imag, :conj, :adjoint, :unsigned, :nextfloat, :prevfloat)
 end
 
 # Base.one, typemin, typemax
-for f in (:one, :typemin, :typemax)
+for f in (:typemin, :typemax)
     @eval begin
         Base.$f(::Type{Q}) where {T,D,Q<:AbstractQuantity{T,D}} = new_quantity(Q, $f(T), D)
         Base.$f(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = $f(constructor_of(Q){T, DEFAULT_DIM_TYPE})
         Base.$f(::Type{Q}) where {Q<:AbstractQuantity} = $f(Q{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE})
-    end
-    if f == :one  # Return empty dimensions, as should be multiplicative identity.
-        # Special behavior as packages use `one` to get an element of the value type:
-        @eval Base.$f(q::Q) where {Q<:AbstractQuantity} = $f(ustrip(q))
-    else
-        @eval Base.$f(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, $f(ustrip(q)), dimension(q))
+        Base.$f(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, $f(ustrip(q)), dimension(q))
     end
 end
+Base.one(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = one(T)
 Base.one(::Type{D}) where {D<:AbstractDimensions} = D()
+Base.one(q::Q) where {Q<:AbstractQuantity} = one(ustrip(q))
 Base.one(::D) where {D<:AbstractDimensions} = one(D)
 
 # Additive identities (zero)
