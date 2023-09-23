@@ -16,6 +16,9 @@ else
     @safetestset "ScientificTypes.jl integration tests" begin
         include("test_scitypes.jl")
     end
+    @safetestset "Measurements.jl integration tests" begin
+        include("test_measurements.jl")
+    end
     @safetestset "Unit tests" begin
         include("unittests.jl")
     end
