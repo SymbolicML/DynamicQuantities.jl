@@ -6,7 +6,9 @@ using DynamicQuantities
 
 ## 1. Solving a Chemistry Homework Problem
 
-On your chemistry homework, you are faced with the following problem:
+On your chemistry homework, you are faced with the following problem on the photoelectric effect[^1]:
+
+[^1]: Attribution: [MIT OCW](https://ocw.mit.edu/courses/5-111sc-principles-of-chemical-science-fall-2014/resources/mit5_111f14_lec04soln/)
 
 > In a photoelectric effect experiment, electrons are ejected from a titanium surface (work function ``\Phi = 4.33\mathrm{eV}``) following irradition with UV light.
 > The energy of the incident UV light is ``7.2 \cdot 10^{-19} \mathrm{J}`` per photon. Calculate the wavelength of the ejected electrons.
