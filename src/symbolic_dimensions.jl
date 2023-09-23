@@ -94,6 +94,17 @@ function expand_units(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:AbstractQuant
 end
 expand_units(q::QuantityArray) = expand_units.(q)
 
+"""
+    as_units(q::AbstractQuantity{<:Any, <:Dimensions}, qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
+
+Convert a quantity `q` with base SI units to the symbolic units of `qout`, for `q` and `qout` with compatible units.
+Mathematically, the result has value `q / expand_units(qout)` and units `dimension(qout)`. 
+"""
+function as_units(q::AbstractQuantity{<:Any, <:Dimensions}, qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
+    qout_expanded = expand_units(qout)
+    dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
+    return new_quantity(typeof(qout), ustrip(q) / ustrip(qout_expanded), dimension(qout))
+end
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(data(d)))
 Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions) = data(l) == data(r)

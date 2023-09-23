@@ -207,6 +207,12 @@ julia> expand_units(x^2)
 8.987551787368176e16 m² s⁻⁴
 ```
 
+You can also convert a quantity in regular base SI units to symbolic units with `as_units`:
+```julia
+julia> as_units(5e-9u"m", us"nm")
+5.0 nm
+```
+
 ### Arrays
 
 For working with an array of quantities that have the same dimensions,
