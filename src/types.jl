@@ -119,13 +119,22 @@ struct Quantity{T<:Number,D<:AbstractDimensions} <: AbstractQuantity{T,D}
 
     Quantity(x::_T, dimensions::_D) where {_T,_D<:AbstractDimensions} = new{_T,_D}(x, dimensions)
 end
-(::Type{Q})(x::T, ::Type{D}; kws...) where {D<:AbstractDimensions,T,T2,Q<:AbstractQuantity{T2}} = constructor_of(Q)(convert(T2, x), D(; kws...))
-(::Type{Q})(x, ::Type{D}; kws...) where {D<:AbstractDimensions,Q<:AbstractQuantity} = constructor_of(Q)(x, D(; kws...))
-(::Type{Q})(x::T; kws...) where {T,T2,Q<:AbstractQuantity{T2}} = constructor_of(Q)(convert(T2, x), dim_type(Q)(; kws...))
-(::Type{Q})(x; kws...) where {Q<:AbstractQuantity} = constructor_of(Q)(x, dim_type(Q)(; kws...))
 
-(::Type{Q})(q::AbstractQuantity) where {T,D<:AbstractDimensions,Q<:AbstractQuantity{T,D}} = constructor_of(Q)(convert(T, ustrip(q)), convert(D, dimension(q)))
-(::Type{Q})(q::AbstractQuantity) where {T,Q<:AbstractQuantity{T}} = constructor_of(Q)(convert(T, ustrip(q)), dimension(q))
+struct GenericQuantity{T,D<:AbstractDimensions} <: AbstractGenericQuantity{T,D}
+    value::T
+    dimensions::D
+
+    GenericQuantity(x::_T, dimensions::_D) where {_T,_D<:AbstractDimensions} = new{_T,_D}(x, dimensions)
+end
+
+
+(::Type{Q})(x::T, ::Type{D}; kws...) where {D<:AbstractDimensions,T,T2,Q<:AbstractUnionQuantity{T2}} = constructor_of(Q)(convert(T2, x), D(; kws...))
+(::Type{Q})(x, ::Type{D}; kws...) where {D<:AbstractDimensions,Q<:AbstractUnionQuantity} = constructor_of(Q)(x, D(; kws...))
+(::Type{Q})(x::T; kws...) where {T,T2,Q<:AbstractUnionQuantity{T2}} = constructor_of(Q)(convert(T2, x), dim_type(Q)(; kws...))
+(::Type{Q})(x; kws...) where {Q<:AbstractUnionQuantity} = constructor_of(Q)(x, dim_type(Q)(; kws...))
+
+(::Type{Q})(q::AbstractUnionQuantity) where {T,D<:AbstractDimensions,Q<:AbstractUnionQuantity{T,D}} = constructor_of(Q)(convert(T, ustrip(q)), convert(D, dimension(q)))
+(::Type{Q})(q::AbstractUnionQuantity) where {T,Q<:AbstractUnionQuantity{T}} = constructor_of(Q)(convert(T, ustrip(q)), dimension(q))
 
 const DEFAULT_QUANTITY_TYPE = Quantity{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE}
 
