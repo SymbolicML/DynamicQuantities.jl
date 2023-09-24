@@ -106,6 +106,14 @@ function as_units(q::AbstractQuantity{<:Any, <:Dimensions}, qout::AbstractQuanti
     return new_quantity(typeof(qout), ustrip(q) / ustrip(qout_expanded), dimension(qout))
 end
 
+"""
+    as_units(qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
+
+Create a function that converts an input quantity `q` with base SI units to the symbolic units of `qout`, i.e 
+a function equivalent to `q -> as_units(q, qout)`.
+"""
+as_units(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}) = Base.Fix2(as_units, qout)
+
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(data(d)))
 Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions) = data(l) == data(r)
 Base.iszero(d::SymbolicDimensions) = iszero(data(d))
