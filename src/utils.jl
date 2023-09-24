@@ -26,8 +26,8 @@ end
     return output
 end
 
-Base.float(q::AbstractQuantity) = new_quantity(typeof(q), float(ustrip(q)), dimension(q))
-Base.convert(::Type{T}, q::AbstractQuantity) where {T<:Number} =
+Base.float(q::AbstractUnionQuantity) = new_quantity(typeof(q), float(ustrip(q)), dimension(q))
+Base.convert(::Type{T}, q::AbstractUnionQuantity) where {T<:Number} =
     let
         @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
         return convert(T, ustrip(q))
@@ -39,47 +39,48 @@ Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
 
 # Compatibility with `.*`
-Base.size(q::AbstractQuantity) = size(ustrip(q))
-Base.length(q::AbstractQuantity) = length(ustrip(q))
-Base.axes(q::AbstractQuantity) = axes(ustrip(q))
-Base.iterate(qd::AbstractQuantity, maybe_state...) =
+Base.size(q::AbstractUnionQuantity) = size(ustrip(q))
+Base.length(q::AbstractUnionQuantity) = length(ustrip(q))
+Base.axes(q::AbstractUnionQuantity) = axes(ustrip(q))
+Base.iterate(qd::AbstractUnionQuantity, maybe_state...) =
     let subiterate=iterate(ustrip(qd), maybe_state...)
         subiterate === nothing && return nothing
         return new_quantity(typeof(qd), subiterate[1], dimension(qd)), subiterate[2]
     end
-Base.ndims(::Type{<:AbstractQuantity{T}}) where {T} = ndims(T)
-Base.ndims(q::AbstractQuantity) = ndims(ustrip(q))
-Base.broadcastable(q::AbstractQuantity) = new_quantity(typeof(q), Base.broadcastable(ustrip(q)), dimension(q))
-Base.getindex(q::AbstractQuantity, i...) = new_quantity(typeof(q), getindex(ustrip(q), i...), dimension(q))
-Base.keys(q::AbstractQuantity) = keys(ustrip(q))
+Base.ndims(::Type{<:AbstractUnionQuantity{T}}) where {T} = ndims(T)
+Base.ndims(q::AbstractUnionQuantity) = ndims(ustrip(q))
+Base.broadcastable(q::AbstractUnionQuantity) = new_quantity(typeof(q), Base.broadcastable(ustrip(q)), dimension(q))
+Base.getindex(q::AbstractUnionQuantity) = new_quantity(typeof(q), getindex(ustrip(q)), dimension(q))
+Base.getindex(q::AbstractUnionQuantity, i...) = new_quantity(typeof(q), getindex(ustrip(q), i...), dimension(q))
+Base.keys(q::AbstractUnionQuantity) = keys(ustrip(q))
 
 
 # Numeric checks
-function Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...)
+function Base.isapprox(l::AbstractUnionQuantity, r::AbstractUnionQuantity; kws...)
     return isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
 end
-function Base.isapprox(l::Number, r::AbstractQuantity; kws...)
+function Base.isapprox(l::Number, r::AbstractUnionQuantity; kws...)
     iszero(dimension(r)) || throw(DimensionError(l, r))
     return isapprox(l, ustrip(r); kws...)
 end
-function Base.isapprox(l::AbstractQuantity, r::Number; kws...)
+function Base.isapprox(l::AbstractUnionQuantity, r::Number; kws...)
     iszero(dimension(l)) || throw(DimensionError(l, r))
     return isapprox(ustrip(l), r; kws...)
 end
 Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
 Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
-Base.:(==)(l::AbstractQuantity, r::AbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
-Base.:(==)(l::Number, r::AbstractQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
-Base.:(==)(l::AbstractQuantity, r::Number) = ustrip(l) == ustrip(r) && iszero(dimension(l))
-function Base.isless(l::AbstractQuantity, r::AbstractQuantity)
+Base.:(==)(l::AbstractUnionQuantity, r::AbstractUnionQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+Base.:(==)(l::Number, r::AbstractUnionQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
+Base.:(==)(l::AbstractUnionQuantity, r::Number) = ustrip(l) == ustrip(r) && iszero(dimension(l))
+function Base.isless(l::AbstractUnionQuantity, r::AbstractUnionQuantity)
     dimension(l) == dimension(r) || throw(DimensionError(l, r))
     return isless(ustrip(l), ustrip(r))
 end
-function Base.isless(l::AbstractQuantity, r::Number)
+function Base.isless(l::AbstractUnionQuantity, r::Number)
     iszero(dimension(l)) || throw(DimensionError(l, r))
     return isless(ustrip(l), r)
 end
-function Base.isless(l::Number, r::AbstractQuantity)
+function Base.isless(l::Number, r::AbstractUnionQuantity)
     iszero(dimension(r)) || throw(DimensionError(l, r))
     return isless(l, ustrip(r))
 end
@@ -87,41 +88,41 @@ end
 
 # Simple flags:
 for f in (:iszero, :isfinite, :isinf, :isnan, :isreal)
-    @eval Base.$f(q::AbstractQuantity) = $f(ustrip(q))
+    @eval Base.$f(q::AbstractUnionQuantity) = $f(ustrip(q))
 end
 
 # Simple operations which return a full quantity (same dimensions)
 for f in (:real, :imag, :conj, :adjoint, :unsigned, :nextfloat, :prevfloat)
-    @eval Base.$f(q::AbstractQuantity) = new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
+    @eval Base.$f(q::AbstractUnionQuantity) = new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
 end
 
 # Base.one, typemin, typemax
 for f in (:one, :typemin, :typemax)
     @eval begin
-        Base.$f(::Type{Q}) where {T,D,Q<:AbstractQuantity{T,D}} = new_quantity(Q, $f(T), D)
-        Base.$f(::Type{Q}) where {T,Q<:AbstractQuantity{T}} = $f(constructor_of(Q){T, DEFAULT_DIM_TYPE})
-        Base.$f(::Type{Q}) where {Q<:AbstractQuantity} = $f(Q{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE})
+        Base.$f(::Type{Q}) where {T,D,Q<:AbstractUnionQuantity{T,D}} = new_quantity(Q, $f(T), D)
+        Base.$f(::Type{Q}) where {T,Q<:AbstractUnionQuantity{T}} = $f(constructor_of(Q){T, DEFAULT_DIM_TYPE})
+        Base.$f(::Type{Q}) where {Q<:AbstractUnionQuantity} = $f(Q{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE})
     end
     if f == :one  # Return empty dimensions, as should be multiplicative identity.
-        @eval Base.$f(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, $f(ustrip(q)), one(dimension(q)))
+        @eval Base.$f(q::Q) where {Q<:AbstractUnionQuantity} = new_quantity(Q, $f(ustrip(q)), one(dimension(q)))
     else
-        @eval Base.$f(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, $f(ustrip(q)), dimension(q))
+        @eval Base.$f(q::Q) where {Q<:AbstractUnionQuantity} = new_quantity(Q, $f(ustrip(q)), dimension(q))
     end
 end
 Base.one(::Type{D}) where {D<:AbstractDimensions} = D()
 Base.one(::D) where {D<:AbstractDimensions} = one(D)
 
 # Additive identities (zero)
-Base.zero(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, zero(ustrip(q)), dimension(q))
-Base.zero(::AbstractDimensions) = error("There is no such thing as an additive identity for a `AbstractDimensions` object, as + is only defined for `AbstractQuantity`.")
-Base.zero(::Type{<:AbstractQuantity}) = error("Cannot create an additive identity for a `AbstractQuantity` type, as the dimensions are unknown. Please use `zero(::AbstractQuantity)` instead.")
-Base.zero(::Type{<:AbstractDimensions}) = error("There is no such thing as an additive identity for a `AbstractDimensions` type, as + is only defined for `AbstractQuantity`.")
+Base.zero(q::Q) where {Q<:AbstractUnionQuantity} = new_quantity(Q, zero(ustrip(q)), dimension(q))
+Base.zero(::AbstractDimensions) = error("There is no such thing as an additive identity for a `AbstractDimensions` object, as + is only defined for `AbstractUnionQuantity`.")
+Base.zero(::Type{<:AbstractUnionQuantity}) = error("Cannot create an additive identity for a `AbstractUnionQuantity` type, as the dimensions are unknown. Please use `zero(::AbstractUnionQuantity)` instead.")
+Base.zero(::Type{<:AbstractDimensions}) = error("There is no such thing as an additive identity for a `AbstractDimensions` type, as + is only defined for `AbstractUnionQuantity`.")
 
 # Dimensionful 1 (oneunit)
-Base.oneunit(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, oneunit(ustrip(q)), dimension(q))
-Base.oneunit(::AbstractDimensions) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` object, as + is only defined for `AbstractQuantity`.")
-Base.oneunit(::Type{<:AbstractQuantity}) = error("Cannot create a dimensionful 1 for a `AbstractQuantity` type without knowing the dimensions. Please use `oneunit(::AbstractQuantity)` instead.")
-Base.oneunit(::Type{<:AbstractDimensions}) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` type, as + is only defined for `AbstractQuantity`.")
+Base.oneunit(q::Q) where {Q<:AbstractUnionQuantity} = new_quantity(Q, oneunit(ustrip(q)), dimension(q))
+Base.oneunit(::AbstractDimensions) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` object, as + is only defined for `AbstractUnionQuantity`.")
+Base.oneunit(::Type{<:AbstractUnionQuantity}) = error("Cannot create a dimensionful 1 for a `AbstractUnionQuantity` type without knowing the dimensions. Please use `oneunit(::AbstractUnionQuantity)` instead.")
+Base.oneunit(::Type{<:AbstractDimensions}) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` type, as + is only defined for `AbstractUnionQuantity`.")
 
 Base.show(io::IO, d::AbstractDimensions) =
     let tmp_io = IOBuffer()
@@ -135,8 +136,8 @@ Base.show(io::IO, d::AbstractDimensions) =
         s = replace(s, r"\s*$" => "")
         print(io, s)
     end
-Base.show(io::IO, q::AbstractQuantity{<:Real}) = print(io, ustrip(q), " ", dimension(q))
-Base.show(io::IO, q::AbstractQuantity) = print(io, "(", ustrip(q), ") ", dimension(q))
+Base.show(io::IO, q::AbstractUnionQuantity{<:Real}) = print(io, ustrip(q), " ", dimension(q))
+Base.show(io::IO, q::AbstractUnionQuantity) = print(io, "(", ustrip(q), ") ", dimension(q))
 
 function dimension_name(::AbstractDimensions, k::Symbol)
     default_dimensions = (length="m", mass="kg", time="s", current="A", temperature="K", luminosity="cd", amount="mol")
@@ -165,93 +166,93 @@ tryrationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)
 
 Base.showerror(io::IO, e::DimensionError) = print(io, "DimensionError: ", e.q1, " and ", e.q2, " have incompatible dimensions")
 
-Base.convert(::Type{Q}, q::AbstractQuantity) where {Q<:AbstractQuantity} = q
-Base.convert(::Type{Q}, q::AbstractQuantity) where {T,Q<:AbstractQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
-Base.convert(::Type{Q}, q::AbstractQuantity) where {T,D,Q<:AbstractQuantity{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))
+Base.convert(::Type{Q}, q::AbstractUnionQuantity) where {Q<:AbstractUnionQuantity} = q
+Base.convert(::Type{Q}, q::AbstractUnionQuantity) where {T,Q<:AbstractUnionQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
+Base.convert(::Type{Q}, q::AbstractUnionQuantity) where {T,D,Q<:AbstractUnionQuantity{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))
 
 Base.convert(::Type{D}, d::AbstractDimensions) where {D<:AbstractDimensions} = d
 Base.convert(::Type{D}, d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D(d)
 
 Base.copy(d::D) where {D<:AbstractDimensions} = map_dimensions(copy, d)
-Base.copy(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, copy(ustrip(q)), copy(dimension(q)))
+Base.copy(q::Q) where {Q<:AbstractUnionQuantity} = new_quantity(Q, copy(ustrip(q)), copy(dimension(q)))
 
 """
-    ustrip(q::AbstractQuantity)
+    ustrip(q::AbstractUnionQuantity)
 
 Remove the units from a quantity.
 """
-@inline ustrip(q::AbstractQuantity) = q.value
+@inline ustrip(q::AbstractUnionQuantity) = q.value
 ustrip(::AbstractDimensions) = error("Cannot remove units from an `AbstractDimensions` object.")
 @inline ustrip(q) = q
 
 """
-    dimension(q::AbstractQuantity)
+    dimension(q::AbstractUnionQuantity)
 
 Get the dimensions of a quantity, returning an `AbstractDimensions` object.
 """
-dimension(q::AbstractQuantity) = q.dimensions
+dimension(q::AbstractUnionQuantity) = q.dimensions
 dimension(d::AbstractDimensions) = d
-dimension(aq::AbstractArray{<:AbstractQuantity}) = allequal(dimension.(aq)) ? dimension(first(aq)) : throw(DimensionError(aq[begin], aq[begin+1:end]))
+dimension(aq::AbstractArray{<:AbstractUnionQuantity}) = allequal(dimension.(aq)) ? dimension(first(aq)) : throw(DimensionError(aq[begin], aq[begin+1:end]))
 
 """
-    ulength(q::AbstractQuantity)
+    ulength(q::AbstractUnionQuantity)
     ulength(d::AbstractDimensions)
 
 Get the length dimension of a quantity (e.g., meters^(ulength)).
 """
-ulength(q::AbstractQuantity) = ulength(dimension(q))
+ulength(q::AbstractUnionQuantity) = ulength(dimension(q))
 ulength(d::AbstractDimensions) = d.length
 
 """
-    umass(q::AbstractQuantity)
+    umass(q::AbstractUnionQuantity)
     umass(d::AbstractDimensions)
 
 Get the mass dimension of a quantity (e.g., kg^(umass)).
 """
-umass(q::AbstractQuantity) = umass(dimension(q))
+umass(q::AbstractUnionQuantity) = umass(dimension(q))
 umass(d::AbstractDimensions) = d.mass
 
 """
-    utime(q::AbstractQuantity)
+    utime(q::AbstractUnionQuantity)
     utime(d::AbstractDimensions)
 
 Get the time dimension of a quantity (e.g., s^(utime))
 """
-utime(q::AbstractQuantity) = utime(dimension(q))
+utime(q::AbstractUnionQuantity) = utime(dimension(q))
 utime(d::AbstractDimensions) = d.time
 
 """
-    ucurrent(q::AbstractQuantity)
+    ucurrent(q::AbstractUnionQuantity)
     ucurrent(d::AbstractDimensions)
 
 Get the current dimension of a quantity (e.g., A^(ucurrent)).
 """
-ucurrent(q::AbstractQuantity) = ucurrent(dimension(q))
+ucurrent(q::AbstractUnionQuantity) = ucurrent(dimension(q))
 ucurrent(d::AbstractDimensions) = d.current
 
 """
-    utemperature(q::AbstractQuantity)
+    utemperature(q::AbstractUnionQuantity)
     utemperature(d::AbstractDimensions)
 
 Get the temperature dimension of a quantity (e.g., K^(utemperature)).
 """
-utemperature(q::AbstractQuantity) = utemperature(dimension(q))
+utemperature(q::AbstractUnionQuantity) = utemperature(dimension(q))
 utemperature(d::AbstractDimensions) = d.temperature
 
 """
-    uluminosity(q::AbstractQuantity)
+    uluminosity(q::AbstractUnionQuantity)
     uluminosity(d::AbstractDimensions)
 
 Get the luminosity dimension of a quantity (e.g., cd^(uluminosity)).
 """
-uluminosity(q::AbstractQuantity) = uluminosity(dimension(q))
+uluminosity(q::AbstractUnionQuantity) = uluminosity(dimension(q))
 uluminosity(d::AbstractDimensions) = d.luminosity
 
 """
-    uamount(q::AbstractQuantity)
+    uamount(q::AbstractUnionQuantity)
     uamount(d::AbstractDimensions)
 
 Get the amount dimension of a quantity (e.g., mol^(uamount)).
 """
-uamount(q::AbstractQuantity) = uamount(dimension(q))
+uamount(q::AbstractUnionQuantity) = uamount(dimension(q))
 uamount(d::AbstractDimensions) = d.amount

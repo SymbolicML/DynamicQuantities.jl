@@ -8,7 +8,7 @@ const DEFAULT_VALUE_TYPE = Float64
 
 An abstract type for dimension types. `R` is the type of the exponents of the dimensions,
 and by default is set to `DynamicQuantities.DEFAULT_DIM_BASE_TYPE`.
-AbstractDimensions are used to store the dimensions of `AbstractQuantity` objects.
+AbstractDimensions are used to store the dimensions of `AbstractUnionQuantity` objects.
 Together these enable many operators in Base to manipulate dimensions.
 This type has generic constructors for creating dimension objects, so user-defined
 dimension types can be created by simply subtyping `AbstractDimensions`, without
@@ -34,6 +34,10 @@ object is stored in the `:dimensions` field. These fields can be accessed with
 `AbstractQuantity` objects, including `+, -, *, /, ^, sqrt, cbrt, abs`.
 """
 abstract type AbstractQuantity{T,D} <: Number end
+abstract type AbstractGenericQuantity{T,D} end
+
+# Can add more types here to have additional inheritances
+const AbstractUnionQuantity{T,D} = Union{AbstractQuantity{T,D},AbstractGenericQuantity{T,D}}
 
 """
     Dimensions{R<:Real} <: AbstractDimensions{R}
@@ -80,7 +84,7 @@ end
 const DEFAULT_DIM_TYPE = Dimensions{DEFAULT_DIM_BASE_TYPE}
 
 """
-    Quantity{T,D<:AbstractDimensions} <: AbstractQuantity{T,D}
+    Quantity{T<:Number,D<:AbstractDimensions} <: AbstractQuantity{T,D}
 
 Physical quantity with value `value` of type `T` and dimensions `dimensions` of type `D`.
 For example, the velocity of an object with mass 1 kg and velocity
@@ -109,7 +113,7 @@ dimensions according to the operation.
 - `Quantity{T,D}(...)`: As above, but converting the value to type `T` and dimensions to `D`. You may also pass a
   `Quantity` as input.
 """
-struct Quantity{T,D<:AbstractDimensions} <: AbstractQuantity{T,D}
+struct Quantity{T<:Number,D<:AbstractDimensions} <: AbstractQuantity{T,D}
     value::T
     dimensions::D
 
@@ -126,10 +130,10 @@ end
 const DEFAULT_QUANTITY_TYPE = Quantity{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE}
 
 new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = constructor_of(D)(dims...)
-new_quantity(::Type{Q}, l, r) where {Q<:AbstractQuantity} = constructor_of(Q)(l, r)
+new_quantity(::Type{Q}, l, r) where {Q<:AbstractUnionQuantity} = constructor_of(Q)(l, r)
 
-dim_type(::Type{Q}) where {T,D<:AbstractDimensions,Q<:AbstractQuantity{T,D}} = D
-dim_type(::Type{<:AbstractQuantity}) = DEFAULT_DIM_TYPE
+dim_type(::Type{Q}) where {T,D<:AbstractDimensions,Q<:AbstractUnionQuantity{T,D}} = D
+dim_type(::Type{<:AbstractUnionQuantity}) = DEFAULT_DIM_TYPE
 constructor_of(::Type{T}) where {T} = Base.typename(T).wrapper
 
 struct DimensionError{Q1,Q2} <: Exception
