@@ -82,14 +82,21 @@ for (p, ex) in [
     @eval @inline Base.literal_pow(::typeof(^), l::AbstractDimensions, ::Val{$p}) = $ex
 end
 
-function Base.:^(l::AbstractUnionQuantity{T,D}, r::Integer) where {T,R,D<:AbstractDimensions{R}}
+function _pow_int(l::AbstractUnionQuantity{T,D}, r) where {T,R,D<:AbstractDimensions{R}}
     return new_quantity(typeof(l), ustrip(l)^r, dimension(l)^r)
 end
-function Base.:^(l::AbstractUnionQuantity{T,D}, r::Number) where {T,R,D<:AbstractDimensions{R}}
+function _pow(l::AbstractUnionQuantity{T,D}, r) where {T,R,D<:AbstractDimensions{R}}
     dim_pow = tryrationalize(R, r)
     val_pow = convert(T, dim_pow)
     # Need to ensure we take the numerical power by the rationalized quantity:
     return new_quantity(typeof(l), ustrip(l)^val_pow, dimension(l)^dim_pow)
+end
+for (type, _) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        Base.:^(l::$type, r::Integer) = _pow_int(l, r)
+        Base.:^(l::$type, r::Number) = _pow(l, r)
+        Base.:^(l::$type, r::Rational) = _pow(l, r)
+    end
 end
 @inline Base.literal_pow(::typeof(^), l::AbstractDimensions, ::Val{p}) where {p} = map_dimensions(Base.Fix1(*, p), l)
 @inline Base.literal_pow(::typeof(^), l::AbstractUnionQuantity, ::Val{p}) where {p} = new_quantity(typeof(l), Base.literal_pow(^, ustrip(l), Val(p)), Base.literal_pow(^, dimension(l), Val(p)))

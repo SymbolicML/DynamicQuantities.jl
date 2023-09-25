@@ -1,5 +1,3 @@
-
-# Get rid of method ambiguities:
 Base.isless(::AbstractQuantity, ::Missing) = missing
 Base.isless(::Missing, ::AbstractQuantity) = missing
 Base.:(==)(::AbstractQuantity, ::Missing) = missing
