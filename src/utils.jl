@@ -33,18 +33,19 @@ Base.convert(::Type{T}, q::AbstractUnionQuantity) where {T<:Number} =
         return convert(T, ustrip(q))
     end
 function Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
-    Dimensions{promote_type(R1,R2)}
+    return Dimensions{promote_type(R1,R2)}
 end
-function Base.promote_rule(::Type{Q1}, ::Type{Q2}) where {
-    T1,T2,D1,D2,
-    Q1<:Union{Quantity{T1,D1},GenericQuantity{T1,D1}},
-    Q2<:Union{Quantity{T2,D2},GenericQuantity{T2,D2}},
-}
-    if Q1 <: GenericQuantity || Q2 <: GenericQuantity
-        return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
-    else
-        return Quantity{promote_type(T1,T2),promote_type(D1,D2)}
-    end
+function Base.promote_rule(::Type{<:GenericQuantity{T1,D1}}, ::Type{<:GenericQuantity{T2,D2}}) where {T1,T2,D1,D2}
+    return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
+end
+function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:GenericQuantity{T2,D2}}) where {T1,T2,D1,D2}
+    return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
+end
+function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:Quantity{T2,D2}}) where {T1,T2,D1,D2}
+    return Quantity{promote_type(T1,T2),promote_type(D1,D2)}
+end
+function Base.promote_rule(::Type{T1}, ::Type{<:Quantity{T2,D2}}) where {T1<:Number,T2,D2}
+    return Quantity{promote_type(T1,T2),D2}
 end
 
 Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))
