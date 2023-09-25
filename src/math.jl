@@ -1,41 +1,64 @@
-Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
-Base.:*(l::AbstractUnionQuantity, r::AbstractUnionQuantity) = new_quantity(typeof(l), ustrip(l) * ustrip(r), dimension(l) * dimension(r))
+for (type, base_type) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        Base.:*(l::$type, r::$type) = new_quantity(typeof(l), ustrip(l) * ustrip(r), dimension(l) * dimension(r))
+        Base.:/(l::$type, r::$type) = new_quantity(typeof(l), ustrip(l) / ustrip(r), dimension(l) / dimension(r))
+
+        Base.:*(l::$type, r::$base_type) = new_quantity(typeof(l), ustrip(l) * r, dimension(l))
+        Base.:/(l::$type, r::$base_type) = new_quantity(typeof(l), ustrip(l) / r, dimension(l))
+
+        Base.:*(l::$base_type, r::$type) = new_quantity(typeof(r), l * ustrip(r), dimension(r))
+        Base.:/(l::$base_type, r::$type) = new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
+    end
+end
+
 Base.:*(l::AbstractUnionQuantity, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) * r)
+Base.:/(l::AbstractUnionQuantity, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) / r)
 Base.:*(l::AbstractDimensions, r::AbstractUnionQuantity) = new_quantity(typeof(r), ustrip(r), l * dimension(r))
-Base.:*(l::AbstractUnionQuantity, r::Number) = new_quantity(typeof(l), ustrip(l) * r, dimension(l))
-Base.:*(l::Number, r::AbstractUnionQuantity) = new_quantity(typeof(r), l * ustrip(r), dimension(r))
+Base.:/(l::AbstractDimensions, r::AbstractUnionQuantity) = new_quantity(typeof(r), inv(ustrip(r)), l / dimension(r))
+Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
+Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
+
+for (type, base_type) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        Base.:+(l::$type, r::$type) =
+            let
+                dimension(l) == dimension(r) || throw(DimensionError(l, r))
+                new_quantity(typeof(l), ustrip(l) + ustrip(r), dimension(l))
+            end
+        Base.:+(l::$type, r::$base_type) =
+            let
+                iszero(dimension(l)) || throw(DimensionError(l, r))
+                new_quantity(typeof(l), ustrip(l) + r, dimension(l))
+            end
+        Base.:+(l::$base_type, r::$type) =
+            let
+                iszero(dimension(r)) || throw(DimensionError(l, r))
+                new_quantity(typeof(r), l + ustrip(r), dimension(r))
+            end
+
+        Base.:-(l::$type, r::$type) = l + (-r)
+        Base.:-(l::$type, r::$base_type) = l + (-r)
+        Base.:-(l::$base_type, r::$type) = l + (-r)
+    end
+end
+
+Base.:-(l::AbstractUnionQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
+
+# More helpful errors:
 Base.:*(l::AbstractDimensions, r::Number) = error("Please use an `AbstractUnionQuantity` for multiplication. You used multiplication on types: $(typeof(l)) and $(typeof(r)).")
 Base.:*(l::Number, r::AbstractDimensions) = error("Please use an `AbstractUnionQuantity` for multiplication. You used multiplication on types: $(typeof(l)) and $(typeof(r)).")
-
-Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
-Base.:/(l::AbstractUnionQuantity, r::AbstractUnionQuantity) = new_quantity(typeof(l), ustrip(l) / ustrip(r), dimension(l) / dimension(r))
-Base.:/(l::AbstractUnionQuantity, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) / r)
-Base.:/(l::AbstractDimensions, r::AbstractUnionQuantity) = new_quantity(typeof(r), inv(ustrip(r)), l / dimension(r))
-Base.:/(l::AbstractUnionQuantity, r::Number) = new_quantity(typeof(l), ustrip(l) / r, dimension(l))
-Base.:/(l::Number, r::AbstractUnionQuantity) = l * inv(r)
 Base.:/(l::AbstractDimensions, r::Number) = error("Please use an `AbstractUnionQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
 Base.:/(l::Number, r::AbstractDimensions) = error("Please use an `AbstractUnionQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
 
-Base.:+(l::AbstractUnionQuantity, r::AbstractUnionQuantity) =
-    let
-        dimension(l) == dimension(r) || throw(DimensionError(l, r))
-        new_quantity(typeof(l), ustrip(l) + ustrip(r), dimension(l))
-    end
-Base.:-(l::AbstractUnionQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
-Base.:-(l::AbstractUnionQuantity, r::AbstractUnionQuantity) = l + (-r)
+# Combining different abstract types
+for op in (:*, :/, :+, :-),
+    (t1, _) in ABSTRACT_QUANTITY_TYPES,
+    (t2, _) in ABSTRACT_QUANTITY_TYPES
 
-Base.:+(l::AbstractUnionQuantity, r::Number) =
-    let
-        iszero(dimension(l)) || throw(DimensionError(l, r))
-        new_quantity(typeof(l), ustrip(l) + r, dimension(l))
-    end
-Base.:+(l::Number, r::AbstractUnionQuantity) =
-    let
-        iszero(dimension(r)) || throw(DimensionError(l, r))
-        new_quantity(typeof(r), l + ustrip(r), dimension(r))
-    end
-Base.:-(l::AbstractUnionQuantity, r::Number) = l + (-r)
-Base.:-(l::Number, r::AbstractUnionQuantity) = l + (-r)
+    t1 == t2 && continue
+
+    @eval Base.$op(l::$t1, r::$t2) = $op(promote(l, r)...)
+end
 
 # We don't promote on the dimension types:
 function Base.:^(l::AbstractDimensions{R}, r::Integer) where {R}

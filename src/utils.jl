@@ -32,8 +32,20 @@ Base.convert(::Type{T}, q::AbstractUnionQuantity) where {T<:Number} =
         @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
         return convert(T, ustrip(q))
     end
-Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2} = Dimensions{promote_type(R1,R2)}
-Base.promote_rule(::Type{Q1}, ::Type{Q2}) where {T1,T2,D1,D2,Q1<:Quantity{T1,D1},Q2<:Quantity{T2,D2}} = Quantity{promote_type(T1,T2),promote_type(D1,D2)}
+function Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
+    Dimensions{promote_type(R1,R2)}
+end
+function Base.promote_rule(::Type{Q1}, ::Type{Q2}) where {
+    T1,T2,D1,D2,
+    Q1<:Union{Quantity{T1,D1},GenericQuantity{T1,D1}},
+    Q2<:Union{Quantity{T2,D2},GenericQuantity{T2,D2}},
+}
+    if Q1 <: GenericQuantity || Q2 <: GenericQuantity
+        return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
+    else
+        return Quantity{promote_type(T1,T2),promote_type(D1,D2)}
+    end
+end
 
 Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
@@ -50,8 +62,13 @@ Base.iterate(qd::AbstractUnionQuantity, maybe_state...) =
 Base.ndims(::Type{<:AbstractUnionQuantity{T}}) where {T} = ndims(T)
 Base.ndims(q::AbstractUnionQuantity) = ndims(ustrip(q))
 Base.broadcastable(q::AbstractUnionQuantity) = new_quantity(typeof(q), Base.broadcastable(ustrip(q)), dimension(q))
-Base.getindex(q::AbstractUnionQuantity) = new_quantity(typeof(q), getindex(ustrip(q)), dimension(q))
-Base.getindex(q::AbstractUnionQuantity, i...) = new_quantity(typeof(q), getindex(ustrip(q), i...), dimension(q))
+for (type, _) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        Base.getindex(q::$type) = new_quantity(typeof(q), getindex(ustrip(q)), dimension(q))
+        Base.getindex(q::$type, i...) = new_quantity(typeof(q), getindex(ustrip(q), i...), dimension(q))
+        Base.getindex(q::$type, i::Integer...) = new_quantity(typeof(q), getindex(ustrip(q), i...), dimension(q))
+    end
+end
 Base.keys(q::AbstractUnionQuantity) = keys(ustrip(q))
 
 
@@ -85,6 +102,16 @@ function Base.isless(l::Number, r::AbstractUnionQuantity)
     return isless(l, ustrip(r))
 end
 
+# Get rid of method ambiguities:
+Base.isless(::AbstractQuantity, ::Missing) = missing
+Base.isless(::Missing, ::AbstractQuantity) = missing
+Base.:(==)(::AbstractQuantity, ::Missing) = missing
+Base.:(==)(::Missing, ::AbstractQuantity) = missing
+Base.isapprox(::AbstractQuantity, ::Missing; kws...) = missing
+Base.isapprox(::Missing, ::AbstractQuantity; kws...) = missing
+
+Base.:(==)(::AbstractQuantity, ::WeakRef) = error("Cannot compare a quantity to a weakref")
+Base.:(==)(::WeakRef, ::AbstractQuantity) = error("Cannot compare a weakref to a quantity")
 
 # Simple flags:
 for f in (:iszero, :isfinite, :isinf, :isnan, :isreal)

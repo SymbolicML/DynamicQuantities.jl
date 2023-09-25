@@ -37,6 +37,7 @@ abstract type AbstractQuantity{T,D} <: Number end
 abstract type AbstractGenericQuantity{T,D} end
 
 # Can add more types here to have additional inheritances
+const ABSTRACT_QUANTITY_TYPES = ((AbstractQuantity, Number), (AbstractGenericQuantity, Any))
 const AbstractUnionQuantity{T,D} = Union{AbstractQuantity{T,D},AbstractGenericQuantity{T,D}}
 
 """

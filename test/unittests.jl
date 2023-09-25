@@ -2,6 +2,7 @@ using DynamicQuantities
 using DynamicQuantities: FixedRational
 using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 using DynamicQuantities: array_type, value_type, dim_type, quantity_type
+using DynamicQuantities: GenericQuantity
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
@@ -198,13 +199,13 @@ end
         uX = X .* Quantity(2, length=2.5, luminosity=0.5)
         @test sum(X) == 0.5 * ustrip(sum(uX))
 
-        x = Quantity(ones(T, 32))
+        x = GenericQuantity(ones(T, 32))
         @test ustrip(x + ones(T, 32))[32] == 2
-        @test typeof(x + ones(T, 32)) <: Quantity{Vector{T}}
-        @test typeof(x - ones(T, 32)) <: Quantity{Vector{T}}
-        @test typeof(ones(T, 32) * Quantity(T(1), D, length=1)) <: Quantity{Vector{T}}
-        @test typeof(ones(T, 32) / Quantity(T(1), D, length=1)) <: Quantity{Vector{T}}
-        @test ones(T, 32) / Quantity(T(1), length=1) == Quantity(ones(T, 32), length=-1)
+        @test typeof(x + ones(T, 32)) <: GenericQuantity{Vector{T}}
+        @test typeof(x - ones(T, 32)) <: GenericQuantity{Vector{T}}
+        @test typeof(ones(T, 32) * GenericQuantity(T(1), D, length=1)) <: GenericQuantity{Vector{T}}
+        @test typeof(ones(T, 32) / GenericQuantity(T(1), D, length=1)) <: GenericQuantity{Vector{T}}
+        @test ones(T, 32) / GenericQuantity(T(1), length=1) == GenericQuantity(ones(T, 32), length=-1)
     end
 
     x = randn(32) .* u"km/s"
@@ -213,7 +214,7 @@ end
     @test_throws DimensionError dimension([u"km/s", u"km"])
 
     @test norm(x, 2) ≈ norm(ustrip.(x), 2) * u"m/s"
-    @test norm(Quantity(ustrip.(x), length=1, time=-1), 2) ≈ norm(ustrip.(x), 2) * u"m/s"
+    @test norm(GenericQuantity(ustrip.(x), length=1, time=-1), 2) ≈ norm(ustrip.(x), 2) * u"m/s"
 
     @test ustrip(x') == ustrip(x)'
 end
@@ -257,8 +258,8 @@ end
     @test one(Dimensions()) == Dimensions()
     @test typeof(one(Quantity)) == Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
     @test ustrip(one(Quantity)) === one(DEFAULT_VALUE_TYPE)
-    @test typeof(one(Quantity(ones(32, 32)))) == Quantity{Matrix{Float64},DEFAULT_DIM_TYPE}
-    @test dimension(one(Quantity(ones(32, 32), length=1))) == Dimensions()
+    @test typeof(one(GenericQuantity(ones(32, 32)))) == GenericQuantity{Matrix{Float64},DEFAULT_DIM_TYPE}
+    @test dimension(one(GenericQuantity(ones(32, 32), length=1))) == Dimensions()
 
     x = Quantity(1, length=1)
 
@@ -768,17 +769,17 @@ end
         @test typeof(y .* a) <: QuantityArray
         @test typeof(a .* y) <: QuantityArray
 
-        b = Quantity(randn(Float32, 32)) * u"km/s"
-        @test typeof(b) <: Quantity
-        @test typeof(b .* b) <: Vector{<:Quantity}
-        @test typeof(a .* b) <: Vector{<:Quantity}
-        @test typeof(b .* a) <: Vector{<:Quantity}
+        b = GenericQuantity(randn(Float32, 32), length=1, time=-1)
+        @test typeof(b) <: GenericQuantity
+        @test typeof(b .* b) <: Vector{<:GenericQuantity}
+        @test typeof(a .* b) <: Vector{<:GenericQuantity}
+        @test typeof(b .* a) <: Vector{<:GenericQuantity}
         @test typeof(y .* b) <: QuantityArray{Float64}
         @test typeof(b .* y) <: QuantityArray{Float64}
     end
 
     @testset "Broadcast scalars" begin
-        for (x, qx) in ((0.5, 0.5u"s"), ([0.5, 0.2], Quantity([0.5, 0.2], time=1)))
+        for (x, qx) in ((0.5, 0.5u"s"), ([0.5, 0.2], GenericQuantity([0.5, 0.2], time=1)))
             @test size(qx) == size(x)
             @test length(qx) == length(x)
             @test axes(qx) == axes(x)
