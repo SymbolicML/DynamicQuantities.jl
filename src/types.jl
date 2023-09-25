@@ -129,13 +129,17 @@ struct GenericQuantity{T,D<:AbstractDimensions} <: AbstractGenericQuantity{T,D}
 end
 
 
-(::Type{Q})(x::T, ::Type{D}; kws...) where {D<:AbstractDimensions,T,T2,Q<:AbstractUnionQuantity{T2}} = constructor_of(Q)(convert(T2, x), D(; kws...))
-(::Type{Q})(x, ::Type{D}; kws...) where {D<:AbstractDimensions,Q<:AbstractUnionQuantity} = constructor_of(Q)(x, D(; kws...))
-(::Type{Q})(x::T; kws...) where {T,T2,Q<:AbstractUnionQuantity{T2}} = constructor_of(Q)(convert(T2, x), dim_type(Q)(; kws...))
-(::Type{Q})(x; kws...) where {Q<:AbstractUnionQuantity} = constructor_of(Q)(x, dim_type(Q)(; kws...))
+for (type, base_type) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        (::Type{Q})(x::T, ::Type{D}; kws...) where {D<:AbstractDimensions,T<:$base_type,T2,Q<:$type{T2}} = constructor_of(Q)(convert(T2, x), D(; kws...))
+        (::Type{Q})(x::$base_type, ::Type{D}; kws...) where {D<:AbstractDimensions,Q<:$type} = constructor_of(Q)(x, D(; kws...))
+        (::Type{Q})(x::T; kws...) where {T<:$base_type,T2,Q<:$type{T2}} = constructor_of(Q)(convert(T2, x), dim_type(Q)(; kws...))
+        (::Type{Q})(x::$base_type; kws...) where {Q<:$type} = constructor_of(Q)(x, dim_type(Q)(; kws...))
 
-(::Type{Q})(q::AbstractUnionQuantity) where {T,D<:AbstractDimensions,Q<:AbstractUnionQuantity{T,D}} = constructor_of(Q)(convert(T, ustrip(q)), convert(D, dimension(q)))
-(::Type{Q})(q::AbstractUnionQuantity) where {T,Q<:AbstractUnionQuantity{T}} = constructor_of(Q)(convert(T, ustrip(q)), dimension(q))
+        (::Type{Q})(q::AbstractUnionQuantity) where {T,D<:AbstractDimensions,Q<:$type{T,D}} = constructor_of(Q)(convert(T, ustrip(q)), convert(D, dimension(q)))
+        (::Type{Q})(q::AbstractUnionQuantity) where {T,Q<:$type{T}} = constructor_of(Q)(convert(T, ustrip(q)), dimension(q))
+    end
+end
 
 const DEFAULT_QUANTITY_TYPE = Quantity{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE}
 
