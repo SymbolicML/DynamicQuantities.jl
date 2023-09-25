@@ -102,17 +102,6 @@ function Base.isless(l::Number, r::AbstractUnionQuantity)
     return isless(l, ustrip(r))
 end
 
-# Get rid of method ambiguities:
-Base.isless(::AbstractQuantity, ::Missing) = missing
-Base.isless(::Missing, ::AbstractQuantity) = missing
-Base.:(==)(::AbstractQuantity, ::Missing) = missing
-Base.:(==)(::Missing, ::AbstractQuantity) = missing
-Base.isapprox(::AbstractQuantity, ::Missing; kws...) = missing
-Base.isapprox(::Missing, ::AbstractQuantity; kws...) = missing
-
-Base.:(==)(::AbstractQuantity, ::WeakRef) = error("Cannot compare a quantity to a weakref")
-Base.:(==)(::WeakRef, ::AbstractQuantity) = error("Cannot compare a weakref to a quantity")
-
 # Simple flags:
 for f in (:iszero, :isfinite, :isinf, :isnan, :isreal)
     @eval Base.$f(q::AbstractUnionQuantity) = $f(ustrip(q))
