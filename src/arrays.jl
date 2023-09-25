@@ -1,7 +1,7 @@
 import Compat: allequal
 
 """
-    QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractQuantity,V<:AbstractArray}
+    QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractUnionQuantity,V<:AbstractArray}
 
 An array of quantities with value `value` of type `V` and dimensions `dimensions` of type `D`
 (which are shared across all elements of the array). This is a subtype of `AbstractArray{Q,N}`,
@@ -15,22 +15,22 @@ and so can be used in most places where a normal array would be used, including 
 # Constructors
 
 - `QuantityArray(value::AbstractArray, dimensions::AbstractDimensions)`: Create a `QuantityArray` with value `value` and dimensions `dimensions`.
-- `QuantityArray(value::AbstractArray, quantity::Quantity)`: Create a `QuantityArray` with value `value` and dimensions inferred
+- `QuantityArray(value::AbstractArray, quantity::AbstractUnionQuantity)`: Create a `QuantityArray` with value `value` and dimensions inferred
    with `dimension(quantity)`. This is so that you can easily create an array with the units module, like so:
    ```julia
    julia> A = QuantityArray(randn(32), 1u"m")
    ```
-- `QuantityArray(v::AbstractArray{<:AbstractQuantity})`: Create a `QuantityArray` from an array of quantities. This means the following
+- `QuantityArray(v::AbstractArray{<:AbstractUnionQuantity})`: Create a `QuantityArray` from an array of quantities. This means the following
   syntax works:
   ```julia
   julia> A = QuantityArray(randn(32) .* 1u"km/s")
   ```
 """
-struct QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractQuantity{T,D},V<:AbstractArray{T,N}} <: AbstractArray{Q,N}
+struct QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractUnionQuantity{T,D},V<:AbstractArray{T,N}} <: AbstractArray{Q,N}
     value::V
     dimensions::D
 
-    function QuantityArray(v::_V, d::_D, ::Type{_Q}) where {_T,_N,_D<:AbstractDimensions,_Q<:AbstractQuantity,_V<:AbstractArray{_T,_N}}
+    function QuantityArray(v::_V, d::_D, ::Type{_Q}) where {_T,_N,_D<:AbstractDimensions,_Q<:AbstractUnionQuantity,_V<:AbstractArray{_T,_N}}
         Q_out = constructor_of(_Q){_T,_D}
         return new{_T,_N,_D,Q_out,_V}(v, d)
     end
@@ -39,8 +39,8 @@ end
 # Construct with a Quantity (easier, as you can use the units):
 QuantityArray(v::AbstractArray; kws...) = QuantityArray(v, DEFAULT_DIM_TYPE(; kws...))
 QuantityArray(v::AbstractArray, d::AbstractDimensions) = QuantityArray(v, d, Quantity)
-QuantityArray(v::AbstractArray, q::AbstractQuantity) = QuantityArray(v .* ustrip(q), dimension(q), typeof(q))
-QuantityArray(v::QA) where {Q<:AbstractQuantity,QA<:AbstractArray{Q}} =
+QuantityArray(v::AbstractArray, q::AbstractUnionQuantity) = QuantityArray(v .* ustrip(q), dimension(q), typeof(q))
+QuantityArray(v::QA) where {Q<:AbstractUnionQuantity,QA<:AbstractArray{Q}} =
     let
         allequal(dimension.(v)) || throw(DimensionError(first(v), v))
         QuantityArray(ustrip.(v), dimension(first(v)), Q)
@@ -58,7 +58,7 @@ function Base.promote_rule(::Type{QA1}, ::Type{QA2}) where {QA1<:QuantityArray,Q
         "Cannot promote quantity arrays with different dimensions."
     )
     @assert(
-        Q <: AbstractQuantity{T,D} && V <: AbstractArray{T},
+        Q <: AbstractUnionQuantity{T,D} && V <: AbstractArray{T},
         "Incompatible promotion rules between\n    $(QA1)\nand\n    $(QA2)\nPlease convert to a common quantity type first."
     )
 
@@ -92,9 +92,9 @@ quantity_type(A::QuantityArray) = quantity_type(typeof(A))
 dim_type(::Type{<:QuantityArray{T,N,D}}) where {T,N,D} = D
 dim_type(A::QuantityArray) = dim_type(typeof(A))
 
-value_type(::Type{<:AbstractQuantity{T}}) where {T} = T
+value_type(::Type{<:AbstractUnionQuantity{T}}) where {T} = T
 value_type(::Type{<:QuantityArray{T}}) where {T} = T
-value_type(A::Union{<:QuantityArray,<:AbstractQuantity}) = value_type(typeof(A))
+value_type(A::Union{<:QuantityArray,<:AbstractUnionQuantity}) = value_type(typeof(A))
 
 # One field:
 for f in (:size, :length, :axes)
@@ -109,11 +109,11 @@ function Base.getindex(A::QuantityArray, i...)
         return new_quantity(quantity_type(A), output_value, dimension(A))
     end
 end
-function Base.setindex!(A::QuantityArray{T,N,D,Q}, v::Q, i...) where {T,N,D,Q<:AbstractQuantity}
+function Base.setindex!(A::QuantityArray{T,N,D,Q}, v::Q, i...) where {T,N,D,Q<:AbstractUnionQuantity}
     dimension(A) == dimension(v) || throw(DimensionError(A, v))
     return unsafe_setindex!(A, v, i...)
 end
-function Base.setindex!(A::QuantityArray{T,N,D,Q}, v::AbstractQuantity, i...) where {T,N,D,Q<:AbstractQuantity}
+function Base.setindex!(A::QuantityArray{T,N,D,Q}, v::AbstractUnionQuantity, i...) where {T,N,D,Q<:AbstractUnionQuantity}
     return setindex!(A, convert(Q, v), i...)
 end
 
@@ -134,7 +134,7 @@ end
 
 Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray} = Broadcast.ArrayStyle{QA}()
 
-function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType<:AbstractQuantity}
+function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType<:AbstractUnionQuantity}
     T = value_type(ElType)
     output_array = similar(bc, T)
     first_output::ElType = materialize_first(bc)
@@ -156,10 +156,10 @@ end
 materialize_first(bc::Base.Broadcast.Broadcasted) = bc.f(materialize_first.(bc.args)...)
 
 # Base cases
-materialize_first(q::AbstractQuantity{<:AbstractArray}) = new_quantity(typeof(q), first(ustrip(q)), dimension(q))
-materialize_first(q::AbstractQuantity) = q
+materialize_first(q::AbstractGenericQuantity{<:AbstractArray}) = new_quantity(typeof(q), first(ustrip(q)), dimension(q))
+materialize_first(q::AbstractUnionQuantity) = q
 materialize_first(q::QuantityArray) = first(q)
-materialize_first(q::AbstractArray{Q}) where {Q<:AbstractQuantity} = first(q)
+materialize_first(q::AbstractArray{Q}) where {Q<:AbstractUnionQuantity} = first(q)
 
 # Derived calls
 materialize_first(r::Base.RefValue) = materialize_first(r.x)
@@ -202,8 +202,8 @@ for f in (:cat, :hcat, :vcat)
         end
     end
 end
-Base.fill(x::AbstractQuantity, dims::Dims...) = QuantityArray(fill(ustrip(x), dims...), dimension(x), typeof(x))
-Base.fill(x::AbstractQuantity, t::Tuple{}) = QuantityArray(fill(ustrip(x), t), dimension(x), typeof(x))
+Base.fill(x::AbstractUnionQuantity, dims::Dims...) = QuantityArray(fill(ustrip(x), dims...), dimension(x), typeof(x))
+Base.fill(x::AbstractUnionQuantity, t::Tuple{}) = QuantityArray(fill(ustrip(x), t), dimension(x), typeof(x))
 
 ulength(q::QuantityArray) = ulength(dimension(q))
 umass(q::QuantityArray) = umass(dimension(q))
