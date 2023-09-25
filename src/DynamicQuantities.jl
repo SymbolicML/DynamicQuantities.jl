@@ -26,7 +26,7 @@ include("units.jl")
 include("constants.jl")
 include("uparse.jl")
 include("symbolic_dimensions.jl")
-include("ambiguities.jl")
+include("disambiguities.jl")
 
 import PackageExtensionCompat: @require_extensions
 import .Units
