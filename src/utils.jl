@@ -63,11 +63,10 @@ Base.ndims(::Type{<:AbstractUnionQuantity{T}}) where {T} = ndims(T)
 Base.ndims(q::AbstractUnionQuantity) = ndims(ustrip(q))
 Base.broadcastable(q::AbstractUnionQuantity) = new_quantity(typeof(q), Base.broadcastable(ustrip(q)), dimension(q))
 for (type, _) in ABSTRACT_QUANTITY_TYPES
-    @eval begin
-        Base.getindex(q::$type) = new_quantity(typeof(q), getindex(ustrip(q)), dimension(q))
-        Base.getindex(q::$type, i...) = new_quantity(typeof(q), getindex(ustrip(q), i...), dimension(q))
-        Base.getindex(q::$type, i::Integer...) = new_quantity(typeof(q), getindex(ustrip(q), i...), dimension(q))
-    end
+    @eval Base.getindex(q::$type) = new_quantity(typeof(q), getindex(ustrip(q)), dimension(q))
+    @eval Base.getindex(q::$type, i::Integer...) = new_quantity(typeof(q), getindex(ustrip(q), i...), dimension(q))
+    type == AbstractGenericQuantity &&
+        @eval Base.getindex(q::$type, i...) = new_quantity(typeof(q), getindex(ustrip(q), i...), dimension(q))
 end
 Base.keys(q::AbstractUnionQuantity) = keys(ustrip(q))
 
