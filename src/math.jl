@@ -8,13 +8,15 @@ for (type, base_type) in ABSTRACT_QUANTITY_TYPES
 
         Base.:*(l::$base_type, r::$type) = new_quantity(typeof(r), l * ustrip(r), dimension(r))
         Base.:/(l::$base_type, r::$type) = new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
+
+        Base.:*(l::$type, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) * r)
+        Base.:/(l::$type, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) / r)
+
+        Base.:*(l::AbstractDimensions, r::$type) = new_quantity(typeof(r), ustrip(r), l * dimension(r))
+        Base.:/(l::AbstractDimensions, r::$type) = new_quantity(typeof(r), inv(ustrip(r)), l / dimension(r))
     end
 end
 
-Base.:*(l::AbstractUnionQuantity, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) * r)
-Base.:/(l::AbstractUnionQuantity, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) / r)
-Base.:*(l::AbstractDimensions, r::AbstractUnionQuantity) = new_quantity(typeof(r), ustrip(r), l * dimension(r))
-Base.:/(l::AbstractDimensions, r::AbstractUnionQuantity) = new_quantity(typeof(r), inv(ustrip(r)), l / dimension(r))
 Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
 Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 
