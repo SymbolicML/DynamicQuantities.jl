@@ -46,12 +46,6 @@ end
 
 Base.:-(l::AbstractUnionQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 
-# More helpful errors:
-Base.:*(l::AbstractDimensions, r::Number) = error("Please use an `AbstractUnionQuantity` for multiplication. You used multiplication on types: $(typeof(l)) and $(typeof(r)).")
-Base.:*(l::Number, r::AbstractDimensions) = error("Please use an `AbstractUnionQuantity` for multiplication. You used multiplication on types: $(typeof(l)) and $(typeof(r)).")
-Base.:/(l::AbstractDimensions, r::Number) = error("Please use an `AbstractUnionQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
-Base.:/(l::Number, r::AbstractDimensions) = error("Please use an `AbstractUnionQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
-
 # Combining different abstract types
 for op in (:*, :/, :+, :-),
     (t1, _) in ABSTRACT_QUANTITY_TYPES,
