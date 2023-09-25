@@ -4,6 +4,7 @@ authors = ["MilesCranmer <miles.cranmer@gmail.com> and contributors"]
 version = "0.7.0"
 
 [deps]
+BaseType = "7fbed51b-1ef5-4d67-9085-a4a9b26f478c"
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 PackageExtensionCompat = "65ce6f38-6b18-4e1d-a461-8949797d7930"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
@@ -22,6 +23,7 @@ DynamicQuantitiesScientificTypesExt = ["ScientificTypes", "ScientificTypesBase"]
 DynamicQuantitiesUnitfulExt = "Unitful"
 
 [compat]
+BaseType = "0.2"
 Compat = "^3.42, 4"
 PackageExtensionCompat = "1"
 ScientificTypes = "3"
@@ -32,6 +34,7 @@ julia = "1.6"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+BaseType = "7fbed51b-1ef5-4d67-9085-a4a9b26f478c"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Ratios = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
@@ -43,4 +46,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Test", "Aqua", "LinearAlgebra", "Ratios", "SaferIntegers", "SafeTestsets", "ScientificTypes", "ScientificTypesBase", "StaticArrays", "Unitful"]
+test = ["Test", "Aqua", "BaseType", "LinearAlgebra", "Ratios", "SaferIntegers", "SafeTestsets", "ScientificTypes", "ScientificTypesBase", "StaticArrays", "Unitful"]

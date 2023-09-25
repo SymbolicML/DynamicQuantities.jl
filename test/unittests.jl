@@ -7,6 +7,7 @@ using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
 using LinearAlgebra: norm
+using BaseType: base_numeric_type
 using Test
 
 @testset "Basic utilities" begin
@@ -154,7 +155,6 @@ using Test
     z = Quantity(-0.3)
     @test float(z) == z
     @test convert(Float32, z) === convert(Float32, -0.3)
-
 end
 
 @testset "Complex numbers" begin
@@ -171,6 +171,16 @@ end
     @test conj(x) == (0.5 - 0.6im) * u"km/s"
     @test angle(x) == angle(ustrip(x))
     @test adjoint(ustrip(x^2)) ≈ adjoint(x^2) / u"m/s"^2
+end
+
+@testset "Base numeric type" begin
+    z = Quantity(-0.3)
+    @test base_numeric_type(z) == Float64
+    @test base_numeric_type(typeof(z)) == Float64
+
+    zc = Quantity(-0.3f0 + 0.2f0im)
+    @test base_numeric_type(zc) == Float32
+    @test base_numeric_type(typeof(zc)) == Float32
 end
 
 @testset "Fallbacks" begin

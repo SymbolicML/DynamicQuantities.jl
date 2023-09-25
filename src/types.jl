@@ -1,4 +1,5 @@
 import Tricks: static_fieldnames, static_fieldtypes
+import BaseType: base_numeric_type
 
 const DEFAULT_DIM_BASE_TYPE = FixedRational{DEFAULT_NUMERATOR_TYPE,DEFAULT_DENOM}
 const DEFAULT_VALUE_TYPE = Float64
@@ -149,6 +150,8 @@ new_quantity(::Type{Q}, l, r) where {Q<:AbstractUnionQuantity} = constructor_of(
 dim_type(::Type{Q}) where {T,D<:AbstractDimensions,Q<:AbstractUnionQuantity{T,D}} = D
 dim_type(::Type{<:AbstractUnionQuantity}) = DEFAULT_DIM_TYPE
 constructor_of(::Type{T}) where {T} = Base.typename(T).wrapper
+
+base_numeric_type(::Type{<:AbstractUnionQuantity{T}}) where {T} = base_numeric_type(T)
 
 struct DimensionError{Q1,Q2} <: Exception
     q1::Q1
