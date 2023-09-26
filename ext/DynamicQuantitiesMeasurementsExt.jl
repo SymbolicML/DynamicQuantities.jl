@@ -8,11 +8,8 @@ function Measurements.measurement(a::Q, b::Q) where {Q<:AbstractQuantity}
     raw_measurement = measurement(ustrip(a), ustrip(b))
     return new_quantity(Q, raw_measurement, dimension(a))
 end
-function Measurements.measurement(a::Q1, b::Q2) where {Q1<:AbstractQuantity, Q2<:AbstractQuantity}
-    Q = promote_type(Q1, Q2)
-    a = convert(Q, a)
-    b = convert(Q, b)
-    return measurement(a, b)
+function Measurements.measurement(a::AbstractQuantity, b::AbstractQuantity)
+    return measurement(promote(a, b)...)
 end
 
 Measurements.value(q::Q) where {Q<:AbstractQuantity} = new_quantity(Q, value(ustrip(q)), dimension(q))
