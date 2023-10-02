@@ -95,24 +95,24 @@ end
 expand_units(q::QuantityArray) = expand_units.(q)
 
 """
-    as_units(q::AbstractQuantity{<:Any, <:Dimensions}, qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
+    as_u(q::AbstractQuantity{<:Any, <:Dimensions}, qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
 
 Convert a quantity `q` with base SI units to the symbolic units of `qout`, for `q` and `qout` with compatible units.
 Mathematically, the result has value `q / expand_units(qout)` and units `dimension(qout)`. 
 """
-function as_units(q::AbstractQuantity{<:Any, <:Dimensions}, qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
+function as_u(q::AbstractQuantity{<:Any, <:Dimensions}, qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
     qout_expanded = expand_units(qout)
     dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
     return new_quantity(typeof(qout), ustrip(q) / ustrip(qout_expanded), dimension(qout))
 end
 
 """
-    as_units(qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
+    as_u(qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
 
 Create a function that converts an input quantity `q` with base SI units to the symbolic units of `qout`, i.e 
-a function equivalent to `q -> as_units(q, qout)`.
+a function equivalent to `q -> as_u(q, qout)`.
 """
-as_units(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}) = Base.Fix2(as_units, qout)
+as_u(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}) = Base.Fix2(as_u, qout)
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(data(d)))
 Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions) = data(l) == data(r)
