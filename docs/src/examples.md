@@ -30,7 +30,7 @@ julia> p = sqrt(2 * m_e * (E - Φ)) # momentum of ejected electrons
 julia> λ = h / p # wavelength of ejected electrons
 3.029491247878056e-9 m
 
-julia> as_units(λ, us"nm") # return answer in nanometers
+julia> as_u(λ, us"nm") # return answer in nanometers
 3.0294912478780556 nm
 ```
 Since units are automatically propagated, we can verify the dimension of our answer and all intermediates.
