@@ -526,7 +526,7 @@ end
     @test us"Constants.h" != us"h"
     @test expand_units(us"Constants.h") == u"Constants.h"
 
-    @test as_u(5e-9u"m", us"nm") ≈ (5e-9u"m" |> as_u(us"nm")) ≈ 5us"nm"
+    @test as_u(5e-9u"m", us"nm") ≈ as_u(5e-9u"m", "nm") ≈ (5e-9u"m" |> as_u(us"nm")) ≈ (5e-9u"m" |> as_u("nm")) ≈ 5us"nm"
     @test_throws DimensionError as_u(5e-9u"m", us"nm * J")
 
     # Actually expands to:

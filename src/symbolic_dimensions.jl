@@ -96,31 +96,29 @@ expand_units(q::QuantityArray) = expand_units.(q)
 
 """
     as_u(q::AbstractQuantity{<:Any, <:Dimensions}, qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
+    as_u(q::AbstractQuantity{<:Any, <:Dimensions}, ustr::String)
 
 Convert a quantity `q` with base SI units to the symbolic units of `qout`, for `q` and `qout` with compatible units.
 Mathematically, the result has value `q / expand_units(qout)` and units `dimension(qout)`. 
+For string input, `qout` is created by parsing `ustr` as a symbolic unit, i.e. `qout = sym_uparse(ustr)`.
 """
 function as_u(q::AbstractQuantity{<:Any, <:Dimensions}, qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
     qout_expanded = expand_units(qout)
     dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
     return new_quantity(typeof(qout), ustrip(q) / ustrip(qout_expanded), dimension(qout))
 end
+as_u(q::AbstractQuantity{<:Any, <:Dimensions}, ustr::String) = as_u(q, sym_uparse(ustr)) 
 
 """
     as_u(qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
+    as_u(ustr::String)
 
 Create a function that converts an input quantity `q` with base SI units to the symbolic units of `qout`, i.e 
 a function equivalent to `q -> as_u(q, qout)`.
+For string input, `qout` is created by parsing `ustr` as a symbolic unit, i.e. `qout = sym_uparse(ustr)`.
 """
 as_u(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}) = Base.Fix2(as_u, qout)
-
-"""
-    as_u(q::AbstractQuantity{<:Any, <:Dimensions}, qout::String)
-
-Convert a quantity `q` with base SI units to a set of compatible units specified of `qout`.
-Internally, this works by parsing `qout` as a symbolic unit, so this is equivalent to `as_u(q, sym_uparse(qout))`. 
-"""
-as_u(q::AbstractQuantity{<:Any, <:Dimensions}, qout::String) = as_u(q, sym_uparse(qout))
+as_u(ustr::String) = Base.Fix2(as_u, ustr)
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(data(d)))
 Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions) = data(l) == data(r)
