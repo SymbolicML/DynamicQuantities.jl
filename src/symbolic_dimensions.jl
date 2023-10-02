@@ -114,6 +114,14 @@ a function equivalent to `q -> as_u(q, qout)`.
 """
 as_u(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}) = Base.Fix2(as_u, qout)
 
+"""
+    as_u(q::AbstractQuantity{<:Any, <:Dimensions}, qout::String)
+
+Convert a quantity `q` with base SI units to a set of compatible units specified of `qout`.
+Internally, this works by parsing `qout` as a symbolic unit, so this is equivalent to `as_u(q, sym_uparse(qout))`. 
+"""
+as_u(q::AbstractQuantity{<:Any, <:Dimensions}, qout::String) = as_u(q, sym_uparse(qout))
+
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(data(d)))
 Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions) = data(l) == data(r)
 Base.iszero(d::SymbolicDimensions) = iszero(data(d))
