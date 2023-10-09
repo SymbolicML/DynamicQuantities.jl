@@ -1,7 +1,12 @@
 module DynamicQuantitiesMeasurementsExt
 
-using DynamicQuantities: AbstractQuantity, new_quantity, dimension, ustrip, DimensionError
-using Measurements: Measurements, measurement, value, uncertainty
+if isdefined(Base, :get_extension)
+    using DynamicQuantities: AbstractQuantity, new_quantity, dimension, ustrip, DimensionError
+    using Measurements: Measurements, measurement, value, uncertainty
+else
+    using ..DynamicQuantities: AbstractQuantity, new_quantity, dimension, ustrip, DimensionError
+    using ..Measurements: Measurements, measurement, value, uncertainty
+end
 
 function Measurements.measurement(a::Q, b::Q) where {Q<:AbstractQuantity}
     dimension(a) == dimension(b) || throw(DimensionError(a, b))
