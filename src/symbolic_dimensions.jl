@@ -1,6 +1,5 @@
 import .Units: UNIT_SYMBOLS, UNIT_MAPPING, UNIT_VALUES
 import .Constants: CONSTANT_SYMBOLS, CONSTANT_MAPPING, CONSTANT_VALUES
-import SparseArrays as SA
 
 const SYMBOL_CONFLICTS = intersect(UNIT_SYMBOLS, CONSTANT_SYMBOLS)
 
@@ -19,7 +18,7 @@ const ALL_VALUES = vcat(
         if k ∉ SYMBOL_CONFLICTS
     )...
 )
-const ALL_MAPPING = NamedTuple([s => i for (i, s) in enumerate(ALL_SYMBOLS)])
+const ALL_MAPPING = NamedTuple([s => UInt8(i) for (i, s) in enumerate(ALL_SYMBOLS)])
 
 """
     SymbolicDimensions{R} <: AbstractDimensions{R}
@@ -35,49 +34,54 @@ to one which uses `Dimensions` as its dimensions (i.e., base SI units)
 `expand_units`.
 """
 struct SymbolicDimensions{R} <: AbstractDimensions{R}
-    _data::SA.SparseVector{R}
-
-    SymbolicDimensions(data::SA.SparseVector) = new{eltype(data)}(data)
-    SymbolicDimensions{_R}(data::SA.SparseVector) where {_R} = new{_R}(data)
+    nzdims::Vector{UInt8}
+    nzvals::Vector{R}
 end
 
 static_fieldnames(::Type{<:SymbolicDimensions}) = ALL_SYMBOLS
-data(d::SymbolicDimensions) = getfield(d, :_data)
-Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R} = data(d)[ALL_MAPPING[s]]
-Base.getindex(d::SymbolicDimensions{R}, k::Symbol) where {R} = getproperty(d, k)
+function Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R}
+    nzdims = getfield(d, :nzdims)
+    i = ALL_MAPPING[s]
+    ii = searchsortedfirst(nzdims, i)
+    (ii <= length(nzdims) && nzdims[ii] == i) ? getfield(d, :nzvals)[ii] : zero(R)
+end
+Base.propertynames(::SymbolicDimensions) = ALL_SYMBOLS
+Base.getindex(d::SymbolicDimensions, k::Symbol) = getproperty(d, k)
 constructor_of(::Type{<:SymbolicDimensions}) = SymbolicDimensions
 
-SymbolicDimensions{R}(d::SymbolicDimensions) where {R} = SymbolicDimensions{R}(data(d))
-(::Type{D})(; kws...) where {D<:SymbolicDimensions} = D(DEFAULT_DIM_BASE_TYPE; kws...)
-(::Type{D})(::Type{R}; kws...) where {R,D<:SymbolicDimensions} =
-    let constructor=constructor_of(D){R}
-        length(kws) == 0 && return constructor(SA.spzeros(R, length(ALL_SYMBOLS)))
-        I = [ALL_MAPPING[s] for s in keys(kws)]
-        V = [tryrationalize(R, v) for v in values(kws)]
-        data = SA.sparsevec(I, V, length(ALL_SYMBOLS))
-        return constructor(data)
+SymbolicDimensions{R}(d::SymbolicDimensions) where {R} = SymbolicDimensions{R}(getfield(d, :nzdims), convert(Vector{R}, getfield(d, :nzvals)))
+SymbolicDimensions(; kws...) = SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}(; kws...)
+function SymbolicDimensions{R}(; kws...) where {R}
+    if isempty(kws)
+        return SymbolicDimensions{R}(Vector{UInt8}(undef, 0), Vector{R}(undef, 0))
     end
+    I = UInt8[ALL_MAPPING[s] for s in keys(kws)]
+    p = sortperm(I)
+    V = R[tryrationalize(R, kws[i]) for i in p]
+    return SymbolicDimensions{R}(permute!(I, p), V)
+end
+(::Type{<:SymbolicDimensions})(::Type{R}; kws...) where {R} = SymbolicDimensions{R}(; kws...)
 
-function Base.convert(::Type{Qout}, q::Quantity{<:Any,<:Dimensions}) where {T,D<:SymbolicDimensions,Qout<:Quantity{T,D}}
-    output = Qout(
-        convert(T, ustrip(q)),
-        D;
-        m=ulength(q),
-        kg=umass(q),
-        s=utime(q),
-        A=ucurrent(q),
-        K=utemperature(q),
-        cd=uluminosity(q),
-        mol=uamount(q),
-    )
-    SA.dropzeros!(data(dimension(output)))
-    return output
+function Base.convert(::Type{Quantity{T,SymbolicDimensions}}, q::Quantity{<:Any,<:Dimensions}) where {T}
+    return convert(Quantity{T,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}, q)
+end
+function Base.convert(::Type{Quantity{T,SymbolicDimensions{R}}}, q::Quantity{<:Any,<:Dimensions}) where {T,R}
+    syms = (:m, :kg, :s, :A, :K, :cd, :mol)
+    vals = (ulength(q), umass(q), utime(q), ucurrent(q), utemperature(q), uluminosity(q), uamount(q))
+    I = UInt8[ALL_MAPPING[s] for (s, v) in zip(syms, vals) if !iszero(v)]
+    p = sortperm(I)
+    permute!(I, p)
+    V = R[tryrationalize(R, vals[i]) for i in p]
+    dims = SymbolicDimensions{R}(I, V)
+    return Quantity(convert(T, ustrip(q)), dims)
 end
 function Base.convert(::Type{Q}, q::Quantity{<:Any,<:SymbolicDimensions}) where {T,D<:Dimensions,Q<:Quantity{T,D}}
     result = one(Q) * ustrip(q)
     d = dimension(q)
-    for (idx, value) in zip(SA.findnz(data(d))...)
-        result = result * convert(Q, ALL_VALUES[idx]) ^ value
+    for (idx, value) in zip(getfield(d, :nzdims), getfield(d, :nzvals))
+        if !iszero(value)
+            result = result * convert(Q, ALL_VALUES[idx]) ^ value
+        end
     end
     return result
 end
@@ -95,14 +99,118 @@ end
 expand_units(q::QuantityArray) = expand_units.(q)
 
 
-Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(data(d)))
-Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions) = data(l) == data(r)
-Base.iszero(d::SymbolicDimensions) = iszero(data(d))
-Base.:*(l::SymbolicDimensions, r::SymbolicDimensions) = SymbolicDimensions(data(l) + data(r))
-Base.:/(l::SymbolicDimensions, r::SymbolicDimensions) = SymbolicDimensions(data(l) - data(r))
-Base.inv(d::SymbolicDimensions) = SymbolicDimensions(-data(d))
-Base.:^(l::SymbolicDimensions{R}, r::Integer) where {R} = SymbolicDimensions(data(l) * r)
-Base.:^(l::SymbolicDimensions{R}, r::Number) where {R} = SymbolicDimensions(data(l) * tryrationalize(R, r))
+Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(getfield(d, :nzdims)), copy(getfield(d, :nzvals)))
+function Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions)
+    nzdimsl = getfield(l, :nzdims)
+    nzvalsl = getfield(l, :nzvals)
+    nzdimsr = getfield(r, :nzdims)
+    nzvalsr = getfield(r, :nzvals)
+    nl = length(nzdimsl)
+    nr = length(nzdimsr)
+    il = ir = 1
+    while il <= nl && ir <= nr
+        diml = nzdimsl[il]
+        dimr = nzdimsr[ir]
+        if diml == dimr
+            if nzvalsl[il] != nzvalsr[ir]
+                return false
+            end
+            il += 1
+            ir += 1
+        elseif diml < dimr
+            if !iszero(nzvalsl[il])
+                return false
+            end
+            il += 1
+        else
+            if !iszero(nzvalsr[ir])
+                return false
+            end
+            ir += 1
+        end
+    end
+
+    while il <= nl
+        if !iszero(nzvalsl[il])
+            return false
+        end
+        il += 1
+    end
+
+    while ir <= nr
+        if !iszero(nzvalsr[ir])
+            return false
+        end
+        ir += 1
+    end
+
+    return true
+end
+Base.iszero(d::SymbolicDimensions) = iszero(getfield(d, :nzvals))
+Base.:*(l::SymbolicDimensions, r::SymbolicDimensions) = _combine_vals(+, l, r)
+Base.:/(l::SymbolicDimensions, r::SymbolicDimensions) = _combine_vals(-, l, r)
+function _combine_vals(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R}) where {O,L,R}
+    T = typeof(op(zero(L), zero(R)))
+    I = Vector{UInt8}(undef, 0)
+    V = Vector{T}(undef, 0)
+    nzdimsl = getfield(l, :nzdims)
+    nzvalsl = getfield(l, :nzvals)
+    nzdimsr = getfield(r, :nzdims)
+    nzvalsr = getfield(r, :nzvals)
+    nl = length(nzdimsl)
+    nr = length(nzdimsr)
+    il = ir = 1
+    while il <= nl && ir <= nr
+        diml = nzdimsl[il]
+        dimr = nzdimsr[ir]
+        if diml == dimr
+            s = op(nzvalsl[il], nzvalsr[ir])
+            if !iszero(s)
+                push!(I, diml)
+                push!(V, s)
+            end
+            il += 1
+            ir += 1
+        elseif diml < dimr
+            s = nzvalsl[il]
+            if !iszero(s)
+                push!(I, diml)
+                push!(V, s)
+            end
+            il += 1
+        else
+            s = op(nzvalsr[ir])
+            if !iszero(s)
+                push!(I, dimr)
+                push!(V, s)
+            end
+            ir += 1
+        end
+    end
+
+    while il <= nl
+        s = nzvalsl[il]
+        if !iszero(s)
+            push!(I, nzdimsl[il])
+            push!(V, s)
+        end
+        il += 1
+    end
+
+    while ir <= nr
+        s = nzvalsr[ir]
+        if !iszero(s)
+            push!(I, op(nzdimsr[ir]))
+            push!(V, s)
+        end
+        ir += 1
+    end
+
+    return SymbolicDimensions(I, V)
+end
+Base.inv(d::SymbolicDimensions) = SymbolicDimensions(getfield(d, :nzdims), -getfield(d, :nzvals))
+Base.:^(l::SymbolicDimensions{R}, r::Integer) where {R} = SymbolicDimensions(getfield(l, :nzdims), r * getfield(l, :nzvals))
+Base.:^(l::SymbolicDimensions{R}, r::Number) where {R} = SymbolicDimensions(getfield(l, :nzdims), tryrationalize(R, r) * getfield(l, :nzvals))
 
 
 """

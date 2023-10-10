@@ -6,7 +6,6 @@ version = "0.7.1"
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 PackageExtensionCompat = "65ce6f38-6b18-4e1d-a461-8949797d7930"
-SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 Tricks = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
 
