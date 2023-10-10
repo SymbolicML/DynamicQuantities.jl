@@ -1,7 +1,5 @@
 module DynamicQuantities
 
-using PackageExtensionCompat
-
 export Units, Constants
 export AbstractQuantity, AbstractDimensions
 export Quantity, Dimensions, SymbolicDimensions, QuantityArray, DimensionError
@@ -19,6 +17,7 @@ include("constants.jl")
 include("uparse.jl")
 include("symbolic_dimensions.jl")
 
+import PackageExtensionCompat: @require_extensions
 import .Units
 import .Constants
 import .UnitsParse: uparse, @u_str
