@@ -71,15 +71,20 @@ end
 function Base.convert(::Type{Quantity{T,SymbolicDimensions}}, q::Quantity{<:Any,<:Dimensions}) where {T}
     return convert(Quantity{T,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}, q)
 end
-function Base.convert(::Type{Quantity{T,SymbolicDimensions{R}}}, q::Quantity{<:Any,<:Dimensions}) where {T,R}
-    syms = (:m, :kg, :s, :A, :K, :cd, :mol)
-    vals = (ulength(q), umass(q), utime(q), ucurrent(q), utemperature(q), uluminosity(q), uamount(q))
-    I = INDEX_TYPE[ALL_MAPPING[s] for (s, v) in zip(syms, vals) if !iszero(v)]
-    p = sortperm(I)
-    permute!(I, p)
-    V = R[tryrationalize(R, vals[i]) for i in p]
-    dims = SymbolicDimensions{R}(I, V)
-    return Quantity(convert(T, ustrip(q)), dims)
+function Base.convert(::Type{Q}, q::Quantity{<:Any,<:Dimensions}) where {T,R,Q<:Quantity{T,SymbolicDimensions{R}}}
+    return new_quantity(
+        Q,
+        convert(T, ustrip(q)),
+        SymbolicDimensions{R}(;
+            m=ulength(q),
+            kg=umass(q),
+            s=utime(q),
+            A=ucurrent(q),
+            K=utemperature(q),
+            cd=uluminosity(q),
+            mol=uamount(q),
+        )
+    )
 end
 function Base.convert(::Type{Q}, q::Quantity{<:Any,<:SymbolicDimensions}) where {T,D<:Dimensions,Q<:Quantity{T,D}}
     result = new_quantity(Q, ustrip(q), dim_type(Q))
