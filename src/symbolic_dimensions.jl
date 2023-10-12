@@ -3,6 +3,7 @@ import .Constants: CONSTANT_SYMBOLS, CONSTANT_MAPPING, CONSTANT_VALUES
 
 const SYMBOL_CONFLICTS = intersect(UNIT_SYMBOLS, CONSTANT_SYMBOLS)
 
+const INDEX_TYPE = UInt8
 # Prefer units over constants:
 # For example, this means we can't have a symbolic Planck's constant,
 # as it is just "hours" (h), which is more common.
@@ -18,7 +19,7 @@ const ALL_VALUES = vcat(
         if k ∉ SYMBOL_CONFLICTS
     )...
 )
-const ALL_MAPPING = NamedTuple([s => UInt8(i) for (i, s) in enumerate(ALL_SYMBOLS)])
+const ALL_MAPPING = NamedTuple([s => INDEX_TYPE(i) for (i, s) in enumerate(ALL_SYMBOLS)])
 
 """
     SymbolicDimensions{R} <: AbstractDimensions{R}
@@ -34,7 +35,7 @@ to one which uses `Dimensions` as its dimensions (i.e., base SI units)
 `expand_units`.
 """
 struct SymbolicDimensions{R} <: AbstractDimensions{R}
-    nzdims::Vector{UInt8}
+    nzdims::Vector{INDEX_TYPE}
     nzvals::Vector{R}
 end
 
@@ -43,7 +44,11 @@ function Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R}
     nzdims = getfield(d, :nzdims)
     i = ALL_MAPPING[s]
     ii = searchsortedfirst(nzdims, i)
-    (ii <= length(nzdims) && nzdims[ii] == i) ? getfield(d, :nzvals)[ii] : zero(R)
+    if ii <= length(nzdims) && nzdims[ii] == i
+        return getfield(d, :nzvals)[ii]
+    else
+        return zero(R)
+    end
 end
 Base.propertynames(::SymbolicDimensions) = ALL_SYMBOLS
 Base.getindex(d::SymbolicDimensions, k::Symbol) = getproperty(d, k)
@@ -53,9 +58,9 @@ SymbolicDimensions{R}(d::SymbolicDimensions) where {R} = SymbolicDimensions{R}(g
 SymbolicDimensions(; kws...) = SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}(; kws...)
 function SymbolicDimensions{R}(; kws...) where {R}
     if isempty(kws)
-        return SymbolicDimensions{R}(Vector{UInt8}(undef, 0), Vector{R}(undef, 0))
+        return SymbolicDimensions{R}(Vector{INDEX_TYPE}(undef, 0), Vector{R}(undef, 0))
     end
-    I = UInt8[ALL_MAPPING[s] for s in keys(kws)]
+    I = INDEX_TYPE[ALL_MAPPING[s] for s in keys(kws)]
     p = sortperm(I)
     V = R[tryrationalize(R, kws[i]) for i in p]
     return SymbolicDimensions{R}(permute!(I, p), V)
@@ -68,7 +73,7 @@ end
 function Base.convert(::Type{Quantity{T,SymbolicDimensions{R}}}, q::Quantity{<:Any,<:Dimensions}) where {T,R}
     syms = (:m, :kg, :s, :A, :K, :cd, :mol)
     vals = (ulength(q), umass(q), utime(q), ucurrent(q), utemperature(q), uluminosity(q), uamount(q))
-    I = UInt8[ALL_MAPPING[s] for (s, v) in zip(syms, vals) if !iszero(v)]
+    I = INDEX_TYPE[ALL_MAPPING[s] for (s, v) in zip(syms, vals) if !iszero(v)]
     p = sortperm(I)
     permute!(I, p)
     V = R[tryrationalize(R, vals[i]) for i in p]
@@ -151,7 +156,7 @@ Base.:*(l::SymbolicDimensions, r::SymbolicDimensions) = _combine_vals(+, l, r)
 Base.:/(l::SymbolicDimensions, r::SymbolicDimensions) = _combine_vals(-, l, r)
 function _combine_vals(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R}) where {O,L,R}
     T = typeof(op(zero(L), zero(R)))
-    I = Vector{UInt8}(undef, 0)
+    I = Vector{INDEX_TYPE}(undef, 0)
     V = Vector{T}(undef, 0)
     nzdimsl = getfield(l, :nzdims)
     nzvalsl = getfield(l, :nzvals)
