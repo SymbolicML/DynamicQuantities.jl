@@ -499,10 +499,10 @@ end
 
 @testset "Symbolic dimensions" begin
     # TODO: Remove constructors for sym3 and sym4s?
-    sym1 = @inferred(SymbolicDimensions(; m = 3, s = -1))
-    sym2 = @inferred(SymbolicDimensions{Rational{Int}}(; m = 3, s = -1))
-    sym3 = @inferred(SymbolicDimensions(Rational{Int}; m = 3, s = -1))
-    sym4 = @inferred(SymbolicDimensions{Int}(Rational{Int}; m = 3, s = -1))
+    sym1 = @inferred(SymbolicDimensions(; m=3, s=-1))
+    sym2 = @inferred(SymbolicDimensions{Rational{Int}}(; m=3, s=-1))
+    sym3 = @inferred(SymbolicDimensions(Rational{Int}; m=3, s=-1))
+    sym4 = @inferred(SymbolicDimensions{Int}(Rational{Int}; m=3, s=-1))
     for (sym, T) in (
         (sym1, DynamicQuantities.DEFAULT_DIM_BASE_TYPE), (sym2, Rational{Int}), (sym3, Rational{Int}), (sym4, Rational{Int}),
     )  
@@ -525,18 +525,18 @@ end
         @test sym == sym
         @test sym == copy(sym)
         @test sym !== copy(sym)
-        @test sym == SymbolicDimensions{Int}(; m = 3, s = -1)
-        @test SymbolicDimensions{Int}(; m = 3, s = -1) == sym
-        @test sym == SymbolicDimensions(; m = 3, g = 0, s = -1)
-        @test SymbolicDimensions(; m = 3, g = 0, s = -1) == sym
-        @test sym == SymbolicDimensions(; m = 3, s = -1, K = 0)
-        @test SymbolicDimensions(; m = 3, s = -1, K = 0) == sym
-        @test sym != SymbolicDimensions(; m = 2, s = -1)
-        @test SymbolicDimensions(; m = 2, s = -1) != sym
-        @test sym != SymbolicDimensions(; m = 3, g = 1, s = -1)
-        @test SymbolicDimensions(; m = 3, g = 1, s = -1) != sym
-        @test sym != SymbolicDimensions(; m = 3, s = -1, K = 1)
-        @test SymbolicDimensions(; m = 3, s = -1, K = 1) != sym
+        @test sym == SymbolicDimensions{Int}(; m=3, s=-1)
+        @test SymbolicDimensions{Int}(; m=3, s=-1) == sym
+        @test sym == SymbolicDimensions(; m=3, g=0, s=-1)
+        @test SymbolicDimensions(; m=3, g=0, s=-1) == sym
+        @test sym == SymbolicDimensions(; m=3, s=-1, K=0)
+        @test SymbolicDimensions(; m=3, s=-1, K=0) == sym
+        @test sym != SymbolicDimensions(; m=2, s=-1)
+        @test SymbolicDimensions(; m=2, s=-1) != sym
+        @test sym != SymbolicDimensions(; m=3, g=1, s=-1)
+        @test SymbolicDimensions(; m=3, g=1, s=-1) != sym
+        @test sym != SymbolicDimensions(; m=3, s=-1, K=1)
+        @test SymbolicDimensions(; m=3, s=-1, K=1) != sym
 
         @test !iszero(sym)
     end
