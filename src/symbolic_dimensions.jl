@@ -82,7 +82,7 @@ function Base.convert(::Type{Quantity{T,SymbolicDimensions{R}}}, q::Quantity{<:A
     return Quantity(convert(T, ustrip(q)), dims)
 end
 function Base.convert(::Type{Q}, q::Quantity{<:Any,<:SymbolicDimensions}) where {T,D<:Dimensions,Q<:Quantity{T,D}}
-    result = one(Q) * ustrip(q)
+    result = new_quantity(Q, ustrip(q), dim_type(Q))
     d = dimension(q)
     for (idx, value) in zip(getfield(d, :nzdims), getfield(d, :nzvals))
         if !iszero(value)
