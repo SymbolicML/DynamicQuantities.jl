@@ -42,7 +42,8 @@ end
 static_fieldnames(::Type{<:SymbolicDimensions}) = ALL_SYMBOLS
 function Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R}
     nzdims = getfield(d, :nzdims)
-    i = ALL_MAPPING[s]
+    i = get(ALL_MAPPING, s, INDEX_TYPE(0))
+    iszero(i) && error("$s is not available as a symbol in SymbolicDimensions. Symbols available: $(ALL_SYMBOLS).")
     ii = searchsortedfirst(nzdims, i)
     if ii <= length(nzdims) && nzdims[ii] == i
         return getfield(d, :nzvals)[ii]

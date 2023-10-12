@@ -580,6 +580,11 @@ end
 
     # Test conversion
     @test typeof(SymbolicDimensions{Rational{Int}}(dimension(us"km/s"))) == SymbolicDimensions{Rational{Int}}
+
+    # Helpful error if symbol not found:
+    sym5 = dimension(us"km/s")
+    VERSION >= v"1.8" &&
+        @test_throws "rad is not available as a symbol" sym5.rad
 end
 
 @testset "Test ambiguities" begin
