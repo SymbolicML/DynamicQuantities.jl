@@ -152,9 +152,16 @@ function Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions)
     return true
 end
 Base.iszero(d::SymbolicDimensions) = iszero(getfield(d, :nzvals))
-Base.:*(l::SymbolicDimensions, r::SymbolicDimensions) = _combine_vals(+, l, r)
-Base.:/(l::SymbolicDimensions, r::SymbolicDimensions) = _combine_vals(-, l, r)
-function _combine_vals(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R}) where {O,L,R}
+
+# Defines `inv(::SymbolicDimensions)` and `^(::SymbolicDimensions, ::Number)`
+function map_dimensions(op::Function, d::SymbolicDimensions)
+    return SymbolicDimensions(getfield(d, :nzdims), map(op, getfield(d, :nzvals)))
+end
+
+# Defines `*(::SymbolicDimensions, ::SymbolicDimensions)` and `/(::SymbolicDimensions, ::SymbolicDimensions)`
+function map_dimensions(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R}) where {O<:Function,L,R}
+    zero_L = zero(L)
+    zero_R = zero(R)
     T = typeof(op(zero(L), zero(R)))
     I = Vector{INDEX_TYPE}(undef, 0)
     V = Vector{T}(undef, 0)
@@ -177,14 +184,14 @@ function _combine_vals(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R}
             il += 1
             ir += 1
         elseif dim_l < dim_r
-            s = nzvals_l[il]
+            s = op(nzvals_l[il], zero_R)
             if !iszero(s)
                 push!(I, dim_l)
                 push!(V, s)
             end
             il += 1
         else
-            s = op(nzvals_r[ir])
+            s = op(zero_L, nzvals_r[ir])
             if !iszero(s)
                 push!(I, dim_r)
                 push!(V, s)
@@ -194,7 +201,7 @@ function _combine_vals(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R}
     end
 
     while il <= nl
-        s = nzvals_l[il]
+        s = op(nzvals_l[il], zero_R)
         if !iszero(s)
             push!(I, nzdims_l[il])
             push!(V, s)
@@ -203,7 +210,7 @@ function _combine_vals(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R}
     end
 
     while ir <= nr
-        s = nzvals_r[ir]
+        s = op(zero_L, nzvals_r[ir])
         if !iszero(s)
             push!(I, op(nzdims_r[ir]))
             push!(V, s)
@@ -213,10 +220,6 @@ function _combine_vals(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R}
 
     return SymbolicDimensions(I, V)
 end
-Base.inv(d::SymbolicDimensions) = SymbolicDimensions(getfield(d, :nzdims), -getfield(d, :nzvals))
-Base.:^(l::SymbolicDimensions{R}, r::Integer) where {R} = SymbolicDimensions(getfield(l, :nzdims), r * getfield(l, :nzvals))
-Base.:^(l::SymbolicDimensions{R}, r::Number) where {R} = SymbolicDimensions(getfield(l, :nzdims), tryrationalize(R, r) * getfield(l, :nzvals))
-
 
 """
     SymbolicUnitsParse
