@@ -213,7 +213,7 @@ function map_dimensions(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R
     while ir <= nr
         s = op(zero_L, nzvals_r[ir])
         if !iszero(s)
-            push!(I, op(nzdims_r[ir]))
+            push!(I, nzdims_r[ir])
             push!(V, s)
         end
         ir += 1
