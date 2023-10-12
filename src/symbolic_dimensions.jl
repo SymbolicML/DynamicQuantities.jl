@@ -106,29 +106,29 @@ expand_units(q::QuantityArray) = expand_units.(q)
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(getfield(d, :nzdims)), copy(getfield(d, :nzvals)))
 function Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions)
-    nzdimsl = getfield(l, :nzdims)
-    nzvalsl = getfield(l, :nzvals)
-    nzdimsr = getfield(r, :nzdims)
-    nzvalsr = getfield(r, :nzvals)
-    nl = length(nzdimsl)
-    nr = length(nzdimsr)
+    nzdims_l = getfield(l, :nzdims)
+    nzvals_l = getfield(l, :nzvals)
+    nzdims_r = getfield(r, :nzdims)
+    nzvals_r = getfield(r, :nzvals)
+    nl = length(nzdims_l)
+    nr = length(nzdims_r)
     il = ir = 1
     while il <= nl && ir <= nr
-        diml = nzdimsl[il]
-        dimr = nzdimsr[ir]
-        if diml == dimr
-            if nzvalsl[il] != nzvalsr[ir]
+        dim_l = nzdims_l[il]
+        dim_r = nzdims_r[ir]
+        if dim_l == dim_r
+            if nzvals_l[il] != nzvals_r[ir]
                 return false
             end
             il += 1
             ir += 1
-        elseif diml < dimr
-            if !iszero(nzvalsl[il])
+        elseif dim_l < dim_r
+            if !iszero(nzvals_l[il])
                 return false
             end
             il += 1
         else
-            if !iszero(nzvalsr[ir])
+            if !iszero(nzvals_r[ir])
                 return false
             end
             ir += 1
@@ -136,14 +136,14 @@ function Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions)
     end
 
     while il <= nl
-        if !iszero(nzvalsl[il])
+        if !iszero(nzvals_l[il])
             return false
         end
         il += 1
     end
 
     while ir <= nr
-        if !iszero(nzvalsr[ir])
+        if !iszero(nzvals_r[ir])
             return false
         end
         ir += 1
@@ -158,35 +158,35 @@ function _combine_vals(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R}
     T = typeof(op(zero(L), zero(R)))
     I = Vector{INDEX_TYPE}(undef, 0)
     V = Vector{T}(undef, 0)
-    nzdimsl = getfield(l, :nzdims)
-    nzvalsl = getfield(l, :nzvals)
-    nzdimsr = getfield(r, :nzdims)
-    nzvalsr = getfield(r, :nzvals)
-    nl = length(nzdimsl)
-    nr = length(nzdimsr)
+    nzdims_l = getfield(l, :nzdims)
+    nzvals_l = getfield(l, :nzvals)
+    nzdims_r = getfield(r, :nzdims)
+    nzvals_r = getfield(r, :nzvals)
+    nl = length(nzdims_l)
+    nr = length(nzdims_r)
     il = ir = 1
     while il <= nl && ir <= nr
-        diml = nzdimsl[il]
-        dimr = nzdimsr[ir]
-        if diml == dimr
-            s = op(nzvalsl[il], nzvalsr[ir])
+        dim_l = nzdims_l[il]
+        dim_r = nzdims_r[ir]
+        if dim_l == dim_r
+            s = op(nzvals_l[il], nzvals_r[ir])
             if !iszero(s)
-                push!(I, diml)
+                push!(I, dim_l)
                 push!(V, s)
             end
             il += 1
             ir += 1
-        elseif diml < dimr
-            s = nzvalsl[il]
+        elseif dim_l < dim_r
+            s = nzvals_l[il]
             if !iszero(s)
-                push!(I, diml)
+                push!(I, dim_l)
                 push!(V, s)
             end
             il += 1
         else
-            s = op(nzvalsr[ir])
+            s = op(nzvals_r[ir])
             if !iszero(s)
-                push!(I, dimr)
+                push!(I, dim_r)
                 push!(V, s)
             end
             ir += 1
@@ -194,18 +194,18 @@ function _combine_vals(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R}
     end
 
     while il <= nl
-        s = nzvalsl[il]
+        s = nzvals_l[il]
         if !iszero(s)
-            push!(I, nzdimsl[il])
+            push!(I, nzdims_l[il])
             push!(V, s)
         end
         il += 1
     end
 
     while ir <= nr
-        s = nzvalsr[ir]
+        s = nzvals_r[ir]
         if !iszero(s)
-            push!(I, op(nzdimsr[ir]))
+            push!(I, op(nzdims_r[ir]))
             push!(V, s)
         end
         ir += 1
