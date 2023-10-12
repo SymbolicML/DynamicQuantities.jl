@@ -155,7 +155,7 @@ Base.iszero(d::SymbolicDimensions) = iszero(getfield(d, :nzvals))
 
 # Defines `inv(::SymbolicDimensions)` and `^(::SymbolicDimensions, ::Number)`
 function map_dimensions(op::Function, d::SymbolicDimensions)
-    return SymbolicDimensions(getfield(d, :nzdims), map(op, getfield(d, :nzvals)))
+    return SymbolicDimensions(copy(getfield(d, :nzdims)), map(op, getfield(d, :nzvals)))
 end
 
 # Defines `*(::SymbolicDimensions, ::SymbolicDimensions)` and `/(::SymbolicDimensions, ::SymbolicDimensions)`
