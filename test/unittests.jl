@@ -580,6 +580,8 @@ end
 
     # Test conversion
     @test typeof(SymbolicDimensions{Rational{Int}}(dimension(us"km/s"))) == SymbolicDimensions{Rational{Int}}
+    @test convert(Quantity{Float64,SymbolicDimensions}, u"kg") == us"1kg"
+    @test convert(Quantity{Float64,Dimensions}, us"3.5kg/s") == u"3.5kg/s"
 
     # Helpful error if symbol not found:
     sym5 = dimension(us"km/s")
