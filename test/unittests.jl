@@ -589,6 +589,14 @@ end
     sym5 = dimension(us"km/s")
     VERSION >= v"1.8" &&
         @test_throws "rad is not available as a symbol" sym5.rad
+
+    # Extra test coverage
+    @test_warn(
+        "Creating SymbolicDimensions objects",
+        DynamicQuantities.SymbolicUnitsParse._generate_unit_symbols(
+            testing=Val(true)
+        )
+    )
 end
 
 @testset "Test ambiguities" begin

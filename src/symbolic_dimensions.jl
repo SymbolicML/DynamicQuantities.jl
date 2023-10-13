@@ -240,6 +240,8 @@ module SymbolicUnitsParse
     import ...DEFAULT_VALUE_TYPE
     import ...DEFAULT_DIM_BASE_TYPE
 
+    _is_precompiling() = ccall(:jl_generating_output, Cint, ()) == 1
+
     # Lazily create unit symbols (since there are so many)
     module Constants
         import ..CONSTANT_SYMBOLS
@@ -249,12 +251,14 @@ module SymbolicUnitsParse
         import ..Quantity
         import ..DEFAULT_VALUE_TYPE
         import ..DEFAULT_DIM_BASE_TYPE
+        import .._is_precompiling
 
         import ...Constants as EagerConstants
 
         const CONSTANT_SYMBOLS_EXIST = Ref{Bool}(false)
         const CONSTANT_SYMBOLS_LOCK = Threads.SpinLock()
         function _generate_unit_symbols()
+            _is_precompiling() && return nothing
             CONSTANT_SYMBOLS_EXIST[] || lock(CONSTANT_SYMBOLS_LOCK) do
                 CONSTANT_SYMBOLS_EXIST[] && return nothing
                 for unit in setdiff(CONSTANT_SYMBOLS, SYMBOL_CONFLICTS)
@@ -273,7 +277,19 @@ module SymbolicUnitsParse
 
     const UNIT_SYMBOLS_EXIST = Ref{Bool}(false)
     const UNIT_SYMBOLS_LOCK = Threads.SpinLock()
-    function _generate_unit_symbols()
+    function _generate_unit_symbols(; testing=Val(false))
+        if _is_precompiling() || testing === Val(true)
+            @warn (
+                "Creating SymbolicDimensions objects during precompilation is not allowed, "
+                * "as symbolic units are not created until the first runtime call. "
+                * "You should use regular `Dimensions` instead for computations, "
+                * "and generally use `SymbolicDimensions` for display purposes. "
+                * "If needed, you can manually create `SymbolicDimensions` by calling "
+                * "the constructor explicitly, such as `Quantity(1.5, SymbolicDimensions; km=1, s=-1)`, "
+                * "which is equivalent to `us\"km/s\"`."
+            )
+            return nothing
+        end
         UNIT_SYMBOLS_EXIST[] || lock(UNIT_SYMBOLS_LOCK) do
             UNIT_SYMBOLS_EXIST[] && return nothing
             for unit in UNIT_SYMBOLS
