@@ -207,9 +207,9 @@ julia> expand_units(x^2)
 8.987551787368176e16 m² s⁻⁴
 ```
 
-You can also convert a quantity in regular base SI units to symbolic units with `as_u`:
+You can also convert a quantity in regular base SI units to symbolic units with `uconvert`:
 ```julia
-julia> as_u(5e-9u"m", us"nm") # can also write 5e-9u"m" |> as_u(us"nm")
+julia> uconvert(us"nm", 5e-9u"m") # can also write 5e-9u"m" |> uconvert(us"nm")
 5.0 nm
 ```
 

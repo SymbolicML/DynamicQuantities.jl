@@ -20,8 +20,8 @@ To convert a quantity to its regular base SI units, use `expand_units`:
 expand_units
 ```
 
-To convert a quantity in regular base SI units to corresponding symbolic units, use `as_u`:
+To convert a quantity in regular base SI units to corresponding symbolic units, use `uconvert`:
 
 ```@docs
-as_u
+uconvert
 ```

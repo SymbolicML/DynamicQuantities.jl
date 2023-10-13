@@ -5,7 +5,7 @@ export AbstractQuantity, AbstractDimensions
 export Quantity, Dimensions, SymbolicDimensions, QuantityArray, DimensionError
 export ustrip, dimension
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
-export uparse, @u_str, sym_uparse, @us_str, expand_units, as_u
+export uparse, @u_str, sym_uparse, @us_str, expand_units, uconvert
 
 include("fixed_rational.jl")
 include("types.jl")
