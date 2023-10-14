@@ -613,6 +613,22 @@ end
     qs = uconvert(convert(Quantity{Float16}, us"g"), 5 * q)
     @test typeof(qs) <: Quantity{Float16,<:SymbolicDimensions{<:Any}}
     @test qs ≈ 7.5us"g"
+
+    # Arrays
+    x = [1.0, 2.0, 3.0] .* u"kg"
+    xs = x .|> uconvert(us"g")
+    @test typeof(xs) <: Vector{<:Quantity{Float64,<:SymbolicDimensions{<:Any}}}
+    @test xs[2] ≈ 2000us"g"
+
+    x_qa = QuantityArray(x)
+    xs_qa = x_qa .|> uconvert(us"g")
+    @test typeof(xs_qa) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
+    @test xs_qa[2] ≈ 2000us"g"
+
+    # Without vectorized call:
+    xs_qa2 = x_qa |> uconvert(us"g")
+    @test typeof(xs_qa2) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
+    @test xs_qa2[2] ≈ 2000us"g"
 end
 
 @testset "Test ambiguities" begin
