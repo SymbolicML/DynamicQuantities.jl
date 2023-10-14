@@ -18,6 +18,7 @@ include("uparse.jl")
 include("symbolic_dimensions.jl")
 
 include("deprecated.jl")
+export expand_units
 
 import PackageExtensionCompat: @require_extensions
 import .Units
