@@ -130,6 +130,29 @@ a function equivalent to `q -> uconvert(qout, q)`.
 """
 uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}) = Base.Fix1(uconvert, qout)
 
+function dimension_promote(l::AbstractQuantity{<:Any,<:SymbolicDimensions}, r::AbstractQuantity{<:Any,<:SymbolicDimensions})
+    if dimension(l) == dimension(r)
+        return l, r
+    else
+        # We can first try to make the dimensions equivalent
+        l_unit = l / ustrip(l)
+        r_raw = uconvert(l_unit, expand_units(r))
+        # Ensure type stability:
+        r = convert(typeof(r), r_raw)
+        return l, r
+    end
+end
+function dimension_promote(l::AbstractQuantity{T,S}, r) where {T,S<:SymbolicDimensions}
+    l_raw = uconvert(Quantity(one(T), S), expand_units(l))
+    l = convert(typeof(l), l_raw)
+    return l, r
+end
+function dimension_promote(l, r::AbstractQuantity{T,S}) where {T,S<:SymbolicDimensions}
+    r_raw = uconvert(Quantity(one(T), S), expand_units(r))
+    r = convert(typeof(r), r_raw)
+    return l, r
+end
+
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(getfield(d, :nzdims)), copy(getfield(d, :nzvals)))
 function Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions)
     nzdims_l = getfield(l, :nzdims)

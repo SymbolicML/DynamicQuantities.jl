@@ -59,11 +59,11 @@ function Base.isapprox(l::AbstractQuantity, r::AbstractQuantity; kws...)
     return isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
 end
 function Base.isapprox(l, r::AbstractQuantity; kws...)
-    iszero(dimension(r)) || throw(DimensionError(l, r))
+    l, r = dimension_promote(l, r)
     return isapprox(l, ustrip(r); kws...)
 end
 function Base.isapprox(l::AbstractQuantity, r; kws...)
-    iszero(dimension(l)) || throw(DimensionError(l, r))
+    l, r = dimension_promote(l, r)
     return isapprox(ustrip(l), r; kws...)
 end
 Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
@@ -72,15 +72,15 @@ Base.:(==)(l::AbstractQuantity, r::AbstractQuantity) = ustrip(l) == ustrip(r) &&
 Base.:(==)(l, r::AbstractQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
 Base.:(==)(l::AbstractQuantity, r) = ustrip(l) == ustrip(r) && iszero(dimension(l))
 function Base.isless(l::AbstractQuantity, r::AbstractQuantity)
-    dimension(l) == dimension(r) || throw(DimensionError(l, r))
+    l, r = dimension_promote(l, r)
     return isless(ustrip(l), ustrip(r))
 end
 function Base.isless(l::AbstractQuantity, r)
-    iszero(dimension(l)) || throw(DimensionError(l, r))
+    l, r = dimension_promote(l, r)
     return isless(ustrip(l), r)
 end
 function Base.isless(l, r::AbstractQuantity)
-    iszero(dimension(r)) || throw(DimensionError(l, r))
+    l, r = dimension_promote(l, r)
     return isless(l, ustrip(r))
 end
 
@@ -267,3 +267,19 @@ Get the amount dimension of a quantity (e.g., mol^(uamount)).
 """
 uamount(q::AbstractQuantity) = uamount(dimension(q))
 uamount(d::AbstractDimensions) = d.amount
+
+
+"""This function allows custom behavior for dimensionality analysis"""
+@inline function dimension_promote(l::AbstractQuantity, r::AbstractQuantity)
+    dimension(l) == dimension(r) || throw(DimensionError(l, r))
+    return l, r
+end
+@inline function dimension_promote(l::AbstractQuantity, r)
+    iszero(dimension(l)) || throw(DimensionError(l, r))
+    return l, r
+end
+@inline function dimension_promote(l, r::AbstractQuantity)
+    iszero(dimension(r)) || throw(DimensionError(l, r))
+    return l, r
+end
+# TODO: May want to have methods for arrays as well
