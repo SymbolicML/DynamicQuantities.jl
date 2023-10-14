@@ -187,10 +187,10 @@ julia> q^2
 ```
 
 You can convert to regular SI base units with
-`expand_units`:
+`uexpand`:
 
 ```julia
-julia> expand_units(q^2)
+julia> uexpand(q^2)
 1.0e6 kg² s⁻⁴
 ```
 
@@ -203,7 +203,7 @@ julia> x = us"Constants.c * Hz"
 julia> x^2
 1.0 Hz² c²
 
-julia> expand_units(x^2)
+julia> uexpand(x^2)
 8.987551787368176e16 m² s⁻⁴
 ```
 

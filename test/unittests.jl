@@ -545,19 +545,19 @@ end
     @test q == 1.5 * us"km" / us"s"
     @test typeof(q) <: Quantity{Float64,<:SymbolicDimensions}
     @test string(dimension(q)) == "s⁻¹ km"
-    @test expand_units(q) == 1.5u"km/s"
+    @test uexpand(q) == 1.5u"km/s"
     @test string(dimension(us"Constants.au^1.5")) == "au³ᐟ²"
-    @test string(dimension(expand_units(us"Constants.au^1.5"))) == "m³ᐟ²"
-    @test expand_units(2.3us"Constants.au^1.5") ≈ 2.3u"Constants.au^1.5"
+    @test string(dimension(uexpand(us"Constants.au^1.5"))) == "m³ᐟ²"
+    @test uexpand(2.3us"Constants.au^1.5") ≈ 2.3u"Constants.au^1.5"
     @test iszero(dimension(us"1.0")) == true
-    @test expand_units(inv(us"Constants.au")) ≈ 1/u"Constants.au"
+    @test uexpand(inv(us"Constants.au")) ≈ 1/u"Constants.au"
     @test dimension(inv(us"s") * us"km") == dimension(us"km/s")
     @test dimension(inv(us"s") * us"m") != dimension(us"km/s")
-    @test dimension(expand_units(inv(us"s") * us"m")) == dimension(expand_units(us"km/s"))
+    @test dimension(uexpand(inv(us"s") * us"m")) == dimension(uexpand(us"km/s"))
 
     f2(i::Int) = us"s"^i
     @inferred f2(5)
-    @test expand_units(f2(5)) == u"s"^5
+    @test uexpand(f2(5)) == u"s"^5
 
     @test_throws ErrorException sym_uparse("'c'")
 
@@ -567,7 +567,7 @@ end
     @test dimension(us"h")[:h] == 1
 
     @test us"Constants.h" != us"h"
-    @test expand_units(us"Constants.h") == u"Constants.h"
+    @test uexpand(us"Constants.h") == u"Constants.h"
 
     # Actually expands to:
     @test dimension(us"Constants.h")[:m] == 2
@@ -589,6 +589,10 @@ end
     sym5 = dimension(us"km/s")
     VERSION >= v"1.8" &&
         @test_throws "rad is not available as a symbol" sym5.rad
+
+    # Test deprecated method
+    q = 1.5us"km/s"
+    @test expand_units(q) == uexpand(q)
 end
 
 @testset "uconvert" begin
@@ -601,7 +605,7 @@ end
     @test dimension(qs)[:kg] == 0
     @test dimension(qs)[:g] == 0
     @test dimension(qs)[:M_sun] == 1
-    @test expand_units(qs) ≈ 5.0 * q
+    @test uexpand(qs) ≈ 5.0 * q
 
     # Refuses to convert to non-unit quantities:
     @test_throws AssertionError uconvert(1.2us"m", 1.0u"m")
@@ -886,8 +890,8 @@ end
         z_ar = randn(32)
         z = QuantityArray(z_ar, us"Constants.h * km/s")
         z_expanded = QuantityArray(z_ar .* u"Constants.h * km/s")
-        @test typeof(expand_units(z)) == typeof(z_expanded)
-        @test all(expand_units(z) .≈ z_expanded)
+        @test typeof(uexpand(z)) == typeof(z_expanded)
+        @test all(uexpand(z) .≈ z_expanded)
         io = IOBuffer()
         Base.showarg(io, z, true)
         msg = String(take!(io))
