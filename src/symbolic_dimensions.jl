@@ -114,7 +114,7 @@ Convert a quantity `q` with base SI units to the symbolic units of `qout`, for `
 Mathematically, the result has value `q / expand_units(qout)` and units `dimension(qout)`. 
 """
 function uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}, q::AbstractQuantity{<:Any, <:Dimensions})
-    isone(ustrip(qout)) || error("You passed a quantity with a non-unit value to uconvert.")
+    @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
     qout_expanded = expand_units(qout)
     dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
     new_val = ustrip(q) / ustrip(qout_expanded)

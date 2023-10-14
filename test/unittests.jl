@@ -604,7 +604,7 @@ end
     @test expand_units(qs) ≈ 5.0 * q
 
     # Refuses to convert to non-unit quantities:
-    @test_throws ErrorException uconvert(1.2us"m", 1.0u"m")
+    @test_throws AssertionError uconvert(1.2us"m", 1.0u"m")
     VERSION >= v"1.8" &&
         @test_throws "You passed a quantity" uconvert(1.2us"m", 1.0u"m")
 
