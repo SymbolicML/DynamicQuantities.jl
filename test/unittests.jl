@@ -605,6 +605,14 @@ end
 
     # Refuses to convert to non-unit quantities:
     @test_throws ErrorException uconvert(1.2us"m", 1.0u"m")
+    VERSION >= v"1.8" &&
+        @test_throws "You passed a quantity" uconvert(1.2us"m", 1.0u"m")
+
+    # Different types require converting both arguments:
+    q = convert(Quantity{Float16}, 1.5u"g")
+    qs = uconvert(convert(Quantity{Float16}, us"g"), 5 * q)
+    @test typeof(qs) <: Quantity{Float16,<:SymbolicDimensions{<:Any}}
+    @test qs ≈ 7.5us"g"
 end
 
 @testset "Test ambiguities" begin
