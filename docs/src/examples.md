@@ -1,10 +1,5 @@
 # Toy Examples with Code
 
-```jldoctest examples
-julia> using DynamicQuantities
-
-```
-
 ## 1. Solving a Chemistry Homework Problem
 
 On your chemistry homework, you are faced with the following problem on the photoelectric effect[^1]:
@@ -16,6 +11,8 @@ On your chemistry homework, you are faced with the following problem on the phot
 
 Let's solve this problem with `DynamicQuantities.jl`!
 ```jldoctest examples
+julia> using DynamicQuantities
+
 julia> using DynamicQuantities.Constants: h, m_e
 
 julia> Φ = 4.33u"Constants.eV" # work function
