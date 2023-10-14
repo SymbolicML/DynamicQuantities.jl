@@ -19,3 +19,9 @@ To convert a quantity to its regular base SI units, use `expand_units`:
 ```@docs
 expand_units
 ```
+
+To convert a quantity in regular base SI units to corresponding symbolic units, use `uconvert`:
+
+```@docs
+uconvert
+```

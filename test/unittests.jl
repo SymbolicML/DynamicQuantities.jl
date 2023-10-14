@@ -591,6 +591,30 @@ end
         @test_throws "rad is not available as a symbol" sym5.rad
 end
 
+@testset "uconvert" begin
+    @test uconvert(us"nm", 5e-9u"m") ≈ (5e-9u"m" |> uconvert(us"nm")) ≈ 5us"nm"
+    @test_throws DimensionError uconvert(us"nm * J", 5e-9u"m")
+
+    q = 1.5u"Constants.M_sun"
+    qs = uconvert(us"Constants.M_sun", 5.0 * q)
+    @test qs ≈ 7.5us"Constants.M_sun"
+    @test dimension(qs)[:kg] == 0
+    @test dimension(qs)[:g] == 0
+    @test dimension(qs)[:M_sun] == 1
+    @test expand_units(qs) ≈ 5.0 * q
+
+    # Refuses to convert to non-unit quantities:
+    @test_throws AssertionError uconvert(1.2us"m", 1.0u"m")
+    VERSION >= v"1.8" &&
+        @test_throws "You passed a quantity" uconvert(1.2us"m", 1.0u"m")
+
+    # Different types require converting both arguments:
+    q = convert(Quantity{Float16}, 1.5u"g")
+    qs = uconvert(convert(Quantity{Float16}, us"g"), 5 * q)
+    @test typeof(qs) <: Quantity{Float16,<:SymbolicDimensions{<:Any}}
+    @test qs ≈ 7.5us"g"
+end
+
 @testset "Test ambiguities" begin
     R = DEFAULT_DIM_BASE_TYPE
     x = convert(R, 10)

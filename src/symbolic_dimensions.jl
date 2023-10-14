@@ -98,13 +98,37 @@ end
 
 Expand the symbolic units in a quantity to their base SI form.
 In other words, this converts a `Quantity` with `SymbolicDimensions`
-to one with `Dimensions`.
+to one with `Dimensions`. The opposite of this function is `uconvert`,
+for converting to specific symbolic units, or `convert(Quantity{<:Any,<:SymbolicDimensions}, q)`,
+for assuming SI units as the output symbols.
 """
 function expand_units(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:AbstractQuantity{T,D}}
     return convert(constructor_of(Q){T,Dimensions{R}}, q)
 end
 expand_units(q::QuantityArray) = expand_units.(q)
 
+"""
+    uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}, q::AbstractQuantity{<:Any, <:Dimensions})
+
+Convert a quantity `q` with base SI units to the symbolic units of `qout`, for `q` and `qout` with compatible units.
+Mathematically, the result has value `q / expand_units(qout)` and units `dimension(qout)`. 
+"""
+function uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}, q::AbstractQuantity{<:Any, <:Dimensions})
+    @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
+    qout_expanded = expand_units(qout)
+    dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
+    new_val = ustrip(q) / ustrip(qout_expanded)
+    new_dim = dimension(qout)
+    return new_quantity(typeof(q), new_val, new_dim)
+end
+
+"""
+    uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
+
+Create a function that converts an input quantity `q` with base SI units to the symbolic units of `qout`, i.e 
+a function equivalent to `q -> uconvert(qout, q)`.
+"""
+uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}) = Base.Fix1(uconvert, qout)
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(getfield(d, :nzdims)), copy(getfield(d, :nzvals)))
 function Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions)
