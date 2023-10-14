@@ -113,11 +113,13 @@ expand_units(q::QuantityArray) = expand_units.(q)
 Convert a quantity `q` with base SI units to the symbolic units of `qout`, for `q` and `qout` with compatible units.
 Mathematically, the result has value `q / expand_units(qout)` and units `dimension(qout)`. 
 """
-function uconvert(qout::AbstractQuantity{T, <:SymbolicDimensions}, q::AbstractQuantity{<:Any, <:Dimensions}) where {T}
+function uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}, q::AbstractQuantity{<:Any, <:Dimensions})
     isone(ustrip(qout)) || error("You passed a quantity with a non-unit value to uconvert.")
     qout_expanded = expand_units(qout)
     dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
-    return new_quantity(typeof(qout), ustrip(q) / ustrip(qout_expanded), dimension(qout))
+    new_val = ustrip(q) / ustrip(qout_expanded)
+    new_dim = dimension(qout)
+    return new_quantity(typeof(q), new_val, new_dim)
 end
 
 """
