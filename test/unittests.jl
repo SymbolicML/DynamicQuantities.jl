@@ -569,9 +569,6 @@ end
     @test us"Constants.h" != us"h"
     @test expand_units(us"Constants.h") == u"Constants.h"
 
-    @test uconvert(us"nm", 5e-9u"m") ≈ (5e-9u"m" |> uconvert(us"nm")) ≈ 5us"nm"
-    @test_throws DimensionError uconvert(us"nm * J", 5e-9u"m")
-
     # Actually expands to:
     @test dimension(us"Constants.h")[:m] == 2
     @test dimension(us"Constants.h")[:s] == -1
@@ -592,6 +589,22 @@ end
     sym5 = dimension(us"km/s")
     VERSION >= v"1.8" &&
         @test_throws "rad is not available as a symbol" sym5.rad
+end
+
+@testset "uconvert" begin
+    @test uconvert(us"nm", 5e-9u"m") ≈ (5e-9u"m" |> uconvert(us"nm")) ≈ 5us"nm"
+    @test_throws DimensionError uconvert(us"nm * J", 5e-9u"m")
+
+    q = 1.5u"Constants.M_sun"
+    qs = uconvert(us"Constants.M_sun", 5.0 * q)
+    @test qs ≈ 7.5us"Constants.M_sun"
+    @test dimension(qs)[:kg] == 0
+    @test dimension(qs)[:g] == 0
+    @test dimension(qs)[:M_sun] == 1
+    @test expand_units(qs) ≈ 5.0 * q
+
+    # Refuses to convert to non-unit quantities:
+    @test_throws ErrorException uconvert(1.2us"m", 1.0u"m")
 end
 
 @testset "Test ambiguities" begin
