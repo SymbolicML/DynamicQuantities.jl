@@ -499,6 +499,49 @@ end
 end
 
 @testset "Symbolic dimensions" begin
+    # TODO: Remove constructors for sym3 and sym4s?
+    sym1 = @inferred(SymbolicDimensions(; m=3, s=-1))
+    sym2 = @inferred(SymbolicDimensions{Rational{Int}}(; m=3, s=-1))
+    sym3 = @inferred(SymbolicDimensions(Rational{Int}; m=3, s=-1))
+    sym4 = @inferred(SymbolicDimensions{Int}(Rational{Int}; m=3, s=-1))
+    for (sym, T) in (
+        (sym1, DynamicQuantities.DEFAULT_DIM_BASE_TYPE), (sym2, Rational{Int}), (sym3, Rational{Int}), (sym4, Rational{Int}),
+    )  
+        @test sym isa SymbolicDimensions{T}
+
+        # Properties
+        @test sym.m == 3
+        @test sym.s == -1
+        @test propertynames(sym) == DynamicQuantities.ALL_SYMBOLS
+        @test issubset((:m, :s), propertynames(sym))
+        @test all(propertynames(sym)) do x
+            val = getproperty(sym, x)
+            return x === :m ? val == 3 : (x === :s ? val == -1 : iszero(val))
+        end
+
+        # Internal constructor
+        @test DynamicQuantities.constructor_of(typeof(sym)) === SymbolicDimensions
+
+        # Equality comparisons
+        @test sym == sym
+        @test sym == copy(sym)
+        @test sym !== copy(sym)
+        @test sym == SymbolicDimensions{Int}(; m=3, s=-1)
+        @test SymbolicDimensions{Int}(; m=3, s=-1) == sym
+        @test sym == SymbolicDimensions(; m=3, g=0, s=-1)
+        @test SymbolicDimensions(; m=3, g=0, s=-1) == sym
+        @test sym == SymbolicDimensions(; m=3, s=-1, K=0)
+        @test SymbolicDimensions(; m=3, s=-1, K=0) == sym
+        @test sym != SymbolicDimensions(; m=2, s=-1)
+        @test SymbolicDimensions(; m=2, s=-1) != sym
+        @test sym != SymbolicDimensions(; m=3, g=1, s=-1)
+        @test SymbolicDimensions(; m=3, g=1, s=-1) != sym
+        @test sym != SymbolicDimensions(; m=3, s=-1, K=1)
+        @test SymbolicDimensions(; m=3, s=-1, K=1) != sym
+
+        @test !iszero(sym)
+    end
+
     q = 1.5us"km/s"
     @test q == 1.5 * us"km" / us"s"
     @test typeof(q) <: Quantity{Float64,<:SymbolicDimensions}
@@ -538,6 +581,39 @@ end
 
     # Test conversion
     @test typeof(SymbolicDimensions{Rational{Int}}(dimension(us"km/s"))) == SymbolicDimensions{Rational{Int}}
+    @test convert(Quantity{Float64,SymbolicDimensions}, u"kg") == 1.0us"kg"
+    @test convert(Quantity{Float64,SymbolicDimensions}, u"cm") == 1e-2us"m"
+    @test convert(Quantity{Float64,Dimensions}, 3.5us"kg/s") == 3.5u"kg/s"
+    @test convert(Quantity{Float64,Dimensions}, 3.5us"Constants.pc") == 3.5u"Constants.pc"
+
+    # Helpful error if symbol not found:
+    sym5 = dimension(us"km/s")
+    VERSION >= v"1.8" &&
+        @test_throws "rad is not available as a symbol" sym5.rad
+end
+
+@testset "uconvert" begin
+    @test uconvert(us"nm", 5e-9u"m") ≈ (5e-9u"m" |> uconvert(us"nm")) ≈ 5us"nm"
+    @test_throws DimensionError uconvert(us"nm * J", 5e-9u"m")
+
+    q = 1.5u"Constants.M_sun"
+    qs = uconvert(us"Constants.M_sun", 5.0 * q)
+    @test qs ≈ 7.5us"Constants.M_sun"
+    @test dimension(qs)[:kg] == 0
+    @test dimension(qs)[:g] == 0
+    @test dimension(qs)[:M_sun] == 1
+    @test expand_units(qs) ≈ 5.0 * q
+
+    # Refuses to convert to non-unit quantities:
+    @test_throws AssertionError uconvert(1.2us"m", 1.0u"m")
+    VERSION >= v"1.8" &&
+        @test_throws "You passed a quantity" uconvert(1.2us"m", 1.0u"m")
+
+    # Different types require converting both arguments:
+    q = convert(Quantity{Float16}, 1.5u"g")
+    qs = uconvert(convert(Quantity{Float16}, us"g"), 5 * q)
+    @test typeof(qs) <: Quantity{Float16,<:SymbolicDimensions{<:Any}}
+    @test qs ≈ 7.5us"g"
 end
 
 @testset "Test ambiguities" begin

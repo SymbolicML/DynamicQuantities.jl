@@ -182,6 +182,7 @@ tryrationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)
 
 Base.showerror(io::IO, e::DimensionError) = print(io, "DimensionError: ", e.q1, " and ", e.q2, " have incompatible dimensions")
 
+# TODO: these are redundant with the constructors
 Base.convert(::Type{Q}, q::AbstractUnionQuantity) where {Q<:AbstractUnionQuantity} = q
 Base.convert(::Type{Q}, q::AbstractUnionQuantity) where {T,Q<:AbstractUnionQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
 Base.convert(::Type{Q}, q::AbstractUnionQuantity) where {T,D,Q<:AbstractUnionQuantity{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))

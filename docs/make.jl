@@ -39,12 +39,14 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Examples" => "examples.md",
         "Utilities" => "api.md",
         "Units" => "units.md",
         "Constants" => "constants.md",
         "Symbolic Units" => "symbolic_units.md",
         "Types" => "types.md",
-    ]
+    ],
+    warnonly = [:missing_docs]
 )
 
 deploydocs(;
