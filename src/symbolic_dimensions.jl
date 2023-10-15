@@ -123,6 +123,7 @@ function uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}, q::Abstra
     return new_quantity(typeof(q), new_val, new_dim)
 end
 function uconvert(qout::AbstractQuantity{<:Any,<:SymbolicDimensions}, q::QuantityArray{<:Any,<:Any,<:Dimensions})
+    @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
     qout_expanded = expand_units(qout)
     dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
     new_array = ustrip(q) ./ ustrip(qout_expanded)
