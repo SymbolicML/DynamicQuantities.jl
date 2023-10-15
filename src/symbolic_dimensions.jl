@@ -106,6 +106,7 @@ function expand_units(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:AbstractQuant
     return convert(constructor_of(Q){T,Dimensions{R}}, q)
 end
 expand_units(q::QuantityArray) = expand_units.(q)
+# TODO: Make the array-based one more efficient
 
 """
     uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}, q::AbstractQuantity{<:Any, <:Dimensions})
@@ -121,6 +122,15 @@ function uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}, q::Abstra
     new_dim = dimension(qout)
     return new_quantity(typeof(q), new_val, new_dim)
 end
+function uconvert(qout::AbstractQuantity{<:Any,<:SymbolicDimensions}, q::QuantityArray{<:Any,<:Any,<:Dimensions})
+    @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
+    qout_expanded = expand_units(qout)
+    dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
+    new_array = ustrip(q) ./ ustrip(qout_expanded)
+    new_dim = dimension(qout)
+    return QuantityArray(new_array, new_dim, quantity_type(q))
+end
+# TODO: Method for converting SymbolicDimensions -> SymbolicDimensions
 
 """
     uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
