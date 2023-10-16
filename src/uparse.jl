@@ -35,7 +35,6 @@ end
 
 as_quantity(q::Quantity) = convert(DEFAULT_UNIT_TYPE, q)
 as_quantity(x::Number) = DEFAULT_UNIT_TYPE(x)
-# Quantity(convert(DEFAULT_VALUE_TYPE, x), DEFAULT_DIM_TYPE)
 as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 
 """
