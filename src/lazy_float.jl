@@ -1,5 +1,11 @@
-# This is used to store floats without forcing promotion on other
-# numeric types.
+"""
+    AutoFloat <: AbstractFloat
+
+A wrapper around a `Float64` which automatically demotes
+itself to `Float32` or `Float16` if interacting with
+such a type. In other cases it will respect promotion
+rules associated with `Float64`.
+"""
 struct AutoFloat <: AbstractFloat
     value::Float64
 
