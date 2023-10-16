@@ -379,20 +379,21 @@ end
     @test ustrip(z) ≈ 60 * 60 * 24 * 365.25
 
     # Test type stability of extreme range of units
-    @test typeof(u"1") == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
-    @test typeof(u"1f0") == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
-    @test typeof(u"s"^2) == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
-    @test typeof(u"Ω") == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
-    @test typeof(u"Gyr") == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
-    @test typeof(u"fm") == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
-    @test typeof(u"fm"^2) == Quantity{DEFAULT_UNIT_TYPE,DEFAULT_DIM_TYPE}
+    @test typeof(u"1") == DEFAULT_UNIT_TYPE
+    @test typeof(u"1f0") == DEFAULT_UNIT_TYPE
+    @test typeof(u"s"^2) == DEFAULT_UNIT_TYPE
+    @test typeof(u"Ω") == DEFAULT_UNIT_TYPE
+    @test typeof(u"Gyr") == DEFAULT_UNIT_TYPE
+    @test typeof(u"fm") == DEFAULT_UNIT_TYPE
+    @test typeof(u"fm"^2) == DEFAULT_UNIT_TYPE
 
     # Test type demotion
-    @test typeof(1u"m") == Quantity{Int64,DEFAULT_DIM_TYPE}
+    @test typeof(1u"m") == Quantity{Float64,DEFAULT_DIM_TYPE}
     @test typeof(1f0u"m") == Quantity{Float32,DEFAULT_DIM_TYPE}
     @test typeof(1.0u"m") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(Float16(1.0)u"m") == Quantity{Float16,DEFAULT_DIM_TYPE}
 
-    @test typeof(1u"m^2/s") == Quantity{Int64,DEFAULT_DIM_TYPE}
+    @test typeof(1u"m^2/s") == Quantity{Float64,DEFAULT_DIM_TYPE}
     @test typeof(1f0u"m^2/s") == Quantity{Float32,DEFAULT_DIM_TYPE}
     @test typeof(1.0u"m^2/s") == Quantity{Float64,DEFAULT_DIM_TYPE}
 
@@ -651,7 +652,7 @@ end
     @test promote(x, y) == (x, y)
     @test_throws ErrorException promote(x, convert(FixedRational{Int32,100}, 10))
     @test round(Missing, x) === missing
-    @test promote_type(typeof(u"km/s"), typeof(convert(Quantity{Float32}, u"km/s"))) <: Quantity{Float64}
+    @test promote_type(typeof(1.0u"km/s"), typeof(convert(Quantity{Float32}, u"km/s"))) <: Quantity{Float64}
 
     x = 1.0u"m"
     y = missing
