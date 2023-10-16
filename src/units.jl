@@ -4,9 +4,9 @@ import ..DEFAULT_DIM_TYPE
 import ..DEFAULT_VALUE_TYPE
 import ..Quantity
 import ..Quantity
-import ..LazyFloat64
+import ..AutoFloat
 
-const DEFAULT_UNIT_BASE_TYPE = LazyFloat64
+const DEFAULT_UNIT_BASE_TYPE = AutoFloat
 const DEFAULT_UNIT_TYPE = Quantity{DEFAULT_UNIT_BASE_TYPE,DEFAULT_DIM_TYPE}
 
 const _UNIT_SYMBOLS = Symbol[]
