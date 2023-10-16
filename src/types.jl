@@ -1,6 +1,6 @@
 import Tricks: static_fieldnames, static_fieldtypes
 
-const DEFAULT_DIM_BASE_TYPE = FixedRational{Int32,2^4 * 3^2 * 5^2 * 7}
+const DEFAULT_DIM_BASE_TYPE = FixedRational{DEFAULT_NUMERATOR_TYPE,DEFAULT_DENOM}
 const DEFAULT_VALUE_TYPE = Float64
 
 """
@@ -112,6 +112,8 @@ dimensions according to the operation.
 struct Quantity{T,D<:AbstractDimensions} <: AbstractQuantity{T,D}
     value::T
     dimensions::D
+
+    Quantity(x::_T, dimensions::_D) where {_T,_D<:AbstractDimensions} = new{_T,_D}(x, dimensions)
 end
 (::Type{Q})(x::T, ::Type{D}; kws...) where {D<:AbstractDimensions,T,T2,Q<:AbstractQuantity{T2}} = constructor_of(Q)(convert(T2, x), D(; kws...))
 (::Type{Q})(x, ::Type{D}; kws...) where {D<:AbstractDimensions,Q<:AbstractQuantity} = constructor_of(Q)(x, D(; kws...))

@@ -1,31 +1,45 @@
 name = "DynamicQuantities"
 uuid = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
 authors = ["MilesCranmer <miles.cranmer@gmail.com> and contributors"]
-version = "0.6.0"
+version = "0.7.4"
 
 [deps]
-Requires = "ae029012-a4dd-5104-9daa-d747884805df"
-SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
+PackageExtensionCompat = "65ce6f38-6b18-4e1d-a461-8949797d7930"
 Tricks = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
 
 [weakdeps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
+ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [extensions]
+DynamicQuantitiesLinearAlgebraExt = "LinearAlgebra"
+DynamicQuantitiesMeasurementsExt = "Measurements"
+DynamicQuantitiesScientificTypesExt = "ScientificTypes"
 DynamicQuantitiesUnitfulExt = "Unitful"
 
 [compat]
-Requires = "1"
+Compat = "3.42, 4"
+Measurements = "2"
+PackageExtensionCompat = "1.0.2"
+ScientificTypes = "3"
 Tricks = "0.1"
 Unitful = "1"
 julia = "1.6"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
 Ratios = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SaferIntegers = "88634af6-177f-5301-88b8-7819386cfa38"
+ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Test", "Ratios", "SaferIntegers", "SafeTestsets", "Unitful"]
+test = ["Aqua", "LinearAlgebra", "Measurements", "Ratios", "SaferIntegers", "SafeTestsets", "ScientificTypes", "StaticArrays", "Test", "Unitful"]
