@@ -1,12 +1,19 @@
 using DynamicQuantities
 using DynamicQuantities: FixedRational
 using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE, DEFAULT_UNIT_TYPE
+using DynamicQuantities: AutoFloat
 using DynamicQuantities: array_type, value_type, dim_type, quantity_type
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
 using LinearAlgebra: norm
 using Test
+
+function show_string(i)
+    io = IOBuffer()
+    show(io, i)
+    return String(take!(io))
+end
 
 @testset "Basic utilities" begin
 
@@ -400,6 +407,31 @@ end
     @test_throws LoadError eval(:(u":x"))
 end
 
+@testset "AutoFloat" begin
+    @test promote_type(AutoFloat, Float16) == Float16
+    @test promote_type(AutoFloat, Float32) == Float32
+    @test promote_type(AutoFloat, Float64) == Float64
+    @test promote_type(AutoFloat, BigFloat) == BigFloat
+    @test promote_type(AutoFloat, Int64) == Float64
+    @test promote_type(AutoFloat, ComplexF16) == promote_type(Float64, ComplexF16)
+
+    x = AutoFloat(1.5)
+    @test show_string(x) == "1.5"
+
+    @test -x == AutoFloat(-1.5)
+    @test abs(-x) == x
+    @test sqrt(x) == AutoFloat(sqrt(1.5))
+    @test cbrt(x) == AutoFloat(cbrt(1.5))
+    @test inv(x) == AutoFloat(inv(1.5))
+
+    y = AutoFloat(2.1)
+    @test x + y == AutoFloat(1.5 + 2.1)
+    @test x - y == AutoFloat(1.5 - 2.1)
+
+    # Should promote to array:
+    @test typeof([u"km/s", 1.5u"km/s"]) <: Vector{<:Quantity{Float64}}
+end
+
 @testset "Constants" begin
     @test Constants.h * Constants.c / (1000.0u"nm") ≈ 1.9864458571489284e-19u"J"
 
@@ -431,11 +463,6 @@ end
     @test convert(Rational, FixedRational{UInt8,6}(2)) === Rational{UInt8}(2)
 
     # Showing rationals
-    function show_string(i)
-        io = IOBuffer()
-        show(io, i)
-        return String(take!(io))
-    end
     @test show_string(FixedRational{Int,10}(2)) == "2"
     @test show_string(FixedRational{Int,10}(11//10)) == "11//10"
 

@@ -23,9 +23,10 @@ Base.promote_rule(::Type{AutoFloat}, ::Type{T}) where {T} = promote_type(Float64
 
 Base.show(io::IO, x::AutoFloat) = print(io, float(x))
 
+Base.:(==)(a::AutoFloat, b::AutoFloat) = float(a) == float(b)
 Base.:+(a::AutoFloat, b::AutoFloat) = AutoFloat(float(a) + float(b))
 Base.:-(a::AutoFloat) = AutoFloat(-float(a))
-Base.:-(a::AutoFloat, b::AutoFloat) = AutoFloat(float(a) - float(b))
+Base.:-(a::AutoFloat, b::AutoFloat) = AutoFloat(float(a) + float(-b))
 Base.:*(a::AutoFloat, b::AutoFloat) = AutoFloat(float(a) * float(b))
 Base.inv(a::AutoFloat) = AutoFloat(inv(float(a)))
 Base.abs(a::AutoFloat) = AutoFloat(abs(float(a)))
