@@ -27,6 +27,7 @@ end
 end
 
 Base.float(q::AbstractUnionQuantity) = new_quantity(typeof(q), float(ustrip(q)), dimension(q))
+Base.convert(::Type{Number}, q::AbstractQuantity) = q
 function Base.convert(::Type{T}, q::AbstractUnionQuantity) where {T<:Number}
     @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
     return convert(T, ustrip(q))
@@ -42,6 +43,9 @@ function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:GenericQuantity{T
 end
 function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:Quantity{T2,D2}}) where {T1,T2,D1,D2}
     return Quantity{promote_type(T1,T2),promote_type(D1,D2)}
+end
+function Base.promote_rule(::Type{<:AbstractQuantity}, ::Type{<:Number})
+    return Number
 end
 
 Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))

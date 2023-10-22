@@ -440,6 +440,9 @@ end
     q1 = Quantity(1.0, length=1)
     q2 = Quantity(2, mass=1)
     @test typeof(promote(q1, q2)) == typeof((q1, q1))
+
+    x = [0.5, 0.5u"km/s"]
+    @test x isa Vector{Number}
 end
 
 struct MyDimensions{R} <: AbstractDimensions{R}
