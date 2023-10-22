@@ -25,15 +25,25 @@ abstract type AbstractDimensions{R} end
     AbstractQuantity{T,D} <: Number
 
 An abstract type for quantities. `T` is the type of the value of the quantity,
-and `D` is the type of the dimensions of the quantity. By default, `D` is set to
+which should be `<:Number`.
+`D` is the type of the dimensions of the quantity. By default, `D` is set to
 `DynamicQuantities.DEFAULT_DIM_TYPE`. `T` is inferred from the value in a calculation,
 but in other cases is defaulted to `DynamicQuantities.DEFAULT_VALUE_TYPE`.
 It is assumed that the value is stored in the `:value` field, and the dimensions
 object is stored in the `:dimensions` field. These fields can be accessed with
 `ustrip` and `dimension`, respectively. Many operators in `Base` are defined on
 `AbstractQuantity` objects, including `+, -, *, /, ^, sqrt, cbrt, abs`.
+
+See also `AbstractGenericQuantity` for creating quantities subtyped to `Any`.
 """
 abstract type AbstractQuantity{T,D} <: Number end
+
+"""
+    AbstractGenericQuantity{T,D} <: Any
+
+This has the same behavior as `AbstractQuantity` but is subtyped to `Any` rather
+than `Number`.
+"""
 abstract type AbstractGenericQuantity{T,D} end
 
 # Can add more types here to have additional inheritances
@@ -121,6 +131,12 @@ struct Quantity{T<:Number,D<:AbstractDimensions} <: AbstractQuantity{T,D}
     Quantity(x::_T, dimensions::_D) where {_T,_D<:AbstractDimensions} = new{_T,_D}(x, dimensions)
 end
 
+"""
+    GenericQuantity{T<:Any,D<:AbstractDimensions} <: AbstractGenericQuantity{T,D}
+
+This has the same behavior as `Quantity` but is subtyped to `AbstractGenericQuantity`
+rather than `AbstractQuantity`.
+"""
 struct GenericQuantity{T,D<:AbstractDimensions} <: AbstractGenericQuantity{T,D}
     value::T
     dimensions::D
