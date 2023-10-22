@@ -636,15 +636,8 @@ end
     @test xs_qa2[2] ≈ 2000us"g"
 end
 
-@testset "Test ambiguities" begin
-    R = DEFAULT_DIM_BASE_TYPE
-    x = convert(R, 10)
-    y = convert(R, 5)
-    @test promote(x, y) == (x, y)
-    @test_throws ErrorException promote(x, convert(FixedRational{Int32,100}, 10))
+@testset "Test missing" begin
     @test round(Missing, x) === missing
-    @test promote_type(typeof(u"km/s"), typeof(convert(Quantity{Float32}, u"km/s"))) <: Quantity{Float64}
-
     x = 1.0u"m"
     y = missing
     @test isless(x, y) === missing
@@ -653,6 +646,21 @@ end
     @test (y == x) === missing
     @test isapprox(x, y) === missing
     @test isapprox(y, x) === missing
+
+    x = 1.0u"m"
+    y = missing
+    @test x * y === missing
+    @test x + y === missing
+end
+
+
+@testset "Test ambiguities" begin
+    R = DEFAULT_DIM_BASE_TYPE
+    x = convert(R, 10)
+    y = convert(R, 5)
+    @test promote(x, y) == (x, y)
+    @test_throws ErrorException promote(x, convert(FixedRational{Int32,100}, 10))
+    @test promote_type(typeof(u"km/s"), typeof(convert(Quantity{Float32}, u"km/s"))) <: Quantity{Float64}
 
     x = 1.0u"m"
     s = "test"
