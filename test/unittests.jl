@@ -637,8 +637,9 @@ end
 end
 
 @testset "Test missing" begin
-    @test round(Missing, x) === missing
     x = 1.0u"m"
+    @test round(Union{Int32,Missing}, FixedRational{Int32,100}(1)) isa Int32
+    @test round(Union{Int32,Missing}, FixedRational{Int32,100}(1)) === Int32(1)
     y = missing
     @test isless(x, y) === missing
     @test isless(y, x) === missing
