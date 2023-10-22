@@ -64,7 +64,7 @@ Rational(x::F) where {F<:FixedRational} = Rational{eltype(F)}(x)
         isinteger(x) || throw(InexactError(:convert, I, x))
         convert(I, div(x.num, denom(F)))
     end
-Bool(x::F) where {F<:FixedRational} =
+(::Type{Bool})(x::F) where {F<:FixedRational} =
     let
         iszero(x) || isone(x) || throw(InexactError(:convert, Bool, x))
         return x.num == denom(F)
