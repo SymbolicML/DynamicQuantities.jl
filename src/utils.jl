@@ -27,11 +27,10 @@ end
 end
 
 Base.float(q::AbstractUnionQuantity) = new_quantity(typeof(q), float(ustrip(q)), dimension(q))
-Base.convert(::Type{T}, q::AbstractUnionQuantity) where {T<:Number} =
-    let
-        @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
-        return convert(T, ustrip(q))
-    end
+function Base.convert(::Type{T}, q::AbstractUnionQuantity) where {T<:Number}
+    @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
+    return convert(T, ustrip(q))
+end
 function Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
     return Dimensions{promote_type(R1,R2)}
 end
