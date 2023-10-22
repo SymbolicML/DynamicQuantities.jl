@@ -97,12 +97,6 @@ for (type, _) in ABSTRACT_QUANTITY_TYPES
     end
 end
 
-function (::Type{Q})(q::Quantity{<:Any,<:SymbolicDimensions}) where {Q<:AbstractQuantity{<:Any,<:Dimensions}}
-    return convert(Q, q)
-end
-function (::Type{Q})(q::Quantity{<:Any,<:Dimensions}) where {Q<:AbstractQuantity{<:Any,<:SymbolicDimensions}}
-    return convert(Q, q)
-end
 
 """
     uexpand(q::Quantity{<:Any,<:SymbolicDimensions})
