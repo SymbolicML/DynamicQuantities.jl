@@ -443,6 +443,15 @@ end
 
     x = [0.5, 0.5u"km/s"]
     @test x isa Vector{Number}
+
+    # Explicit conversion so coverage can see it:
+    D = DEFAULT_DIM_TYPE
+    @test promote_type(Quantity{Float32,D}, Float64) == Number
+    @test promote_type(Quantity{Float32,D}, Quantity{Float64,D}) == Quantity{Float64,D}
+    @test promote_type(Quantity{Float32,D}, GenericQuantity{Float64,D}) == GenericQuantity{Float64,D}
+    @test promote_type(GenericQuantity{Float32,D}, GenericQuantity{Float64,D}) == GenericQuantity{Float64,D}
+    @test promote_type(SymbolicDimensions{Rational{Int}}, SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}) == SymbolicDimensions{Rational{Int}}
+    @test promote_type(Dimensions{Rational{Int}}, SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}) == Dimensions{Rational{Int}}
 end
 
 struct MyDimensions{R} <: AbstractDimensions{R}
