@@ -44,9 +44,6 @@ end
 function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:Quantity{T2,D2}}) where {T1,T2,D1,D2}
     return Quantity{promote_type(T1,T2),promote_type(D1,D2)}
 end
-function Base.promote_rule(::Type{T1}, ::Type{<:Quantity{T2,D2}}) where {T1<:Number,T2,D2}
-    return Quantity{promote_type(T1,T2),D2}
-end
 
 Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
