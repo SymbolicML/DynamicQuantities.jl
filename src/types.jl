@@ -151,9 +151,13 @@ for (type, base_type) in ABSTRACT_QUANTITY_TYPES
         (::Type{Q})(x::$base_type, ::Type{D}; kws...) where {D<:AbstractDimensions,Q<:$type} = constructor_of(Q)(x, D(; kws...))
         (::Type{Q})(x::T; kws...) where {T<:$base_type,T2,Q<:$type{T2}} = constructor_of(Q)(convert(T2, x), dim_type(Q)(; kws...))
         (::Type{Q})(x::$base_type; kws...) where {Q<:$type} = constructor_of(Q)(x, dim_type(Q)(; kws...))
-
-        (::Type{Q})(q::AbstractUnionQuantity) where {T,D<:AbstractDimensions,Q<:$type{T,D}} = constructor_of(Q)(convert(T, ustrip(q)), convert(D, dimension(q)))
-        (::Type{Q})(q::AbstractUnionQuantity) where {T,Q<:$type{T}} = constructor_of(Q)(convert(T, ustrip(q)), dimension(q))
+    end
+    for (type2, _) in ABSTRACT_QUANTITY_TYPES
+        @eval begin
+            (::Type{Q})(q::$type2) where {T,D<:AbstractDimensions,Q<:$type{T,D}} = constructor_of(Q)(convert(T, ustrip(q)), convert(D, dimension(q)))
+            (::Type{Q})(q::$type2) where {T,Q<:$type{T}} = constructor_of(Q)(convert(T, ustrip(q)), dimension(q))
+            (::Type{Q})(q::$type2) where {Q<:$type} = constructor_of(Q)(ustrip(q), dimension(q))
+        end
     end
 end
 
