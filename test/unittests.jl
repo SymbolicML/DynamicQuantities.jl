@@ -983,6 +983,12 @@ end
         @test x isa Vector{<:GenericQuantity}
         ax = QuantityArray(x)
         @test ax isa QuantityArray{Float64,1,<:Dimensions,<:GenericQuantity{Float64}}
+
+        # Test both symbolic/non-symbolic and Quantity/GenericQuantity:
+        x = [0.5us"km/s", GenericQuantity(1.0f0; length=1)]
+        @test x isa Vector{<:GenericQuantity{Float64,<:Dimensions}}
+        @test ustrip(x[1]) == 500.0
+        @test ustrip(x[2]) == 1.0
     end
 
     @testset "GenericQuantity broadcasting" begin
