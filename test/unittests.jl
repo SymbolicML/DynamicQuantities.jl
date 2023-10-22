@@ -637,7 +637,6 @@ end
 end
 
 @testset "Test missing" begin
-    @test round(Missing, x) === missing
     x = 1.0u"m"
     y = missing
     @test isless(x, y) === missing

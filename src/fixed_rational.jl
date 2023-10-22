@@ -98,6 +98,3 @@ Base.zero(::Type{F}) where {F<:FixedRational} = unsafe_fixed_rational(0, eltype(
 tryrationalize(::Type{F}, x::F) where {F<:FixedRational} = x
 tryrationalize(::Type{F}, x::Union{Rational,Integer}) where {F<:FixedRational} = convert(F, x)
 tryrationalize(::Type{F}, x) where {F<:FixedRational} = unsafe_fixed_rational(round(eltype(F), x * denom(F)), eltype(F), val_denom(F))
-
-# Fix method ambiguities
-Base.round(::Type{T}, ::F) where {T>:Missing, F<:FixedRational} = missing
