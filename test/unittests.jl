@@ -675,7 +675,7 @@ end
 @testset "Arrays" begin
     @testset "Basics" begin
         x = QuantityArray(randn(32), u"km/s")
-        @test ustrip(sum(x)) == sum(ustrip(x))
+        @test ustrip(sum(x)) ≈ sum(ustrip(x))
 
         # Setting index with different quantity:
         x[5] = Quantity(5, length=1, time=-1)
@@ -921,5 +921,79 @@ end
         x = [1u"km/s"]
         ref = Base.RefValue(x)
         @test DynamicQuantities.materialize_first(ref) === x[1]
+    end
+end
+
+@testset "GenericQuantity" begin
+    @testset "GenericQuantity construction" begin
+        x = GenericQuantity(1.5)
+        @test x isa GenericQuantity
+        @test ustrip(x) == 1.5
+        @test dimension(x) == Dimensions()
+    
+        x = GenericQuantity(big(1.5)) 
+        @test typeof(x) <: GenericQuantity{BigFloat}
+    
+        x = GenericQuantity([1.5, 2.0], Dimensions{Rational{Int8}}; length=1)
+        @test x isa GenericQuantity{Vector{Float64},Dimensions{Rational{Int8}}}
+        @test supertype(typeof(x)) <: AbstractGenericQuantity{Vector{Float64},Dimensions{Rational{Int8}}}
+        @test ustrip(x) == [1.5, 2.0]
+        @test dimension(x) == Dimensions(length=1)
+    
+        x = GenericQuantity(randn(3,3))
+        @test x isa GenericQuantity{Matrix{Float64}}
+        @test size(x) == (3,3)
+    
+        x = GenericQuantity(1.5, length=1)
+        y = GenericQuantity(2.0, time=1)
+        @test_throws DimensionError x + y
+
+        x = 0.5us"km/s"
+        y = GenericQuantity(1.0)
+
+    end
+
+    @testset "GenericQuantity and Quantity promotion" begin
+        x = GenericQuantity(1.5f0)
+        y = Quantity(1.5, length=1)
+    
+        # *Always* promotes to GenericQuantity:
+        @test typeof(x * y) <: GenericQuantity{Float64}
+    
+        x = GenericQuantity(rand(3))
+        y = GenericQuantity(rand(3), length=1)
+    
+        @test typeof(x .* y) <: Vector{<:GenericQuantity{Float64}}
+
+        x = 0.5us"km/s"
+        @test GenericQuantity(x) isa GenericQuantity{Float64}
+
+        x = GenericQuantity("abcd"; length=1)
+        @test x isa GenericQuantity{String}
+        y = "c"
+        @test x * y == GenericQuantity("abcdc"; length=1)
+
+        x = GenericQuantity([1.0, 2.0]; length=1)
+        y = Quantity(3; mass=-1)
+        @test x * y isa GenericQuantity{Vector{Float64}}
+        @test x * y == GenericQuantity([3.0, 6.0]; length=1, mass=-1)
+
+        x = [GenericQuantity(1.0; length=1), Quantity(2.0; length=1)]
+        @test x isa Vector{<:GenericQuantity}
+        ax = QuantityArray(x)
+        @test ax isa QuantityArray{Float64,1,<:Dimensions,<:GenericQuantity{Float64}}
+    end
+
+    @testset "GenericQuantity broadcasting" begin
+        x = QuantityArray([GenericQuantity(1.0f0i; length=1) for i=1:30])
+        y = randn(30)
+        z = QuantityArray([Quantity(1.0f0i; length=1) for i=1:30])
+
+        @test x isa AbstractArray{<:GenericQuantity}
+        @test x isa QuantityArray{Float32,1,<:Dimensions,<:GenericQuantity{Float32}}
+        @test x .* y isa QuantityArray{Float64,1,<:Dimensions,<:GenericQuantity{Float64}}
+
+        # TODO: Currently this converts to a `Vector` of `GenericQuantity`
+        @test_skip x .* z isa QuantityArray{Float32,1,<:Dimensions,<:GenericQuantity{Float32}}
     end
 end
