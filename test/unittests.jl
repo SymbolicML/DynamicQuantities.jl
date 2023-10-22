@@ -444,6 +444,9 @@ end
     x = [0.5, 0.5u"km/s"]
     @test x isa Vector{Number}
 
+    x = [0.5, GenericQuantity(0.5u"km/s")]
+    @test x isa Vector{Any}
+
     # Explicit conversion so coverage can see it:
     D = DEFAULT_DIM_TYPE
     @test promote_type(Quantity{Float32,D}, Float64) == Number
