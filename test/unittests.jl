@@ -433,7 +433,7 @@ end
     # Promotion rules
     @test promote_type(FixedRational{Int64,10},FixedRational{BigInt,10}) == FixedRational{BigInt,10}
     @test promote_type(Rational{Int8}, FixedRational{Int,12345}) == Rational{Int}
-    @test promote_type(Int8, FixedRational{Int,12345}) == promote_type(Int8, Rational{Int})
+    @test promote_type(Int8, FixedRational{Int,12345}) == FixedRational{Int,12345}
 end
 
 @testset "Quantity promotion" begin
