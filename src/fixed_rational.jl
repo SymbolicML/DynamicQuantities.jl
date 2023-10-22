@@ -55,8 +55,6 @@ end
 Base.iszero(x::FixedRational) = iszero(x.num)
 Base.isone(x::F) where {F<:FixedRational} = x.num == denom(F)
 Base.isinteger(x::F) where {F<:FixedRational} = iszero(x.num % denom(F))
-Base.convert(::Type{F}, x::Integer) where {F<:FixedRational} = unsafe_fixed_rational(x * denom(F), eltype(F), val_denom(F))
-Base.convert(::Type{F}, x::Rational) where {F<:FixedRational} = F(x)
 Base.convert(::Type{Rational{R}}, x::F) where {R,F<:FixedRational} = Rational{R}(x.num, denom(F))
 Base.convert(::Type{Rational}, x::F) where {F<:FixedRational} = Rational{eltype(F)}(x.num, denom(F))
 Base.convert(::Type{AF}, x::F) where {AF<:AbstractFloat,F<:FixedRational} = convert(AF, x.num) / convert(AF, denom(F))
