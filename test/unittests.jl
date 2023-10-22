@@ -1032,4 +1032,15 @@ end
         # TODO: Currently this converts to a `Vector` of `GenericQuantity`
         @test_skip x .* z isa QuantityArray{Float32,1,<:Dimensions,<:GenericQuantity{Float32}}
     end
+
+    @testset "Array conversion" begin
+        x = SArray{Tuple{3}}(randn(3))
+        y = SArray{Tuple{3}}(randn(Float32, 3))
+        qx = QuantityArray(x, Dimensions(Rational{Int}, length=1))
+        qy = QuantityArray(y; length=1)
+
+        @test typeof(convert(typeof(qx), qy)) == typeof(qx)
+        @test convert(typeof(qx), qy)[1] isa Quantity{Float64}
+        @test convert(typeof(qx), qy)[1] == convert(Quantity{Float64}, qy[1])
+    end
 end

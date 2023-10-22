@@ -70,15 +70,15 @@ function Base.convert(::Type{QA}, A::QA) where {QA<:QuantityArray}
     return A
 end
 function Base.convert(::Type{QA1}, A::QA2) where {QA1<:QuantityArray,QA2<:QuantityArray}
-    Q = quantity_type(QA1)
     V = array_type(QA1)
-    N = ndims(QA1)
+    D = dim_type(QA1)
+    Q = quantity_type(QA1)
 
-    raw_array = Base.Fix1(convert, Q).(A)
-    output = QuantityArray(convert(constructorof(V){Q,N}, raw_array))
-    # TODO: This will mess with static arrays
-
-    return output::QA1
+    return QuantityArray(
+        convert(V, ustrip(A)),
+        convert(D, dimension(A)),
+        Q,
+    )::QA1
 end
 
 @inline ustrip(A::QuantityArray) = A.value
