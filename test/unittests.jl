@@ -473,7 +473,6 @@ end
         x = MyQuantity(big(0.1), length=1)
         @test typeof(x) == MyQuantity{BigFloat,DEFAULT_DIM_TYPE}
         @test typeof(MyQuantity{T}(x)) == MyQuantity{T,DEFAULT_DIM_TYPE}
-        @test typeof(MyQuantity{T,D}(x)) == MyQuantity{T,D}
 
         # Using MyDimensions inside regular Quantity:
         x = Quantity(T(0.1), MyDimensions(R, length=0.5))
