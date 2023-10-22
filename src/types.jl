@@ -99,7 +99,7 @@ end
 const DEFAULT_DIM_TYPE = Dimensions{DEFAULT_DIM_BASE_TYPE}
 
 """
-    Quantity{T<:Number,D<:AbstractDimensions} <: AbstractQuantity{T,D}
+    Quantity{T<:Number,D<:AbstractDimensions} <: AbstractQuantity{T,D} <: Number
 
 Physical quantity with value `value` of type `T` and dimensions `dimensions` of type `D`.
 For example, the velocity of an object with mass 1 kg and velocity
@@ -136,10 +136,10 @@ struct Quantity{T<:Number,D<:AbstractDimensions} <: AbstractQuantity{T,D}
 end
 
 """
-    GenericQuantity{T<:Any,D<:AbstractDimensions} <: AbstractGenericQuantity{T,D}
+    GenericQuantity{T<:Any,D<:AbstractDimensions} <: AbstractGenericQuantity{T,D} <: Any
 
-This has the same behavior as `Quantity` but is subtyped to `AbstractGenericQuantity`
-rather than `AbstractQuantity`.
+This has the same behavior as `Quantity` but is subtyped to `AbstractGenericQuantity <: Any`
+rather than `AbstractQuantity <: Number`.
 """
 struct GenericQuantity{T,D<:AbstractDimensions} <: AbstractGenericQuantity{T,D}
     value::T
