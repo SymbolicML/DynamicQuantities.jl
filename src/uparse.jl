@@ -3,7 +3,7 @@ module UnitsParse
 import ..Quantity
 import ..DEFAULT_DIM_TYPE
 import ..DEFAULT_VALUE_TYPE
-import ..Units: UNIT_SYMBOLS
+import ..Units: UNIT_SYMBOLS, DEFAULT_UNIT_TYPE
 import ..Constants
 
 function _generate_units_import()
@@ -30,11 +30,11 @@ the quantity corresponding to the speed of light multiplied by Hertz,
 squared.
 """
 function uparse(s::AbstractString)
-    return as_quantity(eval(Meta.parse(s)))::Quantity{DEFAULT_VALUE_TYPE,DEFAULT_DIM_TYPE}
+    return as_quantity(eval(Meta.parse(s)))::DEFAULT_UNIT_TYPE
 end
 
-as_quantity(q::Quantity) = q
-as_quantity(x::Number) = Quantity(convert(DEFAULT_VALUE_TYPE, x), DEFAULT_DIM_TYPE)
+as_quantity(q::Quantity) = convert(DEFAULT_UNIT_TYPE, q)
+as_quantity(x::Number) = DEFAULT_UNIT_TYPE(x)
 as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 
 """

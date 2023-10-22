@@ -1,12 +1,19 @@
 using DynamicQuantities
 using DynamicQuantities: FixedRational
-using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
+using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE, DEFAULT_UNIT_TYPE
+using DynamicQuantities: AutoFloat
 using DynamicQuantities: array_type, value_type, dim_type, quantity_type
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
 using LinearAlgebra: norm
 using Test
+
+function show_string(i)
+    io = IOBuffer()
+    show(io, i)
+    return String(take!(io))
+end
 
 @testset "Basic utilities" begin
 
@@ -379,15 +386,50 @@ end
     @test ustrip(z) ≈ 60 * 60 * 24 * 365.25
 
     # Test type stability of extreme range of units
-    @test typeof(u"1") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"1f0") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"s"^2) == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"Ω") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"Gyr") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"fm") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"fm"^2) == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"1") == DEFAULT_UNIT_TYPE
+    @test typeof(u"1f0") == DEFAULT_UNIT_TYPE
+    @test typeof(u"s"^2) == DEFAULT_UNIT_TYPE
+    @test typeof(u"Ω") == DEFAULT_UNIT_TYPE
+    @test typeof(u"Gyr") == DEFAULT_UNIT_TYPE
+    @test typeof(u"fm") == DEFAULT_UNIT_TYPE
+    @test typeof(u"fm"^2) == DEFAULT_UNIT_TYPE
+
+    # Test type demotion
+    @test typeof(1u"m") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(1f0u"m") == Quantity{Float32,DEFAULT_DIM_TYPE}
+    @test typeof(1.0u"m") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(Float16(1.0)u"m") == Quantity{Float16,DEFAULT_DIM_TYPE}
+
+    @test typeof(1u"m^2/s") == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(1f0u"m^2/s") == Quantity{Float32,DEFAULT_DIM_TYPE}
+    @test typeof(1.0u"m^2/s") == Quantity{Float64,DEFAULT_DIM_TYPE}
 
     @test_throws LoadError eval(:(u":x"))
+end
+
+@testset "AutoFloat" begin
+    @test promote_type(AutoFloat, Float16) == Float16
+    @test promote_type(AutoFloat, Float32) == Float32
+    @test promote_type(AutoFloat, Float64) == Float64
+    @test promote_type(AutoFloat, BigFloat) == BigFloat
+    @test promote_type(AutoFloat, Int64) == Float64
+    @test promote_type(AutoFloat, ComplexF16) == promote_type(Float64, ComplexF16)
+
+    x = AutoFloat(1.5)
+    @test show_string(x) == "1.5"
+
+    @test -x == AutoFloat(-1.5)
+    @test abs(-x) == x
+    @test sqrt(x) == AutoFloat(sqrt(1.5))
+    @test cbrt(x) == AutoFloat(cbrt(1.5))
+    @test inv(x) == AutoFloat(inv(1.5))
+
+    y = AutoFloat(2.1)
+    @test x + y == AutoFloat(1.5 + 2.1)
+    @test x - y == AutoFloat(1.5 - 2.1)
+
+    # Should promote to array:
+    @test typeof([u"km/s", 1.5u"km/s"]) <: Vector{<:Quantity{Float64}}
 end
 
 @testset "Constants" begin
@@ -421,11 +463,6 @@ end
     @test convert(Rational, FixedRational{UInt8,6}(2)) === Rational{UInt8}(2)
 
     # Showing rationals
-    function show_string(i)
-        io = IOBuffer()
-        show(io, i)
-        return String(take!(io))
-    end
     @test show_string(FixedRational{Int,10}(2)) == "2"
     @test show_string(FixedRational{Int,10}(11//10)) == "11//10"
 
@@ -642,7 +679,7 @@ end
     @test promote(x, y) == (x, y)
     @test_throws ErrorException promote(x, convert(FixedRational{Int32,100}, 10))
     @test round(Missing, x) === missing
-    @test promote_type(typeof(u"km/s"), typeof(convert(Quantity{Float32}, u"km/s"))) <: Quantity{Float64}
+    @test promote_type(typeof(1.0u"km/s"), typeof(convert(Quantity{Float32}, u"km/s"))) <: Quantity{Float64}
 
     x = 1.0u"m"
     y = missing

@@ -1,5 +1,6 @@
-import .Units: UNIT_SYMBOLS, UNIT_MAPPING, UNIT_VALUES
+import .Units: UNIT_SYMBOLS, UNIT_MAPPING, UNIT_VALUES, DEFAULT_UNIT_BASE_TYPE
 import .Constants: CONSTANT_SYMBOLS, CONSTANT_MAPPING, CONSTANT_VALUES
+import ..DEFAULT_DIM_BASE_TYPE
 
 const SYMBOL_CONFLICTS = intersect(UNIT_SYMBOLS, CONSTANT_SYMBOLS)
 
@@ -92,6 +93,8 @@ function Base.convert(::Type{Quantity{T,D}}, q::Quantity{<:Any,<:SymbolicDimensi
     end
     return result
 end
+
+const DEFAULT_SYMBOLIC_UNIT_TYPE = Quantity{DEFAULT_UNIT_BASE_TYPE,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}
 
 """
     uexpand(q::Quantity{<:Any,<:SymbolicDimensions})
@@ -269,20 +272,22 @@ module SymbolicUnitsParse
     import ..CONSTANT_SYMBOLS
     import ..SYMBOL_CONFLICTS
     import ..SymbolicDimensions
+    import ..DEFAULT_SYMBOLIC_UNIT_TYPE
+    import ..DEFAULT_UNIT_BASE_TYPE
+    import ..DEFAULT_DIM_BASE_TYPE
 
     import ...Quantity
-    import ...DEFAULT_VALUE_TYPE
-    import ...DEFAULT_DIM_BASE_TYPE
 
     # Lazily create unit symbols (since there are so many)
     module Constants
         import ..CONSTANT_SYMBOLS
         import ..SYMBOL_CONFLICTS
         import ..SymbolicDimensions
+        import ..DEFAULT_SYMBOLIC_UNIT_TYPE
+        import ..DEFAULT_UNIT_BASE_TYPE
+        import ..DEFAULT_DIM_BASE_TYPE
 
         import ..Quantity
-        import ..DEFAULT_VALUE_TYPE
-        import ..DEFAULT_DIM_BASE_TYPE
 
         import ...Constants as EagerConstants
 
@@ -292,11 +297,11 @@ module SymbolicUnitsParse
             CONSTANT_SYMBOLS_EXIST[] || lock(CONSTANT_SYMBOLS_LOCK) do
                 CONSTANT_SYMBOLS_EXIST[] && return nothing
                 for unit in setdiff(CONSTANT_SYMBOLS, SYMBOL_CONFLICTS)
-                    @eval const $unit = Quantity(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
+                    @eval const $unit = Quantity(DEFAULT_UNIT_BASE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
                 end
                 # Evaluate conflicting symbols to non-symbolic form:
                 for unit in SYMBOL_CONFLICTS
-                    @eval const $unit = convert(Quantity{DEFAULT_VALUE_TYPE,SymbolicDimensions}, EagerConstants.$unit)
+                    @eval const $unit = convert(DEFAULT_SYMBOLIC_UNIT_TYPE, EagerConstants.$unit)
                 end
                 CONSTANT_SYMBOLS_EXIST[] = true
             end
@@ -311,7 +316,7 @@ module SymbolicUnitsParse
         UNIT_SYMBOLS_EXIST[] || lock(UNIT_SYMBOLS_LOCK) do
             UNIT_SYMBOLS_EXIST[] && return nothing
             for unit in UNIT_SYMBOLS
-                @eval const $unit = Quantity(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
+                @eval const $unit = Quantity(DEFAULT_UNIT_BASE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
             end
             UNIT_SYMBOLS_EXIST[] = true
         end
@@ -338,11 +343,11 @@ module SymbolicUnitsParse
         _generate_unit_symbols()
         Constants._generate_unit_symbols()
         raw_result = eval(Meta.parse(raw_string))
-        return copy(as_quantity(raw_result))::Quantity{DEFAULT_VALUE_TYPE,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}
+        return copy(as_quantity(raw_result))::DEFAULT_SYMBOLIC_UNIT_TYPE
     end
 
-    as_quantity(q::Quantity) = q
-    as_quantity(x::Number) = Quantity(convert(DEFAULT_VALUE_TYPE, x), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE})
+    as_quantity(q::Quantity) = convert(DEFAULT_SYMBOLIC_UNIT_TYPE, q)
+    as_quantity(x::Number) = DEFAULT_SYMBOLIC_UNIT_TYPE(x)
     as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 end
 

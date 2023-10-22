@@ -8,6 +8,8 @@ export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 export uparse, @u_str, sym_uparse, @us_str, uexpand, uconvert
 
 include("fixed_rational.jl")
+include("lazy_float.jl")
+
 include("types.jl")
 include("utils.jl")
 include("math.jl")
@@ -22,6 +24,7 @@ export expand_units
 
 import PackageExtensionCompat: @require_extensions
 import .Units
+import .Units: DEFAULT_UNIT_TYPE
 import .Constants
 import .UnitsParse: uparse, @u_str
 

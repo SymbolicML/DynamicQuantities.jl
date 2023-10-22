@@ -2,13 +2,15 @@ module Units
 
 import ..DEFAULT_DIM_TYPE
 import ..DEFAULT_VALUE_TYPE
-import ..DEFAULT_QUANTITY_TYPE
 import ..Quantity
+import ..Quantity
+import ..AutoFloat
 
-@assert DEFAULT_VALUE_TYPE == Float64 "`units.jl` must be updated to support a different default value type."
+const DEFAULT_UNIT_BASE_TYPE = AutoFloat
+const DEFAULT_UNIT_TYPE = Quantity{DEFAULT_UNIT_BASE_TYPE,DEFAULT_DIM_TYPE}
 
 const _UNIT_SYMBOLS = Symbol[]
-const _UNIT_VALUES = DEFAULT_QUANTITY_TYPE[]
+const _UNIT_VALUES = DEFAULT_UNIT_TYPE[]
 
 macro register_unit(name, value)
     return esc(_register_unit(name, value))
@@ -22,7 +24,7 @@ end
 function _register_unit(name::Symbol, value)
     s = string(name)
     return quote
-        const $name = $value
+        const $name = convert(DEFAULT_UNIT_TYPE, $value)
         push!(_UNIT_SYMBOLS, Symbol($s))
         push!(_UNIT_VALUES, $name)
     end
@@ -37,19 +39,19 @@ function _add_prefixes(base_unit::Symbol, prefixes, register_function)
     for (prefix, value) in zip(keys(all_prefixes), values(all_prefixes))
         prefix in prefixes || continue
         new_unit = Symbol(prefix, base_unit)
-        push!(expr.args, register_function(new_unit, :($value * $base_unit)))
+        push!(expr.args, register_function(new_unit, :(convert(DEFAULT_UNIT_TYPE, $value * $base_unit))))
     end
     return expr
 end
 
 # SI base units
-@register_unit m DEFAULT_QUANTITY_TYPE(1.0, length=1)
-@register_unit g DEFAULT_QUANTITY_TYPE(1e-3, mass=1)
-@register_unit s DEFAULT_QUANTITY_TYPE(1.0, time=1)
-@register_unit A DEFAULT_QUANTITY_TYPE(1.0, current=1)
-@register_unit K DEFAULT_QUANTITY_TYPE(1.0, temperature=1)
-@register_unit cd DEFAULT_QUANTITY_TYPE(1.0, luminosity=1)
-@register_unit mol DEFAULT_QUANTITY_TYPE(1.0, amount=1)
+@register_unit m Quantity(1.0, length=1)
+@register_unit g Quantity(1e-3, mass=1)
+@register_unit s Quantity(1.0, time=1)
+@register_unit A Quantity(1.0, current=1)
+@register_unit K Quantity(1.0, temperature=1)
+@register_unit cd Quantity(1.0, luminosity=1)
+@register_unit mol Quantity(1.0, amount=1)
 
 @add_prefixes m (f, p, n, μ, u, c, d, m, k, M, G)
 @add_prefixes g (p, n, μ, u, m, k)
