@@ -407,6 +407,11 @@ end
 @testset "Additional tests of FixedRational" begin
     @test convert(Int64, FixedRational{Int64,1000}(2 // 1)) == 2
     @test convert(Int32, FixedRational{Int64,1000}(3 // 1)) == 3
+    @test convert(Bool, FixedRational{Int8,6}(1//1)) === true
+    @test convert(Bool, FixedRational{Int8,6}(0//1)) === false
+
+    @test_throws InexactError convert(Int32, FixedRational{Int8,6}(2//3))
+    @test_throws InexactError convert(Bool, FixedRational{Int8,6}(2//1))
 
     VERSION >= v"1.8" && @test_throws "Refusing to" promote(FixedRational{Int,10}(2), FixedRational{Int,4}(2))
 
