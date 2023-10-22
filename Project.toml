@@ -1,7 +1,7 @@
 name = "DynamicQuantities"
 uuid = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
 authors = ["MilesCranmer <miles.cranmer@gmail.com> and contributors"]
-version = "0.7.4"
+version = "0.7.5"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
