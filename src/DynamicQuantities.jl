@@ -5,7 +5,7 @@ export AbstractQuantity, AbstractDimensions
 export Quantity, Dimensions, SymbolicDimensions, QuantityArray, DimensionError
 export ustrip, dimension
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
-export uparse, @u_str, sym_uparse, @us_str, expand_units
+export uparse, @u_str, sym_uparse, @us_str, uexpand, uconvert
 
 include("fixed_rational.jl")
 include("types.jl")
@@ -16,6 +16,9 @@ include("units.jl")
 include("constants.jl")
 include("uparse.jl")
 include("symbolic_dimensions.jl")
+
+include("deprecated.jl")
+export expand_units
 
 import PackageExtensionCompat: @require_extensions
 import .Units

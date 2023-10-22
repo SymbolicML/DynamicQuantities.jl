@@ -39,6 +39,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Examples" => "examples.md",
         "Utilities" => "api.md",
         "Units" => "units.md",
         "Constants" => "constants.md",

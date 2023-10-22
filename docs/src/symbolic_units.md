@@ -14,8 +14,14 @@ units are `sym_uparse` and `us_str`:
 sym_uparse
 ```
 
-To convert a quantity to its regular base SI units, use `expand_units`:
+To convert a quantity to its regular base SI units, use `uexpand`:
 
 ```@docs
-expand_units
+uexpand
+```
+
+To convert a quantity in regular base SI units to corresponding symbolic units, use `uconvert`:
+
+```@docs
+uconvert
 ```
