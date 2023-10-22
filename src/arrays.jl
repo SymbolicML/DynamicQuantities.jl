@@ -31,7 +31,7 @@ struct QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractUnionQuantity{T,D},V<:
     dimensions::D
 
     function QuantityArray(v::_V, d::_D, ::Type{_Q}) where {_T,_N,_D<:AbstractDimensions,_Q<:AbstractUnionQuantity,_V<:AbstractArray{_T,_N}}
-        Q_out = constructor_of(_Q){_T,_D}
+        Q_out = constructorof(_Q){_T,_D}
         return new{_T,_N,_D,Q_out,_V}(v, d)
     end
 end
@@ -74,7 +74,7 @@ function Base.convert(::Type{QA1}, A::QA2) where {QA1<:QuantityArray,QA2<:Quanti
     N = ndims(QA1)
 
     raw_array = Base.Fix1(convert, Q).(A)
-    output = QuantityArray(convert(constructor_of(V){Q,N}, raw_array))
+    output = QuantityArray(convert(constructorof(V){Q,N}, raw_array))
     # TODO: This will mess with static arrays
 
     return output::QA1

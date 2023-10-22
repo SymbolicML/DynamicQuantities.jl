@@ -534,7 +534,7 @@ end
         end
 
         # Internal constructor
-        @test DynamicQuantities.constructor_of(typeof(sym)) === SymbolicDimensions
+        @test DynamicQuantities.constructorof(typeof(sym)) === SymbolicDimensions
 
         # Equality comparisons
         @test sym == sym

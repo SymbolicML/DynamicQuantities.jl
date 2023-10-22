@@ -1,3 +1,4 @@
+import ConstructionBase: constructorof
 import Tricks: static_fieldnames, static_fieldtypes
 
 const DEFAULT_DIM_BASE_TYPE = FixedRational{DEFAULT_NUMERATOR_TYPE,DEFAULT_DENOM}
@@ -17,7 +18,7 @@ the need to define many other functions.
 The key function that one could wish to overload is
 `DynamicQuantities.dimension_name(::AbstractDimensions, k::Symbol)` for mapping from a field name
 to a base unit (e.g., `length` by default maps to `m`). You may also need to overload
-`DynamicQuantities.constructor_of(::Type{T})` in case of non-standard construction.
+`ConstructionBase.constructorof(::Type{T})` in case of non-standard construction.
 """
 abstract type AbstractDimensions{R} end
 
@@ -87,8 +88,8 @@ struct Dimensions{R<:Real} <: AbstractDimensions{R}
     amount::R
 end
 
-(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = constructor_of(D){R}((tryrationalize(R, get(kws, k, zero(R))) for k in static_fieldnames(D))...)
-(::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = constructor_of(D)(R; kws...)
+(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = constructorof(D){R}((tryrationalize(R, get(kws, k, zero(R))) for k in static_fieldnames(D))...)
+(::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = constructorof(D)(R; kws...)
 (::Type{D})(; kws...) where {D<:AbstractDimensions} = D(DEFAULT_DIM_BASE_TYPE; kws...)
 function (::Type{D})(d::D2) where {R,D<:AbstractDimensions{R},D2<:AbstractDimensions}
     issetequal(static_fieldnames(D), static_fieldnames(D2)) ||
@@ -151,28 +152,31 @@ end
 
 for (type, base_type) in ABSTRACT_QUANTITY_TYPES
     @eval begin
-        (::Type{Q})(x::T, ::Type{D}; kws...) where {D<:AbstractDimensions,T<:$base_type,T2,Q<:$type{T2}} = constructor_of(Q)(convert(T2, x), D(; kws...))
-        (::Type{Q})(x::$base_type, ::Type{D}; kws...) where {D<:AbstractDimensions,Q<:$type} = constructor_of(Q)(x, D(; kws...))
-        (::Type{Q})(x::T; kws...) where {T<:$base_type,T2,Q<:$type{T2}} = constructor_of(Q)(convert(T2, x), dim_type(Q)(; kws...))
-        (::Type{Q})(x::$base_type; kws...) where {Q<:$type} = constructor_of(Q)(x, dim_type(Q)(; kws...))
+        (::Type{Q})(x::T, ::Type{D}; kws...) where {D<:AbstractDimensions,T<:$base_type,T2,Q<:$type{T2}} = constructorof(Q)(convert(T2, x), D(; kws...))
+        (::Type{Q})(x::$base_type, ::Type{D}; kws...) where {D<:AbstractDimensions,Q<:$type} = constructorof(Q)(x, D(; kws...))
+        (::Type{Q})(x::T; kws...) where {T<:$base_type,T2,Q<:$type{T2}} = constructorof(Q)(convert(T2, x), dim_type(Q)(; kws...))
+        (::Type{Q})(x::$base_type; kws...) where {Q<:$type} = constructorof(Q)(x, dim_type(Q)(; kws...))
     end
     for (type2, _) in ABSTRACT_QUANTITY_TYPES
         @eval begin
-            (::Type{Q})(q::$type2) where {T,D<:AbstractDimensions,Q<:$type{T,D}} = constructor_of(Q)(convert(T, ustrip(q)), convert(D, dimension(q)))
-            (::Type{Q})(q::$type2) where {T,Q<:$type{T}} = constructor_of(Q)(convert(T, ustrip(q)), dimension(q))
-            (::Type{Q})(q::$type2) where {Q<:$type} = constructor_of(Q)(ustrip(q), dimension(q))
+            (::Type{Q})(q::$type2) where {T,D<:AbstractDimensions,Q<:$type{T,D}} = constructorof(Q)(convert(T, ustrip(q)), convert(D, dimension(q)))
+            (::Type{Q})(q::$type2) where {T,Q<:$type{T}} = constructorof(Q)(convert(T, ustrip(q)), dimension(q))
+            (::Type{Q})(q::$type2) where {Q<:$type} = constructorof(Q)(ustrip(q), dimension(q))
         end
     end
 end
 
 const DEFAULT_QUANTITY_TYPE = Quantity{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE}
 
-new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = constructor_of(D)(dims...)
-new_quantity(::Type{Q}, l, r) where {Q<:AbstractUnionQuantity} = constructor_of(Q)(l, r)
+new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = constructorof(D)(dims...)
+new_quantity(::Type{Q}, l, r) where {Q<:AbstractUnionQuantity} = constructorof(Q)(l, r)
 
 dim_type(::Type{Q}) where {T,D<:AbstractDimensions,Q<:AbstractUnionQuantity{T,D}} = D
 dim_type(::Type{<:AbstractUnionQuantity}) = DEFAULT_DIM_TYPE
-constructor_of(::Type{T}) where {T} = Base.typename(T).wrapper
+
+constructorof(::Type{<:Dimensions}) = Dimensions
+constructorof(::Type{<:Quantity}) = Quantity
+constructorof(::Type{<:GenericQuantity}) = GenericQuantity
 
 struct DimensionError{Q1,Q2} <: Exception
     q1::Q1
