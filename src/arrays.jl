@@ -1,4 +1,5 @@
 import Compat: allequal
+import ConstructionBase: constructorof
 
 """
     QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractUnionQuantity,V<:AbstractArray}
