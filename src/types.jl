@@ -92,7 +92,7 @@ end
 (::Type{D})(; kws...) where {D<:AbstractDimensions} = D(DEFAULT_DIM_BASE_TYPE; kws...)
 function (::Type{D})(d::D2) where {R,D<:AbstractDimensions{R},D2<:AbstractDimensions}
     issetequal(static_fieldnames(D), static_fieldnames(D2)) ||
-        error("Cannot create a dimensions of `$(D)` from `$(D2)`. Please write a custom method for conversion.")
+        error("Cannot create a dimensions of `$(D)` from `$(D2)`. Please write a custom method for construction.")
     D((getproperty(d, k) for k in static_fieldnames(D))...)
 end
 

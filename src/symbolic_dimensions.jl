@@ -68,29 +68,40 @@ function SymbolicDimensions{R}(; kws...) where {R}
 end
 (::Type{<:SymbolicDimensions})(::Type{R}; kws...) where {R} = SymbolicDimensions{R}(; kws...)
 
-function Base.convert(::Type{Quantity{T,SymbolicDimensions}}, q::Quantity{<:Any,<:Dimensions}) where {T}
-    return convert(Quantity{T,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}, q)
-end
-function Base.convert(::Type{Quantity{T,SymbolicDimensions{R}}}, q::Quantity{<:Any,<:Dimensions}) where {T,R}
-    syms = (:m, :kg, :s, :A, :K, :cd, :mol)
-    vals = (ulength(q), umass(q), utime(q), ucurrent(q), utemperature(q), uluminosity(q), uamount(q))
-    I = INDEX_TYPE[ALL_MAPPING[s] for (s, v) in zip(syms, vals) if !iszero(v)]
-    V = R[tryrationalize(R, v) for v in vals if !iszero(v)]
-    p = sortperm(I)
-    permute!(I, p)
-    permute!(V, p)
-    dims = SymbolicDimensions{R}(I, V)
-    return Quantity(convert(T, ustrip(q)), dims)
-end
-function Base.convert(::Type{Quantity{T,D}}, q::Quantity{<:Any,<:SymbolicDimensions}) where {T,D<:Dimensions}
-    result = Quantity(T(ustrip(q)), D())
-    d = dimension(q)
-    for (idx, value) in zip(getfield(d, :nzdims), getfield(d, :nzvals))
-        if !iszero(value)
-            result = result * convert(Quantity{T,D}, ALL_VALUES[idx]) ^ value
+for (type, _) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        function Base.convert(::Type{Q}, q::AbstractUnionQuantity{<:Any,<:Dimensions}) where {T,Q<:$type{T,SymbolicDimensions}}
+            return convert(constructor_of(Q){T,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}, q)
+        end
+        function Base.convert(::Type{Q}, q::AbstractUnionQuantity{<:Any,<:Dimensions}) where {T,R,Q<:$type{T,SymbolicDimensions{R}}}
+            syms = (:m, :kg, :s, :A, :K, :cd, :mol)
+            vals = (ulength(q), umass(q), utime(q), ucurrent(q), utemperature(q), uluminosity(q), uamount(q))
+            I = INDEX_TYPE[ALL_MAPPING[s] for (s, v) in zip(syms, vals) if !iszero(v)]
+            V = R[tryrationalize(R, v) for v in vals if !iszero(v)]
+            p = sortperm(I)
+            permute!(I, p)
+            permute!(V, p)
+            dims = SymbolicDimensions{R}(I, V)
+            return constructor_of(Q)(convert(T, ustrip(q)), dims)
+        end
+        function Base.convert(::Type{Q}, q::AbstractUnionQuantity{<:Any,<:SymbolicDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
+            result = constructor_of(Q)(T(ustrip(q)), D())
+            d = dimension(q)
+            for (idx, value) in zip(getfield(d, :nzdims), getfield(d, :nzvals))
+                if !iszero(value)
+                    result = result * convert(constructor_of(Q){T,D}, ALL_VALUES[idx]) ^ value
+                end
+            end
+            return result
         end
     end
-    return result
+end
+
+function (::Type{Q})(q::Quantity{<:Any,<:SymbolicDimensions}) where {Q<:AbstractQuantity{<:Any,<:Dimensions}}
+    return convert(Q, q)
+end
+function (::Type{Q})(q::Quantity{<:Any,<:Dimensions}) where {Q<:AbstractQuantity{<:Any,<:SymbolicDimensions}}
+    return convert(Q, q)
 end
 
 """
