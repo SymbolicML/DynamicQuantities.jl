@@ -55,14 +55,21 @@ end
 Base.iszero(x::FixedRational) = iszero(x.num)
 Base.isone(x::F) where {F<:FixedRational} = x.num == denom(F)
 Base.isinteger(x::F) where {F<:FixedRational} = iszero(x.num % denom(F))
-Base.convert(::Type{Rational{R}}, x::F) where {R,F<:FixedRational} = Rational{R}(x.num, denom(F))
-Base.convert(::Type{Rational}, x::F) where {F<:FixedRational} = Rational{eltype(F)}(x.num, denom(F))
-Base.convert(::Type{AF}, x::F) where {AF<:AbstractFloat,F<:FixedRational} = convert(AF, x.num) / convert(AF, denom(F))
-Base.convert(::Type{I}, x::F) where {I<:Integer,F<:FixedRational} =
+
+Rational{R}(x::F) where {R,F<:FixedRational} = Rational{R}(x.num, denom(F))
+Rational(x::F) where {F<:FixedRational} = Rational{eltype(F)}(x)
+(::Type{AF})(x::F) where {AF<:AbstractFloat,F<:FixedRational} = convert(AF, x.num) / convert(AF, denom(F))
+(::Type{I})(x::F) where {I<:Integer,F<:FixedRational} =
     let
         isinteger(x) || throw(InexactError(:convert, I, x))
         convert(I, div(x.num, denom(F)))
     end
+Bool(x::F) where {F<:FixedRational} =
+    let
+        iszero(x) || isone(x) || throw(InexactError(:convert, Bool, x))
+        return x.num == denom(F)
+    end
+
 Base.round(::Type{T}, x::F, r::RoundingMode=RoundNearest) where {T,F<:FixedRational} = div(convert(T, x.num), convert(T, denom(F)), r)
 Base.decompose(x::F) where {T,F<:FixedRational{T}} = (x.num, zero(T), denom(F))
 
