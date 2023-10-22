@@ -18,7 +18,7 @@ Base.:/(l, r::AbstractDimensions) = error("Please use an `AbstractQuantity` for 
 
 Base.:+(l::AbstractQuantity, r::AbstractQuantity) =
     let
-        dimension(l) == dimension(r) || throw(DimensionError(l, r))
+        l, r = dimension_promote(l, r)
         new_quantity(typeof(l), ustrip(l) + ustrip(r), dimension(l))
     end
 Base.:-(l::AbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
@@ -26,12 +26,12 @@ Base.:-(l::AbstractQuantity, r::AbstractQuantity) = l + (-r)
 
 Base.:+(l::AbstractQuantity, r) =
     let
-        iszero(dimension(l)) || throw(DimensionError(l, r))
+        l, r = dimension_promote(l, r)
         new_quantity(typeof(l), ustrip(l) + r, dimension(l))
     end
 Base.:+(l, r::AbstractQuantity) =
     let
-        iszero(dimension(r)) || throw(DimensionError(l, r))
+        l, r = dimension_promote(l, r)
         new_quantity(typeof(r), l + ustrip(r), dimension(r))
     end
 Base.:-(l::AbstractQuantity, r) = l + (-r)

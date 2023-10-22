@@ -635,6 +635,15 @@ end
     @test xs_qa2[2] ≈ 2000us"g"
 end
 
+@testset "Soft conversion" begin
+    x = 1.5us"km"
+    y = 1.5us"m"
+    @test x + y == 1.5015us"km"
+    @test y + x == 1501.5us"m"
+
+    # TODO: Should allow `==` for non-equal dimensions
+end
+
 @testset "Test ambiguities" begin
     R = DEFAULT_DIM_BASE_TYPE
     x = convert(R, 10)
