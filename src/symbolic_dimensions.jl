@@ -366,3 +366,10 @@ namespace collisions, a few physical constants are automatically converted.
 macro us_str(s)
     return esc(SymbolicUnitsParse.sym_uparse(s))
 end
+
+function Base.promote_rule(::Type{SymbolicDimensions{R1}}, ::Type{SymbolicDimensions{R2}}) where {R1,R2}
+    return SymbolicDimensions{promote_type(R1,R2)}
+end
+function Base.promote_rule(::Type{SymbolicDimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
+    return Dimensions{promote_type(R1,R2)}
+end
