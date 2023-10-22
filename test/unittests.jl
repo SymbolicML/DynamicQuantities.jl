@@ -11,9 +11,9 @@ using Test
 
 @testset "Basic utilities" begin
 
-    for T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_BASE_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
+    for Q in [Quantity, GenericQuantity], T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_BASE_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
         D = Dimensions{R}
-        x = Quantity(T(0.2), D, length=1, mass=2.5)
+        x = Q(T(0.2), D, length=1, mass=2.5)
 
         @test typeof(x).parameters[1] == T
         @test typeof(x).parameters[2] == D
@@ -22,7 +22,7 @@ using Test
         @test ustrip(x) ≈ T(0.2)
         @test dimension(x) == Dimensions(R, length=1, mass=5 // 2)
         if R == DEFAULT_DIM_TYPE
-            @test x == Quantity(T(0.2), length=1, mass=2.5)
+            @test x == Q(T(0.2), length=1, mass=2.5)
             @test dimension(x) == Dimensions(length=1, mass=5 // 2)
         end
 
@@ -77,11 +77,11 @@ using Test
         @test iszero(x.dimensions) == false
         @test iszero(y.dimensions) == true
 
-        y = Quantity(T(2 // 10), D, length=1, mass=5 // 2)
+        y = Q(T(2 // 10), D, length=1, mass=5 // 2)
 
         @test y ≈ x
 
-        y = Quantity(T(2 // 10), D, length=1, mass=6 // 2)
+        y = Q(T(2 // 10), D, length=1, mass=6 // 2)
 
         @test !(y ≈ x)
 
@@ -105,26 +105,26 @@ using Test
         @test uamount(y) == R(0)
         @test ustrip(y) ≈ T(0.2^2.1)
 
-        dimensionless = Quantity(one(T), D)
+        dimensionless = Q(one(T), D)
         y = T(2) + dimensionless
         @test ustrip(y) == T(3)
         @test dimension(y) == Dimensions(R)
-        @test typeof(y) == Quantity{T,D}
+        @test typeof(y) == Q{T,D}
 
         y = T(2) - dimensionless
         @test ustrip(y) == T(1)
         @test dimension(y) == Dimensions(R)
-        @test typeof(y) == Quantity{T,D}
+        @test typeof(y) == Q{T,D}
 
         y = dimensionless + T(2)
         @test ustrip(y) == T(3)
         y = dimensionless - T(2)
         @test ustrip(y) == T(-1)
 
-        @test_throws DimensionError Quantity(one(T), D,  length=1) + 1.0
-        @test_throws DimensionError Quantity(one(T), D, length=1) - 1.0
-        @test_throws DimensionError 1.0 + Quantity(one(T), D, length=1)
-        @test_throws DimensionError 1.0 - Quantity(one(T), D, length=1)
+        @test_throws DimensionError Q(one(T), D,  length=1) + 1.0
+        @test_throws DimensionError Q(one(T), D, length=1) - 1.0
+        @test_throws DimensionError 1.0 + Q(one(T), D, length=1)
+        @test_throws DimensionError 1.0 - Q(one(T), D, length=1)
     end
 
     x = Quantity(-1.2, length=2 // 5)
@@ -593,6 +593,12 @@ end
     # Test deprecated method
     q = 1.5us"km/s"
     @test expand_units(q) == uexpand(q)
+
+    # Test promotions:
+    x = Quantity{Float32,SymbolicDimensions{Rational{Int}}}(0.2us"km/s")
+    y = 0.5us"km/s"
+    qa = [x, y]
+    @test qa isa Vector{Quantity{Float64,SymbolicDimensions{Rational{Int}}}}
 end
 
 @testset "uconvert" begin
@@ -671,6 +677,11 @@ end
     qarr1 = QuantityArray(randn(3), u"km/s")
     qarr2 = qarr1
     @test convert(typeof(qarr2), qarr2) === qarr1
+
+    x = 1.0u"m"
+    y = x ^ (3//2)
+    @test y == Quantity(1.0, length=3//2)
+    @test typeof(y) == Quantity{Float64,DEFAULT_DIM_TYPE}
 end
 
 @testset "Arrays" begin
@@ -989,6 +1000,9 @@ end
         @test x isa Vector{<:GenericQuantity{Float64,<:Dimensions}}
         @test ustrip(x[1]) == 500.0
         @test ustrip(x[2]) == 1.0
+
+        x = [GenericQuantity([1.0, 2.0]), GenericQuantity([3f0, 4f0], Dimensions{Rational{Int}}, length=1)]
+        @test x isa Vector{GenericQuantity{Vector{Float64},Dimensions{Rational{Int}}}}
     end
 
     @testset "GenericQuantity broadcasting" begin
