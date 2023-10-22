@@ -52,7 +52,7 @@ end
 @register_unit mol DEFAULT_QUANTITY_TYPE(1.0, amount=1)
 
 @add_prefixes m (f, p, n, μ, u, c, d, m, k, M, G)
-@add_prefixes g (μ, u, m, k)
+@add_prefixes g (p, n, μ, u, m, k)
 @add_prefixes s (f, p, n, μ, u, m)
 @add_prefixes A (n, μ, u, m, k)
 @add_prefixes K (m,)
@@ -64,7 +64,7 @@ end
     m,
 )
 @doc(
-    "Mass in kilograms. Available variants: `μg` (/`ug`), `mg`, `g`.",
+    "Mass in kilograms. Available variants: `pg`, `ng`, `μg` (/`ug`), `mg`, `g`.",
     kg,
 )
 @doc(
