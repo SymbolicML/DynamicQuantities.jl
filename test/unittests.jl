@@ -903,7 +903,7 @@ end
         io = IOBuffer()
         Base.showarg(io, z, true)
         msg = String(take!(io))
-        @test msg == "QuantityArray(::Vector{Float64}, ::DynamicQuantities.Quantity{Float64, DynamicQuantities.SymbolicDimensions{DynamicQuantities.FixedRational{Int32, 25200}}})"
+        @test occursin(r"QuantityArray\(::Vector{Float64}, ::(DynamicQuantities\.)?Quantity{Float64, (DynamicQuantities\.)?SymbolicDimensions{(DynamicQuantities\.)?FixedRational{Int32, 25200}}}\)", msg)
 
         io = IOBuffer()
         Base.show(io, MIME"text/plain"(), typeof(z))
