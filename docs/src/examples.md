@@ -31,175 +31,230 @@ julia> λ = h / p # wavelength of ejected electrons
 julia> uconvert(us"nm", λ) # return answer in nanometers
 3.0294912478780556 nm
 ```
+
 Since units are automatically propagated, we can verify the dimension of our answer and all intermediates.
 Also, using `DynamicQuantities.Constants`, we were able to obtain the (dimensionful!) values of all necessary constants without typing them ourselves.
 
+## 3. Projectile motion
 
-## 2. Various simple examples
-
-Here, let's look at various things we can do with DynamicQuantities.jl.
-
-### Projectile motion
+Let's solve a simple projectile motion problem.
+First load the `DynamicQuantities` module:
 
 ```julia
 using DynamicQuantities
 ```
 
-First, the initial conditions:
+Set up initial conditions as quantities:
 
 ```julia
-y0 = 10u"km"        # Initial position
-v0 = 250u"m/s"      # Initial velocity
-θ = deg2rad(60)     # Launch angle
-g = 9.81u"m/s^2"    # Acceleration due to gravity
+y0 = 10u"km"
+v0 = 250u"m/s"
+θ = deg2rad(60)
+g = 9.81u"m/s^2"
 ```
 
-Let's calculate components of initial velocity:
+Next, we use trig functions to calculate x and y components of initial velocity.
+`vx0` is the x component and
+`vy0` is the y component:
 
 ```julia
 vx0 = v0 * cos(θ)
 vy0 = v0 * sin(θ)
 ```
 
-Let's simply plug it into the equations of motion,
-from 0 seconds to 1.3 minutes:
+Next, let's create a time vector from 0 to 1.3 minutes.
+Note that these are the same dimension (time), so it's fine to treat
+them as dimensionally equivalent!
 
 ```julia
 t = range(0u"s", 1.3u"min", length=100)
+```
 
+Next, use kinematic equations to calculate x and y as a function of time.
+`x(t)` is x position at time t, and
+`y(t)` is the y position
+
+```julia
 x(t) = vx0*t
 y(t) = vy0*t - 0.5*g*t^2 + y0
+```
 
-# Compute trajectory:
+These are functions, so let's evaluate them:
+
+```julia
 x_si = x.(t)
 y_si = y.(t)
 ```
 
-Now, let's plot it:
+These are regular vectors of quantities
+with `Dimensions` for physical dimensions.
+
+Next, let's plot the trajectory.
+First convert to km and strip units:
 
 ```julia
-# Plot
-using Plots
+x_km = ustrip.(uconvert(us"km").(x_si))
+y_km = ustrip.(uconvert(us"km").(y_si))
+```
 
-# Convert to km and strip:
-x_km = x_si .|> uconvert(us"km") .|> ustrip
-y_km = y_si .|> uconvert(us"km") .|> ustrip
+Now, we plot:
 
+```julia
 plot(x_km, y_km, label="Trajectory", xlabel="x [km]", ylabel="y [km]")
 ```
 
+## 3. Various Simple Examples
+
+This section demonstrates miscellaneous examples of using `DynamicQuantities.jl`.
+
 ### Conversion
+
+Convert a quantity to have a new type for the value:
 
 ```julia
 quantity = 1.5u"m"
-println("Converted Quantity to Float32: ", Quantity{Float32}(quantity))
+
+convert_q = Quantity{Float32}(quantity)
+
+println("Converted Quantity to Float32: ", convert_q)
 ```
 
-### Arrays Basics
+### Array basics
+
+Create a `QuantityArray` (an array of quantities with
+the same dimension) by passing an array and a single quantity:
 
 ```julia
-using DynamicQuantities
 x = QuantityArray(randn(32), u"km/s")
+```
 
+or, by passing an array of individual quantities:
+
+```julia
 y = randn(32)
+y_q = QuantityArray(y .* u"m * cd / s")
+```
 
-y_array_of_q = y .* u"m * cd / s"
-y_q = QuantityArray(y_array_of_q)
+We can take advantage of this being `<:AbstractArray`:
 
-# Summing QuantityArray
+```julia
 println("Sum x: ", sum(x))
+```
 
-# Setting index with different quantity
-x[5] = Quantity(5, length=1, time=-1)
+We can also do things like setting a particular element:
+
+```julia
+y_q[5] = Quantity(5, length=1, luminosity=1, time=-1)
 println("5th element of x: ", x[5])
+```
 
-# Checking if it strips to original values
-println("Stripped y_q equals to y: ", ustrip(QuantityArray(y, u"m")) == y)
+We can get back the original array with `ustrip`:
 
-# Applying a function to QuantityArray
+```julia
+println("Stripped y_q: ", ustrip(y_q))
+```
+
+This `QuantityArray` is useful for broadcasting:
+
+```julia
 f_square(v) = v^2 * 1.5 - v^2
 println("Applying function to y_q: ", sum(f_square.(y_q)))
 ```
 
-### Utilities
+
+### Fill
+
+We can also make `QuantityArray` using `fill`:
 
 ```julia
-# Using fill function to create a QuantityArray
-println("Filled QuantityArray: ", fill(u"m/s", 10))
+filled_q = fill(u"m/s", 10)
+println("Filled QuantityArray: ", filled_q)
+```
 
-# Check if fill function can create 0 dimensional QuantityArray
-println("0 dimensional QuantityArray: ", fill(u"m/s", ()))
+`fill` works for 0 dimensional `QuantityArray`s as well:
+
+```julia
+empty_q = fill(u"m/s", ())
+println("0 dimensional QuantityArray: ", empty_q)
 ```
 
 ### Similar
 
+Likewise, we can create a `QuantityArray` with the same properties as another `QuantityArray`:
+
 ```julia
 qa = QuantityArray(rand(3, 4), u"m")
 
-# Creating a similar QuantityArray
 new_qa = similar(qa)
+
 println("Similar qa: ", new_qa)
 ```
 
 ### Promotion
 
+Promotion rules are defined for `QuantityArray`s:
+
 ```julia
 qarr1 = QuantityArray(randn(32), convert(Dimensions{Rational{Int32}}, dimension(u"km/s")))
 qarr2 = QuantityArray(randn(Float16, 32), convert(Dimensions{Rational{Int64}}, dimension(u"km/s")))
-
-# Checking the promotion rules between QuantityArrays
-println("Promotion rules: ", typeof(promote(qarr1, qarr2)))
 ```
 
-### Array concatenation
+See what type they promote to:
+
+```julia
+println("Promoted type: ", typeof(promote(qarr1, qarr2)))
+```
+
+### Array Concatenation
+
+Likewise, we can take advantage of array concatenation,
+which will ensure we have the same dimensions:
 
 ```julia
 qarr1 = QuantityArray(randn(3) .* u"km/s")
 qarr2 = QuantityArray(randn(3) .* u"km/s")
-
-# Concatenating QuantityArrays
-println("Concatenated QuantityArray: ", hcat(qarr1, qarr2))
 ```
 
-### Broadcasted power operation
+Concatenate them:
 
 ```julia
-y_q = QuantityArray(randn(32), u"m")
-
-# Applying a function with power operation to QuantityArray
-f4(v) = v^4 * 0.3
-println("Power operation to y_q: ", sum(f4, y_q))
+concat_qarr = hcat(qarr1, qarr2)
+println("Concatenated QuantityArray: ", concat_qarr)
 ```
 
-### Broadcasting nd-arrays
+### Symbolic Units
+
+We can use arbitrary `AbstractQuantity` and `AbstractDimensions`
+in a `QuantityArray`, including `SymbolicDimensions`:
 
 ```julia
-# Broadcasting operation between two 2D QuantityArrays
-x = QuantityArray(randn(3, 3), u"A")
-y = QuantityArray(randn(3, 3), u"cd")
-println("Broadcasted QuantityArray: ", x .* y)
-```
-
-### Symbolic units
-
-```julia
-# Creating QuantityArray with symbolic units
 z_ar = randn(32)
-z = QuantityArray(z_ar, us"Constants.h * km/s")
-println("Expanded z: ", uexpand(z))
+z = QuantityArray(z_ar, us"Constants.M_sun * km/s")
 ```
 
-### GenericQuantity construction
+Expand to standard units:
+
+```julia
+z_expanded = uexpand(z)
+println("Expanded z: ", z_expanded)
+```
+
+
+### GenericQuantity Construction
+
+In addition to `Quantity`, we can also use `GenericQuantity`:
+
 
 ```julia
 x = GenericQuantity(1.5)
-println("Generic Quantity: ", x)
+y = GenericQuantity(0.2u"km")
+println(x, y)
 ```
 
 This `GenericQuantity` is subtyped to `Any`,
 rather than `Number`.
 
-### GenericQuantity and Quantity promotion
+### GenericQuantity and Quantity Promotion
 
 When we combine a `GenericQuantity` and a `Quantity`,
 the result is another `GenericQuantity`:
