@@ -38,16 +38,64 @@ Also, using `DynamicQuantities.Constants`, we were able to obtain the (dimension
 ## 2. Various simple examples
 
 Here, let's look at various things we can do with DynamicQuantities.jl.
-First,
 
-### i. Conversion
+### Projectile motion
+
+```julia
+using DynamicQuantities
+```
+
+First, the initial conditions:
+
+```julia
+y0 = 10u"km"        # Initial position
+v0 = 250u"m/s"      # Initial velocity
+θ = deg2rad(60)     # Launch angle
+g = 9.81u"m/s^2"    # Acceleration due to gravity
+```
+
+Let's calculate components of initial velocity:
+
+```julia
+vx0 = v0 * cos(θ)
+vy0 = v0 * sin(θ)
+```
+
+Let's simply plug it into the equations of motion,
+from 0 seconds to 1.3 minutes:
+
+```julia
+t = range(0u"s", 1.3u"min", length=100)
+
+x(t) = vx0*t
+y(t) = vy0*t - 0.5*g*t^2 + y0
+
+# Compute trajectory:
+x_si = x.(t)
+y_si = y.(t)
+```
+
+Now, let's plot it:
+
+```julia
+# Plot
+using Plots
+
+# Convert to km and strip:
+x_km = x_si .|> uconvert(us"km") .|> ustrip
+y_km = y_si .|> uconvert(us"km") .|> ustrip
+
+plot(x_km, y_km, label="Trajectory", xlabel="x [km]", ylabel="y [km]")
+```
+
+### Conversion
 
 ```julia
 quantity = 1.5u"m"
 println("Converted Quantity to Float32: ", Quantity{Float32}(quantity))
 ```
 
-### ii. Arrays Basics
+### Arrays Basics
 
 ```julia
 using DynamicQuantities
@@ -73,7 +121,7 @@ f_square(v) = v^2 * 1.5 - v^2
 println("Applying function to y_q: ", sum(f_square.(y_q)))
 ```
 
-### iii. Utilities
+### Utilities
 
 ```julia
 # Using fill function to create a QuantityArray
@@ -83,7 +131,7 @@ println("Filled QuantityArray: ", fill(u"m/s", 10))
 println("0 dimensional QuantityArray: ", fill(u"m/s", ()))
 ```
 
-### iv. Similar
+### Similar
 
 ```julia
 qa = QuantityArray(rand(3, 4), u"m")
@@ -93,7 +141,7 @@ new_qa = similar(qa)
 println("Similar qa: ", new_qa)
 ```
 
-### v. Promotion
+### Promotion
 
 ```julia
 qarr1 = QuantityArray(randn(32), convert(Dimensions{Rational{Int32}}, dimension(u"km/s")))
@@ -103,7 +151,7 @@ qarr2 = QuantityArray(randn(Float16, 32), convert(Dimensions{Rational{Int64}}, d
 println("Promotion rules: ", typeof(promote(qarr1, qarr2)))
 ```
 
-### vi. Array concatenation
+### Array concatenation
 
 ```julia
 qarr1 = QuantityArray(randn(3) .* u"km/s")
@@ -113,7 +161,7 @@ qarr2 = QuantityArray(randn(3) .* u"km/s")
 println("Concatenated QuantityArray: ", hcat(qarr1, qarr2))
 ```
 
-### vii. Broadcasted power operation
+### Broadcasted power operation
 
 ```julia
 y_q = QuantityArray(randn(32), u"m")
@@ -123,7 +171,7 @@ f4(v) = v^4 * 0.3
 println("Power operation to y_q: ", sum(f4, y_q))
 ```
 
-### viii. Broadcasting nd-arrays
+### Broadcasting nd-arrays
 
 ```julia
 # Broadcasting operation between two 2D QuantityArrays
@@ -132,7 +180,7 @@ y = QuantityArray(randn(3, 3), u"cd")
 println("Broadcasted QuantityArray: ", x .* y)
 ```
 
-### ix. Symbolic units
+### Symbolic units
 
 ```julia
 # Creating QuantityArray with symbolic units
@@ -141,7 +189,7 @@ z = QuantityArray(z_ar, us"Constants.h * km/s")
 println("Expanded z: ", uexpand(z))
 ```
 
-### x. GenericQuantity construction
+### GenericQuantity construction
 
 ```julia
 x = GenericQuantity(1.5)
@@ -151,7 +199,7 @@ println("Generic Quantity: ", x)
 This `GenericQuantity` is subtyped to `Any`,
 rather than `Number`.
 
-### xi. GenericQuantity and Quantity promotion
+### GenericQuantity and Quantity promotion
 
 When we combine a `GenericQuantity` and a `Quantity`,
 the result is another `GenericQuantity`:
