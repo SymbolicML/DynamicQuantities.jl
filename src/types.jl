@@ -46,8 +46,14 @@ than `Number`.
 """
 abstract type AbstractGenericQuantity{T,D} end
 
-# Can add more types here to have additional inheritances
 const ABSTRACT_QUANTITY_TYPES = ((AbstractQuantity, Number), (AbstractGenericQuantity, Any))
+
+"""
+    AbstractUnionQuantity{T,D}
+
+This is a union of both `AbstractQuantity{T,D}` and `AbstractGenericQuantity{T,D}`.
+It is used throughout the library to declare methods which can take both types.
+"""
 const AbstractUnionQuantity{T,D} = Union{AbstractQuantity{T,D},AbstractGenericQuantity{T,D}}
 
 """
