@@ -31,7 +31,7 @@ struct QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractUnionQuantity{T,D},V<:
     dimensions::D
 
     function QuantityArray(v::_V, d::_D, ::Type{_Q}) where {_T,_N,_D<:AbstractDimensions,_Q<:AbstractUnionQuantity,_V<:AbstractArray{_T,_N}}
-        Q_out = constructorof(_Q){_T,_D}
+        Q_out = with_type_parameters(_Q, _T, _D)
         return new{_T,_N,_D,Q_out,_V}(v, d)
     end
 end

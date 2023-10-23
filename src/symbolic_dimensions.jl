@@ -55,7 +55,9 @@ function Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R}
 end
 Base.propertynames(::SymbolicDimensions) = ALL_SYMBOLS
 Base.getindex(d::SymbolicDimensions, k::Symbol) = getproperty(d, k)
+
 constructorof(::Type{<:SymbolicDimensions}) = SymbolicDimensions
+with_type_parameters(::Type{<:SymbolicDimensions}, ::Type{R}) where {R} = SymbolicDimensions{R}
 
 SymbolicDimensions{R}(d::SymbolicDimensions) where {R} = SymbolicDimensions{R}(getfield(d, :nzdims), convert(Vector{R}, getfield(d, :nzvals)))
 SymbolicDimensions(; kws...) = SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}(; kws...)
@@ -73,7 +75,7 @@ end
 for (type, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         function Base.convert(::Type{Q}, q::AbstractUnionQuantity{<:Any,<:Dimensions}) where {T,Q<:$type{T,SymbolicDimensions}}
-            return convert(constructorof(Q){T,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}, q)
+            return convert(with_type_parameters(Q, T,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}), q)
         end
         function Base.convert(::Type{Q}, q::AbstractUnionQuantity{<:Any,<:Dimensions}) where {T,R,Q<:$type{T,SymbolicDimensions{R}}}
             syms = (:m, :kg, :s, :A, :K, :cd, :mol)
@@ -91,7 +93,7 @@ for (type, _) in ABSTRACT_QUANTITY_TYPES
             d = dimension(q)
             for (idx, value) in zip(getfield(d, :nzdims), getfield(d, :nzvals))
                 if !iszero(value)
-                    result = result * convert(constructorof(Q){T,D}, ALL_VALUES[idx]) ^ value
+                    result = result * convert(with_type_parameters(Q, T, D), ALL_VALUES[idx]) ^ value
                 end
             end
             return result
@@ -110,7 +112,7 @@ for converting to specific symbolic units, or `convert(Quantity{<:Any,<:Symbolic
 for assuming SI units as the output symbols.
 """
 function uexpand(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:AbstractQuantity{T,D}}
-    return convert(constructorof(Q){T,Dimensions{R}}, q)
+    return convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
 uexpand(q::QuantityArray) = uexpand.(q)
 # TODO: Make the array-based one more efficient

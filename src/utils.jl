@@ -116,8 +116,8 @@ end
 for f in (:one, :typemin, :typemax)
     @eval begin
         Base.$f(::Type{Q}) where {T,D,Q<:AbstractUnionQuantity{T,D}} = new_quantity(Q, $f(T), D)
-        Base.$f(::Type{Q}) where {T,Q<:AbstractUnionQuantity{T}} = $f(constructorof(Q){T, DEFAULT_DIM_TYPE})
-        Base.$f(::Type{Q}) where {Q<:AbstractUnionQuantity} = $f(constructorof(Q){DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE})
+        Base.$f(::Type{Q}) where {T,Q<:AbstractUnionQuantity{T}} = $f(with_type_parameters(Q, T, DEFAULT_DIM_TYPE))
+        Base.$f(::Type{Q}) where {Q<:AbstractUnionQuantity} = $f(with_type_parameters(Q, DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE))
     end
     if f == :one  # Return empty dimensions, as should be multiplicative identity.
         @eval Base.$f(q::Q) where {Q<:AbstractUnionQuantity} = new_quantity(Q, $f(ustrip(q)), one(dimension(q)))

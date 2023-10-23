@@ -87,7 +87,7 @@ struct Dimensions{R<:Real} <: AbstractDimensions{R}
     amount::R
 end
 
-(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = constructorof(D){R}((tryrationalize(R, get(kws, k, zero(R))) for k in static_fieldnames(D))...)
+(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = with_type_parameters(D, R)((tryrationalize(R, get(kws, k, zero(R))) for k in static_fieldnames(D))...)
 (::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = constructorof(D)(R; kws...)
 (::Type{D})(; kws...) where {D<:AbstractDimensions} = D(DEFAULT_DIM_BASE_TYPE; kws...)
 function (::Type{D})(d::D2) where {R,D<:AbstractDimensions{R},D2<:AbstractDimensions}
@@ -177,9 +177,25 @@ constructorof(::Type{<:Dimensions}) = Dimensions
 constructorof(::Type{<:Quantity}) = Quantity
 constructorof(::Type{<:GenericQuantity}) = GenericQuantity
 
+function with_type_parameters(::Type{<:Dimensions}, ::Type{R}) where {R}
+    return Dimensions{R}
+end
+function with_type_parameters(::Type{<:Quantity}, ::Type{T}, ::Type{D}) where {T,D}
+    return Quantity{T,D}
+end
+function with_type_parameters(::Type{<:GenericQuantity}, ::Type{T}, ::Type{D}) where {T,D}
+    return GenericQuantity{T,D}
+end
+
 # The following functions should be overloaded for special types
 function constructorof(::Type{T}) where {T}
     return Base.typename(T).wrapper
+end
+function with_type_parameters(::Type{D}, ::Type{R}) where {D<:AbstractDimensions,R}
+    return constructorof(D){R}
+end
+function with_type_parameters(::Type{Q}, ::Type{T}, ::Type{D}) where {Q<:AbstractUnionQuantity,T,D}
+    return constructorof(Q){T,D}
 end
 
 struct DimensionError{Q1,Q2} <: Exception
