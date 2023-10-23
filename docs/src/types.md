@@ -30,3 +30,10 @@ SymbolicDimensions
 ```@docs
 QuantityArray
 ```
+
+## Constructors
+
+```@docs
+constructorof
+with_type_parameters
+```

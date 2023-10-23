@@ -173,10 +173,26 @@ new_quantity(::Type{Q}, l, r) where {Q<:AbstractUnionQuantity} = constructorof(Q
 dim_type(::Type{Q}) where {T,D<:AbstractDimensions,Q<:AbstractUnionQuantity{T,D}} = D
 dim_type(::Type{<:AbstractUnionQuantity}) = DEFAULT_DIM_TYPE
 
+"""
+    constructorof(::Type{<:AbstractDimensions})
+    constructorof(::Type{<:AbstractUnionQuantity})
+
+Return the constructor of the given type. This is used to create new objects
+of the same type as the input. Overload a method for a new type, especially
+if you need custom behavior.
+"""
 constructorof(::Type{<:Dimensions}) = Dimensions
 constructorof(::Type{<:Quantity}) = Quantity
 constructorof(::Type{<:GenericQuantity}) = GenericQuantity
 
+"""
+    with_type_parameters(::Type{<:AbstractDimensions}, ::Type{R})
+    with_type_parameters(::Type{<:AbstractUnionQuantity}, ::Type{T}, ::Type{D})
+
+Return the type with the given type parameters instead of the ones in the input type.
+This is used to get `Dimensions{R}` from input `(Dimensions{R1}, R)`, for example.
+Overload a method for a new type, especially if you need custom behavior.
+"""
 function with_type_parameters(::Type{<:Dimensions}, ::Type{R}) where {R}
     return Dimensions{R}
 end
@@ -188,7 +204,7 @@ function with_type_parameters(::Type{<:GenericQuantity}, ::Type{T}, ::Type{D}) w
 end
 
 # The following functions should be overloaded for special types
-function constructorof(::Type{T}) where {T}
+function constructorof(::Type{T}) where {T<:Union{AbstractUnionQuantity,AbstractDimensions}}
     return Base.typename(T).wrapper
 end
 function with_type_parameters(::Type{D}, ::Type{R}) where {D<:AbstractDimensions,R}
