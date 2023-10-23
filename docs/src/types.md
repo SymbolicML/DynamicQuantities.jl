@@ -12,8 +12,6 @@ defined on the abstract functions (including constructors).
 ```@docs
 AbstractDimensions
 AbstractQuantity
-AbstractGenericQuantity
-AbstractUnionQuantity
 ```
 
 Note also that the `Quantity` object can take a custom `AbstractDimensions`
@@ -31,4 +29,12 @@ SymbolicDimensions
 
 ```@docs
 QuantityArray
+```
+
+## Generic quantities
+
+```@docs
+GenericQuantity
+AbstractGenericQuantity
+AbstractUnionQuantity
 ```
