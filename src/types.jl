@@ -77,7 +77,7 @@ which is by default a rational number.
 
 # Constructors
 
-- `Dimensions(args...)`: Pass all the dimensions as arguments. `R` is set to `DEFAULT_DIM_BASE_TYPE`.
+- `Dimensions(args...)`: Pass all the dimensions as arguments.
 - `Dimensions(; kws...)`: Pass a subset of dimensions as keyword arguments. `R` is set to `DEFAULT_DIM_BASE_TYPE`.
 - `Dimensions(::Type{R}; kws...)` or `Dimensions{R}(; kws...)`: Pass a subset of dimensions as keyword arguments, with the output type set to `Dimensions{R}`.
 - `Dimensions{R}()`: Create a dimensionless object typed as `Dimensions{R}`.

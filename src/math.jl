@@ -20,27 +20,21 @@ end
 Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
 Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 
-for (type, base_type) in ABSTRACT_QUANTITY_TYPES
+# Defines + and -
+for (type, base_type) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-)
     @eval begin
-        Base.:+(l::$type, r::$type) =
-            let
-                dimension(l) == dimension(r) || throw(DimensionError(l, r))
-                new_quantity(typeof(l), ustrip(l) + ustrip(r), dimension(l))
-            end
-        Base.:+(l::$type, r::$base_type) =
-            let
-                iszero(dimension(l)) || throw(DimensionError(l, r))
-                new_quantity(typeof(l), ustrip(l) + r, dimension(l))
-            end
-        Base.:+(l::$base_type, r::$type) =
-            let
-                iszero(dimension(r)) || throw(DimensionError(l, r))
-                new_quantity(typeof(r), l + ustrip(r), dimension(r))
-            end
-
-        Base.:-(l::$type, r::$type) = l + (-r)
-        Base.:-(l::$type, r::$base_type) = l + (-r)
-        Base.:-(l::$base_type, r::$type) = l + (-r)
+        function Base.$op(l::$type, r::$type)
+            dimension(l) == dimension(r) || throw(DimensionError(l, r))
+            return new_quantity(typeof(l), $op(ustrip(l), ustrip(r)), dimension(l))
+        end
+        function Base.$op(l::$type, r::$base_type)
+            iszero(dimension(l)) || throw(DimensionError(l, r))
+            return new_quantity(typeof(l), $op(ustrip(l), r), dimension(l))
+        end
+        function Base.$op(l::$base_type, r::$type)
+            iszero(dimension(r)) || throw(DimensionError(l, r))
+            return new_quantity(typeof(r), $op(l, ustrip(r)), dimension(r))
+        end
     end
 end
 
