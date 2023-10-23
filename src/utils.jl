@@ -1,5 +1,4 @@
 import Compat: allequal
-import ConstructionBase: constructorof
 import Tricks: static_fieldnames
 
 function map_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}

@@ -1,4 +1,3 @@
-import ConstructionBase: constructorof
 import Tricks: static_fieldnames
 
 import .Units: UNIT_SYMBOLS, UNIT_MAPPING, UNIT_VALUES

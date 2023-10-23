@@ -1,4 +1,3 @@
-import ConstructionBase: constructorof
 import Tricks: static_fieldnames, static_fieldtypes
 
 const DEFAULT_DIM_BASE_TYPE = FixedRational{DEFAULT_NUMERATOR_TYPE,DEFAULT_DENOM}
@@ -18,7 +17,7 @@ the need to define many other functions.
 The key function that one could wish to overload is
 `DynamicQuantities.dimension_name(::AbstractDimensions, k::Symbol)` for mapping from a field name
 to a base unit (e.g., `length` by default maps to `m`). You may also need to overload
-`ConstructionBase.constructorof(::Type{T})` in case of non-standard construction.
+`constructorof(::Type{T})` in case of non-standard construction.
 """
 abstract type AbstractDimensions{R} end
 
@@ -177,6 +176,11 @@ dim_type(::Type{<:AbstractUnionQuantity}) = DEFAULT_DIM_TYPE
 constructorof(::Type{<:Dimensions}) = Dimensions
 constructorof(::Type{<:Quantity}) = Quantity
 constructorof(::Type{<:GenericQuantity}) = GenericQuantity
+
+# The following functions should be overloaded for special types
+function constructorof(::Type{T}) where {T}
+    return Base.typename(T).wrapper
+end
 
 struct DimensionError{Q1,Q2} <: Exception
     q1::Q1
