@@ -193,7 +193,8 @@ Base.copy(d::D) where {D<:AbstractDimensions} = map_dimensions(copy, d)
 Base.copy(q::Q) where {Q<:AbstractUnionQuantity} = new_quantity(Q, copy(ustrip(q)), copy(dimension(q)))
 
 """
-    ustrip(q::AbstractUnionQuantity)
+    ustrip(q::AbstractQuantity)
+    ustrip(q::AbstractGenericQuantity)
 
 Remove the units from a quantity.
 """
@@ -202,7 +203,8 @@ ustrip(::AbstractDimensions) = error("Cannot remove units from an `AbstractDimen
 @inline ustrip(q) = q
 
 """
-    dimension(q::AbstractUnionQuantity)
+    dimension(q::AbstractQuantity)
+    dimension(q::AbstractGenericQuantity)
 
 Get the dimensions of a quantity, returning an `AbstractDimensions` object.
 """
@@ -211,7 +213,8 @@ dimension(d::AbstractDimensions) = d
 dimension(aq::AbstractArray{<:AbstractUnionQuantity}) = allequal(dimension.(aq)) ? dimension(first(aq)) : throw(DimensionError(aq[begin], aq[begin+1:end]))
 
 """
-    ulength(q::AbstractUnionQuantity)
+    ulength(q::AbstractQuantity)
+    ulength(q::AbstractGenericQuantity)
     ulength(d::AbstractDimensions)
 
 Get the length dimension of a quantity (e.g., meters^(ulength)).
@@ -220,7 +223,8 @@ ulength(q::AbstractUnionQuantity) = ulength(dimension(q))
 ulength(d::AbstractDimensions) = d.length
 
 """
-    umass(q::AbstractUnionQuantity)
+    umass(q::AbstractQuantity)
+    umass(q::AbstractGenericQuantity)
     umass(d::AbstractDimensions)
 
 Get the mass dimension of a quantity (e.g., kg^(umass)).
@@ -229,7 +233,8 @@ umass(q::AbstractUnionQuantity) = umass(dimension(q))
 umass(d::AbstractDimensions) = d.mass
 
 """
-    utime(q::AbstractUnionQuantity)
+    utime(q::AbstractQuantity)
+    utime(q::AbstractGenericQuantity)
     utime(d::AbstractDimensions)
 
 Get the time dimension of a quantity (e.g., s^(utime))
@@ -238,7 +243,8 @@ utime(q::AbstractUnionQuantity) = utime(dimension(q))
 utime(d::AbstractDimensions) = d.time
 
 """
-    ucurrent(q::AbstractUnionQuantity)
+    ucurrent(q::AbstractQuantity)
+    ucurrent(q::AbstractGenericQuantity)
     ucurrent(d::AbstractDimensions)
 
 Get the current dimension of a quantity (e.g., A^(ucurrent)).
@@ -247,7 +253,8 @@ ucurrent(q::AbstractUnionQuantity) = ucurrent(dimension(q))
 ucurrent(d::AbstractDimensions) = d.current
 
 """
-    utemperature(q::AbstractUnionQuantity)
+    utemperature(q::AbstractQuantity)
+    utemperature(q::AbstractGenericQuantity)
     utemperature(d::AbstractDimensions)
 
 Get the temperature dimension of a quantity (e.g., K^(utemperature)).
@@ -256,7 +263,8 @@ utemperature(q::AbstractUnionQuantity) = utemperature(dimension(q))
 utemperature(d::AbstractDimensions) = d.temperature
 
 """
-    uluminosity(q::AbstractUnionQuantity)
+    uluminosity(q::AbstractQuantity)
+    uluminosity(q::AbstractGenericQuantity)
     uluminosity(d::AbstractDimensions)
 
 Get the luminosity dimension of a quantity (e.g., cd^(uluminosity)).
@@ -265,7 +273,8 @@ uluminosity(q::AbstractUnionQuantity) = uluminosity(dimension(q))
 uluminosity(d::AbstractDimensions) = d.luminosity
 
 """
-    uamount(q::AbstractUnionQuantity)
+    uamount(q::AbstractQuantity)
+    uamount(q::AbstractGenericQuantity)
     uamount(d::AbstractDimensions)
 
 Get the amount dimension of a quantity (e.g., mol^(uamount)).
