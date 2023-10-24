@@ -72,6 +72,11 @@ using Test
         @test iszero(y) == true
         @test iszero(y.dimensions) == false
 
+        y = -x
+
+        @test ustrip(y) == -ustrip(x)
+        @test dimension(y) == dimension(x)
+
         y = x / x
 
         @test iszero(x.dimensions) == false
