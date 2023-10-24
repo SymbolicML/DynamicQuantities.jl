@@ -251,7 +251,42 @@ println(y)
 ```
 
 This `GenericQuantity` is subtyped to `Any`,
-rather than `Number`.
+rather than `Number`, and thus can also store
+custom non-scalar types.
+
+For example, we can work with `Coords`, and
+wrap it in a single `GenericQuantity` type:
+
+```julia
+struct Coords
+    x::Float64
+    y::Float64
+end
+
+# Define arithmetic operations on Coords
+Base.:+(a::Coords, b::Coords) = Coords(a.x + b.x, a.y + b.y)
+Base.:-(a::Coords, b::Coords) = Coords(a.x - b.x, a.y - b.y)
+Base.:*(a::Coords, b::Number) = Coords(a.x * b, a.y * b)
+Base.:*(a::Number, b::Coords) = Coords(a * b.x, a * b.y)
+Base.:/(a::Coords, b::Number) = Coords(a.x / b, a.y / b)
+```
+
+We can then build a `GenericQuantity` out of this:
+
+```julia
+coord1 = GenericQuantity(Coords(0.3, 0.9), length=1)
+coord2 = GenericQuantity(Coords(0.2, -0.1), length=1)
+```
+
+and perform operations on these:
+
+```julia
+coord1 + coord2 |> uconvert(us"cm")
+# (Coords(50.0, 80.0)) cm
+```
+
+The nice part about this is it only stores a single Dimensions
+(or `SymbolicDimensions`) for the entire struct!
 
 ### GenericQuantity and Quantity Promotion
 
