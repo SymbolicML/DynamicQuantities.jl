@@ -276,8 +276,9 @@ struct MyDimensions{R} <: AbstractDimensions{R}
 end
 ```
 
-We can then use this in a `Quantity`,
-and all operations will work as expected:
+Many constructors and functions are defined on `AbstractDimensions`,
+so this can be used out-of-the-box.
+We can then use this in a `Quantity`, and all operations will work as expected:
 
 ```julia
 x = Quantity(1.5, MyDimensions(cookie=1, milk=-1))
@@ -293,4 +294,58 @@ we can use this in a `QuantityArray`:
 x_qa = QuantityArray(randn(32), MyDimensions(cookie=1, milk=-1))
 
 x_qa .^ 2
+```
+
+### Custom Quantities
+
+We can also create custom dimensions by subtyping
+to either `AbstractQuantity` (for `<:Number`) or
+`AbstractGenericQuantity` (for `<:Any`):
+
+```julia
+struct MyQuantity{T,D} <: AbstractQuantity{T,D}
+    value::T
+    dimensions::D
+end
+```
+
+Since `AbstractQuantity <: Number`, this will also be a number.
+Keep in mind that you must call these fields `value` and `dimensions`
+for `ustrip(...)` and `dimension(...)` to work. Otherwise, simply
+redefine those.
+
+We can use this custom quantity just like we would use `Quantity`:
+
+```julia
+q1 = MyQuantity(1.2, Dimensions(length=-2))
+# prints as `1.2 m⁻²`
+
+q2 = MyQuantity(1.5, MyDimensions(cookie=1))
+# prints as `1.5 cookie`
+```
+
+Including mathematical operations:
+
+```julia
+q2 ^ 2
+# `2.25 cookie²`
+```
+
+The main reason you would use a custom quantity is if you want
+to change built-in behavior, or maybe have special methods for
+different types of quantities.
+
+Note that you can declare a method on `AbstractQuantity`, or
+`AbstractGenericQuantity` to allow their respective inputs.
+
+**Note**: In general, you should probably
+specialize on `AbstractUnionQuantity` which is
+the union of these two abstract quantities, _as well as any other future abstract quantity types_,
+such as the planned `AbstractRealQuantity`.
+
+```julia
+function my_func(x::AbstractUnionQuantity{T,D}) where {T,D}
+    # value has type T and dimensions has type D
+    return x / ustrip(x)
+end
 ```
