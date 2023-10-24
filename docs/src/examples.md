@@ -35,7 +35,7 @@ julia> uconvert(us"nm", λ) # return answer in nanometers
 Since units are automatically propagated, we can verify the dimension of our answer and all intermediates.
 Also, using `DynamicQuantities.Constants`, we were able to obtain the (dimensionful!) values of all necessary constants without typing them ourselves.
 
-## 3. Projectile motion
+## 2. Projectile motion
 
 Let's solve a simple projectile motion problem.
 First load the `DynamicQuantities` module:
