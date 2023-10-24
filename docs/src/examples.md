@@ -145,7 +145,7 @@ We can also do things like setting a particular element:
 
 ```julia
 y_q[5] = Quantity(5, length=1, luminosity=1, time=-1)
-println("5th element of x: ", x[5])
+println("5th element of y_q: ", y_q[5])
 ```
 
 We can get back the original array with `ustrip`:
@@ -160,7 +160,6 @@ This `QuantityArray` is useful for broadcasting:
 f_square(v) = v^2 * 1.5 - v^2
 println("Applying function to y_q: ", sum(f_square.(y_q)))
 ```
-
 
 ### Fill
 
@@ -248,7 +247,7 @@ In addition to `Quantity`, we can also use `GenericQuantity`:
 ```julia
 x = GenericQuantity(1.5)
 y = GenericQuantity(0.2u"km")
-println(x, y)
+println(y)
 ```
 
 This `GenericQuantity` is subtyped to `Any`,
@@ -263,4 +262,35 @@ the result is another `GenericQuantity`:
 x = GenericQuantity(1.5f0)
 y = Quantity(1.5, length=1)
 println("Promoted type of x and y: ", typeof(x * y))
+```
+
+### Custom Dimensions
+
+We can create custom dimensions by subtyping to
+`AbstractDimensions`:
+
+```julia
+struct MyDimensions{R} <: AbstractDimensions{R}
+    cookie::R
+    milk::R
+end
+```
+
+We can then use this in a `Quantity`,
+and all operations will work as expected:
+
+```julia
+x = Quantity(1.5, MyDimensions(cookie=1, milk=-1))
+y = Quantity(2.0, MyDimensions(cookie=1))
+
+x * y
+```
+
+which gives us `3.0 cookie² milk⁻¹`. Likewise,
+we can use this in a `QuantityArray`:
+
+```julia
+x_qa = QuantityArray(randn(32), MyDimensions(cookie=1, milk=-1))
+
+x_qa .^ 2
 ```
