@@ -317,13 +317,13 @@ We can then use this in a `Quantity`, and all operations will work as expected:
 
 ```julia
 x = Quantity(1.5, MyDimensions(cookie=1, milk=-1))
-y = Quantity(2.0, MyDimensions(cookie=1))
+y = Quantity(2.0, MyDimensions(milk=1))
 
 x * y
 ```
 
-which gives us `3.0 cookie² milk⁻¹`. Likewise,
-we can use this in a `QuantityArray`:
+which gives us `3.0 cookie` computed from a rate of `1.5 cookie milk⁻¹` multiplied
+by `2.0 milk`. Likewise, we can use these in a `QuantityArray`:
 
 ```julia
 x_qa = QuantityArray(randn(32), MyDimensions(cookie=1, milk=-1))
