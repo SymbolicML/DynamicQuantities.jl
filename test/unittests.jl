@@ -3,6 +3,7 @@ using DynamicQuantities: FixedRational
 using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 using DynamicQuantities: array_type, value_type, dim_type, quantity_type
 using Ratios: SimpleRatio
+using RecursiveArrayTools: RecursiveArrayTools as RAT
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
 using LinearAlgebra: norm
@@ -913,5 +914,13 @@ end
         x = [1u"km/s"]
         ref = Base.RefValue(x)
         @test DynamicQuantities.materialize_first(ref) === x[1]
+    end
+end
+
+@testset "RecursiveArrayTools" begin
+    for f in (RAT.recursive_unitless_bottom_eltype, RAT.recursive_unitless_eltype)
+        @test f([0.3u"km/s"]) == Float64
+        @test f([Quantity{Float32}(0.3u"km/s")]) == Float64
+        @test f([0.3Unitful.u"km/s"]) == Float64
     end
 end

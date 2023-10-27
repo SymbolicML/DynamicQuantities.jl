@@ -35,6 +35,8 @@ Base.convert(::Type{T}, q::AbstractQuantity) where {T<:Real} =
 Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2} = Dimensions{promote_type(R1,R2)}
 Base.promote_rule(::Type{Q1}, ::Type{Q2}) where {T1,T2,D1,D2,Q1<:Quantity{T1,D1},Q2<:Quantity{T2,D2}} = Quantity{promote_type(T1,T2),promote_type(D1,D2)}
 
+Base.eltype(::Type{Q}) where {Q<:AbstractQuantity} = Q
+
 Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
 
@@ -96,8 +98,8 @@ Base.:(==)(::AbstractQuantity, ::WeakRef) = error("Cannot compare a quantity to 
 Base.:(==)(::WeakRef, ::AbstractQuantity) = error("Cannot compare a weakref to a quantity")
 
 
-# Simple flags:
-for f in (:iszero, :isfinite, :isinf, :isnan, :isreal)
+# Simple flags and returns:
+for f in (:iszero, :isfinite, :isinf, :isnan, :isreal, :sign)
     @eval Base.$f(q::AbstractQuantity) = $f(ustrip(q))
 end
 
