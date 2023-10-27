@@ -6,10 +6,10 @@ import DynamicQuantities: AbstractQuantity, ustrip, dimension, new_quantity, Abs
 norm(q::AbstractQuantity, p::Real=2) = new_quantity(typeof(q), norm(ustrip(q), p), dimension(q))
 
 \(q::QuantityArray,r::QuantityArray) = QuantityArray(ustrip(q)\ustrip(r),dimension(r)/dimension(q))
-\(q::QuantityArray,r::Union{AbstractVector,AbstractMatrix}) = QuantityArray(ustrip(q)\r,dimension(q)^-1)
+\(q::QuantityArray,r::Union{AbstractVector,AbstractMatrix}) = QuantityArray(ustrip(q)\r,inv(dimension(q)))
 # not implemented, AbstractMatrix \ QuantityArray
 
-inv(Q::QuantityArray) = QuantityArray(inv(ustrip(Q)),dimension(Q)^-1)
+inv(Q::QuantityArray) = QuantityArray(inv(ustrip(Q)),inv(dimension(Q)))
 
 """
     svd(A::QuantityArray; full::Bool = false, alg::Algorithm = default_svd_alg(A)) -> SVD
