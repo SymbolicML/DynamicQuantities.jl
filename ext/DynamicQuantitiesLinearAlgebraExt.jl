@@ -27,17 +27,26 @@ inv(Q::QuantityArray) = QuantityArray(inv(ustrip(Q)),inv(dimension(Q)))
 """
 function svd(A::QuantityArray;full=false,alg::Algorithm = default_svd_alg(ustrip(A))) 
     F = svd(ustrip(A), full=full, alg=alg)
-    return SVD(F.U,QuantityArray(F.S,dimension(A)),F.Vt)
+    #return SVD(F.U,QuantityArray(F.S,dimension(A)),F.Vt) # julia 1.9 pass but 1.6 fail because 2nd argument is not a Vector
+    S = [Quantity(F.S[i],dimension(A)) for i in eachindex(F.S)]
+    return SVD(F.U,S,F.Vt) # julia 1.6 pass but long-winded
 end
 
 Diagonal(q::QuantityArray)  = QuantityArray(Diagonal(ustrip(q)),dimension(q))
+function Diagonal(q::Vector{Quantity{T,D}}) where {T,R,D<:AbstractDimensions{R}}
+    if allequal(dimension.(q))
+        return QuantityArray(Diagonal(ustrip.(q)),dimension(q[begin]))
+    else
+        error("Diagonal matrix would not be a `QuantityArray`. Vector must contain `Quantity`s with same dimension.")
+    end
+end
 
 """
-    function eigen(A::T;permute::Bool=true, scale::Bool=true, sortby::Union{Function,Nothing}=eigsortby) where T <: AbstractMultipliableMatrix
+    function eigen(A::T;permute::Bool=true, scale::Bool=true, sortby::Union{Function,Nothing}=eigsortby) where T = QuantityArray
 
     Thin wrapper for `eigen` with same keyword arguments as `LinearAlgebra.eigen`.
     Only squarable matrices have eigenstructure (pp. 96, Hart, 1995).
-    Eigenvalues have the same dimensions as A[1,1].
+    Eigenvalues have the same dimensions as 𝐀[1,1].
     Eigenvectors are parallel to the domain and range.
     There are multiple ways to distribute the units among the eigenvectors, however.
     If 𝐀 is endomorphic (i.e., the dimensional domain and range are the same), then the dimensional domain should
