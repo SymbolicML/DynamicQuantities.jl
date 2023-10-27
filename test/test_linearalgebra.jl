@@ -2,6 +2,9 @@
 #using Revise
 using DynamicQuantities, LinearAlgebra
 
+# checks for unit consistency with subtraction
+within(A,B,tol) =  maximum(abs.(ustrip(A - B))) < tol
+
 v = randn(2,2)
 d = 1u"m"
 e = u"m"
@@ -11,7 +14,7 @@ A = QuantityArray(v, d) # Create a `QuantityArray` with value `value` and dimens
 q = [1,2]
 r = A\q
 @test isequal(dimension(A*r),dimension(QuantityArray(q)))
-@test isequal(ustrip(A*r),q)
+@test within(ustrip(A*r),q,1e-10)
 
 # test inv
 B = inv(A)
@@ -23,8 +26,6 @@ dc = 1u"kg"
 C = QuantityArray(vc, dc) # Create a `QuantityArray` with v
 
 D = A*C
-# checks for unit consistency with subtraction
-within(A,B,tol) =  maximum(abs.(ustrip(A - B))) < tol
 
 @test within(A\D,C,1e-12)
 
