@@ -1,20 +1,9 @@
 module DynamicQuantitiesLinearAlgebraExt
 
-import Base: (*) #, transpose
 import LinearAlgebra: norm, inv, (\), svd, Algorithm, default_svd_alg, SVD, Diagonal, Adjoint, Transpose, AbstractRotation, AbstractMatrix, eigen, eigsortby, Eigen, det
 import DynamicQuantities: AbstractQuantity, ustrip, dimension, new_quantity, AbstractDimensions, QuantityArray, Quantity
 
 norm(q::AbstractQuantity, p::Real=2) = new_quantity(typeof(q), norm(ustrip(q), p), dimension(q))
-
-# handle ambiguities
-*(q::QuantityArray,r::QuantityArray) = QuantityArray(ustrip(q)*ustrip(r),dimension(q)*dimension(r))
-*(q::QuantityArray,r::AbstractMatrix) = QuantityArray(ustrip(q)*r,dimension(q))
-*(q::QuantityArray,r::AbstractVector)  = QuantityArray(ustrip(q)*r,dimension(q))
-*(r::AbstractMatrix,q::QuantityArray) = QuantityArray(r*ustrip(q),dimension(q))
-*(r::AbstractVector,q::QuantityArray) = QuantityArray(r*ustrip(q),dimension(q))
-
-# a choice to make this function type stable (to be reviewed/revisited)
-#transpose(q::QuantityArray) = QuantityArray(transpose(ustrip(q)),dimension(q))
 
 \(q::QuantityArray,r::QuantityArray) = QuantityArray(ustrip(q)\ustrip(r),dimension(r)/dimension(q))
 \(q::QuantityArray,r::Union{AbstractVector,AbstractMatrix}) = QuantityArray(ustrip(q)\r,dimension(q)^-1)

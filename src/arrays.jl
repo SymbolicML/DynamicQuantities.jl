@@ -212,3 +212,10 @@ ucurrent(q::QuantityArray) = ucurrent(dimension(q))
 utemperature(q::QuantityArray) = utemperature(dimension(q))
 uluminosity(q::QuantityArray) = uluminosity(dimension(q))
 uamount(q::QuantityArray) = uamount(dimension(q))
+
+# handle ambiguities in multiplication
+Base.:*(q::QuantityArray,r::QuantityArray) = QuantityArray(ustrip(q)*ustrip(r),dimension(q)*dimension(r))
+Base.:*(q::QuantityArray,r::AbstractMatrix) = QuantityArray(ustrip(q)*r,dimension(q))
+Base.:*(q::QuantityArray,r::AbstractVector)  = QuantityArray(ustrip(q)*r,dimension(q))
+Base.:*(r::AbstractMatrix,q::QuantityArray) = QuantityArray(r*ustrip(q),dimension(q))
+Base.:*(r::AbstractVector,q::QuantityArray) = QuantityArray(r*ustrip(q),dimension(q))
