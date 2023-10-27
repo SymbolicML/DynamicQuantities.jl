@@ -22,10 +22,10 @@ else
     @safetestset "Unit tests" begin
         include("unittests.jl")
     end
-    @safetestset "Aqua tests" begin
-        include("test_aqua.jl")
-    end
     @safetestset "LinearAlgebra.jl integration tests" begin
         include("test_linearalgebra.jl")
+    end
+    @safetestset "Aqua tests" begin
+        include("test_aqua.jl")
     end
 end
