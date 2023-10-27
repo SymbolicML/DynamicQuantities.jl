@@ -1,5 +1,3 @@
-#import Pkg; Pkg.activate(".")
-#using Revise
 using DynamicQuantities, LinearAlgebra
 
 # checks for unit consistency with subtraction
@@ -43,6 +41,10 @@ inv(F) # doesn't return a QuantityArray, could add a wrapper here
 
 Σ = Diagonal(σ)
 @test within(U*Σ*V',A,1e-10)
+
+# test that diagm runs
+Σwide = diagm(2,3,σ)
+Σsquare = diagm(σ)
 
 # SVD in modal form
 # truncated SVD
