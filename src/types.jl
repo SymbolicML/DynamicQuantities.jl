@@ -35,6 +35,11 @@ object is stored in the `:dimensions` field. These fields can be accessed with
 `AbstractQuantity` objects, including `+, -, *, /, ^, sqrt, cbrt, abs`.
 
 See also `AbstractGenericQuantity` for creating quantities subtyped to `Any`.
+
+**Note**: In general, you should probably
+specialize on `AbstractUnionQuantity` which is
+the union of both `AbstractQuantity` and `AbstractGenericQuantity`,
+_as well as any other future abstract quantity types_,
 """
 abstract type AbstractQuantity{T,D} <: Number end
 
@@ -43,6 +48,11 @@ abstract type AbstractQuantity{T,D} <: Number end
 
 This has the same behavior as `AbstractQuantity` but is subtyped to `Any` rather
 than `Number`.
+
+**Note**: In general, you should probably
+specialize on `AbstractUnionQuantity` which is
+the union of both `AbstractQuantity` and `AbstractGenericQuantity`,
+_as well as any other future abstract quantity types_,
 """
 abstract type AbstractGenericQuantity{T,D} end
 
@@ -53,6 +63,8 @@ const ABSTRACT_QUANTITY_TYPES = ((AbstractQuantity, Number), (AbstractGenericQua
 
 This is a union of both `AbstractQuantity{T,D}` and `AbstractGenericQuantity{T,D}`.
 It is used throughout the library to declare methods which can take both types.
+You should generally specialize on this type, rather than its constituents,
+as it will also include future abstract quantity types.
 """
 const AbstractUnionQuantity{T,D} = Union{AbstractQuantity{T,D},AbstractGenericQuantity{T,D}}
 
