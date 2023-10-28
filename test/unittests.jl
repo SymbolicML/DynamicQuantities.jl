@@ -705,254 +705,257 @@ end
 end
 
 @testset "Arrays" begin
-    @testset "Basics" begin
-        x = QuantityArray(randn(32), u"km/s")
-        @test ustrip(sum(x)) ≈ sum(ustrip(x))
+    for Q in (Quantity, GenericQuantity)
+        @testset "Basics $Q" begin
+            x = QuantityArray(randn(32), Q(u"km/s"))
+            @test ustrip(sum(x)) ≈ sum(ustrip(x))
 
-        # Setting index with different quantity:
-        x[5] = Quantity(5, length=1, time=-1)
-        @test x[5] == Quantity(5, length=1, time=-1)
+            # Setting index with different quantity:
+            x[5] = Q(5, length=1, time=-1)
+            @test x[5] == Q(5, length=1, time=-1)
 
-        y = randn(32)
-        @test ustrip(QuantityArray(y, u"m")) == y
+            y = randn(32)
+            @test ustrip(QuantityArray(y, Q(u"m"))) == y
 
-        f_square(v) = v^2 * 1.5 - v^2
-        @test sum(f_square.(QuantityArray(y, u"m"))) == sum(f_square.(y) .* u"m^2")
+            f_square(v) = v^2 * 1.5 - v^2
+            @test sum(f_square.(QuantityArray(y, Q(u"m")))) == sum(f_square.(y) .* Q(u"m^2"))
 
-        y_q = QuantityArray(y, u"m * cd / s")
-        @test typeof(f_square.(y_q)) == typeof(y_q)
+            y_q = QuantityArray(y, Q(u"m * cd / s"))
+            @test typeof(f_square.(y_q)) == typeof(y_q)
 
-        for get_u in (ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount)
-            @test get_u(f_square.(y_q)) == get_u(y_q) * 2
-            @test get_u(f_square(first(y_q))) == get_u(y_q) * 2
+            for get_u in (ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount)
+                @test get_u(f_square.(y_q)) == get_u(y_q) * 2
+                @test get_u(f_square(first(y_q))) == get_u(y_q) * 2
+            end
+
+            Q == Quantity && @test QuantityArray(ones(3), u"m/s") == QuantityArray(ones(3), length=1, time=-1)
+
+            fv_square(v) = f_square.(v)
+            @inferred fv_square(y_q)
+
+            # Same array type:
+            s_x = QuantityArray(SArray{Tuple{32}}(ustrip(x)), dimension(x), Q)
+            @test typeof(s_x) <: QuantityArray{Float64,1,<:Dimensions,<:Q{Float64,<:Dimensions},<:SArray}
+            output_s_x = (xi -> xi^2).(s_x)
+            @test array_type(output_s_x) <: MArray
+            @test dim_type(output_s_x) <: Dimensions{<:FixedRational}
+            @test value_type(output_s_x) == Float64
+            @test dimension(output_s_x) == dimension(x)^2
+            fv_square2(x) = (xi -> xi^2).(x)
+            @inferred fv_square2(s_x)
         end
 
-        @test QuantityArray(ones(3), u"m/s") == QuantityArray(ones(3), length=1, time=-1)
-
-        fv_square(v) = f_square.(v)
-        @inferred fv_square(y_q)
-
-        # Same array type:
-        s_x = QuantityArray(SArray{Tuple{32}}(ustrip(x)), dimension(x))
-        output_s_x = (xi -> xi^2).(s_x)
-        @test array_type(output_s_x) <: MArray
-        @test dim_type(output_s_x) <: Dimensions{<:FixedRational}
-        @test value_type(output_s_x) == Float64
-        @test dimension(output_s_x) == dimension(x)^2
-        fv_square2(x) = (xi -> xi^2).(x)
-        @inferred fv_square2(s_x)
-    end
-
-    @testset "Copying" begin
-        x = QuantityArray(randn(3), u"km/s")
-        xc = copy(x)
-        @test x == xc
-        xc[2] *= 0.5
-        @test x != xc
-    end
-
-    @testset "Utilities" begin
-        @test fill(u"m/s", 10) == QuantityArray(fill(1.0, 10) .* u"m/s")
-        @test ndims(fill(u"m/s", ())) == 0
-        @test fill(u"m/s", ())[begin] == u"m/s"
-    end
-
-    @testset "similar" begin
-        qa = QuantityArray(rand(3, 4), u"m")
-
-        new_qa = similar(qa)
-        @test size(new_qa) == size(qa)
-        @test eltype(new_qa) == eltype(qa)
-        @test dim_type(new_qa) == dim_type(qa)
-        @test quantity_type(new_qa) == eltype(new_qa)
-        @test dimension(new_qa) == dimension(qa)
-        @test isa(ustrip(new_qa), Array{Float64,2})
-        @test !isequal(ustrip(qa), ustrip(new_qa))
-
-        new_qa = similar(qa, Float32)
-        @test eltype(new_qa) <: Quantity{Float32}
-        @test dim_type(new_qa) == dim_type(qa)
-        @test dimension(new_qa) == dimension(qa)
-        @test isa(ustrip(new_qa), Array{Float32,2})
-
-        new_qa = similar(qa, axes(ones(6, 8)))
-        @test size(new_qa) == (6, 8)
-        @test eltype(new_qa) <: Quantity{Float64}
-        @test dim_type(new_qa) == dim_type(qa)
-        @test dimension(new_qa) == dimension(qa)
-        @test isa(ustrip(new_qa), Array{Float64,2})
-
-        new_qa = similar(qa, Float32, axes(ones(6, 8)))
-        @test size(new_qa) == (6, 8)
-        @test eltype(new_qa) <: Quantity{Float32}
-
-        new_qa = similar(qa, Float32, (6,))
-        @test size(new_qa) == (6,)
-        @test eltype(new_qa) <: Quantity{Float32}
-
-        new_qa = similar(qa, (6,))
-        @test size(new_qa) == (6,)
-        @test eltype(new_qa) <: Quantity{Float64}
-
-        new_qa = similar(qa, Float32, (6, UInt(3)))
-        @test size(new_qa) == (6, 3)
-        @test eltype(new_qa) <: Quantity{Float32}
-
-        new_qa = similar(qa, (6, UInt(3)))
-        @test size(new_qa) == (6, 3)
-        @test eltype(new_qa) <: Quantity{Float64}
-    end
-
-    @testset "Promotion" begin
-        qarr1 = QuantityArray(randn(32), convert(Dimensions{Rational{Int32}}, dimension(u"km/s")))
-        qarr2 = QuantityArray(randn(Float16, 32), convert(Dimensions{Rational{Int64}}, dimension(u"km/s")))
-
-        expected_T = Float64
-        expected_D = Dimensions{Rational{Int64}}
-        expected_type = QuantityArray{expected_T,1,expected_D,Quantity{Float64,expected_D},Array{expected_T,1}}
-
-        @test promote_type(typeof(qarr1), typeof(qarr2)) == expected_type
-        @test typeof(promote(qarr1, qarr2)) == Tuple{expected_type, expected_type}
-    end
-
-    @testset "Array concatenation" begin
-        qarr1 = QuantityArray(randn(3) .* u"km/s")
-        qarr2 = QuantityArray(randn(3) .* u"km/s")
-
-        @test ustrip.(hcat(qarr1, qarr2)) == hcat(ustrip(qarr1), ustrip(qarr2))
-        @test ustrip.(vcat(qarr1, qarr2)) == vcat(ustrip(qarr1), ustrip(qarr2))
-        @test ustrip.(cat(qarr1, qarr2, dims=2)) == cat(ustrip(qarr1), ustrip(qarr2), dims=Val(2))
-        @test dimension(hcat(qarr1, qarr2)) == dimension(u"km/s")
-        
-        # type stability:
-        @inferred hcat(qarr1, qarr2)
-        @inferred vcat(qarr1, qarr2)
-        @inferred cat(qarr1, qarr2, dims=Val(2))
-
-        # same array type:
-        s_qarr1 = QuantityArray(SArray{Tuple{3}}(ustrip(qarr1)), dimension(qarr1))
-        s_qarr2 = QuantityArray(SArray{Tuple{3}}(ustrip(qarr2)), dimension(qarr2))
-        @test array_type(hcat(s_qarr1, s_qarr2)) <: SArray
-
-        # Test concatenating different arrays:
-
-    end
-
-    @testset "Generic literal_pow" begin
-        y = randn(32)
-        y_q = QuantityArray(y, u"m")
-
-        f4(v) = v^4 * 0.3
-        @test sum(f4.(QuantityArray(y, u"m"))) == sum(f4.(y) .* u"m^4")
-
-        f4v(v) = f4.(v)
-        @inferred f4v(y_q)
-    end
-
-    @testset "Broadcast with single number" begin
-        ar1 = QuantityArray(randn(3), u"km/s")
-        @test ustrip(ar1 .* u"m/s") == ustrip(ar1)
-        @test dimension(ar1 .* u"m/s") == dimension(u"m^2/s^2")
-    end
-
-    @testset "Multiple arrays" begin
-        ar1 = QuantityArray(randn(3), u"km/s")
-        ar2 = QuantityArray(randn(3, 1), u"km/s")
-        ar3 = randn(3)
-        f(x, y, z) = x + y * z
-        g(x, y, z) = f.(x, y, z)
-        @inferred g(ar1, ar2[:, 1], ar3)
-        @test g(ar1, ar2[:, 1], ar3) == [f(ar1[i], ar2[i, 1], ar3[i]) for i in eachindex(ar1)]
-
-        tuple_array = (1u"km/s", 2u"m/s", 3u"cm/s")
-        @inferred g(ar1, tuple_array, ar3)
-        @test g(ar1, tuple_array, ar3) == [f(ar1[i], tuple_array[i], ar3[i]) for i in eachindex(ar1)]
-
-        array_of_quantities = [1u"km/s", 2u"m/s", 3u"cm/s"]
-        @inferred g(ar1, array_of_quantities, ar3)
-        @test g(ar1, tuple_array, ar3) == g(ar1, array_of_quantities, ar3)
-
-        @test typeof(Base.broadcasted(f, ar1, array_of_quantities, 1.0).args[end]) == Float64
-        q = u"1"
-        @test typeof(Base.broadcasted(f, ar1, array_of_quantities, q).args[end]) == typeof(q)
-
-        # TODO: Type inference here needs to be fixed
-        @test_skip @inferred g(ar1, array_of_quantities, u"1")
-        @test g(ar1, array_of_quantities, u"1") == [f(ar1[i], array_of_quantities[i], 1) for i in eachindex(ar1)]
-    end
-
-    @testset "Broadcast nd-arrays" begin
-        x = QuantityArray(randn(3, 3), u"A")
-        y = QuantityArray(randn(3, 3), u"cd")
-        @test ustrip(x .* y) == ustrip(x) .* ustrip(y)
-    end
-
-    @testset "Broadcast different arrays" begin
-        f(x, y, z, w) = x * y + z * w
-        g(x, y, z, w) = f.(x, y, z, w)
-
-        x = randn(32)
-        y = QuantityArray(randn(32), u"km/s")
-        z = rand(1:10, 32)
-        w = Quantity{Float32}(u"m/s")
-        @test typeof(g(x, y, z, w)) <: QuantityArray{Float64}
-
-        y32 = QuantityArray(ustrip(y), dimension(y))
-        @test typeof(y .* y32) <: QuantityArray{Float64}
-
-        a = [randn() * u"km/s" for i=1:32]
-        @test typeof(y .* a) <: QuantityArray
-        @test typeof(a .* y) <: QuantityArray
-
-        b = GenericQuantity(randn(Float32, 32), length=1, time=-1)
-        @test typeof(b) <: GenericQuantity
-        @test typeof(b .* b) <: Vector{<:GenericQuantity}
-        @test typeof(a .* b) <: Vector{<:GenericQuantity}
-        @test typeof(b .* a) <: Vector{<:GenericQuantity}
-        @test typeof(y .* b) <: QuantityArray{Float64}
-        @test typeof(b .* y) <: QuantityArray{Float64}
-    end
-
-    @testset "Broadcast scalars" begin
-        for (x, qx) in ((0.5, 0.5u"s"), ([0.5, 0.2], GenericQuantity([0.5, 0.2], time=1)))
-            @test size(qx) == size(x)
-            @test length(qx) == length(x)
-            @test axes(qx) == axes(x)
-            @test iterate(qx)[1] == (iterate(x)[1] * u"s")
-            @test ndims(qx) == ndims(x)
-            @test Base.broadcastable(qx) == qx
-            ustrip(qx) isa Real && @test qx[1] == qx
-            @test keys(qx) == keys(x)
+        @testset "Copying $Q" begin
+            x = QuantityArray(randn(3), Q(u"km/s"))
+            xc = copy(x)
+            @test x == xc
+            xc[2] *= 0.5
+            @test x != xc
         end
-    end
 
-    @testset "Symbolic units" begin
-        z_ar = randn(32)
-        z = QuantityArray(z_ar, us"Constants.h * km/s")
-        z_expanded = QuantityArray(z_ar .* u"Constants.h * km/s")
-        @test typeof(uexpand(z)) == typeof(z_expanded)
-        @test all(uexpand(z) .≈ z_expanded)
-        io = IOBuffer()
-        Base.showarg(io, z, true)
-        msg = String(take!(io))
-        @test occursin(r"QuantityArray\(::Vector{Float64}, ::(DynamicQuantities\.)?Quantity{Float64, (DynamicQuantities\.)?SymbolicDimensions{(DynamicQuantities\.)?FixedRational{Int32, 25200}}}\)", msg)
+        @testset "Utilities $Q" begin
+            @test fill(Q(u"m/s"), 10) == QuantityArray(fill(1.0, 10) .* Q(u"m/s"))
+            @test ndims(fill(Q(u"m/s"), ())) == 0
+            @test fill(Q(u"m/s"), ())[begin] == Q(u"m/s")
+        end
 
-        io = IOBuffer()
-        Base.show(io, MIME"text/plain"(), typeof(z))
-        msg2 = String(take!(io))
-        @test msg2 == msg
-    end
+        @testset "similar $Q" begin
+            qa = QuantityArray(rand(3, 4), Q(u"m"))
 
-    @testset "Extra test coverage" begin
-        @test_throws ErrorException DynamicQuantities.materialize_first(())
-        VERSION >= v"1.8" &&
-            @test_throws "Unexpected broadcast" DynamicQuantities.materialize_first(())
+            new_qa = similar(qa)
+            @test size(new_qa) == size(qa)
+            @test eltype(new_qa) == eltype(qa)
+            @test dim_type(new_qa) == dim_type(qa)
+            @test quantity_type(new_qa) == eltype(new_qa)
+            @test dimension(new_qa) == dimension(qa)
+            @test isa(ustrip(new_qa), Array{Float64,2})
+            @test !isequal(ustrip(qa), ustrip(new_qa))
 
-        # Not sure how to test this otherwise, but method is supposed to be
-        # required for the broadcasting interface
-        x = [1u"km/s"]
-        ref = Base.RefValue(x)
-        @test DynamicQuantities.materialize_first(ref) === x[1]
+            new_qa = similar(qa, Float32)
+            @test eltype(new_qa) <: Q{Float32}
+            @test dim_type(new_qa) == dim_type(qa)
+            @test dimension(new_qa) == dimension(qa)
+            @test isa(ustrip(new_qa), Array{Float32,2})
+
+            new_qa = similar(qa, axes(ones(6, 8)))
+            @test size(new_qa) == (6, 8)
+            @test eltype(new_qa) <: Q{Float64}
+            @test dim_type(new_qa) == dim_type(qa)
+            @test dimension(new_qa) == dimension(qa)
+            @test isa(ustrip(new_qa), Array{Float64,2})
+
+            new_qa = similar(qa, Float32, axes(ones(6, 8)))
+            @test size(new_qa) == (6, 8)
+            @test eltype(new_qa) <: Q{Float32}
+
+            new_qa = similar(qa, Float32, (6,))
+            @test size(new_qa) == (6,)
+            @test eltype(new_qa) <: Q{Float32}
+
+            new_qa = similar(qa, (6,))
+            @test size(new_qa) == (6,)
+            @test eltype(new_qa) <: Q{Float64}
+
+            new_qa = similar(qa, Float32, (6, UInt(3)))
+            @test size(new_qa) == (6, 3)
+            @test eltype(new_qa) <: Q{Float32}
+
+            new_qa = similar(qa, (6, UInt(3)))
+            @test size(new_qa) == (6, 3)
+            @test eltype(new_qa) <: Q{Float64}
+        end
+
+        @testset "Promotion $Q" begin
+            qarr1 = QuantityArray(randn(32), convert(Dimensions{Rational{Int32}}, dimension(u"km/s")), Q)
+            qarr2 = QuantityArray(randn(Float16, 32), convert(Dimensions{Rational{Int64}}, dimension(u"km/s")), Q)
+
+            expected_T = Float64
+            expected_D = Dimensions{Rational{Int64}}
+            expected_type = QuantityArray{expected_T,1,expected_D,Q{Float64,expected_D},Array{expected_T,1}}
+
+            @test promote_type(typeof(qarr1), typeof(qarr2)) == expected_type
+            @test typeof(promote(qarr1, qarr2)) == Tuple{expected_type, expected_type}
+        end
+
+        @testset "Array concatenation $Q" begin
+            qarr1 = QuantityArray(randn(3) .* Q(u"km/s"))
+            qarr2 = QuantityArray(randn(3) .* Q(u"km/s"))
+
+            @test ustrip.(hcat(qarr1, qarr2)) == hcat(ustrip(qarr1), ustrip(qarr2))
+            @test ustrip.(vcat(qarr1, qarr2)) == vcat(ustrip(qarr1), ustrip(qarr2))
+            @test ustrip.(cat(qarr1, qarr2, dims=2)) == cat(ustrip(qarr1), ustrip(qarr2), dims=Val(2))
+            @test dimension(hcat(qarr1, qarr2)) == dimension(u"km/s")
+            
+            # type stability:
+            @inferred hcat(qarr1, qarr2)
+            @inferred vcat(qarr1, qarr2)
+            @inferred cat(qarr1, qarr2, dims=Val(2))
+
+            # same array type:
+            s_qarr1 = QuantityArray(SArray{Tuple{3}}(ustrip(qarr1)), dimension(qarr1), Q)
+            s_qarr2 = QuantityArray(SArray{Tuple{3}}(ustrip(qarr2)), dimension(qarr2), Q)
+            @test array_type(hcat(s_qarr1, s_qarr2)) <: SArray
+
+            # Test concatenating different arrays:
+
+        end
+
+        @testset "Generic literal_pow $Q" begin
+            y = randn(32)
+            y_q = QuantityArray(y, Q(u"m"))
+
+            f4(v) = v^4 * 0.3
+            @test sum(f4.(QuantityArray(y, Q(u"m")))) == sum(f4.(y) .* Q(u"m^4"))
+
+            f4v(v) = f4.(v)
+            @inferred f4v(y_q)
+        end
+
+        @testset "Broadcast with single number $Q" begin
+            ar1 = QuantityArray(randn(3), Q(u"km/s"))
+            @test ustrip(ar1 .* Q(u"m/s")) == ustrip(ar1)
+            @test dimension(ar1 .* Q(u"m/s")) == dimension(u"m^2/s^2")
+        end
+
+        @testset "Multiple arrays $Q" begin
+            ar1 = QuantityArray(randn(3), Q(u"km/s"))
+            ar2 = QuantityArray(randn(3, 1), Q(u"km/s"))
+            ar3 = randn(3)
+            f(x, y, z) = x + y * z
+            g(x, y, z) = f.(x, y, z)
+            @inferred g(ar1, ar2[:, 1], ar3)
+            @test g(ar1, ar2[:, 1], ar3) == [f(ar1[i], ar2[i, 1], ar3[i]) for i in eachindex(ar1)]
+
+            tuple_array = Q.((1u"km/s", 2u"m/s", 3u"cm/s"))
+            @inferred g(ar1, tuple_array, ar3)
+            @test g(ar1, tuple_array, ar3) == [f(ar1[i], tuple_array[i], ar3[i]) for i in eachindex(ar1)]
+
+            array_of_quantities = Q.([1u"km/s", 2u"m/s", 3u"cm/s"])
+            @inferred g(ar1, array_of_quantities, ar3)
+            @test g(ar1, tuple_array, ar3) == g(ar1, array_of_quantities, ar3)
+
+            @test typeof(Base.broadcasted(f, ar1, array_of_quantities, 1.0).args[end]) == Float64
+            q = Q(u"1")
+            @test typeof(Base.broadcasted(f, ar1, array_of_quantities, q).args[end]) == typeof(q)
+
+            # TODO: Type inference here needs to be fixed
+            @test_skip @inferred g(ar1, array_of_quantities, Q(u"1"))
+            @test g(ar1, array_of_quantities, Q(u"1")) == [f(ar1[i], array_of_quantities[i], 1) for i in eachindex(ar1)]
+        end
+
+        @testset "Broadcast nd-arrays $Q" begin
+            x = QuantityArray(randn(3, 3), Q(u"A"))
+            y = QuantityArray(randn(3, 3), Q(u"cd"))
+            @test ustrip(x .* y) == ustrip(x) .* ustrip(y)
+        end
+
+        @testset "Broadcast different arrays $Q" begin
+            f(x, y, z, w) = x * y + z * w
+            g(x, y, z, w) = f.(x, y, z, w)
+
+            x = randn(32)
+            y = QuantityArray(randn(32), u"km/s")
+            z = rand(1:10, 32)
+            w = Quantity{Float32}(u"m/s")
+            @test typeof(g(x, y, z, w)) <: QuantityArray{Float64}
+
+            y32 = QuantityArray(ustrip(y), dimension(y))
+            @test typeof(y .* y32) <: QuantityArray{Float64}
+
+            a = [randn() * u"km/s" for i=1:32]
+            @test typeof(y .* a) <: QuantityArray
+            @test typeof(a .* y) <: QuantityArray
+
+            b = GenericQuantity(randn(Float32, 32), length=1, time=-1)
+            @test typeof(b) <: GenericQuantity
+            @test typeof(b .* b) <: Vector{<:GenericQuantity}
+            @test typeof(a .* b) <: Vector{<:GenericQuantity}
+            @test typeof(b .* a) <: Vector{<:GenericQuantity}
+            @test typeof(y .* b) <: QuantityArray{Float64}
+            @test typeof(b .* y) <: QuantityArray{Float64}
+        end
+
+        @testset "Broadcast scalars $Q" begin
+            for (x, qx) in ((0.5, 0.5u"s"), ([0.5, 0.2], GenericQuantity([0.5, 0.2], time=1)))
+                @test size(qx) == size(x)
+                @test length(qx) == length(x)
+                @test axes(qx) == axes(x)
+                @test iterate(qx)[1] == (iterate(x)[1] * u"s")
+                @test ndims(qx) == ndims(x)
+                @test Base.broadcastable(qx) == qx
+                ustrip(qx) isa Real && @test qx[1] == qx
+                @test keys(qx) == keys(x)
+            end
+        end
+
+        @testset "Symbolic units $Q" begin
+            z_ar = randn(32)
+            z = QuantityArray(z_ar, Q(us"Constants.h * km/s"))
+            z_expanded = QuantityArray(z_ar .* Q(u"Constants.h * km/s"))
+            @test typeof(uexpand(z)) == typeof(z_expanded)
+            @test all(uexpand(z) .≈ z_expanded)
+            io = IOBuffer()
+            Base.showarg(io, z, true)
+            msg = String(take!(io))
+            Q == Quantity && @test occursin(r"QuantityArray\(::Vector{Float64}, ::(DynamicQuantities\.)?Quantity{Float64, (DynamicQuantities\.)?SymbolicDimensions{(DynamicQuantities\.)?FixedRational{Int32, 25200}}}\)", msg)
+
+            io = IOBuffer()
+            Base.show(io, MIME"text/plain"(), typeof(z))
+            msg2 = String(take!(io))
+            @test msg2 == msg
+        end
+
+        @testset "Extra test coverage $Q" begin
+            @test_throws ErrorException DynamicQuantities.materialize_first(())
+            VERSION >= v"1.8" &&
+                @test_throws "Unexpected broadcast" DynamicQuantities.materialize_first(())
+
+            # Not sure how to test this otherwise, but method is supposed to be
+            # required for the broadcasting interface
+            x = [1u"km/s"]
+            ref = Base.RefValue(x)
+            @test DynamicQuantities.materialize_first(ref) === x[1]
+        end
     end
 end
 
