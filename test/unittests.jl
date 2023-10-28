@@ -625,6 +625,15 @@ end
     @test uconvert(us"nm", 5e-9u"m") ≈ (5e-9u"m" |> uconvert(us"nm")) ≈ 5us"nm"
     @test_throws DimensionError uconvert(us"nm * J", 5e-9u"m")
 
+    # Types:
+    @test typeof(uconvert(us"nm", 5e-9u"m")) <: Quantity{Float64,<:SymbolicDimensions}
+    @test typeof(uconvert(us"nm", GenericQuantity(5e-9u"m"))) <: GenericQuantity{Float64,<:SymbolicDimensions}
+    @test uconvert(GenericQuantity(us"nm"), GenericQuantity(5e-9u"m")) ≈ 5us"nm"
+    @test uconvert(GenericQuantity(us"nm"), GenericQuantity(5e-9u"m")) ≈ GenericQuantity(5us"nm")
+
+    # We only want to convert the dimensions, and ignore the quantity type:
+    @test typeof(uconvert(GenericQuantity(us"nm"), 5e-9u"m")) <: Quantity{Float64,<:SymbolicDimensions}
+
     q = 1.5u"Constants.M_sun"
     qs = uconvert(us"Constants.M_sun", 5.0 * q)
     @test qs ≈ 7.5us"Constants.M_sun"
@@ -638,27 +647,29 @@ end
     VERSION >= v"1.8" &&
         @test_throws "You passed a quantity" uconvert(1.2us"m", 1.0u"m")
 
-    # Different types require converting both arguments:
-    q = convert(Quantity{Float16}, 1.5u"g")
-    qs = uconvert(convert(Quantity{Float16}, us"g"), 5 * q)
-    @test typeof(qs) <: Quantity{Float16,<:SymbolicDimensions{<:Any}}
-    @test qs ≈ 7.5us"g"
+    for Q in (Quantity, GenericQuantity)
+        # Different types require converting both arguments:
+        q = convert(Q{Float16}, 1.5u"g")
+        qs = uconvert(convert(Q{Float16}, us"g"), 5 * q)
+        @test typeof(qs) <: Q{Float16,<:SymbolicDimensions{<:Any}}
+        @test qs ≈ 7.5us"g"
 
-    # Arrays
-    x = [1.0, 2.0, 3.0] .* u"kg"
-    xs = x .|> uconvert(us"g")
-    @test typeof(xs) <: Vector{<:Quantity{Float64,<:SymbolicDimensions{<:Any}}}
-    @test xs[2] ≈ 2000us"g"
+        # Arrays
+        x = [1.0, 2.0, 3.0] .* Q(u"kg")
+        xs = x .|> uconvert(us"g")
+        @test typeof(xs) <: Vector{<:Q{Float64,<:SymbolicDimensions{<:Any}}}
+        @test xs[2] ≈ Q(2000us"g")
 
-    x_qa = QuantityArray(x)
-    xs_qa = x_qa .|> uconvert(us"g")
-    @test typeof(xs_qa) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
-    @test xs_qa[2] ≈ 2000us"g"
+        x_qa = QuantityArray(x)
+        xs_qa = x_qa .|> uconvert(us"g")
+        @test typeof(xs_qa) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
+        @test xs_qa[2] ≈ Q(2000us"g")
 
-    # Without vectorized call:
-    xs_qa2 = x_qa |> uconvert(us"g")
-    @test typeof(xs_qa2) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
-    @test xs_qa2[2] ≈ 2000us"g"
+        # Without vectorized call:
+        xs_qa2 = x_qa |> uconvert(us"g")
+        @test typeof(xs_qa2) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
+        @test xs_qa2[2] ≈ Q(2000us"g")
+    end
 end
 
 @testset "Test missing" begin
@@ -825,7 +836,7 @@ end
             @test ustrip.(vcat(qarr1, qarr2)) == vcat(ustrip(qarr1), ustrip(qarr2))
             @test ustrip.(cat(qarr1, qarr2, dims=2)) == cat(ustrip(qarr1), ustrip(qarr2), dims=Val(2))
             @test dimension(hcat(qarr1, qarr2)) == dimension(u"km/s")
-            
+
             # type stability:
             @inferred hcat(qarr1, qarr2)
             @inferred vcat(qarr1, qarr2)
@@ -965,20 +976,20 @@ end
         @test x isa GenericQuantity
         @test ustrip(x) == 1.5
         @test dimension(x) == Dimensions()
-    
+
         x = GenericQuantity(big(1.5)) 
         @test typeof(x) <: GenericQuantity{BigFloat}
-    
+
         x = GenericQuantity([1.5, 2.0], Dimensions{Rational{Int8}}; length=1)
         @test x isa GenericQuantity{Vector{Float64},Dimensions{Rational{Int8}}}
         @test supertype(typeof(x)) <: AbstractGenericQuantity{Vector{Float64},Dimensions{Rational{Int8}}}
         @test ustrip(x) == [1.5, 2.0]
         @test dimension(x) == Dimensions(length=1)
-    
+
         x = GenericQuantity(randn(3,3))
         @test x isa GenericQuantity{Matrix{Float64}}
         @test size(x) == (3,3)
-    
+
         x = GenericQuantity(1.5, length=1)
         y = GenericQuantity(2.0, time=1)
         @test_throws DimensionError x + y
@@ -991,13 +1002,13 @@ end
     @testset "GenericQuantity and Quantity promotion" begin
         x = GenericQuantity(1.5f0)
         y = Quantity(1.5, length=1)
-    
+
         # *Always* promotes to GenericQuantity:
         @test typeof(x * y) <: GenericQuantity{Float64}
-    
+
         x = GenericQuantity(rand(3))
         y = GenericQuantity(rand(3), length=1)
-    
+
         @test typeof(x .* y) <: Vector{<:GenericQuantity{Float64}}
 
         x = 0.5us"km/s"
