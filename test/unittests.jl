@@ -1037,6 +1037,11 @@ end
 
         x = [GenericQuantity([1.0, 2.0]), GenericQuantity([3f0, 4f0], Dimensions{Rational{Int}}, length=1)]
         @test x isa Vector{GenericQuantity{Vector{Float64},Dimensions{Rational{Int}}}}
+
+        # Explicitly trigger Number conversion:
+        x = Quantity(1u"nm")
+        @test convert(Number, x) === x
+        @test x isa Number
     end
 
     @testset "GenericQuantity broadcasting" begin
