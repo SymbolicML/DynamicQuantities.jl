@@ -42,7 +42,7 @@ function diagm(m::Integer, n::Integer, q::Vector{Quantity{T,D}}) where {T,R,D<:A
     end
 end
 
-function eigen(A::QuantityArray; permute::Bool=true, scale::Bool=true, sortby::Union{Function,Nothing}=eigsortby) 
+function eigen(A::QuantityArray{T,2}; permute::Bool=true, scale::Bool=true, sortby::Union{Function,Nothing}=eigsortby) where T
     F = eigen(ustrip(A), permute=permute, scale=scale, sortby=sortby)
     return Eigen(QuantityArray(F.values, dimension(A)), F.vectors)
     # functions available for Eigen objects: eigvals, det. Not implemented: inv, isposdef. 

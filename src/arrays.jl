@@ -36,7 +36,7 @@ struct QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractQuantity{T,D},V<:Abstr
     end
 end
 
-const QuantityArrayVecOrMat{T} = Union{QuantityArray{T,2},QuantityArray{T,1}} where T
+const QuantityArrayVecOrMat{T} = Union{QuantityArray{T,1}, QuantityArray{T,2}} where T
 
 # Construct with a Quantity (easier, as you can use the units):
 QuantityArray(v::AbstractArray; kws...) = QuantityArray(v, DEFAULT_DIM_TYPE(; kws...))
@@ -216,11 +216,11 @@ uluminosity(q::QuantityArray) = uluminosity(dimension(q))
 uamount(q::QuantityArray) = uamount(dimension(q))
 
 # handle ambiguities in multiplication
-Base.:*(q::QuantityArray,r::QuantityArray) = QuantityArray(ustrip(q)*ustrip(r),dimension(q)*dimension(r))
-Base.:*(q::QuantityArray,r::AbstractMatrix) = QuantityArray(ustrip(q)*r,dimension(q))
-Base.:*(q::QuantityArray,r::AbstractVector)  = QuantityArray(ustrip(q)*r,dimension(q))
-Base.:*(r::AbstractMatrix,q::QuantityArray) = QuantityArray(r*ustrip(q),dimension(q))
-Base.:*(r::AbstractVector,q::QuantityArray) = QuantityArray(r*ustrip(q),dimension(q))
+Base.:*(l::QuantityArray, r::QuantityArray) = QuantityArray(ustrip(l)*ustrip(r), dimension(l)*dimension(r))
+Base.:*(l::QuantityArray, r::AbstractMatrix) = QuantityArray(ustrip(l)*r, dimension(l))
+Base.:*(l::QuantityArray, r::AbstractVector)  = QuantityArray(ustrip(q)*r, dimension(l))
+Base.:*(l::AbstractMatrix, r::QuantityArray) = QuantityArray(l*ustrip(r), dimension(r))
+Base.:*(l::AbstractVector, r::QuantityArray) = QuantityArray(l*ustrip(r), dimension(r))
 
 Base.:\(l::QuantityArrayVecOrMat, r::QuantityArrayVecOrMat)  = QuantityArray(ustrip(l) \ ustrip(r), dimension(r) / dimension(l))
 Base.:\(l::QuantityArrayVecOrMat, r::Union{AbstractVector,AbstractMatrix}) = QuantityArray(ustrip(l) \ r, inv(dimension(l)))
