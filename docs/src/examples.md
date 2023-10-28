@@ -62,7 +62,7 @@ vx0 = v0 * cos(θ)
 vy0 = v0 * sin(θ)
 ```
 
-Next, let's create a time vector from 0 to 1.3 minutes.
+Next, let's create a time vector from 0 seconds to 1.3 minutes.
 Note that these are the same dimension (time), so it's fine to treat
 them as dimensionally equivalent!
 
@@ -71,8 +71,8 @@ t = range(0u"s", 1.3u"min", length=100)
 ```
 
 Next, use kinematic equations to calculate x and y as a function of time.
-`x(t)` is x position at time t, and
-`y(t)` is the y position
+`x(t)` is the x position at time t, and
+`y(t)` is the y position:
 
 ```julia
 x(t) = vx0*t
