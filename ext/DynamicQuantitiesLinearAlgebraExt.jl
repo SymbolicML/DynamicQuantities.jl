@@ -8,7 +8,7 @@ using DynamicQuantities: AbstractQuantity, allequal, ustrip, dimension, new_quan
 
 norm(q::AbstractQuantity, p::Real=2) = new_quantity(typeof(q), norm(ustrip(q), p), dimension(q))
 
-function svd(A::QuantityArray; full=false,alg::Algorithm=default_svd_alg(ustrip(A))) 
+function svd(A::QuantityArray{T,2}; full=false,alg::Algorithm=default_svd_alg(ustrip(A))) where T
     F = svd(ustrip(A), full=full, alg=alg)
     S = [Quantity(F.S[i], dimension(A)) for i in eachindex(F.S)] # julia 1.6 passes but long-winded
     return SVD(F.U, S, F.Vt)
