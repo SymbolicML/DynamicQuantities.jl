@@ -56,8 +56,6 @@ _as well as any other future abstract quantity types_,
 """
 abstract type AbstractGenericQuantity{T,D} end
 
-const ABSTRACT_QUANTITY_TYPES = ((AbstractQuantity, Number), (AbstractGenericQuantity, Any))
-
 """
     AbstractUnionQuantity{T,D}
 
@@ -166,15 +164,23 @@ struct GenericQuantity{T,D<:AbstractDimensions} <: AbstractGenericQuantity{T,D}
     GenericQuantity(x::_T, dimensions::_D) where {_T,_D<:AbstractDimensions} = new{_T,_D}(x, dimensions)
 end
 
+"""
+    ABSTRACT_QUANTITY_TYPES
 
-for (type, base_type) in ABSTRACT_QUANTITY_TYPES
+A constant tuple of the existing abstract quantity types,
+each as a tuple with (1) the abstract type,
+(2) the base type, and (3) the default exported concrete type.
+"""
+const ABSTRACT_QUANTITY_TYPES = ((AbstractQuantity, Number, Quantity), (AbstractGenericQuantity, Any, GenericQuantity))
+
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         (::Type{Q})(x::T, ::Type{D}; kws...) where {D<:AbstractDimensions,T<:$base_type,T2,Q<:$type{T2}} = constructor_of(Q)(convert(T2, x), D(; kws...))
         (::Type{Q})(x::$base_type, ::Type{D}; kws...) where {D<:AbstractDimensions,Q<:$type} = constructor_of(Q)(x, D(; kws...))
         (::Type{Q})(x::T; kws...) where {T<:$base_type,T2,Q<:$type{T2}} = constructor_of(Q)(convert(T2, x), dim_type(Q)(; kws...))
         (::Type{Q})(x::$base_type; kws...) where {Q<:$type} = constructor_of(Q)(x, dim_type(Q)(; kws...))
     end
-    for (type2, _) in ABSTRACT_QUANTITY_TYPES
+    for (type2, _, _) in ABSTRACT_QUANTITY_TYPES
         @eval begin
             (::Type{Q})(q::$type2) where {T,D<:AbstractDimensions,Q<:$type{T,D}} = constructor_of(Q)(convert(T, ustrip(q)), convert(D, dimension(q)))
             (::Type{Q})(q::$type2) where {T,Q<:$type{T}} = constructor_of(Q)(convert(T, ustrip(q)), dimension(q))

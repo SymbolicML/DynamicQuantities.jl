@@ -68,7 +68,7 @@ function SymbolicDimensions{R}(; kws...) where {R}
 end
 (::Type{<:SymbolicDimensions})(::Type{R}; kws...) where {R} = SymbolicDimensions{R}(; kws...)
 
-for (type, _) in ABSTRACT_QUANTITY_TYPES
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         function Base.convert(::Type{Q}, q::AbstractUnionQuantity{<:Any,<:Dimensions}) where {T,Q<:$type{T,SymbolicDimensions}}
             return convert(constructor_of(Q){T,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}, q)

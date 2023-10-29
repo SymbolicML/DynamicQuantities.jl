@@ -739,7 +739,14 @@ for Q in (Quantity, GenericQuantity)
                 @test get_u(f_square(first(y_q))) == get_u(y_q) * 2
             end
 
-            Q == Quantity && @test QuantityArray(ones(3), u"m/s") == QuantityArray(ones(3), length=1, time=-1)
+            # Test default constructors:
+            @test QuantityArray(ones(3), u"m/s") == QuantityArray(ones(3), length=1, time=-1)
+            @test typeof(QuantityArray(ones(3), u"m/s")) <: QuantityArray{Float64,1,<:Dimensions,<:Quantity,<:Array}
+
+            # We can create quantity arrays with generic quantity
+            @test typeof(QuantityArray([[1.0], [2.0, 3.0]], dimension(u"m/s"))) <: QuantityArray{<:Any,1,<:Dimensions,<:GenericQuantity,<:Array}
+            @test typeof(QuantityArray([[1.0], [2.0, 3.0]], GenericQuantity(u"m/s"))) <: QuantityArray{<:Any,1,<:Dimensions,<:GenericQuantity,<:Array}
+            @test QuantityArray([[1.0], [2.0, 3.0]], GenericQuantity(u"km/s"))[1][1] == 1000u"m/s"
 
             fv_square(v) = f_square.(v)
             @inferred fv_square(y_q)
@@ -900,7 +907,7 @@ for Q in (Quantity, GenericQuantity)
             @test ustrip(x .* y) == ustrip(x) .* ustrip(y)
         end
 
-        @testset "Broadcast different arrays" begin
+        Q == Quantity && @testset "Broadcast different arrays" begin
             f(x, y, z, w) = x * y + z * w
             g(x, y, z, w) = f.(x, y, z, w)
 
@@ -926,7 +933,7 @@ for Q in (Quantity, GenericQuantity)
             @test typeof(b .* y) <: QuantityArray{Float64}
         end
 
-        @testset "Broadcast scalars" begin
+        Q == Quantity && @testset "Broadcast scalars" begin
             for (x, qx) in ((0.5, 0.5u"s"), ([0.5, 0.2], GenericQuantity([0.5, 0.2], time=1)))
                 @test size(qx) == size(x)
                 @test length(qx) == length(x)
@@ -956,7 +963,7 @@ for Q in (Quantity, GenericQuantity)
             @test msg2 == msg
         end
 
-        @testset "Extra test coverage" begin
+        Q == Quantity && @testset "Extra test coverage" begin
             @test_throws ErrorException DynamicQuantities.materialize_first(())
             VERSION >= v"1.8" &&
                 @test_throws "Unexpected broadcast" DynamicQuantities.materialize_first(())

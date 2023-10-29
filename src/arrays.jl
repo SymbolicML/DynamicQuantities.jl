@@ -14,9 +14,9 @@ and so can be used in most places where a normal array would be used, including 
 
 # Constructors
 
-- `QuantityArray(value::AbstractArray, dimensions::AbstractDimensions)`: Create a `QuantityArray` with value `value` and dimensions `dimensions`.
-- `QuantityArray(value::AbstractArray, quantity::AbstractUnionQuantity)`: Create a `QuantityArray` with value `value` and dimensions inferred
-   with `dimension(quantity)`. This is so that you can easily create an array with the units module, like so:
+- `QuantityArray(v::AbstractArray{<:Number}, d::AbstractDimensions)`: Create a `QuantityArray` with value `v` and dimensions `d`.
+- `QuantityArray(v::AbstractArray{<:Number}, q::AbstractUnionQuantity)`: Create a `QuantityArray` with value `v` and dimensions inferred
+   with `dimension(q)`. This is so that you can easily create an array with the units module, like so:
    ```julia
    julia> A = QuantityArray(randn(32), 1u"m")
    ```
@@ -25,6 +25,23 @@ and so can be used in most places where a normal array would be used, including 
   ```julia
   julia> A = QuantityArray(randn(32) .* 1u"km/s")
   ```
+- `QuantityArray(v::AbstractArray; kws...)`: Create a `QuantityArray` with dimensions inferred from the keyword arguments. For example:
+  ```julia
+  julia> A = QuantityArray(randn(32); length=1)
+  ```
+  is equivalent to
+  ```julia
+  julia> A = QuantityArray(randn(32), u"m")
+  ```
+  The keyword arguments are passed to `DEFAULT_DIM_TYPE`.
+- `QuantityArray(v::AbstractArray, d::AbstractDimensions)`: Create a `QuantityArray` with value `v` and dimensions `d`,
+  where `v` has non-numeric elements. This is useful for nested arrays, like `QuantityArray([[1.0], [1.0, 2.0]], length=1)`,
+  and will use a `GenericQuantity` as the element type, rather than the default `Quantity`.
+- `QuantityArray(v::AbstractArray, q::Quantity)`: Likewise, but passing a quantity. This is so the following syntax works:
+  ```julia
+  julia> QuantityArray([[1.0], [1.0, 2.0]], u"km/s")`
+  ```
+  where the value will be multiplied as `v .* 1000.0` when converting to SI units.
 """
 struct QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractUnionQuantity{T,D},V<:AbstractArray{T,N}} <: AbstractArray{Q,N}
     value::V
@@ -38,8 +55,12 @@ end
 
 # Construct with a Quantity (easier, as you can use the units):
 QuantityArray(v::AbstractArray; kws...) = QuantityArray(v, DEFAULT_DIM_TYPE(; kws...))
-QuantityArray(v::AbstractArray, d::AbstractDimensions) = QuantityArray(v, d, Quantity)
-QuantityArray(v::AbstractArray, q::AbstractUnionQuantity) = QuantityArray(v .* ustrip(q), dimension(q), typeof(q))
+for (type, base_type, default_type) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        QuantityArray(v::AbstractArray{<:$base_type}, q::$type) = QuantityArray(v .* ustrip(q), dimension(q), typeof(q))
+        QuantityArray(v::AbstractArray{<:$base_type}, d::AbstractDimensions) = QuantityArray(v, d, $default_type)
+    end
+end
 QuantityArray(v::QA) where {Q<:AbstractUnionQuantity,QA<:AbstractArray{Q}} =
     let
         allequal(dimension.(v)) || throw(DimensionError(first(v), v))

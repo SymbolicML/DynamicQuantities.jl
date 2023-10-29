@@ -1,4 +1,4 @@
-for (type, base_type) in ABSTRACT_QUANTITY_TYPES
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         Base.:*(l::$type, r::$type) = new_quantity(typeof(l), ustrip(l) * ustrip(r), dimension(l) * dimension(r))
         Base.:/(l::$type, r::$type) = new_quantity(typeof(l), ustrip(l) / ustrip(r), dimension(l) / dimension(r))
@@ -21,7 +21,7 @@ Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
 Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 
 # Defines + and -
-for (type, base_type) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-)
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-)
     @eval begin
         function Base.$op(l::$type, r::$type)
             dimension(l) == dimension(r) || throw(DimensionError(l, r))
@@ -42,8 +42,8 @@ Base.:-(l::AbstractUnionQuantity) = new_quantity(typeof(l), -ustrip(l), dimensio
 
 # Combining different abstract types
 for op in (:*, :/, :+, :-),
-    (t1, _) in ABSTRACT_QUANTITY_TYPES,
-    (t2, _) in ABSTRACT_QUANTITY_TYPES
+    (t1, _, _) in ABSTRACT_QUANTITY_TYPES,
+    (t2, _, _) in ABSTRACT_QUANTITY_TYPES
 
     t1 == t2 && continue
 
@@ -79,7 +79,7 @@ function _pow(l::AbstractUnionQuantity{T,D}, r) where {T,R,D<:AbstractDimensions
     # Need to ensure we take the numerical power by the rationalized quantity:
     return new_quantity(typeof(l), ustrip(l)^val_pow, dimension(l)^dim_pow)
 end
-for (type, _) in ABSTRACT_QUANTITY_TYPES
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         Base.:^(l::$type, r::Integer) = _pow_int(l, r)
         Base.:^(l::$type, r::Number) = _pow(l, r)
