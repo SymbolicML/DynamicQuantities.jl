@@ -14,11 +14,18 @@ and so can be used in most places where a normal array would be used, including 
 
 # Constructors
 
-- `QuantityArray(v::AbstractArray{<:Number}, d::AbstractDimensions)`: Create a `QuantityArray` with value `v` and dimensions `d`.
-- `QuantityArray(v::AbstractArray{<:Number}, q::AbstractUnionQuantity)`: Create a `QuantityArray` with value `v` and dimensions inferred
+- `QuantityArray(v::AbstractArray, d::AbstractDimensions)`: Create a `QuantityArray` with value `v` and dimensions `d`,
+  using `Quantity` if the eltype of `v` is numeric, and `GenericQuantity` otherwise.
+- `QuantityArray(v::AbstractArray{<:Number}, q::AbstractQuantity)`: Create a `QuantityArray` with value `v` and dimensions inferred
    with `dimension(q)`. This is so that you can easily create an array with the units module, like so:
    ```julia
    julia> A = QuantityArray(randn(32), 1u"m")
+   ```
+- `QuantityArray(v::AbstractArray{<:Any}, q::AbstractGenericQuantity)`: Create a `QuantityArray` with
+    value `v` and dimensions inferred with `dimension(q)`.
+    This is so that you can easily create quantity arrays of non-numeric eltypes, like so:
+   ```julia
+   julia> A = QuantityArray([[1.0], [2.0, 3.0]], GenericQuantity(1u"m"))
    ```
 - `QuantityArray(v::AbstractArray{<:AbstractUnionQuantity})`: Create a `QuantityArray` from an array of quantities. This means the following
   syntax works:
@@ -34,14 +41,6 @@ and so can be used in most places where a normal array would be used, including 
   julia> A = QuantityArray(randn(32), u"m")
   ```
   The keyword arguments are passed to `DEFAULT_DIM_TYPE`.
-- `QuantityArray(v::AbstractArray, d::AbstractDimensions)`: Create a `QuantityArray` with value `v` and dimensions `d`,
-  where `v` has non-numeric elements. This is useful for nested arrays, like `QuantityArray([[1.0], [1.0, 2.0]], length=1)`,
-  and will use a `GenericQuantity` as the element type, rather than the default `Quantity`.
-- `QuantityArray(v::AbstractArray, q::Quantity)`: Likewise, but passing a quantity. This is so the following syntax works:
-  ```julia
-  julia> QuantityArray([[1.0], [1.0, 2.0]], u"km/s")`
-  ```
-  where the value will be multiplied as `v .* 1000.0` when converting to SI units.
 """
 struct QuantityArray{T,N,D<:AbstractDimensions,Q<:AbstractUnionQuantity{T,D},V<:AbstractArray{T,N}} <: AbstractArray{Q,N}
     value::V
