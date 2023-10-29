@@ -41,5 +41,5 @@ which is subtyped to `Any`.
 GenericQuantity
 AbstractGenericQuantity
 AbstractUnionQuantity
-ABSTRACT_QUANTITY_TYPES
+DynamicQuantities.ABSTRACT_QUANTITY_TYPES
 ```
