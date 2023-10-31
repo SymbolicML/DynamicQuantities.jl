@@ -38,7 +38,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-)
     end
 end
 
-Base.:-(l::AbstractUnionQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
+Base.:-(l::UnionAbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 
 # Combining different abstract types
 for op in (:*, :/, :+, :-),
@@ -70,10 +70,10 @@ for (p, ex) in [
     @eval @inline Base.literal_pow(::typeof(^), l::AbstractDimensions, ::Val{$p}) = $ex
 end
 
-function _pow_int(l::AbstractUnionQuantity{T,D}, r) where {T,R,D<:AbstractDimensions{R}}
+function _pow_int(l::UnionAbstractQuantity{T,D}, r) where {T,R,D<:AbstractDimensions{R}}
     return new_quantity(typeof(l), ustrip(l)^r, dimension(l)^r)
 end
-function _pow(l::AbstractUnionQuantity{T,D}, r) where {T,R,D<:AbstractDimensions{R}}
+function _pow(l::UnionAbstractQuantity{T,D}, r) where {T,R,D<:AbstractDimensions{R}}
     dim_pow = tryrationalize(R, r)
     val_pow = convert(T, dim_pow)
     # Need to ensure we take the numerical power by the rationalized quantity:
@@ -87,16 +87,16 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     end
 end
 @inline Base.literal_pow(::typeof(^), l::AbstractDimensions, ::Val{p}) where {p} = map_dimensions(Base.Fix1(*, p), l)
-@inline Base.literal_pow(::typeof(^), l::AbstractUnionQuantity, ::Val{p}) where {p} = new_quantity(typeof(l), Base.literal_pow(^, ustrip(l), Val(p)), Base.literal_pow(^, dimension(l), Val(p)))
+@inline Base.literal_pow(::typeof(^), l::UnionAbstractQuantity, ::Val{p}) where {p} = new_quantity(typeof(l), Base.literal_pow(^, ustrip(l), Val(p)), Base.literal_pow(^, dimension(l), Val(p)))
 
 Base.inv(d::AbstractDimensions) = map_dimensions(-, d)
-Base.inv(q::AbstractUnionQuantity) = new_quantity(typeof(q), inv(ustrip(q)), inv(dimension(q)))
+Base.inv(q::UnionAbstractQuantity) = new_quantity(typeof(q), inv(ustrip(q)), inv(dimension(q)))
 
 Base.sqrt(d::AbstractDimensions{R}) where {R} = d^inv(convert(R, 2))
-Base.sqrt(q::AbstractUnionQuantity) = new_quantity(typeof(q), sqrt(ustrip(q)), sqrt(dimension(q)))
+Base.sqrt(q::UnionAbstractQuantity) = new_quantity(typeof(q), sqrt(ustrip(q)), sqrt(dimension(q)))
 Base.cbrt(d::AbstractDimensions{R}) where {R} = d^inv(convert(R, 3))
-Base.cbrt(q::AbstractUnionQuantity) = new_quantity(typeof(q), cbrt(ustrip(q)), cbrt(dimension(q)))
+Base.cbrt(q::UnionAbstractQuantity) = new_quantity(typeof(q), cbrt(ustrip(q)), cbrt(dimension(q)))
 
-Base.abs(q::AbstractUnionQuantity) = new_quantity(typeof(q), abs(ustrip(q)), dimension(q))
-Base.abs2(q::AbstractUnionQuantity) = new_quantity(typeof(q), abs2(ustrip(q)), dimension(q)^2)
-Base.angle(q::AbstractUnionQuantity{T}) where {T<:Complex} = angle(ustrip(q))
+Base.abs(q::UnionAbstractQuantity) = new_quantity(typeof(q), abs(ustrip(q)), dimension(q))
+Base.abs2(q::UnionAbstractQuantity) = new_quantity(typeof(q), abs2(ustrip(q)), dimension(q)^2)
+Base.angle(q::UnionAbstractQuantity{T}) where {T<:Complex} = angle(ustrip(q))

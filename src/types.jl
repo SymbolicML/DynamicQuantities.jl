@@ -8,7 +8,7 @@ const DEFAULT_VALUE_TYPE = Float64
 
 An abstract type for dimension types. `R` is the type of the exponents of the dimensions,
 and by default is set to `DynamicQuantities.DEFAULT_DIM_BASE_TYPE`.
-AbstractDimensions are used to store the dimensions of `AbstractUnionQuantity` objects.
+AbstractDimensions are used to store the dimensions of `UnionAbstractQuantity` objects.
 Together these enable many operators in Base to manipulate dimensions.
 This type has generic constructors for creating dimension objects, so user-defined
 dimension types can be created by simply subtyping `AbstractDimensions`, without
@@ -37,7 +37,7 @@ object is stored in the `:dimensions` field. These fields can be accessed with
 See also `AbstractGenericQuantity` for creating quantities subtyped to `Any`.
 
 **Note**: In general, you should probably
-specialize on `AbstractUnionQuantity` which is
+specialize on `UnionAbstractQuantity` which is
 the union of both `AbstractQuantity` and `AbstractGenericQuantity`,
 _as well as any other future abstract quantity types_,
 """
@@ -50,21 +50,21 @@ This has the same behavior as `AbstractQuantity` but is subtyped to `Any` rather
 than `Number`.
 
 **Note**: In general, you should probably
-specialize on `AbstractUnionQuantity` which is
+specialize on `UnionAbstractQuantity` which is
 the union of both `AbstractQuantity` and `AbstractGenericQuantity`,
 _as well as any other future abstract quantity types_,
 """
 abstract type AbstractGenericQuantity{T,D} end
 
 """
-    AbstractUnionQuantity{T,D}
+    UnionAbstractQuantity{T,D}
 
 This is a union of both `AbstractQuantity{T,D}` and `AbstractGenericQuantity{T,D}`.
 It is used throughout the library to declare methods which can take both types.
 You should generally specialize on this type, rather than its constituents,
 as it will also include future abstract quantity types.
 """
-const AbstractUnionQuantity{T,D} = Union{AbstractQuantity{T,D},AbstractGenericQuantity{T,D}}
+const UnionAbstractQuantity{T,D} = Union{AbstractQuantity{T,D},AbstractGenericQuantity{T,D}}
 
 """
     Dimensions{R<:Real} <: AbstractDimensions{R}
@@ -192,10 +192,10 @@ end
 const DEFAULT_QUANTITY_TYPE = Quantity{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE}
 
 new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = constructor_of(D)(dims...)
-new_quantity(::Type{Q}, l, r) where {Q<:AbstractUnionQuantity} = constructor_of(Q)(l, r)
+new_quantity(::Type{Q}, l, r) where {Q<:UnionAbstractQuantity} = constructor_of(Q)(l, r)
 
-dim_type(::Type{Q}) where {T,D<:AbstractDimensions,Q<:AbstractUnionQuantity{T,D}} = D
-dim_type(::Type{<:AbstractUnionQuantity}) = DEFAULT_DIM_TYPE
+dim_type(::Type{Q}) where {T,D<:AbstractDimensions,Q<:UnionAbstractQuantity{T,D}} = D
+dim_type(::Type{<:UnionAbstractQuantity}) = DEFAULT_DIM_TYPE
 constructor_of(::Type{T}) where {T} = Base.typename(T).wrapper
 
 struct DimensionError{Q1,Q2} <: Exception

@@ -40,6 +40,6 @@ which is subtyped to `Any`.
 ```@docs
 GenericQuantity
 AbstractGenericQuantity
-AbstractUnionQuantity
+UnionAbstractQuantity
 DynamicQuantities.ABSTRACT_QUANTITY_TYPES
 ```

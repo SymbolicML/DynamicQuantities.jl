@@ -374,12 +374,12 @@ Note that you can declare a method on `AbstractQuantity`, or
 `AbstractGenericQuantity` to allow their respective inputs.
 
 **Note**: In general, you should probably
-specialize on `AbstractUnionQuantity` which is
+specialize on `UnionAbstractQuantity` which is
 the union of these two abstract quantities, _as well as any other future abstract quantity types_,
 such as the planned `AbstractRealQuantity`.
 
 ```julia
-function my_func(x::AbstractUnionQuantity{T,D}) where {T,D}
+function my_func(x::UnionAbstractQuantity{T,D}) where {T,D}
     # value has type T and dimensions has type D
     return x / ustrip(x)
 end
