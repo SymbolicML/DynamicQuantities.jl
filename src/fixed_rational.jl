@@ -65,7 +65,7 @@ Base.convert(::Type{I}, x::F) where {I<:Integer,F<:FixedRational} =
         isinteger(x) || throw(InexactError(:convert, I, x))
         convert(I, div(x.num, denom(F)))
     end
-Base.round(::Type{T}, x::F) where {T,F<:FixedRational} = div(convert(T, x.num), convert(T, denom(F)), RoundNearest)
+Base.round(::Type{T}, x::F, r::RoundingMode=RoundNearest) where {T,F<:FixedRational} = div(convert(T, x.num), convert(T, denom(F)), r)
 Base.decompose(x::F) where {T,F<:FixedRational{T}} = (x.num, zero(T), denom(F))
 
 # Promotion rules:
@@ -100,4 +100,4 @@ tryrationalize(::Type{F}, x::Union{Rational,Integer}) where {F<:FixedRational} =
 tryrationalize(::Type{F}, x) where {F<:FixedRational} = unsafe_fixed_rational(round(eltype(F), x * denom(F)), eltype(F), val_denom(F))
 
 # Fix method ambiguities
-Base.round(::Type{T}, ::F) where {T>:Missing, F<:FixedRational} = missing
+Base.round(::Type{T}, x::F, r::RoundingMode=RoundNearest) where {T>:Missing, F<:FixedRational} = round(Base.nonmissingtype_checked(T), x, r)
