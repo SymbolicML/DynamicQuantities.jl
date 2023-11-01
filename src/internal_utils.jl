@@ -4,8 +4,8 @@ library, but are used throughout.
 """
 
 @generated function fieldnames_equal(::Type{T1}, ::Type{T2}) where {T1,T2}
-    # Needs to be a generated function as might not be inlined
-    return Base.fieldnames(T1) == Base.fieldnames(T2)
+    # Needs to be a generated function to ensure hardcoded
+    return static_fieldnames(T1) == static_fieldnames(T2)
 end
 
 const SUPERSCRIPT_MAPPING = ('⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹')
