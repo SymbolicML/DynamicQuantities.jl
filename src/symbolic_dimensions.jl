@@ -87,7 +87,7 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
             return constructorof(Q)(convert(T, ustrip(q)), dims)
         end
         function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:SymbolicDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
-            result = constructorof(Q)(T(ustrip(q)), D())
+            result = constructorof(Q)(convert(T, ustrip(q)), D())
             d = dimension(q)
             for (idx, value) in zip(getfield(d, :nzdims), getfield(d, :nzvals))
                 if !iszero(value)
