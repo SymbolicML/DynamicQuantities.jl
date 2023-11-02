@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · DynamicQuantities.jl</title><meta name="title" content="Home · DynamicQuantities.jl"/><meta property="og:title" content="Home · DynamicQuantities.jl"/><meta property="twitter:title" content="Home · DynamicQuantities.jl"/><meta name="description" content="Documentation for DynamicQuantities.jl."/><meta property="og:description" content="Documentation for DynamicQuantities.jl."/><meta property="twitter:description" content="Documentation for DynamicQuantities.jl."/><meta property="og:url" content="https://symbolicml.org/DynamicQuantities.jl/"/><meta property="twitter:url" content="https://symbolicml.org/DynamicQuantities.jl/"/><link rel="canonical" href="https://symbolicml.org/DynamicQuantities.jl/"/><script data-outdated-warner src="assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="search_index.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href>DynamicQuantities.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Home</a><ul class="internal"><li><a class="tocitem" href="#Performance"><span>Performance</span></a></li><li><a class="tocitem" href="#Usage"><span>Usage</span></a></li><li><a class="tocitem" href="#Types"><span>Types</span></a></li></ul></li><li><a class="tocitem" href="examples/">Examples</a></li><li><a class="tocitem" href="api/">Utilities</a></li><li><a class="tocitem" href="units/">Units</a></li><li><a class="tocitem" href="constants/">Constants</a></li><li><a class="tocitem" href="symbolic_units/">Symbolic Units</a></li><li><a class="tocitem" href="types/">Types</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Home</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Home</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/SymbolicML/DynamicQuantities.jl/blob/main/docs/src/index.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><p><img src="https://github.com/SymbolicML/DynamicQuantities.jl/assets/7593028/a278d0c1-2f95-416b-ba04-82750074146b" alt="logo"/></p><p><a href="https://symbolicml.org/DynamicQuantities.jl/dev/"><img src="https://img.shields.io/badge/docs-dev-blue.svg" alt="Dev"/></a> <a href="https://github.com/SymbolicML/DynamicQuantities.jl/actions/workflows/CI.yml?query=branch%3Amain"><img src="https://github.com/SymbolicML/DynamicQuantities.jl/actions/workflows/CI.yml/badge.svg?branch=main" alt="Build Status"/></a> <a href="https://coveralls.io/github/SymbolicML/DynamicQuantities.jl?branch=main"><img src="https://coveralls.io/repos/github/SymbolicML/DynamicQuantities.jl/badge.svg?branch=main" alt="Coverage"/></a> <a href="https://github.com/JuliaTesting/Aqua.jl"><img src="https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg" alt="Aqua QA"/></a></p><p>DynamicQuantities defines a simple statically-typed <code>Quantity</code> type for Julia. Physical dimensions are stored as a <em>value</em>, as opposed to a parametric type, as in <a href="https://github.com/PainterQubits/Unitful.jl">Unitful.jl</a>. This can greatly improve both runtime performance, by avoiding type instabilities, and startup time, as it avoids overspecializing methods.</p><ul><li><a href="#performance">Performance</a></li><li><a href="#usage">Usage</a><ul><li><a href="#constants">Constants</a></li><li><a href="#symbolic-units">Symbolic Units</a></li><li><a href="#arrays">Arrays</a></li><li><a href="#unitful">Unitful</a></li></ul></li><li><a href="#types">Types</a></li><li><a href="#vectors">Vectors</a></li></ul><h2 id="Performance"><a class="docs-heading-anchor" href="#Performance">Performance</a><a id="Performance-1"></a><a class="docs-heading-anchor-permalink" href="#Performance" title="Permalink"></a></h2><p>DynamicQuantities can greatly outperform Unitful when the compiler cannot infer dimensions in a function:</p><pre><code class="language-julia hljs">julia&gt; using BenchmarkTools, DynamicQuantities; import Unitful
+
+julia&gt; dyn_uni = 0.2u&quot;m/s&quot;
+0.2 m s⁻¹
+
+julia&gt; unitful = convert(Unitful.Quantity, dyn_uni)
+0.2 m s⁻¹
+
+julia&gt; f(x, i) = x ^ i * 0.3;
+
+julia&gt; @btime f($dyn_uni, 1);
+  2.708 ns (0 allocations: 0 bytes)
+
+julia&gt; @btime f($unitful, 1);
+  2.597 μs (30 allocations: 1.33 KiB)</code></pre><p><strong>Note the μ and n: this is a 1000x speedup!</strong> Here, the DynamicQuantities quantity object allows the compiler to build a function that is type stable, while the Unitful quantity object, which stores its dimensions in the type, requires type inference at runtime.</p><p>However, if the dimensions in your function <em>can</em> be inferred by the compiler, then you can get better speeds with Unitful:</p><pre><code class="language-julia hljs">julia&gt; g(x) = x ^ 2 * 0.3;
+
+julia&gt; @btime g($dyn_uni);
+  1.791 ns (0 allocations: 0 bytes)
+
+julia&gt; @btime g($unitful);
+  1.500 ns (0 allocations: 0 bytes)</code></pre><p>While both of these are type stable, because Unitful parametrizes the type on the dimensions, functions can specialize to units and the compiler can optimize away units from the code.</p><h2 id="Usage"><a class="docs-heading-anchor" href="#Usage">Usage</a><a id="Usage-1"></a><a class="docs-heading-anchor-permalink" href="#Usage" title="Permalink"></a></h2><p>You can create a <code>Quantity</code> object  by using the convenience macro <code>u&quot;...&quot;</code>:</p><pre><code class="language-julia hljs">julia&gt; x = 0.3u&quot;km/s&quot;
+300.0 m s⁻¹
+
+julia&gt; y = 42 * u&quot;kg&quot;
+42.0 kg
+
+julia&gt; room_temp = 100u&quot;kPa&quot;
+100000.0 m⁻¹ kg s⁻²</code></pre><p>This supports a wide range of SI base and derived units, with common prefixes.</p><p>You can also construct values explicitly with the <code>Quantity</code> type, with a value and keyword arguments for the powers of the physical dimensions (<code>mass</code>, <code>length</code>, <code>time</code>, <code>current</code>, <code>temperature</code>, <code>luminosity</code>, <code>amount</code>):</p><pre><code class="language-julia hljs">julia&gt; x = Quantity(300.0, length=1, time=-1)
+300.0 m s⁻¹</code></pre><p>Elementary calculations with <code>+, -, *, /, ^, sqrt, cbrt, abs</code> are supported:</p><pre><code class="language-julia hljs">julia&gt; x * y
+12600.0 m kg s⁻¹
+
+julia&gt; x / y
+7.142857142857143 m kg⁻¹ s⁻¹
+
+julia&gt; x ^ 3
+2.7e7 m³ s⁻³
+
+julia&gt; x ^ -1
+0.0033333333333333335 m⁻¹ s
+
+julia&gt; sqrt(x)
+17.320508075688775 m¹ᐟ² s⁻¹ᐟ²
+
+julia&gt; x ^ 1.5
+5196.152422706632 m³ᐟ² s⁻³ᐟ²</code></pre><p>Each of these values has the same type, which means we don&#39;t need to perform type inference at runtime.</p><p>Furthermore, we can do dimensional analysis by detecting <code>DimensionError</code>:</p><pre><code class="language-julia hljs">julia&gt; x + 3 * x
+1.2 m¹ᐟ² kg
+
+julia&gt; x + y
+ERROR: DimensionError: 0.3 m¹ᐟ² kg and 10.2 kg² s⁻² have incompatible dimensions</code></pre><p>The dimensions of a <code>Quantity</code> can be accessed either with <code>dimension(quantity)</code> for the entire <code>Dimensions</code> object:</p><pre><code class="language-julia hljs">julia&gt; dimension(x)
+m¹ᐟ² kg</code></pre><p>or with <code>umass</code>, <code>ulength</code>, etc., for the various dimensions:</p><pre><code class="language-julia hljs">julia&gt; umass(x)
+1//1
+
+julia&gt; ulength(x)
+1//2</code></pre><p>Finally, you can strip units with <code>ustrip</code>:</p><pre><code class="language-julia hljs">julia&gt; ustrip(x)
+0.2</code></pre><h3 id="Constants"><a class="docs-heading-anchor" href="#Constants">Constants</a><a id="Constants-1"></a><a class="docs-heading-anchor-permalink" href="#Constants" title="Permalink"></a></h3><p>There are a variety of physical constants accessible via the <code>Constants</code> submodule:</p><pre><code class="language-julia hljs">julia&gt; Constants.c
+2.99792458e8 m s⁻¹</code></pre><p>These can also be used inside the <code>u&quot;...&quot;</code> macro:</p><pre><code class="language-julia hljs">julia&gt; u&quot;Constants.c * Hz&quot;
+2.99792458e8 m s⁻²</code></pre><p>For the full list, see the <a href="https://symbolicml.org/DynamicQuantities.jl/dev/constants/">docs</a>.</p><h3 id="Symbolic-Units"><a class="docs-heading-anchor" href="#Symbolic-Units">Symbolic Units</a><a id="Symbolic-Units-1"></a><a class="docs-heading-anchor-permalink" href="#Symbolic-Units" title="Permalink"></a></h3><p>You can also choose to not eagerly convert to SI base units, instead leaving the units as the user had written them. For example:</p><pre><code class="language-julia hljs">julia&gt; q = 100us&quot;cm * kPa&quot;
+100.0 cm kPa
+
+julia&gt; q^2
+10000.0 cm² kPa²</code></pre><p>You can convert to regular SI base units with <code>uexpand</code>:</p><pre><code class="language-julia hljs">julia&gt; uexpand(q^2)
+1.0e6 kg² s⁻⁴</code></pre><p>This also works with constants:</p><pre><code class="language-julia hljs">julia&gt; x = us&quot;Constants.c * Hz&quot;
+1.0 Hz c
+
+julia&gt; x^2
+1.0 Hz² c²
+
+julia&gt; uexpand(x^2)
+8.987551787368176e16 m² s⁻⁴</code></pre><p>You can also convert a quantity in regular base SI units to symbolic units with <code>uconvert</code>:</p><pre><code class="language-julia hljs">julia&gt; uconvert(us&quot;nm&quot;, 5e-9u&quot;m&quot;) # can also write 5e-9u&quot;m&quot; |&gt; uconvert(us&quot;nm&quot;)
+5.0 nm</code></pre><h3 id="Arrays"><a class="docs-heading-anchor" href="#Arrays">Arrays</a><a id="Arrays-1"></a><a class="docs-heading-anchor-permalink" href="#Arrays" title="Permalink"></a></h3><p>For working with an array of quantities that have the same dimensions, you can use a <code>QuantityArray</code>:</p><pre><code class="language-julia hljs">julia&gt; ar = QuantityArray(rand(3), u&quot;m/s&quot;)
+3-element QuantityArray(::Vector{Float64}, ::Quantity{Float64, Dimensions{DynamicQuantities.FixedRational{Int32, 25200}}}):
+ 0.2729202669351497 m s⁻¹
+ 0.992546340360901 m s⁻¹
+ 0.16863543422972482 m s⁻¹</code></pre><p>This <code>QuantityArray</code> is a subtype <code>&lt;:AbstractArray{Quantity{Float64,Dimensions{...}},1}</code>, meaning that indexing a specific element will return a <code>Quantity</code>:</p><pre><code class="language-julia hljs">julia&gt; ar[2]
+0.992546340360901 m s⁻¹
+
+julia&gt; ar[2] *= 2
+1.985092680721802 m s⁻¹
+
+julia&gt; ar[2] += 0.5u&quot;m/s&quot;
+2.485092680721802 m s⁻¹</code></pre><p>This also has a custom broadcasting interface which allows the compiler to avoid redundant dimension calculations, relative to if you had simply used an array of quantities:</p><pre><code class="language-julia hljs">julia&gt; f(v) = v^2 * 1.5;
+
+julia&gt; @btime $f.(xa) setup=(xa = randn(100000) .* u&quot;km/s&quot;);
+  109.500 μs (2 allocations: 3.81 MiB)
+
+julia&gt; @btime $f.(qa) setup=(xa = randn(100000) .* u&quot;km/s&quot;; qa = QuantityArray(xa));
+  50.917 μs (3 allocations: 781.34 KiB)</code></pre><p>So we can see the <code>QuantityArray</code> version saves on both time and memory.</p><h3 id="Unitful"><a class="docs-heading-anchor" href="#Unitful">Unitful</a><a id="Unitful-1"></a><a class="docs-heading-anchor-permalink" href="#Unitful" title="Permalink"></a></h3><p>DynamicQuantities allows you to convert back and forth from Unitful.jl:</p><pre><code class="language-julia hljs">julia&gt; using Unitful: Unitful, @u_str; import DynamicQuantities
+
+julia&gt; x = 0.5u&quot;km/s&quot;
+0.5 km s⁻¹
+
+julia&gt; y = convert(DynamicQuantities.Quantity, x)
+500.0 m s⁻¹
+
+julia&gt; y2 = y^2 * 0.3
+75000.0 m² s⁻²
+
+julia&gt; x2 = convert(Unitful.Quantity, y2)
+75000.0 m² s⁻²
+
+julia&gt; x^2*0.3 == x2
+true</code></pre><h2 id="Types"><a class="docs-heading-anchor" href="#Types">Types</a><a id="Types-1"></a><a class="docs-heading-anchor-permalink" href="#Types" title="Permalink"></a></h2><p>Both a <code>Quantity</code>&#39;s values and dimensions are of arbitrary type. By default, dimensions are stored as a <code>Dimensions{FixedRational{Int32,C}}</code> object, whose exponents are stored as rational numbers with a fixed denominator <code>C</code>. This is much faster than <code>Rational</code>.</p><pre><code class="language-julia hljs">julia&gt; typeof(0.5u&quot;kg&quot;)
+Quantity{Float64, Dimensions{FixedRational{Int32, 25200}}}</code></pre><p>You can change the type of the value field by initializing with a value explicitly of the desired type.</p><pre><code class="language-julia hljs">julia&gt; typeof(Quantity(Float16(0.5), mass=1, length=1))
+Quantity{Float16, Dimensions{FixedRational{Int32, 25200}}}</code></pre><p>or by conversion:</p><pre><code class="language-julia hljs">julia&gt; typeof(convert(Quantity{Float16}, 0.5u&quot;m/s&quot;))
+Quantity{Float16, Dimensions{FixedRational{Int32, 25200}}}</code></pre><p>For many applications, <code>FixedRational{Int8,6}</code> will suffice, and can be faster as it means the entire <code>Dimensions</code> struct will fit into 64 bits. You can change the type of the dimensions field by passing the type you wish to use as the second argument to <code>Quantity</code>:</p><pre><code class="language-julia hljs">julia&gt; using DynamicQuantities
+
+julia&gt; R8 = Dimensions{DynamicQuantities.FixedRational{Int8,6}};
+
+julia&gt; R32 = Dimensions{DynamicQuantities.FixedRational{Int32,2^4 * 3^2 * 5^2 * 7}};  # Default
+
+julia&gt; q8 = [Quantity(randn(), R8, length=rand(-2:2)) for i in 1:1000];
+
+julia&gt; q32 = [Quantity(randn(), R32, length=rand(-2:2)) for i in 1:1000];
+
+julia&gt; f(x) = @. x ^ 2 * 0.5;
+
+julia&gt; @btime f($q8);
+  7.750 μs (1 allocation: 15.75 KiB)
+
+julia&gt; @btime f($q32);
+  8.417 μs (2 allocations: 39.11 KiB)</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="examples/">Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.1.2 on <span class="colophon-date" title="Thursday 2 November 2023 17:06">Thursday 2 November 2023</span>. Using Julia version 1.9.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
