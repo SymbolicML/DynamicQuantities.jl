@@ -1,6 +1,6 @@
 using DynamicQuantities
 using DynamicQuantities.Units
-using DynamicQuantities: constructorof, with_type_parameters
+using DynamicQuantities: constructorof, with_type_parameters, dimension_names
 using Documenter
 
 DocMeta.setdocmeta!(DynamicQuantities, :DocTestSetup, :(using DynamicQuantities); recursive=true)
