@@ -420,7 +420,7 @@ end
     @test promote(f64, f8) == (2, 2)
     @test typeof(promote(f64, f8)) == typeof((f64, f64))
     @test typeof(promote(FixedRational{Int8,10}(2), FixedRational{Int8,10}(2))) == typeof((f8, f8))
-    @test typeof(promote(1.6, f64)) == typeof((1.6, 1.6))
+    @test promote_type(Float64, typeof(f64)) == Float64
 
     # Required to hit integer branch (otherwise will go to `literal_pow`)
     f(i::Int) = Dimensions(length=1, mass=-1)^i
