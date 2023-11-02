@@ -1,4 +1,4 @@
-for (type, base_type) in ABSTRACT_QUANTITY_TYPES
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         Base.:*(l::$type, r::$type) = new_quantity(typeof(l), ustrip(l) * ustrip(r), dimension(l) * dimension(r))
         Base.:/(l::$type, r::$type) = new_quantity(typeof(l), ustrip(l) / ustrip(r), dimension(l) / dimension(r))
@@ -20,36 +20,30 @@ end
 Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
 Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 
-for (type, base_type) in ABSTRACT_QUANTITY_TYPES
+# Defines + and -
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-)
     @eval begin
-        Base.:+(l::$type, r::$type) =
-            let
-                dimension(l) == dimension(r) || throw(DimensionError(l, r))
-                new_quantity(typeof(l), ustrip(l) + ustrip(r), dimension(l))
-            end
-        Base.:+(l::$type, r::$base_type) =
-            let
-                iszero(dimension(l)) || throw(DimensionError(l, r))
-                new_quantity(typeof(l), ustrip(l) + r, dimension(l))
-            end
-        Base.:+(l::$base_type, r::$type) =
-            let
-                iszero(dimension(r)) || throw(DimensionError(l, r))
-                new_quantity(typeof(r), l + ustrip(r), dimension(r))
-            end
-
-        Base.:-(l::$type, r::$type) = l + (-r)
-        Base.:-(l::$type, r::$base_type) = l + (-r)
-        Base.:-(l::$base_type, r::$type) = l + (-r)
+        function Base.$op(l::$type, r::$type)
+            dimension(l) == dimension(r) || throw(DimensionError(l, r))
+            return new_quantity(typeof(l), $op(ustrip(l), ustrip(r)), dimension(l))
+        end
+        function Base.$op(l::$type, r::$base_type)
+            iszero(dimension(l)) || throw(DimensionError(l, r))
+            return new_quantity(typeof(l), $op(ustrip(l), r), dimension(l))
+        end
+        function Base.$op(l::$base_type, r::$type)
+            iszero(dimension(r)) || throw(DimensionError(l, r))
+            return new_quantity(typeof(r), $op(l, ustrip(r)), dimension(r))
+        end
     end
 end
 
-Base.:-(l::AbstractUnionQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
+Base.:-(l::UnionAbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 
 # Combining different abstract types
 for op in (:*, :/, :+, :-),
-    (t1, _) in ABSTRACT_QUANTITY_TYPES,
-    (t2, _) in ABSTRACT_QUANTITY_TYPES
+    (t1, _, _) in ABSTRACT_QUANTITY_TYPES,
+    (t2, _, _) in ABSTRACT_QUANTITY_TYPES
 
     t1 == t2 && continue
 
@@ -76,16 +70,16 @@ for (p, ex) in [
     @eval @inline Base.literal_pow(::typeof(^), l::AbstractDimensions, ::Val{$p}) = $ex
 end
 
-function _pow_int(l::AbstractUnionQuantity{T,D}, r) where {T,R,D<:AbstractDimensions{R}}
+function _pow_int(l::UnionAbstractQuantity{T,D}, r) where {T,R,D<:AbstractDimensions{R}}
     return new_quantity(typeof(l), ustrip(l)^r, dimension(l)^r)
 end
-function _pow(l::AbstractUnionQuantity{T,D}, r) where {T,R,D<:AbstractDimensions{R}}
+function _pow(l::UnionAbstractQuantity{T,D}, r) where {T,R,D<:AbstractDimensions{R}}
     dim_pow = tryrationalize(R, r)
     val_pow = convert(T, dim_pow)
     # Need to ensure we take the numerical power by the rationalized quantity:
     return new_quantity(typeof(l), ustrip(l)^val_pow, dimension(l)^dim_pow)
 end
-for (type, _) in ABSTRACT_QUANTITY_TYPES
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         Base.:^(l::$type, r::Integer) = _pow_int(l, r)
         Base.:^(l::$type, r::Number) = _pow(l, r)
@@ -93,16 +87,16 @@ for (type, _) in ABSTRACT_QUANTITY_TYPES
     end
 end
 @inline Base.literal_pow(::typeof(^), l::AbstractDimensions, ::Val{p}) where {p} = map_dimensions(Base.Fix1(*, p), l)
-@inline Base.literal_pow(::typeof(^), l::AbstractUnionQuantity, ::Val{p}) where {p} = new_quantity(typeof(l), Base.literal_pow(^, ustrip(l), Val(p)), Base.literal_pow(^, dimension(l), Val(p)))
+@inline Base.literal_pow(::typeof(^), l::UnionAbstractQuantity, ::Val{p}) where {p} = new_quantity(typeof(l), Base.literal_pow(^, ustrip(l), Val(p)), Base.literal_pow(^, dimension(l), Val(p)))
 
 Base.inv(d::AbstractDimensions) = map_dimensions(-, d)
-Base.inv(q::AbstractUnionQuantity) = new_quantity(typeof(q), inv(ustrip(q)), inv(dimension(q)))
+Base.inv(q::UnionAbstractQuantity) = new_quantity(typeof(q), inv(ustrip(q)), inv(dimension(q)))
 
 Base.sqrt(d::AbstractDimensions{R}) where {R} = d^inv(convert(R, 2))
-Base.sqrt(q::AbstractUnionQuantity) = new_quantity(typeof(q), sqrt(ustrip(q)), sqrt(dimension(q)))
+Base.sqrt(q::UnionAbstractQuantity) = new_quantity(typeof(q), sqrt(ustrip(q)), sqrt(dimension(q)))
 Base.cbrt(d::AbstractDimensions{R}) where {R} = d^inv(convert(R, 3))
-Base.cbrt(q::AbstractUnionQuantity) = new_quantity(typeof(q), cbrt(ustrip(q)), cbrt(dimension(q)))
+Base.cbrt(q::UnionAbstractQuantity) = new_quantity(typeof(q), cbrt(ustrip(q)), cbrt(dimension(q)))
 
-Base.abs(q::AbstractUnionQuantity) = new_quantity(typeof(q), abs(ustrip(q)), dimension(q))
-Base.abs2(q::AbstractUnionQuantity) = new_quantity(typeof(q), abs2(ustrip(q)), dimension(q)^2)
-Base.angle(q::AbstractUnionQuantity{T}) where {T<:Complex} = angle(ustrip(q))
+Base.abs(q::UnionAbstractQuantity) = new_quantity(typeof(q), abs(ustrip(q)), dimension(q))
+Base.abs2(q::UnionAbstractQuantity) = new_quantity(typeof(q), abs2(ustrip(q)), dimension(q)^2)
+Base.angle(q::UnionAbstractQuantity{T}) where {T<:Complex} = angle(ustrip(q))
