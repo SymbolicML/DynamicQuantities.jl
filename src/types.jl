@@ -1,4 +1,4 @@
-import Tricks: static_fieldnames, static_fieldtypes
+using Tricks: static_fieldnames
 
 const DEFAULT_DIM_BASE_TYPE = FixedRational{DEFAULT_NUMERATOR_TYPE,DEFAULT_DENOM}
 const DEFAULT_VALUE_TYPE = Float64
@@ -103,13 +103,13 @@ struct Dimensions{R<:Real} <: AbstractDimensions{R}
     amount::R
 end
 
-(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = with_type_parameters(D, R)((tryrationalize(R, get(kws, k, zero(R))) for k in static_fieldnames(D))...)
+(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = with_type_parameters(D, R)((tryrationalize(R, get(kws, k, zero(R))) for k in dimension_names(D))...)
 (::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = constructorof(D)(R; kws...)
 (::Type{D})(; kws...) where {D<:AbstractDimensions} = D(DEFAULT_DIM_BASE_TYPE; kws...)
 function (::Type{D})(d::D2) where {R,D<:AbstractDimensions{R},D2<:AbstractDimensions}
-    fieldnames_equal(D, D2) ||
+    dimension_names_equal(D, D2) ||
         error("Cannot create a dimensions of `$(D)` from `$(D2)`. Please write a custom method for construction.")
-    D((getproperty(d, k) for k in static_fieldnames(D))...)
+    D((getproperty(d, k) for k in dimension_names(D))...)
 end
 
 const DEFAULT_DIM_TYPE = Dimensions{DEFAULT_DIM_BASE_TYPE}
@@ -236,6 +236,17 @@ function with_type_parameters(::Type{D}, ::Type{R}) where {D<:AbstractDimensions
 end
 function with_type_parameters(::Type{Q}, ::Type{T}, ::Type{D}) where {Q<:UnionAbstractQuantity,T,D}
     return constructorof(Q){T,D}
+end
+
+"""
+    dimension_names(::Type{<:AbstractDimensions})
+
+Return a tuple of symbols with the names of the dimensions of the given type.
+This should be static so that it can be hardcoded during compilation.
+The default is to use `fieldnames`, but you can overload this for custom behavior.
+"""
+@inline function dimension_names(::Type{D}) where {D<:AbstractDimensions}
+    return static_fieldnames(D)
 end
 
 struct DimensionError{Q1,Q2} <: Exception

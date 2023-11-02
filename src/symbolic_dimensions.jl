@@ -1,5 +1,3 @@
-import Tricks: static_fieldnames
-
 import .Units: UNIT_SYMBOLS, UNIT_MAPPING, UNIT_VALUES
 import .Constants: CONSTANT_SYMBOLS, CONSTANT_MAPPING, CONSTANT_VALUES
 
@@ -41,7 +39,7 @@ struct SymbolicDimensions{R} <: AbstractDimensions{R}
     nzvals::Vector{R}
 end
 
-static_fieldnames(::Type{<:SymbolicDimensions}) = ALL_SYMBOLS
+@inline dimension_names(::Type{<:SymbolicDimensions}) = ALL_SYMBOLS
 function Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R}
     nzdims = getfield(d, :nzdims)
     i = get(ALL_MAPPING, s, INDEX_TYPE(0))

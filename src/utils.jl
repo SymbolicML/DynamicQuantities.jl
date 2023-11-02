@@ -1,14 +1,13 @@
 import Compat: allequal
-import Tricks: static_fieldnames
 
 function map_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
     dimension_type = promote_type(typeof(args).parameters...)
-    dimension_names = static_fieldnames(dimension_type)
+    dim_names = dimension_names(dimension_type)
     return new_dimensions(
         dimension_type,
         (
             f((getproperty(arg, dim) for arg in args)...)
-            for dim in dimension_names
+            for dim in dim_names
         )...
     )
 end
@@ -48,8 +47,13 @@ function Base.promote_rule(::Type{<:AbstractQuantity}, ::Type{<:Number})
     return Number
 end
 
-Base.keys(d::AbstractDimensions) = static_fieldnames(typeof(d))
+Base.keys(d::AbstractDimensions) = dimension_names(typeof(d))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
+
+@generated function dimension_names_equal(::Type{T1}, ::Type{T2}) where {T1,T2}
+    # Needs to be a generated function to ensure hardcoded
+    return dimension_names(T1) == dimension_names(T2)
+end
 
 # Compatibility with `.*`
 Base.size(q::UnionAbstractQuantity) = size(ustrip(q))
