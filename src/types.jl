@@ -195,11 +195,11 @@ new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = constructorof
 new_quantity(::Type{Q}, l, r) where {Q<:UnionAbstractQuantity} = constructorof(Q)(l, r)
 
 dim_type(::Type{Q}) where {T,D<:AbstractDimensions,Q<:UnionAbstractQuantity{T,D}} = D
-dim_type(::Type{<:AbstractUnionQuantity}) = DEFAULT_DIM_TYPE
+dim_type(::Type{<:UnionAbstractQuantity}) = DEFAULT_DIM_TYPE
 
 """
     constructorof(::Type{<:AbstractDimensions})
-    constructorof(::Type{<:AbstractUnionQuantity})
+    constructorof(::Type{<:UnionAbstractQuantity})
 
 Return the constructor of the given type. This is used to create new objects
 of the same type as the input. Overload a method for a new type, especially
@@ -211,7 +211,7 @@ constructorof(::Type{<:GenericQuantity}) = GenericQuantity
 
 """
     with_type_parameters(::Type{<:AbstractDimensions}, ::Type{R})
-    with_type_parameters(::Type{<:AbstractUnionQuantity}, ::Type{T}, ::Type{D})
+    with_type_parameters(::Type{<:UnionAbstractQuantity}, ::Type{T}, ::Type{D})
 
 Return the type with the given type parameters instead of the ones in the input type.
 This is used to get `Dimensions{R}` from input `(Dimensions{R1}, R)`, for example.
