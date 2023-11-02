@@ -39,7 +39,7 @@ struct SymbolicDimensions{R} <: AbstractDimensions{R}
     nzvals::Vector{R}
 end
 
-static_fieldnames(::Type{<:SymbolicDimensions}) = ALL_SYMBOLS
+@inline dimension_names(::Type{<:SymbolicDimensions}) = ALL_SYMBOLS
 function Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R}
     nzdims = getfield(d, :nzdims)
     i = get(ALL_MAPPING, s, INDEX_TYPE(0))
@@ -53,7 +53,9 @@ function Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R}
 end
 Base.propertynames(::SymbolicDimensions) = ALL_SYMBOLS
 Base.getindex(d::SymbolicDimensions, k::Symbol) = getproperty(d, k)
-constructor_of(::Type{<:SymbolicDimensions}) = SymbolicDimensions
+
+constructorof(::Type{<:SymbolicDimensions}) = SymbolicDimensions
+with_type_parameters(::Type{<:SymbolicDimensions}, ::Type{R}) where {R} = SymbolicDimensions{R}
 
 SymbolicDimensions{R}(d::SymbolicDimensions) where {R} = SymbolicDimensions{R}(getfield(d, :nzdims), convert(Vector{R}, getfield(d, :nzvals)))
 SymbolicDimensions(; kws...) = SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}(; kws...)
@@ -71,7 +73,7 @@ end
 for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:Dimensions}) where {T,Q<:$type{T,SymbolicDimensions}}
-            return convert(constructor_of(Q){T,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}, q)
+            return convert(with_type_parameters(Q, T,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}), q)
         end
         function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:Dimensions}) where {T,R,Q<:$type{T,SymbolicDimensions{R}}}
             syms = (:m, :kg, :s, :A, :K, :cd, :mol)
@@ -82,14 +84,14 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
             permute!(I, p)
             permute!(V, p)
             dims = SymbolicDimensions{R}(I, V)
-            return constructor_of(Q)(convert(T, ustrip(q)), dims)
+            return constructorof(Q)(convert(T, ustrip(q)), dims)
         end
         function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:SymbolicDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
-            result = constructor_of(Q)(T(ustrip(q)), D())
+            result = constructorof(Q)(convert(T, ustrip(q)), D())
             d = dimension(q)
             for (idx, value) in zip(getfield(d, :nzdims), getfield(d, :nzvals))
                 if !iszero(value)
-                    result = result * convert(constructor_of(Q){T,D}, ALL_VALUES[idx]) ^ value
+                    result = result * convert(with_type_parameters(Q, T, D), ALL_VALUES[idx]) ^ value
                 end
             end
             return result
@@ -108,7 +110,7 @@ for converting to specific symbolic units, or `convert(Quantity{<:Any,<:Symbolic
 for assuming SI units as the output symbols.
 """
 function uexpand(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:UnionAbstractQuantity{T,D}}
-    return convert(constructor_of(Q){T,Dimensions{R}}, q)
+    return convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
 uexpand(q::QuantityArray) = uexpand.(q)
 # TODO: Make the array-based one more efficient

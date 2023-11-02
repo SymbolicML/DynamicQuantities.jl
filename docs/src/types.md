@@ -43,3 +43,15 @@ AbstractGenericQuantity
 UnionAbstractQuantity
 DynamicQuantities.ABSTRACT_QUANTITY_TYPES
 ```
+
+## Custom behavior in abstract quantities
+
+There are a few functions you may need to overload
+when subtyping `AbstractDimensions`, `AbstractQuantity`,
+or `AbstractGenericQuantity`.
+
+```@docs
+constructorof
+with_type_parameters
+dimension_names
+```

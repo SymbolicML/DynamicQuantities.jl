@@ -519,6 +519,13 @@ end
     @test typeof(MyDimensions(1, 1, 1)) == MyDimensions{Int}
     @test typeof(MyDimensions{Float64}(1, 1, 1)) == MyDimensions{Float64}
 
+    # Can use the default constructorof, with_type_parameters, and dimension_names:
+    @test DynamicQuantities.constructorof(MyDimensions{Float64}) == MyDimensions
+    @test DynamicQuantities.constructorof(MyQuantity{Float64}) == MyQuantity
+    @test DynamicQuantities.with_type_parameters(MyDimensions{Float64}, Rational{Int}) == MyDimensions{Rational{Int}}
+    @test DynamicQuantities.with_type_parameters(MyQuantity{Float64,DEFAULT_DIM_TYPE}, Float32, MyDimensions{Float64}) == MyQuantity{Float32,MyDimensions{Float64}}
+    @test DynamicQuantities.dimension_names(MyDimensions{Float64}) == (:length, :mass, :time)
+
     # But, we always need to use a quantity when mixing with mathematical operations:
     @test_throws ErrorException MyQuantity(0.1) + 0.1 * MyDimensions()
 end
@@ -545,7 +552,7 @@ end
         end
 
         # Internal constructor
-        @test DynamicQuantities.constructor_of(typeof(sym)) === SymbolicDimensions
+        @test DynamicQuantities.constructorof(typeof(sym)) === SymbolicDimensions
 
         # Equality comparisons
         @test sym == sym
@@ -625,6 +632,7 @@ end
     y = 0.5us"km/s"
     qa = [x, y]
     @test qa isa Vector{Quantity{Float64,SymbolicDimensions{Rational{Int}}}}
+    DynamicQuantities.with_type_parameters(SymbolicDimensions{Float64}, Rational{Int}) == SymbolicDimensions{Rational{Int}}
 end
 
 @testset "uconvert" begin
@@ -1068,5 +1076,16 @@ end
 
         # TODO: Currently this converts to a `Vector` of `GenericQuantity`
         @test_skip x .* z isa QuantityArray{Float32,1,<:Dimensions,<:GenericQuantity{Float32}}
+    end
+
+    @testset "Array conversion" begin
+        x = SArray{Tuple{3}}(randn(3))
+        y = SArray{Tuple{3}}(randn(Float32, 3))
+        qx = QuantityArray(x, Dimensions(Rational{Int}, length=1))
+        qy = QuantityArray(y; length=1)
+
+        @test typeof(convert(typeof(qx), qy)) == typeof(qx)
+        @test convert(typeof(qx), qy)[1] isa Quantity{Float64}
+        @test convert(typeof(qx), qy)[1] == convert(Quantity{Float64}, qy[1])
     end
 end
