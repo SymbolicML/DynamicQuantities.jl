@@ -55,16 +55,21 @@ end
 Base.iszero(x::FixedRational) = iszero(x.num)
 Base.isone(x::F) where {F<:FixedRational} = x.num == denom(F)
 Base.isinteger(x::F) where {F<:FixedRational} = iszero(x.num % denom(F))
-Base.convert(::Type{F}, x::Integer) where {F<:FixedRational} = unsafe_fixed_rational(x * denom(F), eltype(F), val_denom(F))
-Base.convert(::Type{F}, x::Rational) where {F<:FixedRational} = F(x)
-Base.convert(::Type{Rational{R}}, x::F) where {R,F<:FixedRational} = Rational{R}(x.num, denom(F))
-Base.convert(::Type{Rational}, x::F) where {F<:FixedRational} = Rational{eltype(F)}(x.num, denom(F))
-Base.convert(::Type{AF}, x::F) where {AF<:AbstractFloat,F<:FixedRational} = convert(AF, x.num) / convert(AF, denom(F))
-Base.convert(::Type{I}, x::F) where {I<:Integer,F<:FixedRational} =
+
+Rational{R}(x::F) where {R,F<:FixedRational} = Rational{R}(x.num, denom(F))
+Rational(x::F) where {F<:FixedRational} = Rational{eltype(F)}(x)
+(::Type{AF})(x::F) where {AF<:AbstractFloat,F<:FixedRational} = convert(AF, x.num) / convert(AF, denom(F))
+(::Type{I})(x::F) where {I<:Integer,F<:FixedRational} =
     let
         isinteger(x) || throw(InexactError(:convert, I, x))
         convert(I, div(x.num, denom(F)))
     end
+(::Type{Bool})(x::F) where {F<:FixedRational} =
+    let
+        iszero(x) || isone(x) || throw(InexactError(:convert, Bool, x))
+        return x.num == denom(F)
+    end
+
 Base.round(::Type{T}, x::F, r::RoundingMode=RoundNearest) where {T,F<:FixedRational} = div(convert(T, x.num), convert(T, denom(F)), r)
 Base.decompose(x::F) where {T,F<:FixedRational{T}} = (x.num, zero(T), denom(F))
 
@@ -78,13 +83,13 @@ end
 function Base.promote_rule(::Type{<:FixedRational{T1}}, ::Type{Rational{T2}}) where {T1,T2}
     return Rational{promote_type(T1,T2)}
 end
-function Base.promote_rule(::Type{<:FixedRational{T1}}, ::Type{T2}) where {T1,T2}
+function Base.promote_rule(::Type{<:FixedRational{T1}}, ::Type{T2}) where {T1,T2<:Real}
     return promote_type(Rational{T1}, T2)
 end
-
-# Want to consume integers:
-Base.promote(x::Integer, y::F) where {F<:FixedRational} = (F(x), y)
-Base.promote(x::F, y::Integer) where {F<:FixedRational} = reverse(promote(y, x))
+function Base.promote_rule(::Type{F}, ::Type{<:Integer}) where {F<:FixedRational}
+    # Want to consume integers:
+    return F
+end
 
 Base.string(x::FixedRational) =
     let
@@ -93,7 +98,6 @@ Base.string(x::FixedRational) =
         return string(div(x.num, g)) * "//" * string(div(denom(x), g))
     end
 Base.show(io::IO, x::FixedRational) = print(io, string(x))
-Base.zero(::Type{F}) where {F<:FixedRational} = unsafe_fixed_rational(0, eltype(F), val_denom(F))
 
 tryrationalize(::Type{F}, x::F) where {F<:FixedRational} = x
 tryrationalize(::Type{F}, x::Union{Rational,Integer}) where {F<:FixedRational} = convert(F, x)

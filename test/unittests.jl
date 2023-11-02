@@ -407,6 +407,11 @@ end
 @testset "Additional tests of FixedRational" begin
     @test convert(Int64, FixedRational{Int64,1000}(2 // 1)) == 2
     @test convert(Int32, FixedRational{Int64,1000}(3 // 1)) == 3
+    @test convert(Bool, FixedRational{Int8,6}(1//1)) === true
+    @test convert(Bool, FixedRational{Int8,6}(0//1)) === false
+
+    @test_throws InexactError convert(Int32, FixedRational{Int8,6}(2//3))
+    @test_throws InexactError convert(Bool, FixedRational{Int8,6}(2//1))
 
     VERSION >= v"1.8" && @test_throws "Refusing to" promote(FixedRational{Int,10}(2), FixedRational{Int,4}(2))
 
@@ -415,6 +420,7 @@ end
     @test promote(f64, f8) == (2, 2)
     @test typeof(promote(f64, f8)) == typeof((f64, f64))
     @test typeof(promote(FixedRational{Int8,10}(2), FixedRational{Int8,10}(2))) == typeof((f8, f8))
+    @test promote_type(Float64, typeof(f64)) == Float64
 
     # Required to hit integer branch (otherwise will go to `literal_pow`)
     f(i::Int) = Dimensions(length=1, mass=-1)^i
@@ -438,7 +444,7 @@ end
     # Promotion rules
     @test promote_type(FixedRational{Int64,10},FixedRational{BigInt,10}) == FixedRational{BigInt,10}
     @test promote_type(Rational{Int8}, FixedRational{Int,12345}) == Rational{Int}
-    @test promote_type(Int8, FixedRational{Int,12345}) == promote_type(Int8, Rational{Int})
+    @test promote_type(Int8, FixedRational{Int,12345}) == FixedRational{Int,12345}
 end
 
 @testset "Quantity promotion" begin
