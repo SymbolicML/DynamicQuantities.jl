@@ -25,7 +25,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-)
     @eval begin
         function Base.$op(l::$type, r::$type)
             dimension(l) == dimension(r) || throw(DimensionError(l, r))
-            return new_quantity(typeof(l), $op(ustrip(l), ustrip(r)), dimension(l))
+            return new_quantity(typeof(l), $op(ustrip(l), ustrip(r)), combine_dimension_with_wildcard(l, r))
         end
         function Base.$op(l::$type, r::$base_type)
             iszero(dimension(l)) || throw(DimensionError(l, r))
