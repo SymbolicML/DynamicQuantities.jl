@@ -25,7 +25,6 @@ end
     return output
 end
 
-Base.float(q::UnionAbstractQuantity) = new_quantity(typeof(q), float(ustrip(q)), dimension(q))
 Base.convert(::Type{Number}, q::AbstractQuantity) = q
 function Base.convert(::Type{T}, q::UnionAbstractQuantity) where {T<:Number}
     @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."

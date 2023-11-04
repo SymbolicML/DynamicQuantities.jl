@@ -44,7 +44,7 @@ end
 Base.:-(l::UnionAbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 
 # Combining different abstract types
-for op in (:*, :/, :+, :-, :div),
+for op in (:*, :/, :+, :-, :div, :atan, :atand, :copysign, :flipsign, :mod),
     (t1, _, _) in ABSTRACT_QUANTITY_TYPES,
     (t2, _, _) in ABSTRACT_QUANTITY_TYPES
 
@@ -126,7 +126,6 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:atan, :atand)
         end
         function Base.$f(y::$type, x::$type)
             dimension(y) == dimension(x) || throw(DimensionError(y, x))
-            y, x = promote(y, x)
             return $f(ustrip(y), ustrip(x))
         end
         function Base.$f(y::$type, x::$base_type)
@@ -143,8 +142,8 @@ end
 
 ############################## Same dimension as input ##################################
 for f in (
-    :abs, :real, :imag, :conj, :adjoint, :unsigned, :nextfloat, :prevfloat,
-    :identity, :transpose,
+    :float, :abs, :real, :imag, :conj, :adjoint, :unsigned,
+    :nextfloat, :prevfloat, :identity, :transpose,
 )
     @eval function Base.$f(q::UnionAbstractQuantity)
         return new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
