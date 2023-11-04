@@ -252,4 +252,7 @@ end
 struct DimensionError{Q1,Q2} <: Exception
     q1::Q1
     q2::Q2
+
+    DimensionError(q1, q2) = new{typeof(q1),typeof(q2)}(q1, q2)
+    DimensionError(q1) = DimensionError(q1, nothing)
 end
