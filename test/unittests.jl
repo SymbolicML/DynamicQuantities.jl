@@ -1090,7 +1090,17 @@ end
     end
 end
 
-@testset "Dimensionless functions" begin
+function is_input_valid(f, x)
+    try
+        f(x)
+    catch e
+        e isa DomainError && return false
+        rethrow(e)
+    end
+    return true
+end
+
+@testset "Assorted dimensionless functions" begin
     functions = (
         :sin, :cos, :tan, :sinh, :cosh, :tanh, :asin, :acos,
         :asinh, :acosh, :atanh, :sec, :csc, :cot, :asec, :acsc, :acot, :sech, :csch,
@@ -1099,15 +1109,6 @@ end
         :log, :log2, :log10, :log1p, :exp, :exp2, :exp10, :expm1, :frexp, :exponent,
         :atan, :atand
     )
-    function is_input_valid(f, x)
-        try
-            f(x)
-        catch e
-            e isa DomainError && return false
-            rethrow(e)
-        end
-        return true
-    end
     for Q in (Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
         # Only test on valid domain
         valid_inputs = filter(
@@ -1128,6 +1129,70 @@ end
                     @eval @test_throws DimensionError $f($qy_dimensions, $x)
                     @eval @test_throws DimensionError $f($y, $qx_dimensions)
                 end
+            end
+        end
+    end
+end
+
+@testset "Assorted dimensionful functions" begin
+    functions = (
+        :float, :abs, :real, :imag, :conj, :adjoint, :unsigned,
+        :nextfloat, :prevfloat, :identity, :transpose,
+        :copysign, :flipsign, :mod, :modf,
+        :floor, :trunc, :ceil, :significand,
+        :ldexp, :round
+    )
+    for Q in (Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
+        T = f in (:abs, :real, :imag, :conj) ? ComplexF64 : Float64
+        if f == :modf  # Functions that return multiple outputs
+            for x in 5rand(T, 3) .- 2.5
+                dim = convert(D, dimension(u"m/s"))
+                qx_dimensions = Q(x, dim)
+                num_outputs = 2
+                for i=1:num_outputs
+                    @eval @test $f($qx_dimensions)[$i] == $Q($f($x)[$i], $dim)
+                end
+            end
+        elseif f in (:copysign, :flipsign, :rem, :mod)  # Functions that need multiple inputs
+            for x in 5rand(T, 3) .- 2.5
+                for y in 5rand(T, 3) .- 2.5
+                    dim = convert(D, dimension(u"m/s"))
+                    qx_dimensions = Q(x, dim)
+                    qy_dimensions = Q(y, dim)
+                    @eval @test $f($qx_dimensions, $qy_dimensions) == $Q($f($x, $y), $dim)
+                end
+            end
+        elseif f == :unsigned
+            for x in 5rand(-10:10, 3)
+                dim = convert(D, dimension(u"m/s"))
+                qx_dimensions = Q(x, dim)
+                @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
+            end
+        elseif f == :round
+            for x in 5rand(T, 3) .- 2.5
+                dim = convert(D, dimension(u"m/s"))
+                qx_dimensions = Q(x, dim)
+                @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
+                @eval @test $f(Int32, $qx_dimensions) == $Q($f(Int32, $x), $dim)
+            end
+        elseif f == :ldexp
+            for x in 5rand(T, 3) .- 2.5
+                dim = convert(D, dimension(u"m/s"))
+                qx_dimensions = Q(x, dim)
+                for i=1:3
+                    @eval @test $f($qx_dimensions, $i) == $Q($f($x, $i), $dim)
+                end
+            end
+        else
+            # Only test on valid domain
+            valid_inputs = filter(
+                x -> is_input_valid(eval(f), x),
+                5rand(T, 100) .- 2.5
+            )
+            for x in valid_inputs[1:3]
+                dim = convert(D, dimension(u"m/s"))
+                qx_dimensions = Q(x, dim)
+                @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
             end
         end
     end
