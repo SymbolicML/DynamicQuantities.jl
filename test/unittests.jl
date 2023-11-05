@@ -1089,3 +1089,46 @@ end
         @test convert(typeof(qx), qy)[1] == convert(Quantity{Float64}, qy[1])
     end
 end
+
+@testset "Dimensionless functions" begin
+    functions = (
+        :sin, :cos, :tan, :sinh, :cosh, :tanh, :asin, :acos,
+        :asinh, :acosh, :atanh, :sec, :csc, :cot, :asec, :acsc, :acot, :sech, :csch,
+        :coth, :asech, :acsch, :acoth, :sinc, :cosc, :cosd, :cotd, :cscd, :secd,
+        :sinpi, :cospi, :sind, :tand, :acosd, :acotd, :acscd, :asecd, :asind,
+        :log, :log2, :log10, :log1p, :exp, :exp2, :exp10, :expm1, :frexp, :exponent,
+        :atan, :atand
+    )
+    function is_input_valid(f, x)
+        try
+            f(x)
+        catch e
+            e isa DomainError && return false
+            rethrow(e)
+        end
+        return true
+    end
+    for Q in (Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
+        # Only test on valid domain
+        valid_inputs = filter(
+            x -> is_input_valid(eval(f), x),
+            5rand(100) .- 2.5
+        )
+        for x in valid_inputs[1:3]
+            qx_dimensionless = Quantity(x, D)
+            qx_dimensions = Quantity(x, convert(D, dimension(u"m/s")))
+            @eval @test $f($qx_dimensionless) == $f($x)
+            @eval @test_throws DimensionError $f($qx_dimensions)
+            if f in (:atan, :atand)
+                for y in valid_inputs[end-3:end]
+                    qy_dimensionless = Quantity(y, D)
+                    qy_dimensions = Quantity(y, convert(D, dimension(u"m/s")))
+                    @eval @test $f($qy_dimensionless, $qx_dimensionless) == $f($y, $x)
+                    @eval @test $f($qy_dimensions, $qx_dimensions) == $f($y, $x)
+                    @eval @test_throws DimensionError $f($qy_dimensions, $x)
+                    @eval @test_throws DimensionError $f($y, $qx_dimensions)
+                end
+            end
+        end
+    end
+end
