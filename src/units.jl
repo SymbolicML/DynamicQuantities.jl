@@ -158,15 +158,21 @@ end
 # Common assorted units
 ## Time
 @register_unit min 60 * s
+@register_unit minute min
 @register_unit h 60 * min
 @register_unit hr h
 @register_unit day 24 * h
+@register_unit d day
+@register_unit wk 7 * day
 @register_unit yr 365.25 * day
 
 @add_prefixes min ()
+@add_prefixes minute ()
 @add_prefixes h ()
 @add_prefixes hr ()
 @add_prefixes day ()
+@add_prefixes d ()
+@add_prefixes wk ()
 @add_prefixes yr (k, M, G)
 
 ## Volume
