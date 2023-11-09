@@ -68,7 +68,7 @@ end
     kg,
 )
 @doc(
-    "Time in seconds. Available variants: `fs`, `ps`, `ns`, `μs` (/`us`), `ms`, `min`, `h` (/`hr`), `day`, `yr`, `kyr`, `Myr`, `Gyr`.",
+    "Time in seconds. Available variants: `fs`, `ps`, `ns`, `μs` (/`us`), `ms`, `min` (/`minute`), `h` (/`hr`), `day` (/`d`), `wk`, `yr`, `kyr`, `Myr`, `Gyr`.",
     s,
 )
 @doc(
