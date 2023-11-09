@@ -68,7 +68,7 @@ end
     kg,
 )
 @doc(
-    "Time in seconds. Available variants: `fs`, `ps`, `ns`, `μs` (/`us`), `ms`, `min`, `h` (/`hr`), `day`, `yr`, `kyr`, `Myr`, `Gyr`.",
+    "Time in seconds. Available variants: `fs`, `ps`, `ns`, `μs` (/`us`), `ms`, `min`, `h` (/`hr`), `day`, `wk` `yr`, `kyr`, `Myr`, `Gyr`.",
     s,
 )
 @doc(
@@ -161,12 +161,14 @@ end
 @register_unit h 60 * min
 @register_unit hr h
 @register_unit day 24 * h
+@register_unit wk 7 * day
 @register_unit yr 365.25 * day
 
 @add_prefixes min ()
 @add_prefixes h ()
 @add_prefixes hr ()
 @add_prefixes day ()
+@add_prefixes wk ()
 @add_prefixes yr (k, M, G)
 
 ## Volume
