@@ -77,6 +77,7 @@ Base.keys(q::UnionAbstractQuantity) = keys(ustrip(q))
 
 # Numeric checks
 function Base.isapprox(l::UnionAbstractQuantity, r::UnionAbstractQuantity; kws...)
+    l, r = promote(l, r)
     return isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
 end
 function Base.isapprox(l::Number, r::UnionAbstractQuantity; kws...)
@@ -88,11 +89,15 @@ function Base.isapprox(l::UnionAbstractQuantity, r::Number; kws...)
     return isapprox(ustrip(l), r; kws...)
 end
 Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
-Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
-Base.:(==)(l::UnionAbstractQuantity, r::UnionAbstractQuantity) = ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+function Base.:(==)(l::UnionAbstractQuantity, r::UnionAbstractQuantity)
+    l, r = promote(l, r)
+    ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+end
 Base.:(==)(l::Number, r::UnionAbstractQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
 Base.:(==)(l::UnionAbstractQuantity, r::Number) = ustrip(l) == ustrip(r) && iszero(dimension(l))
+Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 function Base.isless(l::UnionAbstractQuantity, r::UnionAbstractQuantity)
+    l, r = promote(l, r)
     dimension(l) == dimension(r) || throw(DimensionError(l, r))
     return isless(ustrip(l), ustrip(r))
 end

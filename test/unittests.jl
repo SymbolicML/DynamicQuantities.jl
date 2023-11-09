@@ -633,6 +633,16 @@ end
     qa = [x, y]
     @test qa isa Vector{Quantity{Float64,SymbolicDimensions{Rational{Int}}}}
     DynamicQuantities.with_type_parameters(SymbolicDimensions{Float64}, Rational{Int}) == SymbolicDimensions{Rational{Int}}
+
+    @testset "Promotion with Dimensions" begin
+        x = 0.5u"cm"
+        y = -0.03u"m"
+        x_s = 0.5us"cm"
+        for op in (+, -, *, /, atan, atand, copysign, flipsign, mod)
+            @test op(x, y) == op(x_s, y)
+            @test op(y, x) == op(y, x_s)
+        end
+    end
 end
 
 @testset "uconvert" begin
