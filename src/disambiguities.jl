@@ -16,7 +16,7 @@ Base.:/(l::Number, r::AbstractDimensions) = error("Please use an `UnionAbstractQ
 if VERSION < v"1.7"
     for I in (Base.MultiplicativeInverses.UnsignedMultiplicativeInverse, Base.MultiplicativeInverses.SignedMultiplicativeInverse)
         @eval function Base.div(x::T, y::$I{T}, r::RoundingMode=RoundToZero) where {T<:AbstractGenericQuantity}
-            return new_quantity(typeof(x), div(ustrip(x), ustrip(y), r), dimension(x) / dimension(y))
+            return new_quantity(typeof(x), div(ustrip(x), y, r), dimension(x))
         end
     end
 end
