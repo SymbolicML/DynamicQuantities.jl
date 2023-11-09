@@ -46,6 +46,25 @@ function Base.promote_rule(::Type{<:AbstractQuantity}, ::Type{<:Number})
     return Number
 end
 
+"""
+    promote_except_value(q1::UnionAbstractQuantity, q2::UnionAbstractQuantity)
+
+This applies a promotion to the quantity type, and the dimension type,
+but *not* the value type. This is necessary because sometimes we would
+want to multiply a quantity array with a scalar quantity, and wish to use
+promotion on the quantity type itself, but don't want to promote to a
+single value type.
+"""
+@inline function promote_except_value(q1::Q1, q2::Q2) where {T1,D1,T2,D2,Q1<:UnionAbstractQuantity{T1,D1},Q2<:UnionAbstractQuantity{T2,D2}}
+    Q = promote_type(Q1, Q2)
+    D = promote_type(D1, D2)
+
+    Q1_out = with_type_parameters(Q, T1, D)
+    Q2_out = with_type_parameters(Q, T2, D)
+    return convert(Q1_out, q1), convert(Q2_out, q2)
+end
+@inline promote_except_value(q1::Q, q2::Q) where {Q<:UnionAbstractQuantity} = (q1, q2)
+
 Base.keys(d::AbstractDimensions) = dimension_names(typeof(d))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
 
@@ -77,7 +96,7 @@ Base.keys(q::UnionAbstractQuantity) = keys(ustrip(q))
 
 # Numeric checks
 function Base.isapprox(l::UnionAbstractQuantity, r::UnionAbstractQuantity; kws...)
-    l, r = promote(l, r)
+    l, r = promote_except_value(l, r)
     return isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
 end
 function Base.isapprox(l::Number, r::UnionAbstractQuantity; kws...)
@@ -90,14 +109,14 @@ function Base.isapprox(l::UnionAbstractQuantity, r::Number; kws...)
 end
 Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
 function Base.:(==)(l::UnionAbstractQuantity, r::UnionAbstractQuantity)
-    l, r = promote(l, r)
+    l, r = promote_except_value(l, r)
     ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
 end
 Base.:(==)(l::Number, r::UnionAbstractQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
 Base.:(==)(l::UnionAbstractQuantity, r::Number) = ustrip(l) == ustrip(r) && iszero(dimension(l))
 Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 function Base.isless(l::UnionAbstractQuantity, r::UnionAbstractQuantity)
-    l, r = promote(l, r)
+    l, r = promote_except_value(l, r)
     dimension(l) == dimension(r) || throw(DimensionError(l, r))
     return isless(ustrip(l), ustrip(r))
 end

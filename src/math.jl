@@ -1,15 +1,15 @@
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         function Base.:*(l::$type, r::$type)
-            l, r = promote(l, r)
+            l, r = promote_except_value(l, r)
             new_quantity(typeof(l), ustrip(l) * ustrip(r), dimension(l) * dimension(r))
         end
         function Base.:/(l::$type, r::$type)
-            l, r = promote(l, r)
+            l, r = promote_except_value(l, r)
             new_quantity(typeof(l), ustrip(l) / ustrip(r), dimension(l) / dimension(r))
         end
         function Base.div(x::$type, y::$type, r::RoundingMode=RoundToZero)
-            x, y = promote(x, y)
+            x, y = promote_except_value(x, y)
             new_quantity(typeof(x), div(ustrip(x), ustrip(y), r), dimension(x) / dimension(y))
         end
 
@@ -57,7 +57,7 @@ Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-)
     @eval begin
         function Base.$op(l::$type, r::$type)
-            l, r = promote(l, r)
+            l, r = promote_except_value(l, r)
             dimension(l) == dimension(r) || throw(DimensionError(l, r))
             return new_quantity(typeof(l), $op(ustrip(l), ustrip(r)), dimension(l))
         end
@@ -81,7 +81,7 @@ for op in (:*, :/, :+, :-, :div, :atan, :atand, :copysign, :flipsign, :mod),
 
     t1 == t2 && continue
 
-    @eval Base.$op(l::$t1, r::$t2) = $op(promote(l, r)...)
+    @eval Base.$op(l::$t1, r::$t2) = $op(promote_except_value(l, r)...)
 end
 
 # We don't promote on the dimension types:
@@ -156,7 +156,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:atan, :atand)
             return $f(ustrip(x))
         end
         function Base.$f(y::$type, x::$type)
-            y, x = promote(y, x)
+            y, x = promote_except_value(y, x)
             dimension(y) == dimension(x) || throw(DimensionError(y, x))
             return $f(ustrip(y), ustrip(x))
         end
@@ -186,7 +186,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:copysign, :flipsign,
     # and ignore any dimensions on y, since those will cancel out.
     @eval begin
         function Base.$f(x::$type, y::$type)
-            x, y = promote(x, y)
+            x, y = promote_except_value(x, y)
             return new_quantity(typeof(x), $f(ustrip(x), ustrip(y)), dimension(x))
         end
         function Base.$f(x::$type, y::$base_type)
