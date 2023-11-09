@@ -106,12 +106,12 @@ function Base.isless(l::Number, r::UnionAbstractQuantity)
 end
 
 # Simple flags:
-# :iseven, :ispow2, :isfinite, :isinf, :isodd, :isinteger, :isreal,
-# :isnan, :isempty, :iszero
-for f in (:iszero, :isfinite, :isinf, :isnan, :isreal, :signbit)
+for f in (
+    :iszero, :isfinite, :isinf, :isnan, :isreal, :signbit,
+    :isempty, :iseven, :isodd, :isinteger, :ispow2
+)
     @eval Base.$f(q::UnionAbstractQuantity) = $f(ustrip(q))
 end
-Base.isempty(q::AbstractGenericQuantity) = isempty(ustrip(q))
 
 
 # Base.one, typemin, typemax

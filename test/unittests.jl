@@ -149,6 +149,21 @@ using Test
     @test isinf(x * Inf) == true
     @test isnan(x) == false
     @test isnan(x * NaN) == true
+    @test isreal(x) == true
+    @test isreal(x * (1 + 2im)) == false
+    @test signbit(x) == true
+    @test signbit(-x) == false
+    @test isempty(x) == false
+    @test isempty(GenericQuantity([0.0, 1.0])) == false
+    @test isempty(GenericQuantity(Float64[])) == true
+    @test iseven(Quantity(2, length=1)) == true
+    @test iseven(Quantity(3, length=1)) == false
+    @test isodd(Quantity(2, length=1)) == false
+    @test isodd(Quantity(3, length=1)) == true
+    @test isinteger(Quantity(2, length=1)) == true
+    @test isinteger(Quantity(2.1, length=1)) == false
+    @test ispow2(Quantity(2, length=1)) == true
+    @test ispow2(Quantity(3, length=1)) == false
 
     @test nextfloat(x) == Quantity(nextfloat(-1.2), length=2 // 5)
     @test prevfloat(x) == Quantity(prevfloat(-1.2), length=2 // 5)
