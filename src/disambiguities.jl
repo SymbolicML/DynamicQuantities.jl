@@ -12,3 +12,11 @@ Base.:*(l::AbstractDimensions, r::Number) = error("Please use an `UnionAbstractQ
 Base.:*(l::Number, r::AbstractDimensions) = error("Please use an `UnionAbstractQuantity` for multiplication. You used multiplication on types: $(typeof(l)) and $(typeof(r)).")
 Base.:/(l::AbstractDimensions, r::Number) = error("Please use an `UnionAbstractQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
 Base.:/(l::Number, r::AbstractDimensions) = error("Please use an `UnionAbstractQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
+
+if VERSION < v"1.7"
+    for I in (Base.MultiplicativeInverses.UnsignedMultiplicativeInverse, Base.MultiplicativeInverses.SignedMultiplicativeInverse)
+        @eval function Base.div(x::T, y::$I{T}, r::RoundingMode=RoundToZero) where {T<:AbstractGenericQuantity}
+            return new_quantity(typeof(x), div(ustrip(x), ustrip(y), r), dimension(x) / dimension(y))
+        end
+    end
+end
