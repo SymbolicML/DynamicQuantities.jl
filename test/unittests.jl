@@ -461,6 +461,17 @@ end
     x = [0.5, q]
     @test x isa Vector{typeof(q)}
 
+    # Promotion with custom numeric type:
+    @eval struct MyNumber <: Real
+        x::Float64
+    end
+    a = 0.5u"km/s"
+    b = MyNumber(0.5)
+    ar = [a, b]
+    @test ar isa Vector{Number}
+    @test a === ar[1]
+    @test b === ar[2]
+
     # Explicit conversion so coverage can see it:
     D = DEFAULT_DIM_TYPE
     @test promote_type(Quantity{Float32,D}, Float64) == Quantity{Float64,D}

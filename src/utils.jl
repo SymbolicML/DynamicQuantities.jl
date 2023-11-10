@@ -49,7 +49,7 @@ end
 # or even <:AbstractFloat, as it could conflict with other
 # abstract number packages which may try to do the same thing.
 # (which would lead to ambiguities)
-for (type, _, _) in ABSTRACT_QUANTITY_TYPES, numeric_type in (
+const BASE_NUMERIC_TYPES = Union{
     Bool, Int8, UInt8, Int16, UInt16, Int32, UInt32,
     Int64, UInt64, Int128, UInt128, Float16, Float32,
     Float64, BigFloat, BigInt, ComplexF16, ComplexF32,
@@ -57,14 +57,13 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES, numeric_type in (
     Rational{Int16}, Rational{UInt16}, Rational{Int32}, Rational{UInt32},
     Rational{Int64}, Rational{UInt64}, Rational{Int128}, Rational{UInt128},
     Rational{BigInt},
-)
-    @eval begin
-        function Base.promote_rule(::Type{Q}, ::Type{$numeric_type}) where {T,D,Q<:$type{T,D}}
-            return with_type_parameters(Q, promote_type(T,$numeric_type), D)
-        end
-        function Base.convert(::Type{Q}, x::$numeric_type) where {T,D,Q<:$type{T,D}}
-            return new_quantity(Q, convert(T, x), D())
-        end
+}
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES
+    @eval function Base.promote_rule(::Type{Q}, ::Type{T2}) where {T,D,Q<:$type{T,D},T2<:BASE_NUMERIC_TYPES}
+        return with_type_parameters(Q, promote_type(T, T2), D)
+    end
+    @eval function Base.convert(::Type{Q}, x::BASE_NUMERIC_TYPES) where {T,D,Q<:$type{T,D}}
+        return new_quantity(Q, convert(T, x), D())
     end
 end
 function Base.promote_rule(::Type{<:AbstractQuantity}, ::Type{<:Number})
