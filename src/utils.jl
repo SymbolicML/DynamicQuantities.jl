@@ -43,6 +43,30 @@ end
 function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:Quantity{T2,D2}}) where {T1,T2,D1,D2}
     return Quantity{promote_type(T1,T2),promote_type(D1,D2)}
 end
+
+# Define promotion rules for all basic numeric types, individually.
+# We don't want to define an opinionated promotion on <:Number,
+# or even <:AbstractFloat, as it could conflict with other
+# abstract number packages which may try to do the same thing.
+# (which would lead to ambiguities)
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES, numeric_type in (
+    Bool, Int8, UInt8, Int16, UInt16, Int32, UInt32,
+    Int64, UInt64, Int128, UInt128, Float16, Float32,
+    Float64, BigFloat, BigInt, ComplexF16, ComplexF32,
+    ComplexF64, Complex{BigFloat}, Rational{Int8}, Rational{UInt8},
+    Rational{Int16}, Rational{UInt16}, Rational{Int32}, Rational{UInt32},
+    Rational{Int64}, Rational{UInt64}, Rational{Int128}, Rational{UInt128},
+    Rational{BigInt},
+)
+    @eval begin
+        function Base.promote_rule(::Type{Q}, ::Type{$numeric_type}) where {T,D,Q<:$type{T,D}}
+            return with_type_parameters(Q, promote_type(T,$numeric_type), D)
+        end
+        function Base.convert(::Type{Q}, x::$numeric_type) where {T,D,Q<:$type{T,D}}
+            return new_quantity(Q, convert(T, x), D())
+        end
+    end
+end
 function Base.promote_rule(::Type{<:AbstractQuantity}, ::Type{<:Number})
     return Number
 end
