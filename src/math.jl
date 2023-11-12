@@ -20,7 +20,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
         function Base.:/(l::$type, r::$base_type)
             new_quantity(typeof(l), ustrip(l) / r, dimension(l))
         end
-        function Base.div(x::$type, y::$base_type, r::RoundingMode=RoundToZero)
+        function Base.div(x::$type, y::Number, r::RoundingMode=RoundToZero)
             new_quantity(typeof(x), div(ustrip(x), y, r), dimension(x))
         end
 
@@ -30,7 +30,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
         function Base.:/(l::$base_type, r::$type)
             new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
         end
-        function Base.div(x::$base_type, y::$type, r::RoundingMode=RoundToZero)
+        function Base.div(x::Number, y::$type, r::RoundingMode=RoundToZero)
             new_quantity(typeof(y), div(x, ustrip(y), r), inv(dimension(y)))
         end
 
@@ -175,7 +175,7 @@ end
 ############################## Same dimension as input ##################################
 for f in (
     :float, :abs, :real, :imag, :conj, :adjoint, :unsigned,
-    :nextfloat, :prevfloat, :identity, :transpose,
+    :nextfloat, :prevfloat, :identity, :transpose, :significand
 )
     @eval function Base.$f(q::UnionAbstractQuantity)
         return new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
@@ -206,7 +206,7 @@ end
 function Base.round(::Type{Ti}, q::UnionAbstractQuantity, r::RoundingMode=RoundNearest) where {Ti<:Integer}
     return new_quantity(typeof(q), round(Ti, ustrip(q), r), dimension(q))
 end
-for f in (:floor, :trunc, :ceil, :significand)
+for f in (:floor, :trunc, :ceil)
     @eval begin
         function Base.$f(q::UnionAbstractQuantity)
             return new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
