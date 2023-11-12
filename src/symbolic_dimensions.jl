@@ -39,7 +39,7 @@ struct SymbolicDimensions{R} <: AbstractDimensions{R}
     nzvals::Vector{R}
 end
 
-static_fieldnames(::Type{<:SymbolicDimensions}) = ALL_SYMBOLS
+@inline dimension_names(::Type{<:SymbolicDimensions}) = ALL_SYMBOLS
 function Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R}
     nzdims = getfield(d, :nzdims)
     i = get(ALL_MAPPING, s, INDEX_TYPE(0))
@@ -53,7 +53,9 @@ function Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R}
 end
 Base.propertynames(::SymbolicDimensions) = ALL_SYMBOLS
 Base.getindex(d::SymbolicDimensions, k::Symbol) = getproperty(d, k)
-constructor_of(::Type{<:SymbolicDimensions}) = SymbolicDimensions
+
+constructorof(::Type{<:SymbolicDimensions}) = SymbolicDimensions
+with_type_parameters(::Type{<:SymbolicDimensions}, ::Type{R}) where {R} = SymbolicDimensions{R}
 
 SymbolicDimensions{R}(d::SymbolicDimensions) where {R} = SymbolicDimensions{R}(getfield(d, :nzdims), convert(Vector{R}, getfield(d, :nzvals)))
 SymbolicDimensions(; kws...) = SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}(; kws...)
@@ -68,33 +70,38 @@ function SymbolicDimensions{R}(; kws...) where {R}
 end
 (::Type{<:SymbolicDimensions})(::Type{R}; kws...) where {R} = SymbolicDimensions{R}(; kws...)
 
-function Base.convert(::Type{Quantity{T,SymbolicDimensions}}, q::Quantity{<:Any,<:Dimensions}) where {T}
-    return convert(Quantity{T,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}, q)
-end
-function Base.convert(::Type{Quantity{T,SymbolicDimensions{R}}}, q::Quantity{<:Any,<:Dimensions}) where {T,R}
-    syms = (:m, :kg, :s, :A, :K, :cd, :mol)
-    vals = (ulength(q), umass(q), utime(q), ucurrent(q), utemperature(q), uluminosity(q), uamount(q))
-    I = INDEX_TYPE[ALL_MAPPING[s] for (s, v) in zip(syms, vals) if !iszero(v)]
-    V = R[tryrationalize(R, v) for v in vals if !iszero(v)]
-    p = sortperm(I)
-    permute!(I, p)
-    permute!(V, p)
-    dims = SymbolicDimensions{R}(I, V)
-    return Quantity(convert(T, ustrip(q)), dims)
-end
-function Base.convert(::Type{Quantity{T,D}}, q::Quantity{<:Any,<:SymbolicDimensions}) where {T,D<:Dimensions}
-    result = Quantity(T(ustrip(q)), D())
-    d = dimension(q)
-    for (idx, value) in zip(getfield(d, :nzdims), getfield(d, :nzvals))
-        if !iszero(value)
-            result = result * convert(Quantity{T,D}, ALL_VALUES[idx]) ^ value
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:Dimensions}) where {T,Q<:$type{T,SymbolicDimensions}}
+            return convert(with_type_parameters(Q, T,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}), q)
+        end
+        function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:Dimensions}) where {T,R,Q<:$type{T,SymbolicDimensions{R}}}
+            syms = (:m, :kg, :s, :A, :K, :cd, :mol)
+            vals = (ulength(q), umass(q), utime(q), ucurrent(q), utemperature(q), uluminosity(q), uamount(q))
+            I = INDEX_TYPE[ALL_MAPPING[s] for (s, v) in zip(syms, vals) if !iszero(v)]
+            V = R[tryrationalize(R, v) for v in vals if !iszero(v)]
+            p = sortperm(I)
+            permute!(I, p)
+            permute!(V, p)
+            dims = SymbolicDimensions{R}(I, V)
+            return constructorof(Q)(convert(T, ustrip(q)), dims)
+        end
+        function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:SymbolicDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
+            result = constructorof(Q)(convert(T, ustrip(q)), D())
+            d = dimension(q)
+            for (idx, value) in zip(getfield(d, :nzdims), getfield(d, :nzvals))
+                if !iszero(value)
+                    result = result * convert(with_type_parameters(Q, T, D), ALL_VALUES[idx]) ^ value
+                end
+            end
+            return result
         end
     end
-    return result
 end
 
+
 """
-    uexpand(q::Quantity{<:Any,<:SymbolicDimensions})
+    uexpand(q::UnionAbstractQuantity{<:Any,<:SymbolicDimensions})
 
 Expand the symbolic units in a quantity to their base SI form.
 In other words, this converts a `Quantity` with `SymbolicDimensions`
@@ -102,19 +109,19 @@ to one with `Dimensions`. The opposite of this function is `uconvert`,
 for converting to specific symbolic units, or `convert(Quantity{<:Any,<:SymbolicDimensions}, q)`,
 for assuming SI units as the output symbols.
 """
-function uexpand(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:AbstractQuantity{T,D}}
-    return convert(constructor_of(Q){T,Dimensions{R}}, q)
+function uexpand(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:UnionAbstractQuantity{T,D}}
+    return convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
 uexpand(q::QuantityArray) = uexpand.(q)
 # TODO: Make the array-based one more efficient
 
 """
-    uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}, q::AbstractQuantity{<:Any, <:Dimensions})
+    uconvert(qout::UnionAbstractQuantity{<:Any, <:SymbolicDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
 
 Convert a quantity `q` with base SI units to the symbolic units of `qout`, for `q` and `qout` with compatible units.
 Mathematically, the result has value `q / uexpand(qout)` and units `dimension(qout)`. 
 """
-function uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}, q::AbstractQuantity{<:Any, <:Dimensions})
+function uconvert(qout::UnionAbstractQuantity{<:Any, <:SymbolicDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
     @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
     qout_expanded = uexpand(qout)
     dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
@@ -122,7 +129,7 @@ function uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}, q::Abstra
     new_dim = dimension(qout)
     return new_quantity(typeof(q), new_val, new_dim)
 end
-function uconvert(qout::AbstractQuantity{<:Any,<:SymbolicDimensions}, q::QuantityArray{<:Any,<:Any,<:Dimensions})
+function uconvert(qout::UnionAbstractQuantity{<:Any,<:SymbolicDimensions}, q::QuantityArray{<:Any,<:Any,<:Dimensions})
     @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
     qout_expanded = uexpand(qout)
     dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
@@ -133,12 +140,12 @@ end
 # TODO: Method for converting SymbolicDimensions -> SymbolicDimensions
 
 """
-    uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions})
+    uconvert(qout::UnionAbstractQuantity{<:Any, <:SymbolicDimensions})
 
 Create a function that converts an input quantity `q` with base SI units to the symbolic units of `qout`, i.e 
 a function equivalent to `q -> uconvert(qout, q)`.
 """
-uconvert(qout::AbstractQuantity{<:Any, <:SymbolicDimensions}) = Base.Fix1(uconvert, qout)
+uconvert(qout::UnionAbstractQuantity{<:Any, <:SymbolicDimensions}) = Base.Fix1(uconvert, qout)
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(getfield(d, :nzdims)), copy(getfield(d, :nzvals)))
 function Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions)
@@ -381,4 +388,11 @@ namespace collisions, a few physical constants are automatically converted.
 """
 macro us_str(s)
     return esc(SymbolicUnitsParse.sym_uparse(s))
+end
+
+function Base.promote_rule(::Type{SymbolicDimensions{R1}}, ::Type{SymbolicDimensions{R2}}) where {R1,R2}
+    return SymbolicDimensions{promote_type(R1,R2)}
+end
+function Base.promote_rule(::Type{SymbolicDimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
+    return Dimensions{promote_type(R1,R2)}
 end
