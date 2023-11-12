@@ -9,6 +9,12 @@ using StaticArrays: SArray, MArray
 using LinearAlgebra: norm
 using Test
 
+function record_show(s, f=show)
+    io = IOBuffer()
+    f(io, s)
+    return String(take!(io))
+end
+
 @testset "Basic utilities" begin
 
     for Q in [Quantity, GenericQuantity], T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_BASE_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
@@ -447,14 +453,8 @@ end
     # Conversion to Rational without specifying type
     @test convert(Rational, FixedRational{UInt8,6}(2)) === Rational{UInt8}(2)
 
-    # Showing rationals
-    function show_string(i)
-        io = IOBuffer()
-        show(io, i)
-        return String(take!(io))
-    end
-    @test show_string(FixedRational{Int,10}(2)) == "2"
-    @test show_string(FixedRational{Int,10}(11//10)) == "11//10"
+    @test record_show(FixedRational{Int,10}(2)) == "2"
+    @test record_show(FixedRational{Int,10}(11//10)) == "11//10"
 
     # Promotion rules
     @test promote_type(FixedRational{Int64,10},FixedRational{BigInt,10}) == FixedRational{BigInt,10}
@@ -1164,6 +1164,8 @@ end
             end
         end
     end
+    s = record_show(DimensionError(u"km/s"), showerror)
+    @test occursin("not dimensionless", s)
 end
 
 @testset "Assorted dimensionful functions" begin
