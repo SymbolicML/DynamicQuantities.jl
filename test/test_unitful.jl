@@ -38,3 +38,8 @@ x = 1.0u"scale"
 @test typeof(x) <: Unitful.Quantity{Float64, MyScaleUnit.𝐒}
 @test_throws ErrorException convert(DynamicQuantities.Quantity, x)
 # These are not supported because there is no SI equivalency
+
+# issue 79
+symbolic = DynamicQuantities.us"s"
+@test_throws ArgumentError convert(Unitful.Quantity, symbolic)
+@test convert(Unitful.Quantity, DynamicQuantities.uexpand(symbolic)) == 1.0 * Unitful.u"s"

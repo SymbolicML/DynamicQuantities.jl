@@ -149,6 +149,21 @@ using Test
     @test isinf(x * Inf) == true
     @test isnan(x) == false
     @test isnan(x * NaN) == true
+    @test isreal(x) == true
+    @test isreal(x * (1 + 2im)) == false
+    @test signbit(x) == true
+    @test signbit(-x) == false
+    @test isempty(x) == false
+    @test isempty(GenericQuantity([0.0, 1.0])) == false
+    @test isempty(GenericQuantity(Float64[])) == true
+    @test iseven(Quantity(2, length=1)) == true
+    @test iseven(Quantity(3, length=1)) == false
+    @test isodd(Quantity(2, length=1)) == false
+    @test isodd(Quantity(3, length=1)) == true
+    @test isinteger(Quantity(2, length=1)) == true
+    @test isinteger(Quantity(2.1, length=1)) == false
+    @test ispow2(Quantity(2, length=1)) == true
+    @test ispow2(Quantity(3, length=1)) == false
 
     @test nextfloat(x) == Quantity(nextfloat(-1.2), length=2 // 5)
     @test prevfloat(x) == Quantity(prevfloat(-1.2), length=2 // 5)
@@ -452,15 +467,30 @@ end
     q2 = Quantity(2, mass=1)
     @test typeof(promote(q1, q2)) == typeof((q1, q1))
 
-    x = [0.5, 0.5u"km/s"]
-    @test x isa Vector{Number}
+    q = 0.5u"km/s"
+    x = [0.5, q]
+    @test x isa Vector{typeof(q)}
+    @test x[1] == convert(typeof(q), 0.5)
 
-    x = [0.5, GenericQuantity(0.5u"km/s")]
-    @test x isa Vector{Any}
+    q = GenericQuantity(0.5u"km/s")
+    x = [0.5, q]
+    @test x isa Vector{typeof(q)}
+
+    # Promotion with custom numeric type:
+    @eval struct MyNumber <: Real
+        x::Float64
+    end
+    a = 0.5u"km/s"
+    b = MyNumber(0.5)
+    ar = [a, b]
+    @test ar isa Vector{Number}
+    @test a === ar[1]
+    @test b === ar[2]
+    @test promote_type(MyNumber, typeof(a)) == Number
 
     # Explicit conversion so coverage can see it:
     D = DEFAULT_DIM_TYPE
-    @test promote_type(Quantity{Float32,D}, Float64) == Number
+    @test promote_type(Quantity{Float32,D}, Float64) == Quantity{Float64,D}
     @test promote_type(Quantity{Float32,D}, Quantity{Float64,D}) == Quantity{Float64,D}
     @test promote_type(Quantity{Float32,D}, GenericQuantity{Float64,D}) == GenericQuantity{Float64,D}
     @test promote_type(GenericQuantity{Float32,D}, GenericQuantity{Float64,D}) == GenericQuantity{Float64,D}
