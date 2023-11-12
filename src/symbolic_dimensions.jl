@@ -104,9 +104,9 @@ end
     uexpand(q::UnionAbstractQuantity{<:Any,<:SymbolicDimensions})
 
 Expand the symbolic units in a quantity to their base SI form.
-In other words, this converts a `Quantity` with `SymbolicDimensions`
+In other words, this converts a quantity with `SymbolicDimensions`
 to one with `Dimensions`. The opposite of this function is `uconvert`,
-for converting to specific symbolic units, or `convert(Quantity{<:Any,<:SymbolicDimensions}, q)`,
+for converting to specific symbolic units, or, e.g., `convert(Quantity{<:Any,<:SymbolicDimensions}, q)`,
 for assuming SI units as the output symbols.
 """
 function uexpand(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:UnionAbstractQuantity{T,D}}
@@ -277,7 +277,7 @@ module SymbolicUnitsParse
     import ..SYMBOL_CONFLICTS
     import ..SymbolicDimensions
 
-    import ...Quantity
+    import ...RealQuantity
     import ...DEFAULT_VALUE_TYPE
     import ...DEFAULT_DIM_BASE_TYPE
 
@@ -287,7 +287,7 @@ module SymbolicUnitsParse
         import ..SYMBOL_CONFLICTS
         import ..SymbolicDimensions
 
-        import ..Quantity
+        import ..RealQuantity
         import ..DEFAULT_VALUE_TYPE
         import ..DEFAULT_DIM_BASE_TYPE
 
@@ -299,11 +299,11 @@ module SymbolicUnitsParse
             CONSTANT_SYMBOLS_EXIST[] || lock(CONSTANT_SYMBOLS_LOCK) do
                 CONSTANT_SYMBOLS_EXIST[] && return nothing
                 for unit in setdiff(CONSTANT_SYMBOLS, SYMBOL_CONFLICTS)
-                    @eval const $unit = Quantity(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
+                    @eval const $unit = RealQuantity(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
                 end
                 # Evaluate conflicting symbols to non-symbolic form:
                 for unit in SYMBOL_CONFLICTS
-                    @eval const $unit = convert(Quantity{DEFAULT_VALUE_TYPE,SymbolicDimensions}, EagerConstants.$unit)
+                    @eval const $unit = convert(RealQuantity{DEFAULT_VALUE_TYPE,SymbolicDimensions}, EagerConstants.$unit)
                 end
                 CONSTANT_SYMBOLS_EXIST[] = true
             end
@@ -318,7 +318,7 @@ module SymbolicUnitsParse
         UNIT_SYMBOLS_EXIST[] || lock(UNIT_SYMBOLS_LOCK) do
             UNIT_SYMBOLS_EXIST[] && return nothing
             for unit in UNIT_SYMBOLS
-                @eval const $unit = Quantity(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
+                @eval const $unit = RealQuantity(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
             end
             UNIT_SYMBOLS_EXIST[] = true
         end
@@ -329,27 +329,27 @@ module SymbolicUnitsParse
         sym_uparse(raw_string::AbstractString)
 
     Parse a string containing an expression of units and return the
-    corresponding `Quantity` object with `Float64` value.
+    corresponding `RealQuantity` object with `Float64` value.
     However, that unlike the regular `u"..."` macro, this macro uses
     `SymbolicDimensions` for the dimension type, which means that all units and
     constants are stored symbolically and will not automatically expand to SI
     units. For example, `sym_uparse("km/s^2")` would be parsed to
-    `Quantity(1.0, SymbolicDimensions, km=1, s=-2)`.
+    `RealQuantity(1.0, SymbolicDimensions, km=1, s=-2)`.
 
     Note that inside this expression, you also have access to the `Constants`
     module. So, for example, `sym_uparse("Constants.c^2 * Hz^2")` would evaluate to
-    `Quantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
+    `RealQuantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
     namespace collisions, a few physical constants are automatically converted.
     """
     function sym_uparse(raw_string::AbstractString)
         _generate_unit_symbols()
         Constants._generate_unit_symbols()
         raw_result = eval(Meta.parse(raw_string))
-        return copy(as_quantity(raw_result))::Quantity{DEFAULT_VALUE_TYPE,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}
+        return copy(as_quantity(raw_result))::RealQuantity{DEFAULT_VALUE_TYPE,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}
     end
 
-    as_quantity(q::Quantity) = q
-    as_quantity(x::Number) = Quantity(convert(DEFAULT_VALUE_TYPE, x), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE})
+    as_quantity(q::RealQuantity) = q
+    as_quantity(x::Number) = RealQuantity(convert(DEFAULT_VALUE_TYPE, x), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE})
     as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 end
 
@@ -359,15 +359,15 @@ import .SymbolicUnitsParse: sym_uparse
     us"[unit expression]"
 
 Parse a string containing an expression of units and return the
-corresponding `Quantity` object with `Float64` value. However,
+corresponding `RealQuantity` object with `Float64` value. However,
 unlike the regular `u"..."` macro, this macro uses `SymbolicDimensions`
 for the dimension type, which means that all units and constants
 are stored symbolically and will not automatically expand to SI units.
-For example, `us"km/s^2"` would be parsed to `Quantity(1.0, SymbolicDimensions, km=1, s=-2)`.
+For example, `us"km/s^2"` would be parsed to `RealQuantity(1.0, SymbolicDimensions, km=1, s=-2)`.
 
 Note that inside this expression, you also have access to the `Constants`
 module. So, for example, `us"Constants.c^2 * Hz^2"` would evaluate to
-`Quantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
+`RealQuantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
 namespace collisions, a few physical constants are automatically converted.
 """
 macro us_str(s)
@@ -378,5 +378,8 @@ function Base.promote_rule(::Type{SymbolicDimensions{R1}}, ::Type{SymbolicDimens
     return SymbolicDimensions{promote_type(R1,R2)}
 end
 function Base.promote_rule(::Type{SymbolicDimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
+    return Dimensions{promote_type(R1,R2)}
+end
+function Base.promote_rule(::Type{Dimensions{R2}}, ::Type{SymbolicDimensions{R1}}) where {R1,R2}
     return Dimensions{promote_type(R1,R2)}
 end
