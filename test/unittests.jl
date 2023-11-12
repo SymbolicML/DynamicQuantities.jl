@@ -452,15 +452,30 @@ end
     q2 = Quantity(2, mass=1)
     @test typeof(promote(q1, q2)) == typeof((q1, q1))
 
-    x = [0.5, 0.5u"km/s"]
-    @test x isa Vector{Number}
+    q = 0.5u"km/s"
+    x = [0.5, q]
+    @test x isa Vector{typeof(q)}
+    @test x[1] == convert(typeof(q), 0.5)
 
-    x = [0.5, GenericQuantity(0.5u"km/s")]
-    @test x isa Vector{Any}
+    q = GenericQuantity(0.5u"km/s")
+    x = [0.5, q]
+    @test x isa Vector{typeof(q)}
+
+    # Promotion with custom numeric type:
+    @eval struct MyNumber <: Real
+        x::Float64
+    end
+    a = 0.5u"km/s"
+    b = MyNumber(0.5)
+    ar = [a, b]
+    @test ar isa Vector{Number}
+    @test a === ar[1]
+    @test b === ar[2]
+    @test promote_type(MyNumber, typeof(a)) == Number
 
     # Explicit conversion so coverage can see it:
     D = DEFAULT_DIM_TYPE
-    @test promote_type(Quantity{Float32,D}, Float64) == Number
+    @test promote_type(Quantity{Float32,D}, Float64) == Quantity{Float64,D}
     @test promote_type(Quantity{Float32,D}, Quantity{Float64,D}) == Quantity{Float64,D}
     @test promote_type(Quantity{Float32,D}, GenericQuantity{Float64,D}) == GenericQuantity{Float64,D}
     @test promote_type(GenericQuantity{Float32,D}, GenericQuantity{Float64,D}) == GenericQuantity{Float64,D}
