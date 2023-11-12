@@ -471,6 +471,7 @@ end
     @test ar isa Vector{Number}
     @test a === ar[1]
     @test b === ar[2]
+    @test promote_type(MyNumber, typeof(a)) == Number
 
     # Explicit conversion so coverage can see it:
     D = DEFAULT_DIM_TYPE
