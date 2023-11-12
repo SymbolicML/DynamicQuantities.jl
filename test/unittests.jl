@@ -9,6 +9,12 @@ using StaticArrays: SArray, MArray
 using LinearAlgebra: norm
 using Test
 
+function record_show(s, f=show)
+    io = IOBuffer()
+    f(io, s)
+    return String(take!(io))
+end
+
 @testset "Basic utilities" begin
 
     for Q in [Quantity, GenericQuantity], T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_BASE_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
@@ -149,6 +155,21 @@ using Test
     @test isinf(x * Inf) == true
     @test isnan(x) == false
     @test isnan(x * NaN) == true
+    @test isreal(x) == true
+    @test isreal(x * (1 + 2im)) == false
+    @test signbit(x) == true
+    @test signbit(-x) == false
+    @test isempty(x) == false
+    @test isempty(GenericQuantity([0.0, 1.0])) == false
+    @test isempty(GenericQuantity(Float64[])) == true
+    @test iseven(Quantity(2, length=1)) == true
+    @test iseven(Quantity(3, length=1)) == false
+    @test isodd(Quantity(2, length=1)) == false
+    @test isodd(Quantity(3, length=1)) == true
+    @test isinteger(Quantity(2, length=1)) == true
+    @test isinteger(Quantity(2.1, length=1)) == false
+    @test ispow2(Quantity(2, length=1)) == true
+    @test ispow2(Quantity(3, length=1)) == false
 
     @test nextfloat(x) == Quantity(nextfloat(-1.2), length=2 // 5)
     @test prevfloat(x) == Quantity(prevfloat(-1.2), length=2 // 5)
@@ -432,14 +453,8 @@ end
     # Conversion to Rational without specifying type
     @test convert(Rational, FixedRational{UInt8,6}(2)) === Rational{UInt8}(2)
 
-    # Showing rationals
-    function show_string(i)
-        io = IOBuffer()
-        show(io, i)
-        return String(take!(io))
-    end
-    @test show_string(FixedRational{Int,10}(2)) == "2"
-    @test show_string(FixedRational{Int,10}(11//10)) == "11//10"
+    @test record_show(FixedRational{Int,10}(2)) == "2"
+    @test record_show(FixedRational{Int,10}(11//10)) == "11//10"
 
     # Promotion rules
     @test promote_type(FixedRational{Int64,10},FixedRational{BigInt,10}) == FixedRational{BigInt,10}
@@ -1102,5 +1117,137 @@ end
         @test typeof(convert(typeof(qx), qy)) == typeof(qx)
         @test convert(typeof(qx), qy)[1] isa Quantity{Float64}
         @test convert(typeof(qx), qy)[1] == convert(Quantity{Float64}, qy[1])
+    end
+end
+
+function is_input_valid(f, x)
+    try
+        f(x)
+    catch e
+        e isa DomainError && return false
+        rethrow(e)
+    end
+    return true
+end
+
+@testset "Assorted dimensionless functions" begin
+    functions = (
+        :sin, :cos, :tan, :sinh, :cosh, :tanh, :asin, :acos,
+        :asinh, :acosh, :atanh, :sec, :csc, :cot, :asec, :acsc, :acot, :sech, :csch,
+        :coth, :asech, :acsch, :acoth, :sinc, :cosc, :cosd, :cotd, :cscd, :secd,
+        :sinpi, :cospi, :sind, :tand, :acosd, :acotd, :acscd, :asecd, :asind,
+        :log, :log2, :log10, :log1p, :exp, :exp2, :exp10, :expm1, :frexp, :exponent,
+        :atan, :atand
+    )
+    for Q in (Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
+        # Only test on valid domain
+        valid_inputs = filter(
+            x -> is_input_valid(eval(f), x),
+            5rand(100) .- 2.5
+        )
+        for x in valid_inputs[1:3]
+            qx_dimensionless = Quantity(x, D)
+            qx_dimensions = Quantity(x, convert(D, dimension(u"m/s")))
+            @eval @test $f($qx_dimensionless) == $f($x)
+            @eval @test_throws DimensionError $f($qx_dimensions)
+            if f in (:atan, :atand)
+                for y in valid_inputs[end-3:end]
+                    qy_dimensionless = Quantity(y, D)
+                    qy_dimensions = Quantity(y, convert(D, dimension(u"m/s")))
+                    @eval @test $f($y, $qx_dimensionless) == $f($y, $x)
+                    @eval @test $f($qy_dimensionless, $x) == $f($y, $x)
+                    @eval @test $f($qy_dimensionless, $qx_dimensionless) == $f($y, $x)
+                    @eval @test $f($qy_dimensions, $qx_dimensions) == $f($y, $x)
+                    @eval @test_throws DimensionError $f($qy_dimensions, $x)
+                    @eval @test_throws DimensionError $f($y, $qx_dimensions)
+                end
+            end
+        end
+    end
+    s = record_show(DimensionError(u"km/s"), showerror)
+    @test occursin("not dimensionless", s)
+end
+
+@testset "Assorted dimensionful functions" begin
+    functions = (
+        :float, :abs, :real, :imag, :conj, :adjoint, :unsigned,
+        :nextfloat, :prevfloat, :identity, :transpose,
+        :copysign, :flipsign, :mod, :modf,
+        :floor, :trunc, :ceil, :significand,
+        :ldexp, :round,
+    )
+    for Q in (Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
+        T = f in (:abs, :real, :imag, :conj) ? ComplexF64 : Float64
+        if f == :modf  # Functions that return multiple outputs
+            for x in 5rand(T, 3) .- 2.5
+                dim = convert(D, dimension(u"m/s"))
+                qx_dimensions = Q(x, dim)
+                num_outputs = 2
+                for i=1:num_outputs
+                    @eval @test $f($qx_dimensions)[$i] == $Q($f($x)[$i], $dim)
+                end
+            end
+        elseif f in (:copysign, :flipsign, :rem, :mod)  # Functions that need multiple inputs
+            for x in 5rand(T, 3) .- 2.5
+                for y in 5rand(T, 3) .- 2.5
+                    dim = convert(D, dimension(u"m/s"))
+                    qx_dimensions = Q(x, dim)
+                    qy_dimensions = Q(y, dim)
+                    @eval @test $f($qx_dimensions, $qy_dimensions) == $Q($f($x, $y), $dim)
+                    if f in (:copysign, :flipsign, :mod)
+                        # Also do test without dimensions
+                        @eval @test $f($x, $qy_dimensions) == $f($x, $y)
+                        @eval @test $f($qx_dimensions, $y) == $Q($f($x, $y), $dim)
+                    end
+                end
+            end
+        elseif f == :unsigned
+            for x in 5rand(-10:10, 3)
+                dim = convert(D, dimension(u"m/s"))
+                qx_dimensions = Q(x, dim)
+                @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
+            end
+        elseif f in (:round, :floor, :trunc, :ceil)
+            for x in 5rand(T, 3) .- 2.5
+                dim = convert(D, dimension(u"m/s"))
+                qx_dimensions = Q(x, dim)
+                @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
+                @eval @test $f(Int32, $qx_dimensions) == $Q($f(Int32, $x), $dim)
+            end
+        elseif f == :ldexp
+            for x in 5rand(T, 3) .- 2.5
+                dim = convert(D, dimension(u"m/s"))
+                qx_dimensions = Q(x, dim)
+                for i=1:3
+                    @eval @test $f($qx_dimensions, $i) == $Q($f($x, $i), $dim)
+                end
+            end
+        else
+            # Only test on valid domain
+            valid_inputs = filter(
+                x -> is_input_valid(eval(f), x),
+                5rand(T, 100) .- 2.5
+            )
+            for x in valid_inputs[1:3]
+                dim = convert(D, dimension(u"m/s"))
+                qx_dimensions = Q(x, dim)
+                @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
+            end
+        end
+    end
+end
+
+@testset "Test div" begin
+    for Q in (Quantity, GenericQuantity)
+        x = Q{Int}(10, length=1)
+        y = Q{Int}(3, mass=-1)
+        @test div(x, y) == Q{Int}(3, length=1, mass=1)
+        @test div(x, 3) == Q{Int}(3, length=1)
+        @test div(10, y) == Q{Int}(3, mass=1)
+        if VERSION >= v"1.9"
+            @test div(x, y, RoundFromZero) == Q{Int}(4, length=1, mass=1)
+            @test div(x, 3, RoundFromZero) == Q{Int}(4, length=1)
+            @test div(10, y, RoundFromZero) == Q{Int}(4, mass=1)
+        end
     end
 end

@@ -2,12 +2,15 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         Base.:*(l::$type, r::$type) = new_quantity(typeof(l), ustrip(l) * ustrip(r), dimension(l) * dimension(r))
         Base.:/(l::$type, r::$type) = new_quantity(typeof(l), ustrip(l) / ustrip(r), dimension(l) / dimension(r))
+        Base.div(x::$type, y::$type, r::RoundingMode=RoundToZero) = new_quantity(typeof(x), div(ustrip(x), ustrip(y), r), dimension(x) / dimension(y))
 
         Base.:*(l::$type, r::$base_type) = new_quantity(typeof(l), ustrip(l) * r, dimension(l))
         Base.:/(l::$type, r::$base_type) = new_quantity(typeof(l), ustrip(l) / r, dimension(l))
+        Base.div(x::$type, y::Number, r::RoundingMode=RoundToZero) = new_quantity(typeof(x), div(ustrip(x), y, r), dimension(x))
 
         Base.:*(l::$base_type, r::$type) = new_quantity(typeof(r), l * ustrip(r), dimension(r))
         Base.:/(l::$base_type, r::$type) = new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
+        Base.div(x::Number, y::$type, r::RoundingMode=RoundToZero) = new_quantity(typeof(y), div(x, ustrip(y), r), inv(dimension(y)))
 
         Base.:*(l::$type, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) * r)
         Base.:/(l::$type, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) / r)
@@ -41,7 +44,7 @@ end
 Base.:-(l::UnionAbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 
 # Combining different abstract types
-for op in (:*, :/, :+, :-),
+for op in (:*, :/, :+, :-, :div, :atan, :atand, :copysign, :flipsign, :mod),
     (t1, _, _) in ABSTRACT_QUANTITY_TYPES,
     (t2, _, _) in ABSTRACT_QUANTITY_TYPES
 
@@ -97,6 +100,91 @@ Base.sqrt(q::UnionAbstractQuantity) = new_quantity(typeof(q), sqrt(ustrip(q)), s
 Base.cbrt(d::AbstractDimensions{R}) where {R} = d^inv(convert(R, 3))
 Base.cbrt(q::UnionAbstractQuantity) = new_quantity(typeof(q), cbrt(ustrip(q)), cbrt(dimension(q)))
 
-Base.abs(q::UnionAbstractQuantity) = new_quantity(typeof(q), abs(ustrip(q)), dimension(q))
 Base.abs2(q::UnionAbstractQuantity) = new_quantity(typeof(q), abs2(ustrip(q)), dimension(q)^2)
 Base.angle(q::UnionAbstractQuantity{T}) where {T<:Complex} = angle(ustrip(q))
+
+############################## Require dimensionless input ##############################
+# Note that :clamp, :cmp, :sign already work
+# We skip :rad2deg, :deg2rad in case the user defines a rad or deg unit
+for f in (
+    :sin, :cos, :tan, :sinh, :cosh, :tanh, :asin, :acos,
+    :asinh, :acosh, :atanh, :sec, :csc, :cot, :asec, :acsc, :acot, :sech, :csch,
+    :coth, :asech, :acsch, :acoth, :sinc, :cosc, :cosd, :cotd, :cscd, :secd,
+    :sinpi, :cospi, :sind, :tand, :acosd, :acotd, :acscd, :asecd, :asind,
+    :log, :log2, :log10, :log1p, :exp, :exp2, :exp10, :expm1, :frexp, :exponent,
+)
+    @eval function Base.$f(q::UnionAbstractQuantity)
+        iszero(dimension(q)) || throw(DimensionError(q))
+        return $f(ustrip(q))
+    end
+end
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:atan, :atand)
+    @eval begin
+        function Base.$f(x::$type)
+            iszero(dimension(x)) || throw(DimensionError(x))
+            return $f(ustrip(x))
+        end
+        function Base.$f(y::$type, x::$type)
+            dimension(y) == dimension(x) || throw(DimensionError(y, x))
+            return $f(ustrip(y), ustrip(x))
+        end
+        function Base.$f(y::$type, x::$base_type)
+            iszero(dimension(y)) || throw(DimensionError(y))
+            return $f(ustrip(y), x)
+        end
+        function Base.$f(y::$base_type, x::$type)
+            iszero(dimension(x)) || throw(DimensionError(x))
+            return $f(y, ustrip(x))
+        end
+    end
+end
+#########################################################################################
+
+############################## Same dimension as input ##################################
+for f in (
+    :float, :abs, :real, :imag, :conj, :adjoint, :unsigned,
+    :nextfloat, :prevfloat, :identity, :transpose, :significand
+)
+    @eval function Base.$f(q::UnionAbstractQuantity)
+        return new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
+    end
+end
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:copysign, :flipsign, :mod)
+    # These treat the x as the magnitude, so we take the dimensions from there,
+    # and ignore any dimensions on y, since those will cancel out.
+    @eval begin
+        function Base.$f(x::$type, y::$type)
+            return new_quantity(typeof(x), $f(ustrip(x), ustrip(y)), dimension(x))
+        end
+        function Base.$f(x::$type, y::$base_type)
+            return new_quantity(typeof(x), $f(ustrip(x), y), dimension(x))
+        end
+        function Base.$f(x::$base_type, y::$type)
+            return $f(x, ustrip(y))
+        end
+    end
+end
+function Base.ldexp(x::UnionAbstractQuantity, n::Integer)
+    return new_quantity(typeof(x), ldexp(ustrip(x), n), dimension(x))
+end
+function Base.round(q::UnionAbstractQuantity, r::RoundingMode=RoundNearest)
+    return new_quantity(typeof(q), round(ustrip(q), r), dimension(q))
+end
+function Base.round(::Type{Ti}, q::UnionAbstractQuantity, r::RoundingMode=RoundNearest) where {Ti<:Integer}
+    return new_quantity(typeof(q), round(Ti, ustrip(q), r), dimension(q))
+end
+for f in (:floor, :trunc, :ceil)
+    @eval begin
+        function Base.$f(q::UnionAbstractQuantity)
+            return new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
+        end
+        function Base.$f(::Type{Ti}, q::UnionAbstractQuantity) where {Ti<:Integer}
+            return new_quantity(typeof(q), $f(Ti, ustrip(q)), dimension(q))
+        end
+    end
+end
+function Base.modf(q::UnionAbstractQuantity)
+    output = modf(ustrip(q))
+    return ntuple(i -> new_quantity(typeof(q), output[i], dimension(q)), Val(2))
+end
+#########################################################################################

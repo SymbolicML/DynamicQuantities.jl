@@ -25,7 +25,6 @@ end
     return output
 end
 
-Base.float(q::UnionAbstractQuantity) = new_quantity(typeof(q), float(ustrip(q)), dimension(q))
 Base.convert(::Type{Number}, q::AbstractQuantity) = q
 function Base.convert(::Type{T}, q::UnionAbstractQuantity) where {T<:Number}
     @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
@@ -130,14 +129,13 @@ function Base.isless(l::Number, r::UnionAbstractQuantity)
 end
 
 # Simple flags:
-for f in (:iszero, :isfinite, :isinf, :isnan, :isreal)
+for f in (
+    :iszero, :isfinite, :isinf, :isnan, :isreal, :signbit,
+    :isempty, :iseven, :isodd, :isinteger, :ispow2
+)
     @eval Base.$f(q::UnionAbstractQuantity) = $f(ustrip(q))
 end
 
-# Simple operations which return a full quantity (same dimensions)
-for f in (:real, :imag, :conj, :adjoint, :unsigned, :nextfloat, :prevfloat)
-    @eval Base.$f(q::UnionAbstractQuantity) = new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
-end
 
 # Base.one, typemin, typemax
 for f in (:one, :typemin, :typemax)
@@ -195,6 +193,7 @@ tryrationalize(::Type{R}, x::Union{Rational,Integer}) where {R} = convert(R, x)
 tryrationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)) : convert(R, rationalize(Int, x))
 
 Base.showerror(io::IO, e::DimensionError) = print(io, "DimensionError: ", e.q1, " and ", e.q2, " have incompatible dimensions")
+Base.showerror(io::IO, e::DimensionError{<:Any,Nothing}) = print(io, "DimensionError: ", e.q1, " is not dimensionless")
 
 Base.convert(::Type{Q}, q::UnionAbstractQuantity) where {Q<:UnionAbstractQuantity} = q
 Base.convert(::Type{Q}, q::UnionAbstractQuantity) where {T,Q<:UnionAbstractQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
