@@ -28,6 +28,9 @@ Base.convert(::Type{Unitful.Quantity}, x::DynamicQuantities.Quantity) =
         validate_upreferred()
         cumulator = DynamicQuantities.ustrip(x)
         dims = DynamicQuantities.dimension(x)
+        if dims isa DynamicQuantities.SymbolicDimensions
+            throw(ArgumentError("Conversion of a `DynamicQuantities.Quantity` to a `Unitful.Quantity` is not defined with dimensions of type `SymbolicDimensions`. Instead, you can first use the `uexpand` function to convert the dimensions to their base SI form of type `Dimensions`, then convert this quantity to a `Unitful.Quantity`."))
+        end
         equiv = unitful_equivalences()
         for dim in keys(dims)
             value = dims[dim]

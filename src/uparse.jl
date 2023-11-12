@@ -14,8 +14,11 @@ function _generate_units_import()
     end
     return import_expr
 end
+macro generate_units_import()
+    return _generate_units_import()
+end
 
-eval(_generate_units_import())
+@generate_units_import
 
 """
     uparse(s::AbstractString)

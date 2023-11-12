@@ -1,4 +1,4 @@
-import Tricks: static_fieldnames, static_fieldtypes
+using Tricks: static_fieldnames
 
 const DEFAULT_DIM_BASE_TYPE = FixedRational{DEFAULT_NUMERATOR_TYPE,DEFAULT_DENOM}
 const DEFAULT_VALUE_TYPE = Float64
@@ -8,7 +8,7 @@ const DEFAULT_VALUE_TYPE = Float64
 
 An abstract type for dimension types. `R` is the type of the exponents of the dimensions,
 and by default is set to `DynamicQuantities.DEFAULT_DIM_BASE_TYPE`.
-AbstractDimensions are used to store the dimensions of `AbstractQuantity` objects.
+AbstractDimensions are used to store the dimensions of `UnionAbstractQuantity` objects.
 Together these enable many operators in Base to manipulate dimensions.
 This type has generic constructors for creating dimension objects, so user-defined
 dimension types can be created by simply subtyping `AbstractDimensions`, without
@@ -17,23 +17,54 @@ the need to define many other functions.
 The key function that one could wish to overload is
 `DynamicQuantities.dimension_name(::AbstractDimensions, k::Symbol)` for mapping from a field name
 to a base unit (e.g., `length` by default maps to `m`). You may also need to overload
-`DynamicQuantities.constructor_of(::Type{T})` in case of non-standard construction.
+`constructorof(::Type{T})` in case of non-standard construction.
 """
 abstract type AbstractDimensions{R} end
 
 """
-    AbstractQuantity{T,D}
+    AbstractQuantity{T,D} <: Number
 
 An abstract type for quantities. `T` is the type of the value of the quantity,
-and `D` is the type of the dimensions of the quantity. By default, `D` is set to
+which should be `<:Number`.
+`D` is the type of the dimensions of the quantity. By default, `D` is set to
 `DynamicQuantities.DEFAULT_DIM_TYPE`. `T` is inferred from the value in a calculation,
 but in other cases is defaulted to `DynamicQuantities.DEFAULT_VALUE_TYPE`.
 It is assumed that the value is stored in the `:value` field, and the dimensions
 object is stored in the `:dimensions` field. These fields can be accessed with
 `ustrip` and `dimension`, respectively. Many operators in `Base` are defined on
 `AbstractQuantity` objects, including `+, -, *, /, ^, sqrt, cbrt, abs`.
+
+See also `AbstractGenericQuantity` for creating quantities subtyped to `Any`.
+
+**Note**: In general, you should probably
+specialize on `UnionAbstractQuantity` which is
+the union of both `AbstractQuantity` and `AbstractGenericQuantity`,
+_as well as any other future abstract quantity types_,
 """
-abstract type AbstractQuantity{T,D} end
+abstract type AbstractQuantity{T,D} <: Number end
+
+"""
+    AbstractGenericQuantity{T,D} <: Any
+
+This has the same behavior as `AbstractQuantity` but is subtyped to `Any` rather
+than `Number`.
+
+**Note**: In general, you should probably
+specialize on `UnionAbstractQuantity` which is
+the union of both `AbstractQuantity` and `AbstractGenericQuantity`,
+_as well as any other future abstract quantity types_,
+"""
+abstract type AbstractGenericQuantity{T,D} end
+
+"""
+    UnionAbstractQuantity{T,D}
+
+This is a union of both `AbstractQuantity{T,D}` and `AbstractGenericQuantity{T,D}`.
+It is used throughout the library to declare methods which can take both types.
+You should generally specialize on this type, rather than its constituents,
+as it will also include future abstract quantity types.
+"""
+const UnionAbstractQuantity{T,D} = Union{AbstractQuantity{T,D},AbstractGenericQuantity{T,D}}
 
 """
     Dimensions{R<:Real} <: AbstractDimensions{R}
@@ -56,7 +87,7 @@ which is by default a rational number.
 
 # Constructors
 
-- `Dimensions(args...)`: Pass all the dimensions as arguments. `R` is set to `DEFAULT_DIM_BASE_TYPE`.
+- `Dimensions(args...)`: Pass all the dimensions as arguments.
 - `Dimensions(; kws...)`: Pass a subset of dimensions as keyword arguments. `R` is set to `DEFAULT_DIM_BASE_TYPE`.
 - `Dimensions(::Type{R}; kws...)` or `Dimensions{R}(; kws...)`: Pass a subset of dimensions as keyword arguments, with the output type set to `Dimensions{R}`.
 - `Dimensions{R}()`: Create a dimensionless object typed as `Dimensions{R}`.
@@ -72,15 +103,19 @@ struct Dimensions{R<:Real} <: AbstractDimensions{R}
     amount::R
 end
 
-(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = constructor_of(D){R}((tryrationalize(R, get(kws, k, zero(R))) for k in static_fieldnames(D))...)
-(::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = constructor_of(D)(R; kws...)
+(::Type{D})(::Type{R}; kws...) where {R,D<:AbstractDimensions} = with_type_parameters(D, R)((tryrationalize(R, get(kws, k, zero(R))) for k in dimension_names(D))...)
+(::Type{D})(; kws...) where {R,D<:AbstractDimensions{R}} = constructorof(D)(R; kws...)
 (::Type{D})(; kws...) where {D<:AbstractDimensions} = D(DEFAULT_DIM_BASE_TYPE; kws...)
-(::Type{D})(d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D((getproperty(d, k) for k in static_fieldnames(D))...)
+function (::Type{D})(d::D2) where {R,D<:AbstractDimensions{R},D2<:AbstractDimensions}
+    dimension_names_equal(D, D2) ||
+        error("Cannot create a dimensions of `$(D)` from `$(D2)`. Please write a custom method for construction.")
+    D((getproperty(d, k) for k in dimension_names(D))...)
+end
 
 const DEFAULT_DIM_TYPE = Dimensions{DEFAULT_DIM_BASE_TYPE}
 
 """
-    Quantity{T,D<:AbstractDimensions} <: AbstractQuantity{T,D}
+    Quantity{T<:Number,D<:AbstractDimensions} <: AbstractQuantity{T,D} <: Number
 
 Physical quantity with value `value` of type `T` and dimensions `dimensions` of type `D`.
 For example, the velocity of an object with mass 1 kg and velocity
@@ -109,30 +144,115 @@ dimensions according to the operation.
 - `Quantity{T,D}(...)`: As above, but converting the value to type `T` and dimensions to `D`. You may also pass a
   `Quantity` as input.
 """
-struct Quantity{T,D<:AbstractDimensions} <: AbstractQuantity{T,D}
+struct Quantity{T<:Number,D<:AbstractDimensions} <: AbstractQuantity{T,D}
     value::T
     dimensions::D
 
     Quantity(x::_T, dimensions::_D) where {_T,_D<:AbstractDimensions} = new{_T,_D}(x, dimensions)
 end
-(::Type{Q})(x::T, ::Type{D}; kws...) where {D<:AbstractDimensions,T,T2,Q<:AbstractQuantity{T2}} = constructor_of(Q)(convert(T2, x), D(; kws...))
-(::Type{Q})(x, ::Type{D}; kws...) where {D<:AbstractDimensions,Q<:AbstractQuantity} = constructor_of(Q)(x, D(; kws...))
-(::Type{Q})(x::T; kws...) where {T,T2,Q<:AbstractQuantity{T2}} = constructor_of(Q)(convert(T2, x), dim_type(Q)(; kws...))
-(::Type{Q})(x; kws...) where {Q<:AbstractQuantity} = constructor_of(Q)(x, dim_type(Q)(; kws...))
 
-(::Type{Q})(q::AbstractQuantity) where {T,D<:AbstractDimensions,Q<:AbstractQuantity{T,D}} = constructor_of(Q)(convert(T, ustrip(q)), convert(D, dimension(q)))
-(::Type{Q})(q::AbstractQuantity) where {T,Q<:AbstractQuantity{T}} = constructor_of(Q)(convert(T, ustrip(q)), dimension(q))
+"""
+    GenericQuantity{T<:Any,D<:AbstractDimensions} <: AbstractGenericQuantity{T,D} <: Any
+
+This has the same behavior as `Quantity` but is subtyped to `AbstractGenericQuantity <: Any`
+rather than `AbstractQuantity <: Number`.
+"""
+struct GenericQuantity{T,D<:AbstractDimensions} <: AbstractGenericQuantity{T,D}
+    value::T
+    dimensions::D
+
+    GenericQuantity(x::_T, dimensions::_D) where {_T,_D<:AbstractDimensions} = new{_T,_D}(x, dimensions)
+end
+
+"""
+    ABSTRACT_QUANTITY_TYPES
+
+A constant tuple of the existing abstract quantity types,
+each as a tuple with (1) the abstract type,
+(2) the base type, and (3) the default exported concrete type.
+"""
+const ABSTRACT_QUANTITY_TYPES = ((AbstractQuantity, Number, Quantity), (AbstractGenericQuantity, Any, GenericQuantity))
+
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        (::Type{Q})(x::T, ::Type{D}; kws...) where {D<:AbstractDimensions,T<:$base_type,T2,Q<:$type{T2}} = constructorof(Q)(convert(T2, x), D(; kws...))
+        (::Type{Q})(x::$base_type, ::Type{D}; kws...) where {D<:AbstractDimensions,Q<:$type} = constructorof(Q)(x, D(; kws...))
+        (::Type{Q})(x::T; kws...) where {T<:$base_type,T2,Q<:$type{T2}} = constructorof(Q)(convert(T2, x), dim_type(Q)(; kws...))
+        (::Type{Q})(x::$base_type; kws...) where {Q<:$type} = constructorof(Q)(x, dim_type(Q)(; kws...))
+    end
+    for (type2, _, _) in ABSTRACT_QUANTITY_TYPES
+        @eval begin
+            (::Type{Q})(q::$type2) where {T,D<:AbstractDimensions,Q<:$type{T,D}} = constructorof(Q)(convert(T, ustrip(q)), convert(D, dimension(q)))
+            (::Type{Q})(q::$type2) where {T,Q<:$type{T}} = constructorof(Q)(convert(T, ustrip(q)), dimension(q))
+            (::Type{Q})(q::$type2) where {Q<:$type} = constructorof(Q)(ustrip(q), dimension(q))
+        end
+    end
+end
 
 const DEFAULT_QUANTITY_TYPE = Quantity{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE}
 
-new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = constructor_of(D)(dims...)
-new_quantity(::Type{Q}, l, r) where {Q<:AbstractQuantity} = constructor_of(Q)(l, r)
+new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = constructorof(D)(dims...)
+new_quantity(::Type{Q}, l, r) where {Q<:UnionAbstractQuantity} = constructorof(Q)(l, r)
 
-dim_type(::Type{Q}) where {T,D<:AbstractDimensions,Q<:AbstractQuantity{T,D}} = D
-dim_type(::Type{<:AbstractQuantity}) = DEFAULT_DIM_TYPE
-constructor_of(::Type{T}) where {T} = Base.typename(T).wrapper
+dim_type(::Type{Q}) where {T,D<:AbstractDimensions,Q<:UnionAbstractQuantity{T,D}} = D
+dim_type(::Type{<:UnionAbstractQuantity}) = DEFAULT_DIM_TYPE
+
+"""
+    constructorof(::Type{<:AbstractDimensions})
+    constructorof(::Type{<:UnionAbstractQuantity})
+
+Return the constructor of the given type. This is used to create new objects
+of the same type as the input. Overload a method for a new type, especially
+if you need custom behavior.
+"""
+constructorof(::Type{<:Dimensions}) = Dimensions
+constructorof(::Type{<:Quantity}) = Quantity
+constructorof(::Type{<:GenericQuantity}) = GenericQuantity
+
+"""
+    with_type_parameters(::Type{<:AbstractDimensions}, ::Type{R})
+    with_type_parameters(::Type{<:UnionAbstractQuantity}, ::Type{T}, ::Type{D})
+
+Return the type with the given type parameters instead of the ones in the input type.
+This is used to get `Dimensions{R}` from input `(Dimensions{R1}, R)`, for example.
+Overload a method for a new type, especially if you need custom behavior.
+"""
+function with_type_parameters(::Type{<:Dimensions}, ::Type{R}) where {R}
+    return Dimensions{R}
+end
+function with_type_parameters(::Type{<:Quantity}, ::Type{T}, ::Type{D}) where {T,D}
+    return Quantity{T,D}
+end
+function with_type_parameters(::Type{<:GenericQuantity}, ::Type{T}, ::Type{D}) where {T,D}
+    return GenericQuantity{T,D}
+end
+
+# The following functions should be overloaded for special types
+function constructorof(::Type{T}) where {T<:Union{UnionAbstractQuantity,AbstractDimensions}}
+    return Base.typename(T).wrapper
+end
+function with_type_parameters(::Type{D}, ::Type{R}) where {D<:AbstractDimensions,R}
+    return constructorof(D){R}
+end
+function with_type_parameters(::Type{Q}, ::Type{T}, ::Type{D}) where {Q<:UnionAbstractQuantity,T,D}
+    return constructorof(Q){T,D}
+end
+
+"""
+    dimension_names(::Type{<:AbstractDimensions})
+
+Return a tuple of symbols with the names of the dimensions of the given type.
+This should be static so that it can be hardcoded during compilation.
+The default is to use `fieldnames`, but you can overload this for custom behavior.
+"""
+@inline function dimension_names(::Type{D}) where {D<:AbstractDimensions}
+    return static_fieldnames(D)
+end
 
 struct DimensionError{Q1,Q2} <: Exception
     q1::Q1
     q2::Q2
+
+    DimensionError(q1, q2) = new{typeof(q1),typeof(q2)}(q1, q2)
+    DimensionError(q1) = DimensionError(q1, nothing)
 end
