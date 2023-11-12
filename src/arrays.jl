@@ -86,6 +86,28 @@ function Base.promote_rule(::Type{QA1}, ::Type{QA2}) where {QA1<:QuantityArray,Q
 
     return QuantityArray{T,N,D,Q,V}
 end
+@inline function promote_except_value(q1::QA1, q2::QA2) where {
+    T1,T2,D1,D2,Q1,Q2,
+    QA1<:QuantityArray{T1,N1,D1,Q1} where N1,
+    QA2<:QuantityArray{T2,N2,D2,Q2} where N2,
+}
+    if D1 == D2 && constructorof(Q1) == constructorof(Q2)
+        return (q1, q2)
+    end
+    Q = promote_type(Q1, Q2)
+    D = promote_type(D1, D2)
+
+    # We create quantities here to account for numerical
+    # values accumulated when converting dimension types,
+    # like SymbolicDimensions to Dimensions
+    d1 = convert(with_type_parameters(Q, T1, D), new_quantity(Q, one(T1), dimension(q1)))
+    d2 = convert(with_type_parameters(Q, T2, D), new_quantity(Q, one(T2), dimension(q2)))
+
+    return (
+        QuantityArray(ustrip(q1), d1),
+        QuantityArray(ustrip(q2), d2),
+    )
+end
 
 function Base.convert(::Type{QA}, A::QA) where {QA<:QuantityArray}
     return A
@@ -236,14 +258,37 @@ uluminosity(q::QuantityArray) = uluminosity(dimension(q))
 uamount(q::QuantityArray) = uamount(dimension(q))
 
 # handle ambiguities in multiplication
-Base.:*(l::QuantityArray, r::QuantityArray) = QuantityArray(ustrip(l)*ustrip(r), dimension(l)*dimension(r))
-Base.:*(l::QuantityArray, r::AbstractMatrix) = QuantityArray(ustrip(l)*r, dimension(l))
-Base.:*(l::QuantityArray, r::AbstractVector)  = QuantityArray(ustrip(q)*r, dimension(l))
-Base.:*(l::AbstractMatrix, r::QuantityArray) = QuantityArray(l*ustrip(r), dimension(r))
-Base.:*(l::AbstractVector, r::QuantityArray) = QuantityArray(l*ustrip(r), dimension(r))
+function Base.:*(l::QuantityArray, r::QuantityArray)
+    l, r = promote_except_value(l, r)
+    return QuantityArray(ustrip(l) * ustrip(r), dimension(l) * dimension(r), quantity_type(l))
+end
+function Base.:*(l::QuantityArray, r::AbstractVecOrMat)
+    return QuantityArray(ustrip(l) * r, dimension(l), quantity_type(l))
+end
+function Base.:*(l::AbstractVecOrMat, r::QuantityArray)
+    return QuantityArray(l * ustrip(r), dimension(r), quantity_type(r))
+end
 
-Base.:\(l::QuantityArrayVecOrMat, r::QuantityArrayVecOrMat)  = QuantityArray(ustrip(l) \ ustrip(r), dimension(r) / dimension(l))
-Base.:\(l::QuantityArrayVecOrMat, r::Union{AbstractVector,AbstractMatrix}) = QuantityArray(ustrip(l) \ r, inv(dimension(l)))
-# not implemented, AbstractMatrix \ QuantityArray
+function Base.:/(l::QuantityArray, r::QuantityArray)
+    l, r = promote_except_value(l, r)
+    return QuantityArray(ustrip(l) / ustrip(r), dimension(l) / dimension(r), quantity_type(l))
+end
+function Base.:/(l::QuantityArray, r::AbstractVecOrMat)
+    return QuantityArray(ustrip(l) / r, dimension(l), quantity_type(l))
+end
+function Base.:/(l::AbstractVecOrMat, r::QuantityArray)
+    return QuantityArray(l / ustrip(r), inv(dimension(r)), quantity_type(r))
+end
 
-Base.inv(Q::QuantityArray{T,2}) where T = QuantityArray(inv(ustrip(Q)), inv(dimension(Q)))
+function Base.:\(l::QuantityArray, r::QuantityArray)
+    l, r = promote_except_value(l, r)
+    return QuantityArray(ustrip(l) \ ustrip(r), dimension(r) / dimension(l), quantity_type(l))
+end
+function Base.:\(l::QuantityArray, r::AbstractVecOrMat)
+    return QuantityArray(ustrip(l) \ r, inv(dimension(l)), quantity_type(l))
+end
+function Base.:\(l::AbstractVecOrMat, r::QuantityArray)
+    return QuantityArray(l \ ustrip(r), dimension(r), quantity_type(r))
+end
+
+Base.inv(q::QuantityArray) = QuantityArray(inv(ustrip(q)), inv(dimension(q)), quantity_type(q))
