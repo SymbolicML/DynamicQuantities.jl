@@ -6,11 +6,11 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
 
         Base.:*(l::$type, r::$base_type) = new_quantity(typeof(l), ustrip(l) * r, dimension(l))
         Base.:/(l::$type, r::$base_type) = new_quantity(typeof(l), ustrip(l) / r, dimension(l))
-        Base.div(x::$type, y::$base_type, r::RoundingMode=RoundToZero) = new_quantity(typeof(x), div(ustrip(x), y, r), dimension(x))
+        Base.div(x::$type, y::Number, r::RoundingMode=RoundToZero) = new_quantity(typeof(x), div(ustrip(x), y, r), dimension(x))
 
         Base.:*(l::$base_type, r::$type) = new_quantity(typeof(r), l * ustrip(r), dimension(r))
         Base.:/(l::$base_type, r::$type) = new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
-        Base.div(x::$base_type, y::$type, r::RoundingMode=RoundToZero) = new_quantity(typeof(y), div(x, ustrip(y), r), inv(dimension(y)))
+        Base.div(x::Number, y::$type, r::RoundingMode=RoundToZero) = new_quantity(typeof(y), div(x, ustrip(y), r), inv(dimension(y)))
 
         Base.:*(l::$type, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) * r)
         Base.:/(l::$type, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) / r)
