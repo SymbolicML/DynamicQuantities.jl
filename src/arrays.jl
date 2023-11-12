@@ -276,9 +276,6 @@ for ARRAY_TYPE in (:AbstractVector, :AbstractMatrix)
         function Base.:*(l::QuantityArray, r::$ARRAY_TYPE)
             return QuantityArray(ustrip(l) * r, dimension(l), quantity_type(l))
         end
-        function Base.:*(l::$ARRAY_TYPE, r::QuantityArray)
-            return QuantityArray(l * ustrip(r), dimension(r), quantity_type(r))
-        end
         function Base.:/(l::QuantityArray, r::$ARRAY_TYPE)
             return QuantityArray(ustrip(l) / r, dimension(l), quantity_type(l))
         end
@@ -289,6 +286,22 @@ for ARRAY_TYPE in (:AbstractVector, :AbstractMatrix)
             return QuantityArray(ustrip(l) \ r, inv(dimension(l)), quantity_type(l))
         end
         function Base.:\(l::$ARRAY_TYPE, r::QuantityArray)
+            return QuantityArray(l \ ustrip(r), dimension(r), quantity_type(r))
+        end
+
+        function Base.:*(l::QuantityArray{T}, r::$ARRAY_TYPE{T}) where {T}
+            return QuantityArray(ustrip(l) * r, dimension(l), quantity_type(l))
+        end
+        function Base.:/(l::QuantityArray{T}, r::$ARRAY_TYPE{T}) where {T}
+            return QuantityArray(ustrip(l) / r, dimension(l), quantity_type(l))
+        end
+        function Base.:/(l::$ARRAY_TYPE{T}, r::QuantityArray{T}) where {T}
+            return QuantityArray(l / ustrip(r), inv(dimension(r)), quantity_type(r))
+        end
+        function Base.:\(l::QuantityArray{T}, r::$ARRAY_TYPE{T}) where {T}
+            return QuantityArray(ustrip(l) \ r, inv(dimension(l)), quantity_type(l))
+        end
+        function Base.:\(l::$ARRAY_TYPE{T}, r::QuantityArray{T}) where {T}
             return QuantityArray(l \ ustrip(r), dimension(r), quantity_type(r))
         end
     end
