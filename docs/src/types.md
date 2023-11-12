@@ -30,3 +30,28 @@ SymbolicDimensions
 ```@docs
 QuantityArray
 ```
+
+## Generic quantities
+
+Whereas `Quantity` is subtyped to `Number`,
+a more general type of quantity is `GenericQuantity`,
+which is subtyped to `Any`.
+
+```@docs
+GenericQuantity
+AbstractGenericQuantity
+UnionAbstractQuantity
+DynamicQuantities.ABSTRACT_QUANTITY_TYPES
+```
+
+## Custom behavior in abstract quantities
+
+There are a few functions you may need to overload
+when subtyping `AbstractDimensions`, `AbstractQuantity`,
+or `AbstractGenericQuantity`.
+
+```@docs
+constructorof
+with_type_parameters
+dimension_names
+```

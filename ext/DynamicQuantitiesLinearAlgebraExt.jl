@@ -3,10 +3,9 @@ module DynamicQuantitiesLinearAlgebraExt
 import LinearAlgebra: norm, svd, Diagonal, eigen, det, diagm
 
 using LinearAlgebra: Algorithm, default_svd_alg, SVD, Adjoint, Transpose, eigsortby, Eigen
+using DynamicQuantities: UnionAbstractQuantity, allequal, ustrip, dimension, new_quantity, AbstractDimensions, QuantityArray, Quantity
 
-using DynamicQuantities: AbstractQuantity, allequal, ustrip, dimension, new_quantity, AbstractDimensions, QuantityArray, Quantity
-
-norm(q::AbstractQuantity, p::Real=2) = new_quantity(typeof(q), norm(ustrip(q), p), dimension(q))
+norm(q::UnionAbstractQuantity, p::Real=2) = new_quantity(typeof(q), norm(ustrip(q), p), dimension(q))
 
 function svd(A::QuantityArray{T,2}; full=false,alg::Algorithm=default_svd_alg(ustrip(A))) where T
     F = svd(ustrip(A), full=full, alg=alg)

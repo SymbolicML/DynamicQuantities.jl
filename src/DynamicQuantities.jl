@@ -1,12 +1,13 @@
 module DynamicQuantities
 
 export Units, Constants
-export AbstractQuantity, AbstractDimensions
-export Quantity, Dimensions, SymbolicDimensions, QuantityArray, DimensionError
+export AbstractDimensions, AbstractQuantity, AbstractGenericQuantity, UnionAbstractQuantity
+export Quantity, GenericQuantity, Dimensions, SymbolicDimensions, QuantityArray, DimensionError
 export ustrip, dimension
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 export uparse, @u_str, sym_uparse, @us_str, uexpand, uconvert
 
+include("internal_utils.jl")
 include("fixed_rational.jl")
 include("types.jl")
 include("utils.jl")
@@ -16,6 +17,7 @@ include("units.jl")
 include("constants.jl")
 include("uparse.jl")
 include("symbolic_dimensions.jl")
+include("disambiguities.jl")
 
 include("deprecated.jl")
 export expand_units
