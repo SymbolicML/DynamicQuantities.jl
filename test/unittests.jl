@@ -1240,10 +1240,12 @@ end
         x = Q{Int}(10, length=1)
         y = Q{Int}(3, mass=-1)
         @test div(x, y) == Q{Int}(3, length=1, mass=1)
-        @test div(x, y, RoundFromZero) == Q{Int}(4, length=1, mass=1)
         @test div(x, 3) == Q{Int}(3, length=1)
-        @test div(x, 3, RoundFromZero) == Q{Int}(4, length=1)
         @test div(10, y) == Q{Int}(3, mass=1)
-        @test div(10, y, RoundFromZero) == Q{Int}(4, mass=1)
+        if VERSION >= v"1.9"
+            @test div(x, y, RoundFromZero) == Q{Int}(4, length=1, mass=1)
+            @test div(x, 3, RoundFromZero) == Q{Int}(4, length=1)
+            @test div(10, y, RoundFromZero) == Q{Int}(4, mass=1)
+        end
     end
 end
