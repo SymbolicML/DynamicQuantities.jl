@@ -257,38 +257,41 @@ utemperature(q::QuantityArray) = utemperature(dimension(q))
 uluminosity(q::QuantityArray) = uluminosity(dimension(q))
 uamount(q::QuantityArray) = uamount(dimension(q))
 
-# handle ambiguities in multiplication
 function Base.:*(l::QuantityArray, r::QuantityArray)
     l, r = promote_except_value(l, r)
     return QuantityArray(ustrip(l) * ustrip(r), dimension(l) * dimension(r), quantity_type(l))
 end
-function Base.:*(l::QuantityArray, r::AbstractVecOrMat)
-    return QuantityArray(ustrip(l) * r, dimension(l), quantity_type(l))
-end
-function Base.:*(l::AbstractVecOrMat, r::QuantityArray)
-    return QuantityArray(l * ustrip(r), dimension(r), quantity_type(r))
-end
-
 function Base.:/(l::QuantityArray, r::QuantityArray)
     l, r = promote_except_value(l, r)
     return QuantityArray(ustrip(l) / ustrip(r), dimension(l) / dimension(r), quantity_type(l))
 end
-function Base.:/(l::QuantityArray, r::AbstractVecOrMat)
-    return QuantityArray(ustrip(l) / r, dimension(l), quantity_type(l))
-end
-function Base.:/(l::AbstractVecOrMat, r::QuantityArray)
-    return QuantityArray(l / ustrip(r), inv(dimension(r)), quantity_type(r))
-end
-
 function Base.:\(l::QuantityArray, r::QuantityArray)
     l, r = promote_except_value(l, r)
     return QuantityArray(ustrip(l) \ ustrip(r), dimension(r) / dimension(l), quantity_type(l))
 end
-function Base.:\(l::QuantityArray, r::AbstractVecOrMat)
-    return QuantityArray(ustrip(l) \ r, inv(dimension(l)), quantity_type(l))
-end
-function Base.:\(l::AbstractVecOrMat, r::QuantityArray)
-    return QuantityArray(l \ ustrip(r), dimension(r), quantity_type(r))
+
+# Loop over these to deal with ambiguities (rather than a union type)
+for ARRAY_TYPE in (:AbstractVector, :AbstractMatrix)
+    @eval begin
+        function Base.:*(l::QuantityArray, r::$ARRAY_TYPE)
+            return QuantityArray(ustrip(l) * r, dimension(l), quantity_type(l))
+        end
+        function Base.:*(l::$ARRAY_TYPE, r::QuantityArray)
+            return QuantityArray(l * ustrip(r), dimension(r), quantity_type(r))
+        end
+        function Base.:/(l::QuantityArray, r::$ARRAY_TYPE)
+            return QuantityArray(ustrip(l) / r, dimension(l), quantity_type(l))
+        end
+        function Base.:/(l::$ARRAY_TYPE, r::QuantityArray)
+            return QuantityArray(l / ustrip(r), inv(dimension(r)), quantity_type(r))
+        end
+        function Base.:\(l::QuantityArray, r::$ARRAY_TYPE)
+            return QuantityArray(ustrip(l) \ r, inv(dimension(l)), quantity_type(l))
+        end
+        function Base.:\(l::$ARRAY_TYPE, r::QuantityArray)
+            return QuantityArray(l \ ustrip(r), dimension(r), quantity_type(r))
+        end
+    end
 end
 
 Base.inv(q::QuantityArray) = QuantityArray(inv(ustrip(q)), inv(dimension(q)), quantity_type(q))
