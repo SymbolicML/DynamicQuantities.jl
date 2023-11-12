@@ -48,6 +48,6 @@ function eigen(A::QuantityArray; permute::Bool=true, scale::Bool=true, sortby::U
 end
 # functions available for Eigen objects: eigvals, det. Not implemented: inv, isposdef.
 
-det(A::QuantityArray) = Quantity(det(ustrip(A)), dimension(A)^(size(A,1)), quantity_type(A))
+det(A::QuantityArray) = constructorof(quantity_type(A))(det(ustrip(A)), dimension(A)^(size(A,1)))
 
 end
