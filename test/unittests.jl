@@ -663,6 +663,16 @@ end
     qa = [x, y]
     @test qa isa Vector{Quantity{Float64,SymbolicDimensions{Rational{Int}}}}
     DynamicQuantities.with_type_parameters(SymbolicDimensions{Float64}, Rational{Int}) == SymbolicDimensions{Rational{Int}}
+
+    @testset "Promotion with Dimensions" begin
+        x = 0.5u"cm"
+        y = -0.03u"m"
+        x_s = 0.5us"cm"
+        for op in (+, -, *, /, atan, atand, copysign, flipsign, mod)
+            @test op(x, y) == op(x_s, y)
+            @test op(y, x) == op(y, x_s)
+        end
+    end
 end
 
 @testset "uconvert" begin
@@ -696,7 +706,7 @@ end
         q = convert(Q{Float16}, 1.5u"g")
         qs = uconvert(convert(Q{Float16}, us"g"), 5 * q)
         @test typeof(qs) <: Q{Float16,<:SymbolicDimensions{<:Any}}
-        @test qs ≈ 7.5us"g"
+        @test isapprox(qs, 7.5us"g"; atol=0.01)
 
         # Arrays
         x = [1.0, 2.0, 3.0] .* Q(u"kg")

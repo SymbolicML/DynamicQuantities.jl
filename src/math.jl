@@ -1,22 +1,52 @@
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
-        Base.:*(l::$type, r::$type) = new_quantity(typeof(l), ustrip(l) * ustrip(r), dimension(l) * dimension(r))
-        Base.:/(l::$type, r::$type) = new_quantity(typeof(l), ustrip(l) / ustrip(r), dimension(l) / dimension(r))
-        Base.div(x::$type, y::$type, r::RoundingMode=RoundToZero) = new_quantity(typeof(x), div(ustrip(x), ustrip(y), r), dimension(x) / dimension(y))
+        function Base.:*(l::$type, r::$type)
+            l, r = promote_except_value(l, r)
+            new_quantity(typeof(l), ustrip(l) * ustrip(r), dimension(l) * dimension(r))
+        end
+        function Base.:/(l::$type, r::$type)
+            l, r = promote_except_value(l, r)
+            new_quantity(typeof(l), ustrip(l) / ustrip(r), dimension(l) / dimension(r))
+        end
+        function Base.div(x::$type, y::$type, r::RoundingMode=RoundToZero)
+            x, y = promote_except_value(x, y)
+            new_quantity(typeof(x), div(ustrip(x), ustrip(y), r), dimension(x) / dimension(y))
+        end
 
-        Base.:*(l::$type, r::$base_type) = new_quantity(typeof(l), ustrip(l) * r, dimension(l))
-        Base.:/(l::$type, r::$base_type) = new_quantity(typeof(l), ustrip(l) / r, dimension(l))
-        Base.div(x::$type, y::Number, r::RoundingMode=RoundToZero) = new_quantity(typeof(x), div(ustrip(x), y, r), dimension(x))
+        # The rest of the functions are unchanged because they do not operate on two variables of the custom type
+        function Base.:*(l::$type, r::$base_type)
+            new_quantity(typeof(l), ustrip(l) * r, dimension(l))
+        end
+        function Base.:/(l::$type, r::$base_type)
+            new_quantity(typeof(l), ustrip(l) / r, dimension(l))
+        end
+        function Base.div(x::$type, y::Number, r::RoundingMode=RoundToZero)
+            new_quantity(typeof(x), div(ustrip(x), y, r), dimension(x))
+        end
 
-        Base.:*(l::$base_type, r::$type) = new_quantity(typeof(r), l * ustrip(r), dimension(r))
-        Base.:/(l::$base_type, r::$type) = new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
-        Base.div(x::Number, y::$type, r::RoundingMode=RoundToZero) = new_quantity(typeof(y), div(x, ustrip(y), r), inv(dimension(y)))
+        function Base.:*(l::$base_type, r::$type)
+            new_quantity(typeof(r), l * ustrip(r), dimension(r))
+        end
+        function Base.:/(l::$base_type, r::$type)
+            new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
+        end
+        function Base.div(x::Number, y::$type, r::RoundingMode=RoundToZero)
+            new_quantity(typeof(y), div(x, ustrip(y), r), inv(dimension(y)))
+        end
 
-        Base.:*(l::$type, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) * r)
-        Base.:/(l::$type, r::AbstractDimensions) = new_quantity(typeof(l), ustrip(l), dimension(l) / r)
+        function Base.:*(l::$type, r::AbstractDimensions)
+            new_quantity(typeof(l), ustrip(l), dimension(l) * r)
+        end
+        function Base.:/(l::$type, r::AbstractDimensions)
+            new_quantity(typeof(l), ustrip(l), dimension(l) / r)
+        end
 
-        Base.:*(l::AbstractDimensions, r::$type) = new_quantity(typeof(r), ustrip(r), l * dimension(r))
-        Base.:/(l::AbstractDimensions, r::$type) = new_quantity(typeof(r), inv(ustrip(r)), l / dimension(r))
+        function Base.:*(l::AbstractDimensions, r::$type)
+            new_quantity(typeof(r), ustrip(r), l * dimension(r))
+        end
+        function Base.:/(l::AbstractDimensions, r::$type)
+            new_quantity(typeof(r), inv(ustrip(r)), l / dimension(r))
+        end
     end
 end
 
@@ -27,6 +57,7 @@ Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-)
     @eval begin
         function Base.$op(l::$type, r::$type)
+            l, r = promote_except_value(l, r)
             dimension(l) == dimension(r) || throw(DimensionError(l, r))
             return new_quantity(typeof(l), $op(ustrip(l), ustrip(r)), dimension(l))
         end
@@ -50,7 +81,7 @@ for op in (:*, :/, :+, :-, :div, :atan, :atand, :copysign, :flipsign, :mod),
 
     t1 == t2 && continue
 
-    @eval Base.$op(l::$t1, r::$t2) = $op(promote(l, r)...)
+    @eval Base.$op(l::$t1, r::$t2) = $op(promote_except_value(l, r)...)
 end
 
 # We don't promote on the dimension types:
@@ -125,6 +156,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:atan, :atand)
             return $f(ustrip(x))
         end
         function Base.$f(y::$type, x::$type)
+            y, x = promote_except_value(y, x)
             dimension(y) == dimension(x) || throw(DimensionError(y, x))
             return $f(ustrip(y), ustrip(x))
         end
@@ -154,6 +186,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:copysign, :flipsign,
     # and ignore any dimensions on y, since those will cancel out.
     @eval begin
         function Base.$f(x::$type, y::$type)
+            x, y = promote_except_value(x, y)
             return new_quantity(typeof(x), $f(ustrip(x), ustrip(y)), dimension(x))
         end
         function Base.$f(x::$type, y::$base_type)
