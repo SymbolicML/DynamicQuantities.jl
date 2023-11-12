@@ -757,6 +757,16 @@ end
     y = x ^ (3//2)
     @test y == Quantity(1.0, length=3//2)
     @test typeof(y) == Quantity{Float64,DEFAULT_DIM_TYPE}
+
+    VERSION < v"1.7" && for I in (Int64, UInt64)
+        x = GenericQuantity{I}(1u"km/s")
+        a = (
+            I <: Signed ? 
+            Base.MultiplicativeInverses.SignedMultiplicativeInverse :
+            Base.MultiplicativeInverses.UnsignedMultiplicativeInverse
+        )(I(3))
+        @test div(x, a) == GenericQuantity{I}(333u"m/s")
+    end
 end
 
 for Q in (Quantity, GenericQuantity)
