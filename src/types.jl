@@ -57,6 +57,14 @@ _as well as any other future abstract quantity types_,
 abstract type AbstractGenericQuantity{T,D} end
 
 """
+    AbstractRealQuantity{T,D} <: Real
+
+This has the same behavior as `AbstractQuantity` but is subtyped to `Real` rather
+than `Number`.
+"""
+abstract type AbstractRealQuantity{T,D} <: Real end
+
+"""
     UnionAbstractQuantity{T,D}
 
 This is a union of both `AbstractQuantity{T,D}` and `AbstractGenericQuantity{T,D}`.
@@ -64,7 +72,7 @@ It is used throughout the library to declare methods which can take both types.
 You should generally specialize on this type, rather than its constituents,
 as it will also include future abstract quantity types.
 """
-const UnionAbstractQuantity{T,D} = Union{AbstractQuantity{T,D},AbstractGenericQuantity{T,D}}
+const UnionAbstractQuantity{T,D} = Union{AbstractQuantity{T,D},AbstractGenericQuantity{T,D},AbstractRealQuantity{T,D}}
 
 """
     Dimensions{R<:Real} <: AbstractDimensions{R}
@@ -165,13 +173,36 @@ struct GenericQuantity{T,D<:AbstractDimensions} <: AbstractGenericQuantity{T,D}
 end
 
 """
+    RealQuantity{T<:Real,D<:AbstractDimensions} <: AbstractRealQuantity{T,D} <: Real
+
+This has the same behavior as `Quantity` but is subtyped to `AbstractRealQuantity <: Real`.
+"""
+struct RealQuantity{T<:Real,D<:AbstractDimensions} <: AbstractRealQuantity{T,D}
+    value::T
+    dimensions::D
+
+    RealQuantity(x::_T, dimensions::_D) where {_T,_D<:AbstractDimensions} = new{_T,_D}(x, dimensions)
+end
+
+"""
     ABSTRACT_QUANTITY_TYPES
 
 A constant tuple of the existing abstract quantity types,
 each as a tuple with (1) the abstract type,
 (2) the base type, and (3) the default exported concrete type.
 """
-const ABSTRACT_QUANTITY_TYPES = ((AbstractQuantity, Number, Quantity), (AbstractGenericQuantity, Any, GenericQuantity))
+const ABSTRACT_QUANTITY_TYPES = ((AbstractQuantity, Number, Quantity), (AbstractGenericQuantity, Any, GenericQuantity), (AbstractRealQuantity, Real, RealQuantity))
+
+"""
+    promote_quantity(::Type{<:UnionAbstractQuantity}, t::Type{<:Any})
+
+Find the next quantity type in the hierarchy that can accommodate the type `t`.
+If the current quantity type can already accommodate `t`, then the current type is returned.
+"""
+promote_quantity(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Any}) = GenericQuantity
+promote_quantity(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Number}) = Quantity
+promote_quantity(::Type{<:RealQuantity}, ::Type{<:Real}) = RealQuantity
+promote_quantity(T, _) = t
 
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
@@ -189,7 +220,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     end
 end
 
-const DEFAULT_QUANTITY_TYPE = Quantity{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE}
+const DEFAULT_QUANTITY_TYPE = RealQuantity{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE}
 
 new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = constructorof(D)(dims...)
 new_quantity(::Type{Q}, l, r) where {Q<:UnionAbstractQuantity} = constructorof(Q)(l, r)
@@ -208,6 +239,7 @@ if you need custom behavior.
 constructorof(::Type{<:Dimensions}) = Dimensions
 constructorof(::Type{<:Quantity}) = Quantity
 constructorof(::Type{<:GenericQuantity}) = GenericQuantity
+constructorof(::Type{<:RealQuantity}) = RealQuantity
 
 """
     with_type_parameters(::Type{<:AbstractDimensions}, ::Type{R})
@@ -225,6 +257,9 @@ function with_type_parameters(::Type{<:Quantity}, ::Type{T}, ::Type{D}) where {T
 end
 function with_type_parameters(::Type{<:GenericQuantity}, ::Type{T}, ::Type{D}) where {T,D}
     return GenericQuantity{T,D}
+end
+function with_type_parameters(::Type{<:RealQuantity}, ::Type{T}, ::Type{D}) where {T,D}
+    return RealQuantity{T,D}
 end
 
 # The following functions should be overloaded for special types

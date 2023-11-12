@@ -1,7 +1,7 @@
 module Constants
 
 import ..DEFAULT_QUANTITY_TYPE
-import ..Quantity
+import ..RealQuantity
 import ..Units as U
 import ..Units: _add_prefixes
 

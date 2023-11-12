@@ -83,11 +83,20 @@ end
 function Base.promote_rule(::Type{<:FixedRational{T1}}, ::Type{Rational{T2}}) where {T1,T2}
     return Rational{promote_type(T1,T2)}
 end
+function Base.promote_rule(::Type{Rational{T2}}, ::Type{<:FixedRational{T1}}) where {T1,T2}
+    return Rational{promote_type(T1,T2)}
+end
 function Base.promote_rule(::Type{<:FixedRational{T1}}, ::Type{T2}) where {T1,T2<:Real}
     return promote_type(Rational{T1}, T2)
 end
+function Base.promote_rule(::Type{T2}, ::Type{<:FixedRational{T1}}) where {T1,T2<:Real}
+    return promote_type(Rational{T1}, T2)
+end
+# Want to consume integers:
 function Base.promote_rule(::Type{F}, ::Type{<:Integer}) where {F<:FixedRational}
-    # Want to consume integers:
+    return F
+end
+function Base.promote_rule(::Type{<:Integer}, ::Type{F}) where {F<:FixedRational}
     return F
 end
 

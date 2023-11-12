@@ -36,10 +36,29 @@ end
 function Base.promote_rule(::Type{<:GenericQuantity{T1,D1}}, ::Type{<:GenericQuantity{T2,D2}}) where {T1,T2,D1,D2}
     return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
 end
+function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:Quantity{T2,D2}}) where {T1,T2,D1,D2}
+    return Quantity{promote_type(T1,T2),promote_type(D1,D2)}
+end
+function Base.promote_rule(::Type{<:RealQuantity{T1,D1}}, ::Type{<:RealQuantity{T2,D2}}) where {T1,T2,D1,D2}
+    return RealQuantity{promote_type(T1,T2),promote_type(D1,D2)}
+end
+
 function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:GenericQuantity{T2,D2}}) where {T1,T2,D1,D2}
     return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
 end
-function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:Quantity{T2,D2}}) where {T1,T2,D1,D2}
+function Base.promote_rule(::Type{<:GenericQuantity{T1,D1}}, ::Type{<:Quantity{T2,D2}}) where {T1,T2,D1,D2}
+    return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
+end
+function Base.promote_rule(::Type{<:GenericQuantity{T1,D1}}, ::Type{<:RealQuantity{T2,D2}}) where {T1,T2,D1,D2}
+    return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
+end
+function Base.promote_rule(::Type{<:RealQuantity{T1,D1}}, ::Type{<:GenericQuantity{T2,D2}}) where {T1,T2,D1,D2}
+    return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
+end
+function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:RealQuantity{T2,D2}}) where {T1,T2,D1,D2}
+    return Quantity{promote_type(T1,T2),promote_type(D1,D2)}
+end
+function Base.promote_rule(::Type{<:RealQuantity{T1,D1}}, ::Type{<:Quantity{T2,D2}}) where {T1,T2,D1,D2}
     return Quantity{promote_type(T1,T2),promote_type(D1,D2)}
 end
 
@@ -57,16 +76,18 @@ const BASE_NUMERIC_TYPES = Union{
     Rational{Int64}, Rational{UInt64}, Rational{Int128}, Rational{UInt128},
     Rational{BigInt},
 }
-for (type, _, _) in ABSTRACT_QUANTITY_TYPES
-    @eval function Base.promote_rule(::Type{Q}, ::Type{T2}) where {T,D,Q<:$type{T,D},T2<:BASE_NUMERIC_TYPES}
-        return with_type_parameters(Q, promote_type(T, T2), D)
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES 
+    @eval begin
+        function Base.convert(::Type{Q}, x::BASE_NUMERIC_TYPES) where {T,D,Q<:$type{T,D}}
+            return new_quantity(Q, convert(T, x), D())
+        end
+        function Base.promote_rule(::Type{Q}, ::Type{T2}) where {T,D,Q<:$type{T,D},T2<:BASE_NUMERIC_TYPES}
+            return with_type_parameters(promote_quantity(Q, T2), promote_type(T, T2), D)
+        end
+        function Base.promote_rule(::Type{T2}, ::Type{Q}) where {T,D,Q<:$type{T,D},T2<:BASE_NUMERIC_TYPES}
+            return with_type_parameters(promote_quantity(Q, T2), promote_type(T, T2), D)
+        end
     end
-    @eval function Base.convert(::Type{Q}, x::BASE_NUMERIC_TYPES) where {T,D,Q<:$type{T,D}}
-        return new_quantity(Q, convert(T, x), D())
-    end
-end
-function Base.promote_rule(::Type{<:AbstractQuantity}, ::Type{<:Number})
-    return Number
 end
 
 """

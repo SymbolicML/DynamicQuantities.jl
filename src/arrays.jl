@@ -15,7 +15,7 @@ and so can be used in most places where a normal array would be used, including 
 # Constructors
 
 - `QuantityArray(v::AbstractArray, d::AbstractDimensions)`: Create a `QuantityArray` with value `v` and dimensions `d`,
-  using `Quantity` if the eltype of `v` is numeric, and `GenericQuantity` otherwise.
+  using `RealQuantity` if the eltype of `v` is real, `Quantity` if it is numeric, and `GenericQuantity` otherwise.
 - `QuantityArray(v::AbstractArray{<:Number}, q::AbstractQuantity)`: Create a `QuantityArray` with value `v` and dimensions inferred
    with `dimension(q)`. This is so that you can easily create an array with the units module, like so:
    ```julia
@@ -52,7 +52,6 @@ struct QuantityArray{T,N,D<:AbstractDimensions,Q<:UnionAbstractQuantity{T,D},V<:
     end
 end
 
-# Construct with a Quantity (easier, as you can use the units):
 QuantityArray(v::AbstractArray; kws...) = QuantityArray(v, DEFAULT_DIM_TYPE(; kws...))
 for (type, base_type, default_type) in ABSTRACT_QUANTITY_TYPES
     @eval begin
