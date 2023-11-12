@@ -143,7 +143,7 @@ end
 ############################## Same dimension as input ##################################
 for f in (
     :float, :abs, :real, :imag, :conj, :adjoint, :unsigned,
-    :nextfloat, :prevfloat, :identity, :transpose,
+    :nextfloat, :prevfloat, :identity, :transpose, :significand
 )
     @eval function Base.$f(q::UnionAbstractQuantity)
         return new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
@@ -173,7 +173,7 @@ end
 function Base.round(::Type{Ti}, q::UnionAbstractQuantity, r::RoundingMode=RoundNearest) where {Ti<:Integer}
     return new_quantity(typeof(q), round(Ti, ustrip(q), r), dimension(q))
 end
-for f in (:floor, :trunc, :ceil, :significand)
+for f in (:floor, :trunc, :ceil)
     @eval begin
         function Base.$f(q::UnionAbstractQuantity)
             return new_quantity(typeof(q), $f(ustrip(q)), dimension(q))

@@ -1154,6 +1154,8 @@ end
                 for y in valid_inputs[end-3:end]
                     qy_dimensionless = Quantity(y, D)
                     qy_dimensions = Quantity(y, convert(D, dimension(u"m/s")))
+                    @eval @test $f($y, $qx_dimensionless) == $f($y, $x)
+                    @eval @test $f($qy_dimensionless, $x) == $f($y, $x)
                     @eval @test $f($qy_dimensionless, $qx_dimensionless) == $f($y, $x)
                     @eval @test $f($qy_dimensions, $qx_dimensions) == $f($y, $x)
                     @eval @test_throws DimensionError $f($qy_dimensions, $x)
@@ -1170,7 +1172,7 @@ end
         :nextfloat, :prevfloat, :identity, :transpose,
         :copysign, :flipsign, :mod, :modf,
         :floor, :trunc, :ceil, :significand,
-        :ldexp, :round
+        :ldexp, :round,
     )
     for Q in (Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
         T = f in (:abs, :real, :imag, :conj) ? ComplexF64 : Float64
@@ -1190,6 +1192,11 @@ end
                     qx_dimensions = Q(x, dim)
                     qy_dimensions = Q(y, dim)
                     @eval @test $f($qx_dimensions, $qy_dimensions) == $Q($f($x, $y), $dim)
+                    if f in (:copysign, :flipsign, :mod)
+                        # Also do test without dimensions
+                        @eval @test $f($x, $qy_dimensions) == $f($x, $y)
+                        @eval @test $f($qx_dimensions, $y) == $Q($f($x, $y), $dim)
+                    end
                 end
             end
         elseif f == :unsigned
@@ -1198,7 +1205,7 @@ end
                 qx_dimensions = Q(x, dim)
                 @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
             end
-        elseif f == :round
+        elseif f in (:round, :floor, :trunc, :ceil)
             for x in 5rand(T, 3) .- 2.5
                 dim = convert(D, dimension(u"m/s"))
                 qx_dimensions = Q(x, dim)
@@ -1225,5 +1232,18 @@ end
                 @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
             end
         end
+    end
+end
+
+@testset "Test div" begin
+    for Q in (Quantity, GenericQuantity)
+        x = Q{Int}(10, length=1)
+        y = Q{Int}(3, mass=-1)
+        @test div(x, y) == Q{Int}(3, length=1, mass=1)
+        @test div(x, y, RoundFromZero) == Q{Int}(4, length=1, mass=1)
+        @test div(x, 3) == Q{Int}(3, length=1)
+        @test div(x, 3, RoundFromZero) == Q{Int}(4, length=1)
+        @test div(10, y) == Q{Int}(3, mass=1)
+        @test div(10, y, RoundFromZero) == Q{Int}(4, mass=1)
     end
 end
