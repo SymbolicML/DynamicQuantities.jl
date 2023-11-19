@@ -6,10 +6,10 @@ import Ratios: SimpleRatio
 import SaferIntegers: SafeInt16
 using Test
 
-risapprox(x::Unitful.Quantity, y::Unitful.Quantity; kws...) =
-    let (xfloat, yfloat) = (Unitful.ustrip ∘ Unitful.upreferred).((x, y))
-        return isapprox(xfloat, yfloat; kws...)
-    end
+function risapprox(x::Unitful.Quantity, y::Unitful.Quantity; kws...)
+    (xfloat, yfloat) = (Unitful.ustrip ∘ Unitful.upreferred).((x, y))
+    return isapprox(xfloat, yfloat; kws...)
+end
 
 for T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_BASE_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
     D = DynamicQuantities.Dimensions{R}
