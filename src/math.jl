@@ -20,7 +20,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
         function Base.:/(l::$type, r::$base_type)
             new_quantity(typeof(l), ustrip(l) / r, dimension(l))
         end
-        function Base.div(x::$type, y::Number, r::RoundingMode=RoundToZero)
+        function Base.div(x::$type, y::$base_type, r::RoundingMode=RoundToZero)
             new_quantity(typeof(x), div(ustrip(x), y, r), dimension(x))
         end
 
@@ -30,7 +30,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
         function Base.:/(l::$base_type, r::$type)
             new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
         end
-        function Base.div(x::Number, y::$type, r::RoundingMode=RoundToZero)
+        function Base.div(x::$base_type, y::$type, r::RoundingMode=RoundToZero)
             new_quantity(typeof(y), div(x, ustrip(y), r), inv(dimension(y)))
         end
 
@@ -75,13 +75,20 @@ end
 Base.:-(l::UnionAbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 
 # Combining different abstract types
-for op in (:*, :/, :+, :-, :div, :atan, :atand, :copysign, :flipsign, :mod),
+for op in (:*, :/, :+, :-, :atan, :atand, :copysign, :flipsign, :mod),
     (t1, _, _) in ABSTRACT_QUANTITY_TYPES,
     (t2, _, _) in ABSTRACT_QUANTITY_TYPES
 
     t1 == t2 && continue
 
     @eval Base.$op(l::$t1, r::$t2) = $op(promote_except_value(l, r)...)
+end
+# different methods needed:
+for (t1, _, _) in ABSTRACT_QUANTITY_TYPES, (t2, _, _) in ABSTRACT_QUANTITY_TYPES
+
+    t1 == t2 && continue
+
+    @eval Base.div(x::$t1, y::$t2, r::RoundingMode=RoundToZero) = div(promote_except_value(x, y)..., r)
 end
 
 # We don't promote on the dimension types:
