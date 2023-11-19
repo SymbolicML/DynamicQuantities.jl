@@ -35,14 +35,10 @@ end
 function Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
     return Dimensions{promote_type(R1,R2)}
 end
-function Base.promote_rule(::Type{<:GenericQuantity{T1,D1}}, ::Type{<:GenericQuantity{T2,D2}}) where {T1,T2,D1,D2}
-    return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
-end
-function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:Quantity{T2,D2}}) where {T1,T2,D1,D2}
-    return Quantity{promote_type(T1,T2),promote_type(D1,D2)}
-end
-function Base.promote_rule(::Type{<:RealQuantity{T1,D1}}, ::Type{<:RealQuantity{T2,D2}}) where {T1,T2,D1,D2}
-    return RealQuantity{promote_type(T1,T2),promote_type(D1,D2)}
+for (_, _, concrete_type) in ABSTRACT_QUANTITY_TYPES
+    @eval function Base.promote_rule(::Type{<:$concrete_type{T1,D1}}, ::Type{<:$concrete_type{T2,D2}}) where {T1,T2,D1,D2}
+        return $concrete_type{promote_type(T1,T2),promote_type(D1,D2)}
+    end
 end
 
 function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:GenericQuantity{T2,D2}}) where {T1,T2,D1,D2}
