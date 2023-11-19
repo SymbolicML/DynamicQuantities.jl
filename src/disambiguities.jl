@@ -31,16 +31,16 @@ function Base.promote_rule(::Type{Bool}, ::Type{F}) where {F<:FixedRational}
     return F
 end
 function Base.promote_rule(::Type{F}, ::Type{BigFloat}) where {F<:FixedRational}
-    return promote_type(Rational{num_type(F)}, BigFloat)
+    return promote_type(Rational{eltype(F)}, BigFloat)
 end
 function Base.promote_rule(::Type{BigFloat}, ::Type{F}) where {F<:FixedRational}
-    return promote_type(Rational{num_type(F)}, BigFloat)
+    return promote_type(Rational{eltype(F)}, BigFloat)
 end
 function Base.promote_rule(::Type{F}, ::Type{T}) where {F<:FixedRational,T<:AbstractIrrational}
-    return promote_type(Rational{num_type(F)}, T)
+    return promote_type(Rational{eltype(F)}, T)
 end
 function Base.promote_rule(::Type{T}, ::Type{F}) where {F<:FixedRational,T<:AbstractIrrational}
-    return promote_type(Rational{num_type(F)}, T)
+    return promote_type(Rational{eltype(F)}, T)
 end
 
 # Assorted calls found by Aqua:
