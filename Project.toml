@@ -9,12 +9,14 @@ PackageExtensionCompat = "65ce6f38-6b18-4e1d-a461-8949797d7930"
 Tricks = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
 
 [weakdeps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
 ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [extensions]
+DynamicQuantitiesDistributionsExt = "Distributions"
 DynamicQuantitiesLinearAlgebraExt = "LinearAlgebra"
 DynamicQuantitiesMeasurementsExt = "Measurements"
 DynamicQuantitiesScientificTypesExt = "ScientificTypes"
@@ -22,6 +24,7 @@ DynamicQuantitiesUnitfulExt = "Unitful"
 
 [compat]
 Compat = "3.42, 4"
+Distributions = "0.25"
 Measurements = "2"
 PackageExtensionCompat = "1.0.2"
 ScientificTypes = "3"
@@ -31,6 +34,7 @@ julia = "1.6"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
 Ratios = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
@@ -42,4 +46,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Aqua", "LinearAlgebra", "Measurements", "Ratios", "SaferIntegers", "SafeTestsets", "ScientificTypes", "StaticArrays", "Test", "Unitful"]
+test = ["Aqua", "Distributions", "LinearAlgebra", "Measurements", "Ratios", "SaferIntegers", "SafeTestsets", "ScientificTypes", "StaticArrays", "Test", "Unitful"]
