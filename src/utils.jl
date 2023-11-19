@@ -139,39 +139,75 @@ Base.keys(q::UnionAbstractQuantity) = keys(ustrip(q))
 
 
 # Numeric checks
-function Base.isapprox(l::UnionAbstractQuantity, r::UnionAbstractQuantity; kws...)
-    l, r = promote_except_value(l, r)
-    dimension(l) == dimension(r) || throw(DimensionError(l, r))
-    return isapprox(ustrip(l), ustrip(r); kws...)
+for op in (:(<=), :(<), :(>=), :(>), :isless, :isgreater),
+    (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+
+    @eval begin
+        function Base.$(op)(l::$type, r::$type)
+            l, r = promote_except_value(l, r)
+            dimension(l) == dimension(r) || throw(DimensionError(l, r))
+            return $(op)(ustrip(l), ustrip(r))
+        end
+        function Base.$(op)(l::$type, r::$base_type)
+            iszero(dimension(l)) || throw(DimensionError(l, r))
+            return $(op)(ustrip(l), r)
+        end
+        function Base.$(op)(l::$base_type, r::$type)
+            iszero(dimension(r)) || throw(DimensionError(l, r))
+            return $(op)(l, ustrip(r))
+        end
+    end
 end
-function Base.isapprox(l::Number, r::UnionAbstractQuantity; kws...)
-    iszero(dimension(r)) || throw(DimensionError(l, r))
-    return isapprox(l, ustrip(r); kws...)
+for op in (:isequal, :(==)), (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        function Base.$(op)(l::$type, r::$type)
+            l, r = promote_except_value(l, r)
+            return $(op)(ustrip(l), ustrip(r)) && dimension(l) == dimension(r)
+        end
+        function Base.$(op)(l::$type, r::$base_type)
+            return $(op)(ustrip(l), r) && iszero(dimension(l))
+        end
+        function Base.$(op)(l::$base_type, r::$type)
+            return $(op)(l, ustrip(r)) && iszero(dimension(r))
+        end
+    end
 end
-function Base.isapprox(l::UnionAbstractQuantity, r::Number; kws...)
-    iszero(dimension(l)) || throw(DimensionError(l, r))
-    return isapprox(ustrip(l), r; kws...)
+for op in (:(<=), :(<), :(>=), :(>), :isless, :isgreater, :isequal, :(==)),
+    (t1, _, _) in ABSTRACT_QUANTITY_TYPES,
+    (t2, _, _) in ABSTRACT_QUANTITY_TYPES
+
+    t1 == t2 && continue
+
+    @eval function Base.$(op)(l::$t1, r::$t2)
+        return $(op)(promote_except_value(l, r)...)
+    end
 end
-function Base.:(==)(l::UnionAbstractQuantity, r::UnionAbstractQuantity)
-    l, r = promote_except_value(l, r)
-    ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+# Define isapprox:
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        function Base.isapprox(l::$type, r::$type; kws...)
+            dimension(l) == dimension(r) || throw(DimensionError(l, r))
+            return isapprox(ustrip(l), ustrip(r); kws...)
+        end
+        function Base.isapprox(l::$base_type, r::$type; kws...)
+            iszero(dimension(r)) || throw(DimensionError(l, r))
+            return isapprox(l, ustrip(r); kws...)
+        end
+        function Base.isapprox(l::$type, r::$base_type; kws...)
+            iszero(dimension(l)) || throw(DimensionError(l, r))
+            return isapprox(ustrip(l), r; kws...)
+        end
+    end
+    for (type2, _, _) in ABSTRACT_QUANTITY_TYPES
+
+        type == type2 && continue
+
+        @eval function Base.isapprox(l::$type, r::$type2; kws...)
+            return isapprox(promote_except_value(l, r)...; kws...)
+        end
+    end
 end
-Base.:(==)(l::Number, r::UnionAbstractQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
-Base.:(==)(l::UnionAbstractQuantity, r::Number) = ustrip(l) == ustrip(r) && iszero(dimension(l))
-Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
-function Base.isless(l::UnionAbstractQuantity, r::UnionAbstractQuantity)
-    l, r = promote_except_value(l, r)
-    dimension(l) == dimension(r) || throw(DimensionError(l, r))
-    return isless(ustrip(l), ustrip(r))
-end
-function Base.isless(l::UnionAbstractQuantity, r::Number)
-    iszero(dimension(l)) || throw(DimensionError(l, r))
-    return isless(ustrip(l), r)
-end
-function Base.isless(l::Number, r::UnionAbstractQuantity)
-    iszero(dimension(r)) || throw(DimensionError(l, r))
-    return isless(l, ustrip(r))
-end
+
 
 # Simple flags:
 for f in (
@@ -180,6 +216,8 @@ for f in (
 )
     @eval Base.$f(q::UnionAbstractQuantity) = $f(ustrip(q))
 end
+Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
+Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 
 
 # Base.one, typemin, typemax

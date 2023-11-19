@@ -97,7 +97,7 @@ end
 
         y = Q(T(2 // 10), D, length=1, mass=6 // 2)
 
-        @test !(y ≈ x)
+        @test !(unsafe_isapprox(y, x))
 
         y = x * Inf32
 
