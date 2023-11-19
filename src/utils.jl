@@ -141,7 +141,8 @@ Base.keys(q::UnionAbstractQuantity) = keys(ustrip(q))
 # Numeric checks
 function Base.isapprox(l::UnionAbstractQuantity, r::UnionAbstractQuantity; kws...)
     l, r = promote_except_value(l, r)
-    return isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
+    dimension(l) == dimension(r) || throw(DimensionError(l, r))
+    return isapprox(ustrip(l), ustrip(r); kws...)
 end
 function Base.isapprox(l::Number, r::UnionAbstractQuantity; kws...)
     iszero(dimension(r)) || throw(DimensionError(l, r))
@@ -151,7 +152,6 @@ function Base.isapprox(l::UnionAbstractQuantity, r::Number; kws...)
     iszero(dimension(l)) || throw(DimensionError(l, r))
     return isapprox(ustrip(l), r; kws...)
 end
-Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
 function Base.:(==)(l::UnionAbstractQuantity, r::UnionAbstractQuantity)
     l, r = promote_except_value(l, r)
     ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
