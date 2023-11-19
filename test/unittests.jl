@@ -14,6 +14,9 @@ function record_show(s, f=show)
     f(io, s)
     return String(take!(io))
 end
+function unsafe_isapprox(x, y; kwargs...)
+    return isapprox(ustrip(x), ustrip(y); kwargs...) && dimension(x) == dimension(y)
+end
 
 @testset "Basic utilities" begin
 
