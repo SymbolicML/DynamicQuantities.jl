@@ -21,6 +21,7 @@ DynamicQuantitiesScientificTypesExt = "ScientificTypes"
 DynamicQuantitiesUnitfulExt = "Unitful"
 
 [compat]
+Aqua = "0.7"
 Compat = "3.42, 4"
 Measurements = "2"
 PackageExtensionCompat = "1.0.2"
