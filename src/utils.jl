@@ -68,14 +68,18 @@ end
 # abstract number packages which may try to do the same thing.
 # (which would lead to ambiguities)
 const BASE_NUMERIC_TYPES = Union{
-    Bool, Int8, UInt8, Int16, UInt16, Int32, UInt32,
+    Int8, UInt8, Int16, UInt16, Int32, UInt32,
     Int64, UInt64, Int128, UInt128, Float16, Float32,
-    Float64, BigFloat, BigInt, ComplexF16, ComplexF32,
+    Float64, BigInt, ComplexF16, ComplexF32,
     ComplexF64, Complex{BigFloat}, Rational{Int8}, Rational{UInt8},
     Rational{Int16}, Rational{UInt16}, Rational{Int32}, Rational{UInt32},
     Rational{Int64}, Rational{UInt64}, Rational{Int128}, Rational{UInt128},
     Rational{BigInt},
 }
+# The following types require explicit promotion,
+# as putting them in a union type creates different ambiguities
+const AMBIGUOUS_NUMERIC_TYPES = (Bool, BigFloat)
+
 for (type, _, _) in ABSTRACT_QUANTITY_TYPES 
     @eval begin
         function Base.convert(::Type{Q}, x::BASE_NUMERIC_TYPES) where {T,D,Q<:$type{T,D}}
@@ -86,6 +90,19 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
         end
         function Base.promote_rule(::Type{T2}, ::Type{Q}) where {T,D,Q<:$type{T,D},T2<:BASE_NUMERIC_TYPES}
             return with_type_parameters(promote_quantity(Q, T2), promote_type(T, T2), D)
+        end
+    end
+    for numeric_type in AMBIGUOUS_NUMERIC_TYPES
+        @eval begin
+            function Base.convert(::Type{Q}, x::$numeric_type) where {T,D,Q<:$type{T,D}}
+                return new_quantity(Q, convert(T, x), D())
+            end
+            function Base.promote_rule(::Type{Q}, ::Type{$numeric_type}) where {T,D,Q<:$type{T,D}}
+                return with_type_parameters(promote_quantity(Q, $numeric_type), promote_type(T, $numeric_type), D)
+            end
+            function Base.promote_rule(::Type{$numeric_type}, ::Type{Q}) where {T,D,Q<:$type{T,D}}
+                return with_type_parameters(promote_quantity(Q, $numeric_type), promote_type(T, $numeric_type), D)
+            end
         end
     end
 end

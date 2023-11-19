@@ -49,3 +49,30 @@ for type in (Signed, Float64, Float32, Rational), op in (:flipsign, :copysign)
         return $(op)(x, ustrip(y))
     end
 end
+
+function Base.:*(l::Complex{Bool}, r::AbstractRealQuantity)
+    return new_quantity(typeof(r), l * ustrip(r), dimension(r))
+end
+function Base.:*(l::AbstractRealQuantity, r::Complex{Bool})
+    return new_quantity(typeof(l), ustrip(l) * r, dimension(l))
+end
+
+for op in (:(==), :isequal), base_type in (AbstractIrrational, AbstractFloat)
+    @eval begin
+        function Base.$(op)(l::AbstractRealQuantity, r::$base_type)
+            return $(op)(ustrip(l), r) && iszero(dimension(l))
+        end
+        function Base.$(op)(l::$base_type, r::AbstractRealQuantity)
+            return $(op)(l, ustrip(r)) && iszero(dimension(r))
+        end
+    end
+end
+
+function Base.isless(l::AbstractRealQuantity, r::AbstractFloat)
+    iszero(dimension(l)) || throw(DimensionError(l, r))
+    return isless(ustrip(l), r)
+end
+function Base.isless(l::AbstractFloat, r::AbstractRealQuantity)
+    iszero(dimension(r)) || throw(DimensionError(l, r))
+    return isless(l, ustrip(r))
+end
