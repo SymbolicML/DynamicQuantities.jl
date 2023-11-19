@@ -1,4 +1,5 @@
 using DynamicQuantities
+using DynamicQuantities: DEFAULT_QUANTITY_TYPE, constructorof
 using ScientificTypes
 import ScientificTypes as ST
 
@@ -18,6 +19,6 @@ sch = schema(X)
 
 @test first(sch.names) == :x
 @test first(sch.scitypes) == Continuous
-@test first(sch.types) <: Quantity{Float64}
+@test first(sch.types) <: constructorof(DEFAULT_QUANTITY_TYPE){Float64}
 
 @test first(schema((; x=rand(1:10, 5) .* Quantity{Int}(u"m/s"))).scitypes) == Count
