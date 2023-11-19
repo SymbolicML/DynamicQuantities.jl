@@ -1,6 +1,7 @@
 module DynamicQuantitiesUnitfulExt
 
-import DynamicQuantities
+using DynamicQuantities: DynamicQuantities, ABSTRACT_QUANTITY_TYPES
+
 import Unitful
 import Unitful: @u_str
 
@@ -23,30 +24,33 @@ function unitful_equivalences()
     return NamedTuple((k => si_units[k] for k in keys(si_units)))
 end
 
-Base.convert(::Type{Unitful.Quantity}, x::DynamicQuantities.Quantity) =
-    let
-        validate_upreferred()
-        cumulator = DynamicQuantities.ustrip(x)
-        dims = DynamicQuantities.dimension(x)
-        if dims isa DynamicQuantities.SymbolicDimensions
-            throw(ArgumentError("Conversion of a `DynamicQuantities.Quantity` to a `Unitful.Quantity` is not defined with dimensions of type `SymbolicDimensions`. Instead, you can first use the `uexpand` function to convert the dimensions to their base SI form of type `Dimensions`, then convert this quantity to a `Unitful.Quantity`."))
+for (_, _, Q) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        function Base.convert(::Type{Unitful.Quantity}, x::$Q)
+            validate_upreferred()
+            cumulator = DynamicQuantities.ustrip(x)
+            dims = DynamicQuantities.dimension(x)
+            if dims isa DynamicQuantities.SymbolicDimensions
+                throw(ArgumentError("Conversion of a `DynamicQuantities." * string($Q) * "` to a `Unitful.Quantity` is not defined with dimensions of type `SymbolicDimensions`. Instead, you can first use the `uexpand` function to convert the dimensions to their base SI form of type `Dimensions`, then convert this quantity to a `Unitful.Quantity`."))
+            end
+            equiv = unitful_equivalences()
+            for dim in keys(dims)
+                value = dims[dim]
+                iszero(value) && continue
+                cumulator *= equiv[dim]^value
+            end
+            cumulator
         end
-        equiv = unitful_equivalences()
-        for dim in keys(dims)
-            value = dims[dim]
-            iszero(value) && continue
-            cumulator *= equiv[dim]^value
+        function Base.convert(::Type{$Q}, x::Unitful.Quantity{T}) where {T}
+            return convert($Q{T,DynamicQuantities.DEFAULT_DIM_TYPE}, x)
         end
-        cumulator
+        function Base.convert(::Type{$Q{T,D}}, x::Unitful.Quantity) where {T,R,D<:DynamicQuantities.AbstractDimensions{R}}
+            value = Unitful.ustrip(Unitful.upreferred(x))
+            dimension = convert(D, Unitful.dimension(x))
+            return $Q(convert(T, value), dimension)
+        end
     end
-
-Base.convert(::Type{DynamicQuantities.Quantity}, x::Unitful.Quantity{T}) where {T} = convert(DynamicQuantities.Quantity{T,DynamicQuantities.DEFAULT_DIM_TYPE}, x)
-Base.convert(::Type{DynamicQuantities.Quantity{T,D}}, x::Unitful.Quantity) where {T,R,D<:DynamicQuantities.AbstractDimensions{R}} =
-    let
-        value = Unitful.ustrip(Unitful.upreferred(x))
-        dimension = convert(D, Unitful.dimension(x))
-        return DynamicQuantities.Quantity(convert(T, value), dimension)
-    end
+end
 
 Base.convert(::Type{DynamicQuantities.Dimensions}, d::Unitful.Dimensions) = convert(DynamicQuantities.DEFAULT_DIM_TYPE, d)
 Base.convert(::Type{DynamicQuantities.Dimensions{R}}, d::Unitful.Dimensions{D}) where {R,D} =

@@ -14,6 +14,7 @@ struct FixedRational{T<:Integer,den} <: Real
     num::T
     global unsafe_fixed_rational(num::Integer, ::Type{T}, ::Val{den}) where {T,den} = new{T,den}(num)
 end
+@inline _denom(::Type{F}) where {T,den,F<:FixedRational{T,den}} = den
 
 """
     denom(F::FixedRational)
@@ -21,14 +22,15 @@ end
 Since `den` can be a different type than `T`, this function
 is used to get the denominator as a `T`.
 """
-denom(::Type{F}) where {T,den,F<:FixedRational{T,den}} = convert(T, den)
+denom(::Type{<:F}) where {T,F<:FixedRational{T}} = convert(T, _denom(F))
 denom(x::FixedRational) = denom(typeof(x))
 
 # But, for Val(den), we need to use the same type as at init.
 # Otherwise, we would have type instability.
-val_denom(::Type{F}) where {T,den,F<:FixedRational{T,den}} = Val(den)
+val_denom(::Type{<:F}) where {F<:FixedRational} = Val(_denom(F))
 
-num_type(::Type{F}) where {T,F<:FixedRational{T}} = T
+num_type(::Type{<:FixedRational{T}}) where {T} = T
+num_type(x::FixedRational) = num_type(typeof(x))
 
 const DEFAULT_NUMERATOR_TYPE = Int32
 const DEFAULT_DENOM = DEFAULT_NUMERATOR_TYPE(2^4 * 3^2 * 5^2 * 7)
@@ -75,9 +77,9 @@ Base.decompose(x::F) where {T,F<:FixedRational{T}} = (x.num, zero(T), denom(F))
 
 # Promotion with self or rational-like
 function Base.promote_rule(::Type{F1}, ::Type{F2}) where {F1<:FixedRational,F2<:FixedRational}
-    denom(F1) == denom(F2) ||
+    _denom(F1) == _denom(F2) ||
         error("Refusing to promote `FixedRational` types with mixed denominators. Use `Rational` instead.")
-    return FixedRational{promote_type(num_type(F1), num_type(F2)),denom(F1)}
+    return FixedRational{promote_type(num_type(F1), num_type(F2)), _denom(F1)}
 end
 function Base.promote_rule(::Type{F}, ::Type{Rational{T2}}) where {F<:FixedRational,T2}
     return Rational{promote_type(num_type(F),T2)}
