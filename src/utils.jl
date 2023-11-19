@@ -25,7 +25,9 @@ end
     return output
 end
 
-Base.convert(::Type{Number}, q::AbstractQuantity) = q
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+    @eval Base.convert(::Type{$base_type}, q::$type) = q
+end
 function Base.convert(::Type{T}, q::UnionAbstractQuantity) where {T<:Number}
     @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
     return convert(T, ustrip(q))
