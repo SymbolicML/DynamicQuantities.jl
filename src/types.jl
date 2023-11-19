@@ -191,7 +191,11 @@ A constant tuple of the existing abstract quantity types,
 each as a tuple with (1) the abstract type,
 (2) the base type, and (3) the default exported concrete type.
 """
-const ABSTRACT_QUANTITY_TYPES = ((AbstractQuantity, Number, Quantity), (AbstractGenericQuantity, Any, GenericQuantity), (AbstractRealQuantity, Real, RealQuantity))
+const ABSTRACT_QUANTITY_TYPES = (
+    (AbstractQuantity, Number, Quantity),
+    (AbstractGenericQuantity, Any, GenericQuantity),
+    (AbstractRealQuantity, Real, RealQuantity)
+)
 
 """
     promote_quantity(::Type{<:UnionAbstractQuantity}, t::Type{<:Any})
@@ -202,7 +206,7 @@ If the current quantity type can already accommodate `t`, then the current type 
 promote_quantity(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Any}) = GenericQuantity
 promote_quantity(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Number}) = Quantity
 promote_quantity(::Type{<:RealQuantity}, ::Type{<:Real}) = RealQuantity
-promote_quantity(T, _) = t
+promote_quantity(T, _) = T
 
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
@@ -222,8 +226,13 @@ end
 
 const DEFAULT_QUANTITY_TYPE = RealQuantity{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE}
 
-new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions} = constructorof(D)(dims...)
-new_quantity(::Type{Q}, l, r) where {Q<:UnionAbstractQuantity} = constructorof(Q)(l, r)
+@inline function new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions}
+    return constructorof(D)(dims...)
+end
+@inline function new_quantity(::Type{Q}, val, dims) where {Q<:UnionAbstractQuantity}
+    Qout = promote_quantity(Q, typeof(val))
+    return constructorof(Qout)(val, dims)
+end
 
 dim_type(::Type{Q}) where {T,D<:AbstractDimensions,Q<:UnionAbstractQuantity{T,D}} = D
 dim_type(::Type{<:UnionAbstractQuantity}) = DEFAULT_DIM_TYPE

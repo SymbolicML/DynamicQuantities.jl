@@ -50,6 +50,24 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     end
 end
 
+# Complex multiplication
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        function Base.:*(l::Complex, r::$type)
+            new_quantity(typeof(r), l * ustrip(r), dimension(r))
+        end
+        function Base.:*(l::$type, r::Complex)
+            new_quantity(typeof(l), ustrip(l) * r, dimension(l))
+        end
+        function Base.:/(l::Complex, r::$type)
+            new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
+        end
+        function Base.:/(l::$type, r::Complex)
+            new_quantity(typeof(r), ustrip(l) / r, dimension(r))
+        end
+    end
+end
+
 Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
 Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 
@@ -125,6 +143,10 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
         Base.:^(l::$type, r::Integer) = _pow_int(l, r)
         Base.:^(l::$type, r::Number) = _pow(l, r)
         Base.:^(l::$type, r::Rational) = _pow(l, r)
+        function Base.:^(l::$type, r::Complex)
+            iszero(dimension(l)) || throw(DimensionError(l))
+            return new_quantity(typeof(l), ustrip(l)^r, dimension(l))
+        end
     end
 end
 @inline Base.literal_pow(::typeof(^), l::AbstractDimensions, ::Val{p}) where {p} = map_dimensions(Base.Fix1(*, p), l)
