@@ -34,12 +34,6 @@ object is stored in the `:dimensions` field. These fields can be accessed with
 `ustrip` and `dimension`, respectively. Many operators in `Base` are defined on
 `AbstractQuantity` objects, including `+, -, *, /, ^, sqrt, cbrt, abs`.
 
-"""
-    NoDims
-
-An empty struct indicating that something is not a quantity.
-"""
-struct NoDims end
 See also `AbstractGenericQuantity` for creating quantities subtyped to `Any`.
 
 **Note**: In general, you should probably
@@ -64,6 +58,12 @@ abstract type AbstractGenericQuantity{T,D} end
 
 """
     UnionAbstractQuantity{T,D}
+"""
+    NoDims
+
+An empty struct indicating that something is not a quantity.
+"""
+struct NoDims end
 
 This is a union of both `AbstractQuantity{T,D}` and `AbstractGenericQuantity{T,D}`.
 It is used throughout the library to declare methods which can take both types.
