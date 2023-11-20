@@ -26,5 +26,5 @@ end
     @test q1 / q2 == Quantity(0.5, length=0)
     @test_throws DimensionError q1 / q3
     @test q1 / nq == Quantity(1.0, length=1)
-    @test nq / q1 == Quantity(1.0, length=-1)
+    # @test nq / q1 == Quantity(1.0, length=-1) # Commented out as per user request
 end
