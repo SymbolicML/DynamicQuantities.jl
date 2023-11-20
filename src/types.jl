@@ -256,3 +256,21 @@ struct DimensionError{Q1,Q2} <: Exception
     DimensionError(q1, q2) = new{typeof(q1),typeof(q2)}(q1, q2)
     DimensionError(q1) = DimensionError(q1, nothing)
 end
+"""
+    NoDims
+
+An abstract type indicating that something is not a quantity.
+"""
+abstract type NoDims end
+
+function dimension(::Float32)
+    return NoDims()
+end
+
+function dimension(q::UnionAbstractQuantity)
+    if iszero(dimension(q))
+        return NoDims()
+    else
+        return dimension(q)
+    end
+end
