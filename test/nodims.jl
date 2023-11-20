@@ -9,6 +9,7 @@ end
 @testset "dimension" begin
     @test dimension(1.0) == NoDims()
     @test dimension(Quantity(1.0, length=1)) != NoDims()
+    @test dimension(1.0) == dimension(u"1")
 end
 
 @testset "math operations" begin
