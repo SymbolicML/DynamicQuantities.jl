@@ -62,11 +62,11 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-)
             return new_quantity(typeof(l), $op(ustrip(l), ustrip(r)), dimension(l))
         end
         function Base.$op(l::$type, r::$base_type)
-            iszero(dimension(l)) || throw(DimensionError(l, r))
+            dimension(l) == dimension(NoDims()) || throw(DimensionError(l, r))
             return new_quantity(typeof(l), $op(ustrip(l), r), dimension(l))
         end
         function Base.$op(l::$base_type, r::$type)
-            iszero(dimension(r)) || throw(DimensionError(l, r))
+            dimension(r) == dimension(NoDims()) || throw(DimensionError(l, r))
             return new_quantity(typeof(r), $op(l, ustrip(r)), dimension(r))
         end
     end
@@ -145,7 +145,7 @@ for f in (
     :log, :log2, :log10, :log1p, :exp, :exp2, :exp10, :expm1, :frexp, :exponent,
 )
     @eval function Base.$f(q::UnionAbstractQuantity)
-        iszero(dimension(q)) || throw(DimensionError(q))
+        dimension(q) == dimension(NoDims()) || throw(DimensionError(q))
         return $f(ustrip(q))
     end
 end
