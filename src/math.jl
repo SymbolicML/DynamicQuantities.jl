@@ -145,14 +145,14 @@ for f in (
     :log, :log2, :log10, :log1p, :exp, :exp2, :exp10, :expm1, :frexp, :exponent,
 )
     @eval function Base.$f(q::UnionAbstractQuantity)
-        dimension(q) == dimension(NoDims()) || throw(DimensionError(q))
+        iszero(dimension(q)) || throw(DimensionError(q))
         return $f(ustrip(q))
     end
 end
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:atan, :atand)
     @eval begin
         function Base.$f(x::$type)
-            iszero(dimension(x)) || throw(DimensionError(x))
+            dimension(x) == dimension(NoDims()) || throw(DimensionError(x))
             return $f(ustrip(x))
         end
         function Base.$f(y::$type, x::$type)
