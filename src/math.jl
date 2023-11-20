@@ -2,14 +2,17 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         function Base.:*(l::$type, r::$type)
             l, r = promote_except_value(l, r)
+            dimension(l) == dimension(r) || throw(DimensionError(l, r))
             new_quantity(typeof(l), ustrip(l) * ustrip(r), dimension(l) * dimension(r))
         end
         function Base.:/(l::$type, r::$type)
             l, r = promote_except_value(l, r)
+            dimension(l) == dimension(r) || throw(DimensionError(l, r))
             new_quantity(typeof(l), ustrip(l) / ustrip(r), dimension(l) / dimension(r))
         end
         function Base.div(x::$type, y::$type, r::RoundingMode=RoundToZero)
             x, y = promote_except_value(x, y)
+            dimension(x) == dimension(y) || throw(DimensionError(x, y))
             new_quantity(typeof(x), div(ustrip(x), ustrip(y), r), dimension(x) / dimension(y))
         end
 
@@ -62,32 +65,35 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-)
             return new_quantity(typeof(l), $op(ustrip(l), ustrip(r)), dimension(l))
         end
         function Base.$op(l::$type, r::$base_type)
-            iszero(dimension(l)) || throw(DimensionError(l, r))
+            dimension(l) == NoDims || throw(DimensionError(l, r))
             return new_quantity(typeof(l), $op(ustrip(l), r), dimension(l))
         end
         function Base.$op(l::$base_type, r::$type)
-            iszero(dimension(r)) || throw(DimensionError(l, r))
+            dimension(r) == NoDims || throw(DimensionError(l, r))
             return new_quantity(typeof(r), $op(l, ustrip(r)), dimension(r))
         end
     end
 end
 
 Base.:-(l::UnionAbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
-
 # Combining different abstract types
 for op in (:*, :/, :+, :-, :div, :atan, :atand, :copysign, :flipsign, :mod),
     (t1, _, _) in ABSTRACT_QUANTITY_TYPES,
     (t2, _, _) in ABSTRACT_QUANTITY_TYPES
 
-    t1 == t2 && continue
-
-    @eval Base.$op(l::$t1, r::$t2) = $op(promote_except_value(l, r)...)
-end
-
-# We don't promote on the dimension types:
-function Base.:^(l::AbstractDimensions{R}, r::Integer) where {R}
-    return map_dimensions(Base.Fix1(*, r), l)
-end
+        function Base.$f(x::$type)
+            dimension(x) == NoDims || throw(DimensionError(x))
+            return $f(ustrip(x))
+        end
+        function Base.$f(y::$type, x::$type)
+            y, x = promote_except_value(y, x)
+            dimension(y) == dimension(x) || throw(DimensionError(y, x))
+            return $f(ustrip(y), ustrip(x))
+        end
+        function Base.$f(y::$type, x::$base_type)
+            dimension(y) == NoDims || throw(DimensionError(y))
+            return $f(ustrip(y), x)
+        end
 function Base.:^(l::AbstractDimensions{R}, r::Number) where {R}
     return map_dimensions(Base.Fix1(*, tryrationalize(R, r)), l)
 end
@@ -117,23 +123,39 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         Base.:^(l::$type, r::Integer) = _pow_int(l, r)
         Base.:^(l::$type, r::Number) = _pow(l, r)
-        Base.:^(l::$type, r::Rational) = _pow(l, r)
-    end
+        function Base.$f(x::$type)
+            dimension(x) == NoDims || throw(DimensionError(x))
+            return $f(ustrip(x))
+        end
+        function Base.$f(y::$type, x::$type)
+            y, x = promote_except_value(y, x)
+            dimension(y) == dimension(x) || throw(DimensionError(y, x))
+            return $f(ustrip(y), ustrip(x))
+        end
+        function Base.$f(y::$type, x::$base_type)
+            dimension(y) == NoDims || throw(DimensionError(y))
+            return $f(ustrip(y), x)
+        end
 end
-@inline Base.literal_pow(::typeof(^), l::AbstractDimensions, ::Val{p}) where {p} = map_dimensions(Base.Fix1(*, p), l)
-@inline Base.literal_pow(::typeof(^), l::UnionAbstractQuantity, ::Val{p}) where {p} = new_quantity(typeof(l), Base.literal_pow(^, ustrip(l), Val(p)), Base.literal_pow(^, dimension(l), Val(p)))
-
-Base.inv(d::AbstractDimensions) = map_dimensions(-, d)
-Base.inv(q::UnionAbstractQuantity) = new_quantity(typeof(q), inv(ustrip(q)), inv(dimension(q)))
-
-Base.sqrt(d::AbstractDimensions{R}) where {R} = d^inv(convert(R, 2))
+        function Base.$f(x::$type)
+            dimension(x) == NoDims || throw(DimensionError(x))
+            return $f(ustrip(x))
+        end
+        function Base.$f(y::$type, x::$type)
+            y, x = promote_except_value(y, x)
+            dimension(y) == dimension(x) || throw(DimensionError(y, x))
+            return $f(ustrip(y), ustrip(x))
+        end
+        function Base.$f(y::$type, x::$base_type)
+            dimension(y) == NoDims || throw(DimensionError(y))
+            return $f(ustrip(y), x)
+        end
 Base.sqrt(q::UnionAbstractQuantity) = new_quantity(typeof(q), sqrt(ustrip(q)), sqrt(dimension(q)))
 Base.cbrt(d::AbstractDimensions{R}) where {R} = d^inv(convert(R, 3))
 Base.cbrt(q::UnionAbstractQuantity) = new_quantity(typeof(q), cbrt(ustrip(q)), cbrt(dimension(q)))
 
 Base.abs2(q::UnionAbstractQuantity) = new_quantity(typeof(q), abs2(ustrip(q)), dimension(q)^2)
 Base.angle(q::UnionAbstractQuantity{T}) where {T<:Complex} = angle(ustrip(q))
-
 ############################## Require dimensionless input ##############################
 # Note that :clamp, :cmp, :sign already work
 # We skip :rad2deg, :deg2rad in case the user defines a rad or deg unit
@@ -146,15 +168,25 @@ for f in (
 )
     @eval function Base.$f(q::UnionAbstractQuantity)
         iszero(dimension(q)) || throw(DimensionError(q))
-        return $f(ustrip(q))
-    end
-end
-for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:atan, :atand)
-    @eval begin
         function Base.$f(x::$type)
-            iszero(dimension(x)) || throw(DimensionError(x))
+            dimension(x) == NoDims || throw(DimensionError(x))
             return $f(ustrip(x))
         end
+        function Base.$f(y::$type, x::$type)
+            y, x = promote_except_value(y, x)
+            dimension(y) == dimension(x) || throw(DimensionError(y, x))
+            return $f(ustrip(y), ustrip(x))
+        end
+        function Base.$f(y::$type, x::$base_type)
+            dimension(y) == NoDims || throw(DimensionError(y))
+            return $f(ustrip(y), x)
+        end
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:atan, :atand)
+    @eval begin
+    @eval function Base.$f(q::UnionAbstractQuantity)
+        dimension(q) == NoDims || throw(DimensionError(q))
+        return $f(ustrip(q))
+    end
         function Base.$f(y::$type, x::$type)
             y, x = promote_except_value(y, x)
             dimension(y) == dimension(x) || throw(DimensionError(y, x))
