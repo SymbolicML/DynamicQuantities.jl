@@ -34,6 +34,12 @@ object is stored in the `:dimensions` field. These fields can be accessed with
 `ustrip` and `dimension`, respectively. Many operators in `Base` are defined on
 `AbstractQuantity` objects, including `+, -, *, /, ^, sqrt, cbrt, abs`.
 
+"""
+    NoDims
+
+An empty struct indicating that something is not a quantity.
+"""
+struct NoDims end
 See also `AbstractGenericQuantity` for creating quantities subtyped to `Any`.
 
 **Note**: In general, you should probably
