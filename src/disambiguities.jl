@@ -52,6 +52,18 @@ for type in (Signed, Float64, Float32, Rational), op in (:flipsign, :copysign)
         return $(op)(x, ustrip(y))
     end
 end
+function Base.:*(l::Complex, r::AbstractRealQuantity)
+    new_quantity(typeof(r), l * ustrip(r), dimension(r))
+end
+function Base.:*(l::AbstractRealQuantity, r::Complex)
+    new_quantity(typeof(l), ustrip(l) * r, dimension(l))
+end
+function Base.:/(l::Complex, r::AbstractRealQuantity)
+    new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
+end
+function Base.:/(l::AbstractRealQuantity, r::Complex)
+    new_quantity(typeof(l), ustrip(l) / r, dimension(l))
+end
 function Base.:*(l::Complex{Bool}, r::AbstractRealQuantity)
     return new_quantity(typeof(r), l * ustrip(r), dimension(r))
 end
