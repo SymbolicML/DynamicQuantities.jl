@@ -64,7 +64,7 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
             new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
         end
         function Base.:/(l::$type, r::Complex)
-            new_quantity(typeof(r), ustrip(l) / r, dimension(r))
+            new_quantity(typeof(l), ustrip(l) / r, dimension(l))
         end
     end
 end

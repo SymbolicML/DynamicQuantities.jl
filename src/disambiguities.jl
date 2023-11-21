@@ -43,20 +43,21 @@ function Base.promote_rule(::Type{T}, ::Type{F}) where {F<:FixedRational,T<:Abst
     return promote_type(Rational{eltype(F)}, T)
 end
 
-# Assorted calls found by Aqua:
+################################################################################
+# Assorted calls found by Aqua: ################################################
+################################################################################
+
 for type in (Signed, Float64, Float32, Rational), op in (:flipsign, :copysign)
     @eval function Base.$(op)(x::$type, y::AbstractRealQuantity)
         return $(op)(x, ustrip(y))
     end
 end
-
 function Base.:*(l::Complex{Bool}, r::AbstractRealQuantity)
     return new_quantity(typeof(r), l * ustrip(r), dimension(r))
 end
 function Base.:*(l::AbstractRealQuantity, r::Complex{Bool})
     return new_quantity(typeof(l), ustrip(l) * r, dimension(l))
 end
-
 for op in (:(==), :isequal), base_type in (AbstractIrrational, AbstractFloat)
     @eval begin
         function Base.$(op)(l::AbstractRealQuantity, r::$base_type)
@@ -67,7 +68,6 @@ for op in (:(==), :isequal), base_type in (AbstractIrrational, AbstractFloat)
         end
     end
 end
-
 function Base.isless(l::AbstractRealQuantity, r::AbstractFloat)
     iszero(dimension(l)) || throw(DimensionError(l, r))
     return isless(ustrip(l), r)
@@ -75,4 +75,14 @@ end
 function Base.isless(l::AbstractFloat, r::AbstractRealQuantity)
     iszero(dimension(r)) || throw(DimensionError(l, r))
     return isless(l, ustrip(r))
+end
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES, numeric_type in (Bool, BigFloat)
+    @eval begin
+        function Base.promote_rule(::Type{Q}, ::Type{$numeric_type}) where {T,D,Q<:$type{T,D}}
+            return with_type_parameters(promote_quantity_on_value(Q, $numeric_type), promote_type(T, $numeric_type), D)
+        end
+        function Base.promote_rule(::Type{$numeric_type}, ::Type{Q}) where {T,D,Q<:$type{T,D}}
+            return with_type_parameters(promote_quantity_on_value(Q, $numeric_type), promote_type(T, $numeric_type), D)
+        end
+    end
 end
