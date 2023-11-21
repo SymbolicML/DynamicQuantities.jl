@@ -499,7 +499,7 @@ end
     @eval struct MyNumber <: Real
         x::Float64
     end
-    a = 0.5u"km/s"
+    a = RealQuantity(0.5u"km/s")
     b = MyNumber(0.5)
     ar = [a, b]
     @test ar isa Vector{Real}
@@ -704,13 +704,13 @@ end
     @test_throws DimensionError uconvert(us"nm * J", 5e-9u"m")
 
     # Types:
-    @test typeof(uconvert(us"nm", 5e-9u"m")) <: RealQuantity{Float64,<:SymbolicDimensions}
+    @test typeof(uconvert(us"nm", 5e-9u"m")) <: constructorof(DEFAULT_QUANTITY_TYPE){Float64,<:SymbolicDimensions}
     @test typeof(uconvert(us"nm", GenericQuantity(5e-9u"m"))) <: GenericQuantity{Float64,<:SymbolicDimensions}
     @test uconvert(GenericQuantity(us"nm"), GenericQuantity(5e-9u"m")) ≈ 5us"nm"
     @test uconvert(GenericQuantity(us"nm"), GenericQuantity(5e-9u"m")) ≈ GenericQuantity(5us"nm")
 
     # We only want to convert the dimensions, and ignore the quantity type:
-    @test typeof(uconvert(GenericQuantity(us"nm"), 5e-9u"m")) <: RealQuantity{Float64,<:SymbolicDimensions}
+    @test typeof(uconvert(GenericQuantity(us"nm"), 5e-9u"m")) <: constructorof(DEFAULT_QUANTITY_TYPE){Float64,<:SymbolicDimensions}
 
     q = 1.5u"Constants.M_sun"
     qs = uconvert(us"Constants.M_sun", 5.0 * q)
@@ -803,7 +803,7 @@ end
     end
 
     @testset "Rational power law" begin
-        x = 1.0u"m"
+        x = RealQuantity(1.0u"m")
         y = x ^ (3//2)
         @test y == Quantity(1.0, length=3//2)
         @test typeof(y) == RealQuantity{Float64,DEFAULT_DIM_TYPE}
@@ -1201,8 +1201,8 @@ end
         qy = QuantityArray(y; length=1)
 
         @test typeof(convert(typeof(qx), qy)) == typeof(qx)
-        @test convert(typeof(qx), qy)[1] isa RealQuantity{Float64}
-        @test convert(typeof(qx), qy)[1] == convert(RealQuantity{Float64}, qy[1])
+        @test convert(typeof(qx), qy)[1] isa Quantity{Float64}
+        @test convert(typeof(qx), qy)[1] == convert(Quantity{Float64}, qy[1])
     end
 end
 

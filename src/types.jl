@@ -214,7 +214,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     end
 end
 
-const DEFAULT_QUANTITY_TYPE = RealQuantity{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE}
+const DEFAULT_QUANTITY_TYPE = Quantity{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE}
 
 @inline function new_dimensions(::Type{D}, dims...) where {D<:AbstractDimensions}
     return constructorof(D)(dims...)

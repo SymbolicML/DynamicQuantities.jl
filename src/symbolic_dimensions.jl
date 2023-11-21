@@ -264,6 +264,8 @@ function map_dimensions(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R
     return SymbolicDimensions(I, V)
 end
 
+const DEFAULT_SYMBOLIC_QUANTITY_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE, DEFAULT_VALUE_TYPE, SymbolicDimensions{DEFAULT_DIM_BASE_TYPE})
+
 """
     SymbolicUnitsParse
 
@@ -277,7 +279,8 @@ module SymbolicUnitsParse
     import ..SYMBOL_CONFLICTS
     import ..SymbolicDimensions
 
-    import ...RealQuantity
+    import ...constructorof
+    import ...DEFAULT_SYMBOLIC_QUANTITY_TYPE
     import ...DEFAULT_VALUE_TYPE
     import ...DEFAULT_DIM_BASE_TYPE
 
@@ -287,7 +290,8 @@ module SymbolicUnitsParse
         import ..SYMBOL_CONFLICTS
         import ..SymbolicDimensions
 
-        import ..RealQuantity
+        import ..constructorof
+        import ..DEFAULT_SYMBOLIC_QUANTITY_TYPE
         import ..DEFAULT_VALUE_TYPE
         import ..DEFAULT_DIM_BASE_TYPE
 
@@ -299,11 +303,11 @@ module SymbolicUnitsParse
             CONSTANT_SYMBOLS_EXIST[] || lock(CONSTANT_SYMBOLS_LOCK) do
                 CONSTANT_SYMBOLS_EXIST[] && return nothing
                 for unit in setdiff(CONSTANT_SYMBOLS, SYMBOL_CONFLICTS)
-                    @eval const $unit = RealQuantity(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
+                    @eval const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
                 end
                 # Evaluate conflicting symbols to non-symbolic form:
                 for unit in SYMBOL_CONFLICTS
-                    @eval const $unit = convert(RealQuantity{DEFAULT_VALUE_TYPE,SymbolicDimensions}, EagerConstants.$unit)
+                    @eval const $unit = convert(DEFAULT_SYMBOLIC_QUANTITY_TYPE, EagerConstants.$unit)
                 end
                 CONSTANT_SYMBOLS_EXIST[] = true
             end
@@ -318,7 +322,7 @@ module SymbolicUnitsParse
         UNIT_SYMBOLS_EXIST[] || lock(UNIT_SYMBOLS_LOCK) do
             UNIT_SYMBOLS_EXIST[] && return nothing
             for unit in UNIT_SYMBOLS
-                @eval const $unit = RealQuantity(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
+                @eval const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
             end
             UNIT_SYMBOLS_EXIST[] = true
         end
@@ -329,27 +333,27 @@ module SymbolicUnitsParse
         sym_uparse(raw_string::AbstractString)
 
     Parse a string containing an expression of units and return the
-    corresponding `RealQuantity` object with `Float64` value.
+    corresponding `Quantity` object with `Float64` value.
     However, that unlike the regular `u"..."` macro, this macro uses
     `SymbolicDimensions` for the dimension type, which means that all units and
     constants are stored symbolically and will not automatically expand to SI
     units. For example, `sym_uparse("km/s^2")` would be parsed to
-    `RealQuantity(1.0, SymbolicDimensions, km=1, s=-2)`.
+    `Quantity(1.0, SymbolicDimensions, km=1, s=-2)`.
 
     Note that inside this expression, you also have access to the `Constants`
     module. So, for example, `sym_uparse("Constants.c^2 * Hz^2")` would evaluate to
-    `RealQuantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
+    `Quantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
     namespace collisions, a few physical constants are automatically converted.
     """
     function sym_uparse(raw_string::AbstractString)
         _generate_unit_symbols()
         Constants._generate_unit_symbols()
         raw_result = eval(Meta.parse(raw_string))
-        return copy(as_quantity(raw_result))::RealQuantity{DEFAULT_VALUE_TYPE,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}
+        return copy(as_quantity(raw_result))::DEFAULT_SYMBOLIC_QUANTITY_TYPE
     end
 
-    as_quantity(q::RealQuantity) = q
-    as_quantity(x::Number) = RealQuantity(convert(DEFAULT_VALUE_TYPE, x), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE})
+    as_quantity(q::DEFAULT_SYMBOLIC_QUANTITY_TYPE) = q
+    as_quantity(x::Number) = convert(DEFAULT_SYMBOLIC_QUANTITY_TYPE, x)
     as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 end
 
@@ -359,15 +363,15 @@ import .SymbolicUnitsParse: sym_uparse
     us"[unit expression]"
 
 Parse a string containing an expression of units and return the
-corresponding `RealQuantity` object with `Float64` value. However,
+corresponding `Quantity` object with `Float64` value. However,
 unlike the regular `u"..."` macro, this macro uses `SymbolicDimensions`
 for the dimension type, which means that all units and constants
 are stored symbolically and will not automatically expand to SI units.
-For example, `us"km/s^2"` would be parsed to `RealQuantity(1.0, SymbolicDimensions, km=1, s=-2)`.
+For example, `us"km/s^2"` would be parsed to `Quantity(1.0, SymbolicDimensions, km=1, s=-2)`.
 
 Note that inside this expression, you also have access to the `Constants`
 module. So, for example, `us"Constants.c^2 * Hz^2"` would evaluate to
-`RealQuantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
+`Quantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
 namespace collisions, a few physical constants are automatically converted.
 """
 macro us_str(s)

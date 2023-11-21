@@ -15,7 +15,7 @@ and so can be used in most places where a normal array would be used, including 
 # Constructors
 
 - `QuantityArray(v::AbstractArray, d::AbstractDimensions)`: Create a `QuantityArray` with value `v` and dimensions `d`,
-  using `RealQuantity` if the eltype of `v` is real, `Quantity` if it is numeric, and `GenericQuantity` otherwise.
+  using `Quantity` if it is numeric, and `GenericQuantity` otherwise.
 - `QuantityArray(v::AbstractArray{<:Number}, q::AbstractQuantity)`: Create a `QuantityArray` with value `v` and dimensions inferred
    with `dimension(q)`. This is so that you can easily create an array with the units module, like so:
    ```julia
@@ -54,9 +54,11 @@ end
 
 QuantityArray(v::AbstractArray; kws...) = QuantityArray(v, DEFAULT_DIM_TYPE(; kws...))
 for (type, base_type, default_type) in ABSTRACT_QUANTITY_TYPES
-    @eval begin
-        QuantityArray(v::AbstractArray{<:$base_type}, q::$type) = QuantityArray(v .* ustrip(q), dimension(q), typeof(q))
-        QuantityArray(v::AbstractArray{<:$base_type}, d::AbstractDimensions) = QuantityArray(v, d, $default_type)
+    @eval QuantityArray(v::AbstractArray{<:$base_type}, q::$type) = QuantityArray(v .* ustrip(q), dimension(q), typeof(q))
+
+    # Only define defaults for Quantity and GenericQuantity. Other types, the user needs to declare explicitly.
+    if type in (AbstractQuantity, AbstractGenericQuantity)
+        @eval QuantityArray(v::AbstractArray{<:$base_type}, d::AbstractDimensions) = QuantityArray(v, d, $default_type)
     end
 end
 QuantityArray(v::QA) where {Q<:UnionAbstractQuantity,QA<:AbstractArray{Q}} =

@@ -3,7 +3,6 @@ module Units
 import ..DEFAULT_DIM_TYPE
 import ..DEFAULT_VALUE_TYPE
 import ..DEFAULT_QUANTITY_TYPE
-import ..RealQuantity
 
 @assert DEFAULT_VALUE_TYPE == Float64 "`units.jl` must be updated to support a different default value type."
 
