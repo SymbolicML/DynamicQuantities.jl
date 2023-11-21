@@ -1,7 +1,7 @@
 module DynamicQuantities
 
 export Units, Constants
-export AbstractDimensions, AbstractQuantity, AbstractGenericQuantity, UnionAbstractQuantity
+export AbstractDimensions, AbstractQuantity, AbstractGenericQuantity, AbstractRealQuantity, UnionAbstractQuantity
 export Quantity, GenericQuantity, RealQuantity, Dimensions, SymbolicDimensions, QuantityArray, DimensionError
 export ustrip, dimension
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
