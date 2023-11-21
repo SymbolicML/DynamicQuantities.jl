@@ -25,13 +25,6 @@ end
     return output
 end
 
-for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
-    @eval Base.convert(::Type{$base_type}, q::$type) = q
-end
-function Base.convert(::Type{T}, q::UnionAbstractQuantity) where {T<:Number}
-    @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
-    return convert(T, ustrip(q))
-end
 function Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
     return Dimensions{promote_type(R1,R2)}
 end
@@ -106,6 +99,21 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
         end
         function Base.promote_rule(::Type{T2}, ::Type{Q}) where {T,D,Q<:$type{T,D},T2<:BASE_NUMERIC_TYPES}
             return with_type_parameters(promote_quantity_on_value(Q, T2), promote_type(T, T2), D)
+        end
+    end
+end
+
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        function (::Type{T})(q::$type) where {T<:Number}
+            @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
+            return convert(T, ustrip(q))
+        end
+        function Base.convert(::Type{T}, q::$type) where {T<:Number}
+            return T(q)
+        end
+        function Base.convert(::Type{$base_type}, q::$type)
+            return q
         end
     end
 end
@@ -298,9 +306,13 @@ tryrationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)
 Base.showerror(io::IO, e::DimensionError) = print(io, "DimensionError: ", e.q1, " and ", e.q2, " have incompatible dimensions")
 Base.showerror(io::IO, e::DimensionError{<:Any,Nothing}) = print(io, "DimensionError: ", e.q1, " is not dimensionless")
 
-Base.convert(::Type{Q}, q::UnionAbstractQuantity) where {Q<:UnionAbstractQuantity} = q
-Base.convert(::Type{Q}, q::UnionAbstractQuantity) where {T,Q<:UnionAbstractQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
-Base.convert(::Type{Q}, q::UnionAbstractQuantity) where {T,D,Q<:UnionAbstractQuantity{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        Base.convert(::Type{Q}, q::$type) where {Q<:UnionAbstractQuantity} = q
+        Base.convert(::Type{Q}, q::$type) where {T,Q<:UnionAbstractQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
+        Base.convert(::Type{Q}, q::$type) where {T,D,Q<:UnionAbstractQuantity{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))
+    end
+end
 
 Base.convert(::Type{D}, d::AbstractDimensions) where {D<:AbstractDimensions} = d
 Base.convert(::Type{D}, d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D(d)

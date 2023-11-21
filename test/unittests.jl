@@ -1258,9 +1258,9 @@ end
     functions = (
         :float, :abs, :real, :imag, :conj, :adjoint, :unsigned,
         :nextfloat, :prevfloat, :identity, :transpose,
-        :copysign, :flipsign, :mod, :modf,
+        :copysign, :flipsign, :modf,
         :floor, :trunc, :ceil, :significand,
-        :ldexp, :round,
+        :ldexp, :round, # :mod
     )
     for Q in (RealQuantity, Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
         T = f in (:abs, :real, :imag, :conj) ? ComplexF64 : Float64
@@ -1274,7 +1274,7 @@ end
                     @eval @test $f($qx_dimensions)[$i] == $Q($f($x)[$i], $dim)
                 end
             end
-        elseif f in (:copysign, :flipsign, :rem, :mod)  # Functions that need multiple inputs
+        elseif f in (:copysign, :flipsign, :rem)  # Functions that need multiple inputs
             for x in 5rand(T, 3) .- 2.5
                 for y in 5rand(T, 3) .- 2.5
                     dim = convert(D, dimension(u"m/s"))

@@ -47,6 +47,18 @@ end
 # Assorted calls found by Aqua: ################################################
 ################################################################################
 
+function Complex(q::AbstractRealQuantity)
+    @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
+    return Complex(ustrip(q))
+end
+function Complex{T}(q::AbstractRealQuantity) where {T<:Real}
+    @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
+    return Complex{T}(ustrip(q))
+end
+function Bool(q::AbstractRealQuantity)
+    @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
+    return Bool(ustrip(q))
+end
 for type in (Signed, Float64, Float32, Rational), op in (:flipsign, :copysign)
     @eval function Base.$(op)(x::$type, y::AbstractRealQuantity)
         return $(op)(x, ustrip(y))
