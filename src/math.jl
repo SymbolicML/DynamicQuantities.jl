@@ -76,7 +76,7 @@ end
 Base.:-(l::UnionAbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 
 # Combining different abstract types
-for op in (:*, :/, :+, :-, :atan, :atand, :copysign, :flipsign, :mod),
+for op in (:*, :/, :+, :-, :atan, :atand, :copysign, :flipsign),
     (t1, _, _) in ABSTRACT_QUANTITY_TYPES,
     (t2, _, _) in ABSTRACT_QUANTITY_TYPES
 
@@ -193,7 +193,7 @@ for f in (
         return new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
     end
 end
-for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:copysign, :flipsign, :mod)
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:copysign, :flipsign,)
     # These treat the x as the magnitude, so we take the dimensions from there,
     # and ignore any dimensions on y, since those will cancel out.
     @eval begin
@@ -206,6 +206,41 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:copysign, :flipsign,
         end
         function Base.$f(x::$base_type, y::$type)
             return $f(x, ustrip(y))
+        end
+    end
+end
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:rem, :mod)
+    # Need to define all rounding modes to avoid ambiguities
+    rounding_modes = if f == :rem
+        (RoundingMode, typeof.((RoundToZero, RoundDown, RoundUp, RoundFromZero))...)
+    else
+        (nothing,)
+    end
+    for rounding_mode in rounding_modes
+        param, extra_f_args = if rounding_mode == RoundingMode
+            # Add default:
+            ((), (:RoundToZero,))
+        elseif f == :rem
+            ((:(::$rounding_mode),), (:($rounding_mode()),))
+        else # :mod
+            ((), ())
+        end
+        for (type2, _, _) in ABSTRACT_QUANTITY_TYPES
+            @eval function Base.$f(x::$type, y::$type2, $(param...))
+                x, y = promote_except_value(x, y)
+                dimension(x) == dimension(y) || throw(DimensionError(x, y))
+                return new_quantity(typeof(x), $f(ustrip(x), ustrip(y), $(extra_f_args...)), dimension(x))
+            end
+        end
+        @eval begin
+            function Base.$f(x::$type, y::$base_type, $(param...))
+                iszero(dimension(x)) || throw(DimensionError(x))
+                return new_quantity(typeof(x), $f(ustrip(x), y, $(extra_f_args...)), dimension(x))
+            end
+            function Base.$f(x::$base_type, y::$type, $(param...))
+                iszero(dimension(y)) || throw(DimensionError(y))
+                return new_quantity(typeof(y), $f(x, ustrip(y), $(extra_f_args...)), dimension(y))
+            end
         end
     end
 end
