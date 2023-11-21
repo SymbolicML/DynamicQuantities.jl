@@ -1,4 +1,5 @@
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+    div_base_type = type == AbstractGenericQuantity ? Number : base_type
     @eval begin
         function Base.:*(l::$type, r::$type)
             l, r = promote_except_value(l, r)
@@ -20,7 +21,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
         function Base.:/(l::$type, r::$base_type)
             new_quantity(typeof(l), ustrip(l) / r, dimension(l))
         end
-        function Base.div(x::$type, y::$base_type, r::RoundingMode=RoundToZero)
+        function Base.div(x::$type, y::$div_base_type, r::RoundingMode=RoundToZero)
             new_quantity(typeof(x), div(ustrip(x), y, r), dimension(x))
         end
 
@@ -30,7 +31,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
         function Base.:/(l::$base_type, r::$type)
             new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
         end
-        function Base.div(x::$base_type, y::$type, r::RoundingMode=RoundToZero)
+        function Base.div(x::$div_base_type, y::$type, r::RoundingMode=RoundToZero)
             new_quantity(typeof(y), div(x, ustrip(y), r), inv(dimension(y)))
         end
 
