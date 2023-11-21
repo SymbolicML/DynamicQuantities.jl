@@ -197,16 +197,6 @@ const ABSTRACT_QUANTITY_TYPES = (
     (AbstractRealQuantity, Real, RealQuantity)
 )
 
-"""
-    promote_quantity(::Type{<:UnionAbstractQuantity}, t::Type{<:Any})
-
-Find the next quantity type in the hierarchy that can accommodate the type `t`.
-If the current quantity type can already accommodate `t`, then the current type is returned.
-"""
-promote_quantity(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Any}) = GenericQuantity
-promote_quantity(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Number}) = Quantity
-promote_quantity(::Type{<:RealQuantity}, ::Type{<:Real}) = RealQuantity
-promote_quantity(T, _) = T
 
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
@@ -230,7 +220,7 @@ const DEFAULT_QUANTITY_TYPE = RealQuantity{DEFAULT_VALUE_TYPE, DEFAULT_DIM_TYPE}
     return constructorof(D)(dims...)
 end
 @inline function new_quantity(::Type{Q}, val, dims) where {Q<:UnionAbstractQuantity}
-    Qout = promote_quantity(Q, typeof(val))
+    Qout = promote_quantity_on_value(Q, typeof(val))
     return constructorof(Qout)(val, dims)
 end
 

@@ -35,30 +35,51 @@ end
 function Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
     return Dimensions{promote_type(R1,R2)}
 end
-for (_, _, concrete_type) in ABSTRACT_QUANTITY_TYPES
-    @eval function Base.promote_rule(::Type{<:$concrete_type{T1,D1}}, ::Type{<:$concrete_type{T2,D2}}) where {T1,T2,D1,D2}
-        return $concrete_type{promote_type(T1,T2),promote_type(D1,D2)}
+
+# Define all the quantity x quantity promotion rules
+"""
+    promote_quantity_on_value(Q::Type, T::Type)
+
+Find the next quantity type in the hierarchy that can accommodate the type `T`.
+If the current quantity type can already accommodate `T`, then the current type is returned.
+For example, `promote_quantity_on_value(Quantity, Float64)` would return `Quantity`, and
+`promote_quantity_on_value(RealQuantity, String)` would return `GenericQuantity`.
+The user should overload this function to define a custom type hierarchy.
+
+Also see `promote_quantity_on_quantity`.
+"""
+@inline promote_quantity_on_value(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Any}) = GenericQuantity
+@inline promote_quantity_on_value(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Number}) = Quantity
+@inline promote_quantity_on_value(::Type{<:RealQuantity}, ::Type{<:Real}) = RealQuantity
+@inline promote_quantity_on_value(T, _) = T
+
+"""
+    promote_quantity_on_quantity(Q1, Q2)
+
+Defines the type hierarchy for quantities, returning the most specific type
+that is compatible with both input quantity types. For example,
+`promote_quantity_on_quantity(Quantity, GenericQuantity)` would return `GenericQuantity`,
+as it can store both `Quantity` and `GenericQuantity` values.
+Similarly, `promote_quantity_on_quantity(RealQuantity, RealQuantity)` would return `RealQuantity`,
+as that is the most specific type.
+
+Also see `promote_quantity_on_value`.
+"""
+@inline promote_quantity_on_quantity(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}) = GenericQuantity
+@inline promote_quantity_on_quantity(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Union{Quantity,RealQuantity}}) = Quantity
+@inline promote_quantity_on_quantity(::Type{<:RealQuantity}, ::Type{<:RealQuantity}) = RealQuantity
+@inline promote_quantity_on_quantity(::Type{Q}, ::Type{Q}) where {Q<:UnionAbstractQuantity} = Q
+
+for (type1, _, _) in ABSTRACT_QUANTITY_TYPES, (type2, _, _) in ABSTRACT_QUANTITY_TYPES
+    @eval function Base.promote_rule(::Type{Q1}, ::Type{Q2}) where {T1,T2,D1,D2,Q1<:$type1{T1,D1},Q2<:$type2{T2,D2}}
+        return with_type_parameters(
+            promote_quantity_on_quantity(Q1, Q2),
+            promote_type(T1, T2),
+            promote_type(D1, D2),
+        )
     end
 end
 
-function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:GenericQuantity{T2,D2}}) where {T1,T2,D1,D2}
-    return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
-end
-function Base.promote_rule(::Type{<:GenericQuantity{T1,D1}}, ::Type{<:Quantity{T2,D2}}) where {T1,T2,D1,D2}
-    return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
-end
-function Base.promote_rule(::Type{<:GenericQuantity{T1,D1}}, ::Type{<:RealQuantity{T2,D2}}) where {T1,T2,D1,D2}
-    return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
-end
-function Base.promote_rule(::Type{<:RealQuantity{T1,D1}}, ::Type{<:GenericQuantity{T2,D2}}) where {T1,T2,D1,D2}
-    return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
-end
-function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:RealQuantity{T2,D2}}) where {T1,T2,D1,D2}
-    return Quantity{promote_type(T1,T2),promote_type(D1,D2)}
-end
-function Base.promote_rule(::Type{<:RealQuantity{T1,D1}}, ::Type{<:Quantity{T2,D2}}) where {T1,T2,D1,D2}
-    return Quantity{promote_type(T1,T2),promote_type(D1,D2)}
-end
 
 # Define promotion rules for all basic numeric types, individually.
 # We don't want to define an opinionated promotion on <:Number,
@@ -84,10 +105,10 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
             return new_quantity(Q, convert(T, x), D())
         end
         function Base.promote_rule(::Type{Q}, ::Type{T2}) where {T,D,Q<:$type{T,D},T2<:BASE_NUMERIC_TYPES}
-            return with_type_parameters(promote_quantity(Q, T2), promote_type(T, T2), D)
+            return with_type_parameters(promote_quantity_on_value(Q, T2), promote_type(T, T2), D)
         end
         function Base.promote_rule(::Type{T2}, ::Type{Q}) where {T,D,Q<:$type{T,D},T2<:BASE_NUMERIC_TYPES}
-            return with_type_parameters(promote_quantity(Q, T2), promote_type(T, T2), D)
+            return with_type_parameters(promote_quantity_on_value(Q, T2), promote_type(T, T2), D)
         end
     end
     for numeric_type in AMBIGUOUS_NUMERIC_TYPES
@@ -96,10 +117,10 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
                 return new_quantity(Q, convert(T, x), D())
             end
             function Base.promote_rule(::Type{Q}, ::Type{$numeric_type}) where {T,D,Q<:$type{T,D}}
-                return with_type_parameters(promote_quantity(Q, $numeric_type), promote_type(T, $numeric_type), D)
+                return with_type_parameters(promote_quantity_on_value(Q, $numeric_type), promote_type(T, $numeric_type), D)
             end
             function Base.promote_rule(::Type{$numeric_type}, ::Type{Q}) where {T,D,Q<:$type{T,D}}
-                return with_type_parameters(promote_quantity(Q, $numeric_type), promote_type(T, $numeric_type), D)
+                return with_type_parameters(promote_quantity_on_value(Q, $numeric_type), promote_type(T, $numeric_type), D)
             end
         end
     end
