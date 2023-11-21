@@ -515,6 +515,8 @@ end
     @test promote_type(GenericQuantity{Float32,D}, GenericQuantity{Float64,D}) == GenericQuantity{Float64,D}
     @test promote_type(SymbolicDimensions{Rational{Int}}, SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}) == SymbolicDimensions{Rational{Int}}
     @test promote_type(Dimensions{Rational{Int}}, SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}) == Dimensions{Rational{Int}}
+
+    @test promote_quantity_on_quantity(RealQuantity, RealQuantity) == RealQuantity
 end
 
 struct MyDimensions{R} <: AbstractDimensions{R}
@@ -777,12 +779,13 @@ end
         @test promote_type(typeof(u"km/s"), typeof(convert(Quantity{Float32}, u"km/s"))) <: Quantity{Float64}
 
         x = FixedRational{Int32,100}(1)
-        @test promote_type(typeof(x), typeof(true)) == typeof(x)
-        @test promote_type(typeof(true), typeof(x)) == typeof(x)
-        @test promote_type(typeof(x), typeof(BigFloat(1))) == promote_type(Rational{Int32}, BigFloat)
-        @test promote_type(typeof(BigFloat(1)), typeof(x)) == promote_type(Rational{Int32}, BigFloat)
-        @test promote_type(typeof(x), typeof(π)) == promote_type(Rational{Int32}, typeof(π))
-        @test promote_type(typeof(π), typeof(x)) == promote_type(Rational{Int32}, typeof(π))
+        # Need explicit `promote_rule` calls here so coverage picks it up
+        @test promote_rule(typeof(x), typeof(true)) == typeof(x)
+        @test promote_rule(typeof(true), typeof(x)) == typeof(x)
+        @test promote_rule(typeof(x), typeof(BigFloat(1))) == promote_type(Rational{Int32}, BigFloat)
+        @test promote_rule(typeof(BigFloat(1)), typeof(x)) == promote_type(Rational{Int32}, BigFloat)
+        @test promote_rule(typeof(x), typeof(π)) == promote_type(Rational{Int32}, typeof(π))
+        @test promote_rule(typeof(π), typeof(x)) == promote_type(Rational{Int32}, typeof(π))
     end
 
     @testset "Weakref" begin
