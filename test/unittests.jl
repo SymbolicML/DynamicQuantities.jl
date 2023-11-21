@@ -821,7 +821,14 @@ end
 
     @testset "Complex numbers" begin
         for Q in (RealQuantity, Quantity, GenericQuantity)
-            # Bool stuff
+            x = 1.0im
+            y = Q(0.5u"m")
+            @test typeof(x * y) == with_type_parameters(promote_quantity_on_value(Q, ComplexF64), Complex{Float64}, DEFAULT_DIM_TYPE)
+            @test typeof(y * x) == with_type_parameters(promote_quantity_on_value(Q, ComplexF64), Complex{Float64}, DEFAULT_DIM_TYPE)
+            @test ustrip(x * y) == 0.5im
+            @test ustrip(y * x) == 0.5im
+
+            # Bool version
             x = true * im
             y = Q(0.5u"m")
             @test typeof(x * y) == with_type_parameters(promote_quantity_on_value(Q, ComplexF64), Complex{Float64}, DEFAULT_DIM_TYPE)
