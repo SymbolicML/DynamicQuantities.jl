@@ -15,7 +15,7 @@ and so can be used in most places where a normal array would be used, including 
 # Constructors
 
 - `QuantityArray(v::AbstractArray, d::AbstractDimensions)`: Create a `QuantityArray` with value `v` and dimensions `d`,
-  using `Quantity` if it is numeric, and `GenericQuantity` otherwise.
+  using `Quantity` if the eltype of `v` is numeric, and `GenericQuantity` otherwise.
 - `QuantityArray(v::AbstractArray{<:Number}, q::AbstractQuantity)`: Create a `QuantityArray` with value `v` and dimensions inferred
    with `dimension(q)`. This is so that you can easily create an array with the units module, like so:
    ```julia
