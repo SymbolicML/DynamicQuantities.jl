@@ -204,7 +204,7 @@ end
 ############################## Same dimension as input ##################################
 for f in (
     :float, :abs, :real, :imag, :conj, :adjoint, :unsigned,
-    :nextfloat, :prevfloat, :identity, :transpose, :significand
+    :nextfloat, :prevfloat, :transpose, :significand
 )
     @eval function Base.$f(q::UnionAbstractQuantity)
         return new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
