@@ -205,13 +205,13 @@ end
     @test adjoint(ustrip(x^2)) ≈ adjoint(x^2) / u"m/s"^2
 
     # Can create by division as well:
-    x = 1.0u"km/s" / (1.0 + 0.5im)
+    x = RealQuantity(1.0u"km/s") / (1.0 + 0.5im)
     @test typeof(x) == Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
     @test ustrip(x) ≈ 1000.0 / (1.0 + 0.5im)
     @test ulength(x) == 1.0
     @test utime(x) == -1.0
 
-    x = (1.0 + 0.5im) / (1.0u"km/s")
+    x = (1.0 + 0.5im) / RealQuantity(1.0u"km/s")
     @test typeof(x) == Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
     @test ustrip(x) ≈ (1.0 + 0.5im) / 1000.0
     @test ulength(x) == -1.0
