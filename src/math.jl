@@ -76,20 +76,17 @@ end
 Base.:-(l::UnionAbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 
 # Combining different abstract types
-for op in (:*, :/, :+, :-, :atan, :atand, :copysign, :flipsign),
+for op in (:*, :/, :+, :-, :atan, :atand, :copysign, :flipsign, :div),
     (t1, _, _) in ABSTRACT_QUANTITY_TYPES,
     (t2, _, _) in ABSTRACT_QUANTITY_TYPES
 
     t1 == t2 && continue
 
-    @eval Base.$op(l::$t1, r::$t2) = $op(promote_except_value(l, r)...)
-end
-# different methods needed:
-for (t1, _, _) in ABSTRACT_QUANTITY_TYPES, (t2, _, _) in ABSTRACT_QUANTITY_TYPES
-
-    t1 == t2 && continue
-
-    @eval Base.div(x::$t1, y::$t2, r::RoundingMode=RoundToZero) = div(promote_except_value(x, y)..., r)
+    if op == :div
+        @eval Base.$op(x::$t1, y::$t2, r::RoundingMode=RoundToZero) = $op(promote_except_value(x, y)..., r)
+    else
+        @eval Base.$op(l::$t1, r::$t2) = $op(promote_except_value(l, r)...)
+    end
 end
 
 # We don't promote on the dimension types:
@@ -211,11 +208,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:copysign, :flipsign,
 end
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:rem, :mod)
     # Need to define all rounding modes to avoid ambiguities
-    rounding_modes = if f == :rem
-        (RoundingMode, typeof.((RoundToZero, RoundDown, RoundUp, RoundFromZero))...)
-    else
-        (nothing,)
-    end
+    rounding_modes = f == :rem ? (RoundingMode, typeof.((RoundToZero, RoundDown, RoundUp, RoundFromZero))...) : (nothing,)
     for rounding_mode in rounding_modes
         param, extra_f_args = if rounding_mode == RoundingMode
             # Add default:
