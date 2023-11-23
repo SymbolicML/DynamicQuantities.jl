@@ -105,17 +105,12 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
     end
 end
 
-for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         function (::Type{T})(q::$type) where {T<:Number}
+            q isa T && return q
             @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
             return convert(T, ustrip(q))
-        end
-        function Base.convert(::Type{T}, q::$type) where {T<:Number}
-            return T(q)
-        end
-        function Base.convert(::Type{$base_type}, q::$type)
-            return q
         end
     end
 end
