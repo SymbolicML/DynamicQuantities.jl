@@ -89,11 +89,13 @@ const BASE_NUMERIC_TYPES = Union{
     Rational{BigInt},
 }
 
-for (type, _, _) in ABSTRACT_QUANTITY_TYPES 
-    @eval begin
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+    !(base_type <: Number) && @eval begin
         function Base.convert(::Type{Q}, x::BASE_NUMERIC_TYPES) where {T,D,Q<:$type{T,D}}
             return new_quantity(Q, convert(T, x), D())
         end
+    end
+    @eval begin
         function Base.promote_rule(::Type{Q}, ::Type{T2}) where {T,D,Q<:$type{T,D},T2<:BASE_NUMERIC_TYPES}
             return with_type_parameters(promote_quantity_on_value(Q, T2), promote_type(T, T2), D)
         end
@@ -268,7 +270,7 @@ end
 Base.one(::Type{D}) where {D<:AbstractDimensions} = D()
 Base.one(::D) where {D<:AbstractDimensions} = one(D)
 
-# Additive identities (zero)
+# Additive identities (zero). We have to invalidate these due to different behavior with conversion
 Base.zero(q::Q) where {Q<:UnionAbstractQuantity} = new_quantity(Q, zero(ustrip(q)), dimension(q))
 Base.zero(::AbstractDimensions) = error("There is no such thing as an additive identity for a `AbstractDimensions` object, as + is only defined for `UnionAbstractQuantity`.")
 Base.zero(::Type{<:UnionAbstractQuantity}) = error("Cannot create an additive identity for a `UnionAbstractQuantity` type, as the dimensions are unknown. Please use `zero(::UnionAbstractQuantity)` instead.")
@@ -316,6 +318,10 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES, (type2, _, _) in ABSTRACT_QUANTITY_
         Base.convert(::Type{Q}, q::$type) where {T,Q<:$type2{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
         Base.convert(::Type{Q}, q::$type) where {T,D,Q<:$type2{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))
     end
+    # TODO: This invalidates some methods. But we have to, because
+    # the conversion in `number.jl` has a type assertion step, whereas
+    # we want to allow things like `convert(Quantity{Float64}, 1.0u"m")`,
+    # with the type for the dimensions being inferred.
 end
 
 Base.convert(::Type{D}, d::AbstractDimensions) where {D<:AbstractDimensions} = d
