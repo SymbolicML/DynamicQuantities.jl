@@ -189,6 +189,12 @@ end
 
 end
 
+@testset "Ranges" begin
+    x = [xi for xi in 0.0u"km/s":0.1u"km/s":1.0u"km/s"]
+    @test x[2] == 0.1u"km/s"
+    @test x[end] == 1.0u"km/s"
+end
+
 @testset "Complex numbers" begin
     x = (0.5 + 0.6im) * u"km/s"
     @test string(x) == "(500.0 + 600.0im) m s⁻¹"
