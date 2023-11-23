@@ -847,6 +847,26 @@ end
             out = x ^ (1 + 2im)
             @test typeof(out) == with_type_parameters(promote_quantity_on_value(Q, ComplexF64), Complex{Float64}, DEFAULT_DIM_TYPE)
             @test ustrip(out) ≈ 0.5 ^ (1 + 2im)
+
+            for CT in (Complex, Complex{Float32})
+                x = Q(1.0)
+                @test CT(x) == CT(1.0)
+                @test typeof(CT(x)) <: CT
+                x = Q(1.0, length=1)
+                @test_throws AssertionError CT(x)
+            end
+        end
+    end
+
+    @testset "Bool" begin
+        for Q in (RealQuantity, Quantity, GenericQuantity)
+            x = Q(1.0u"1")
+            @test Bool(x) == true
+            @test Bool(ustrip(x)) == true
+            @test Bool(Q(0.0u"m")) == false
+            @test Bool(ustrip(Q(0.0u"m"))) == false
+            x = Q(1.0u"m")
+            @test_throws AssertionError Bool(x)
         end
     end
 end
@@ -1266,7 +1286,7 @@ end
         :nextfloat, :prevfloat, :identity, :transpose,
         :copysign, :flipsign, :modf,
         :floor, :trunc, :ceil, :significand,
-        :ldexp, :round, # :mod
+        :ldexp, :round, :mod, :rem
     )
     for Q in (RealQuantity, Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
         T = f in (:abs, :real, :imag, :conj) ? ComplexF64 : Float64
@@ -1280,17 +1300,31 @@ end
                     @eval @test $f($qx_dimensions)[$i] == $Q($f($x)[$i], $dim)
                 end
             end
-        elseif f in (:copysign, :flipsign, :rem)  # Functions that need multiple inputs
+        elseif f in (:copysign, :flipsign, :rem, :mod)  # Functions that need multiple inputs
             for x in 5rand(T, 3) .- 2.5
                 for y in 5rand(T, 3) .- 2.5
                     dim = convert(D, dimension(u"m/s"))
                     qx_dimensions = Q(x, dim)
                     qy_dimensions = Q(y, dim)
                     @eval @test $f($qx_dimensions, $qy_dimensions) == $Q($f($x, $y), $dim)
-                    if f in (:copysign, :flipsign, :mod)
+                    if f in (:copysign, :flipsign)
                         # Also do test without dimensions
                         @eval @test $f($x, $qy_dimensions) == $f($x, $y)
                         @eval @test $f($qx_dimensions, $y) == $Q($f($x, $y), $dim)
+                    elseif f in (:rem, :mod)
+                        # Also do test without dimensions (need dimensionless)
+                        qx_dimensionless = Q(x, D)
+                        qy_dimensionless = Q(y, D)
+                        @eval @test $f($x, $qy_dimensionless) == $Q($f($x, $y), $D)
+                        @eval @test $f($qx_dimensionless, $y) == $Q($f($x, $y), $D)
+                        @eval @test_throws DimensionError $f($qx_dimensions, $y)
+                        @eval @test_throws DimensionError $f($x, $qy_dimensions)
+                        if f == :rem
+                            # Can also do other rounding modes
+                            for r in (:RoundFromZero, :RoundNearest, :RoundUp, :RoundDown)
+                                @eval @test $f($qx_dimensions, $qy_dimensions, $r) == $Q($f($x, $y, $r), $dim)
+                            end
+                        end
                     end
                 end
             end

@@ -55,7 +55,7 @@ end
 Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
 Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 
-# Defines + and -
+# Defines +, -, and mod
 for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-, :mod)
     # Only define `mod` on `Number` types:
     base_type = (op == :mod && !(true_base_type <: Number)) ? Number : true_base_type
