@@ -60,15 +60,17 @@ for type in (:(Complex), :(Complex{Bool}))
         function Base.:*(l::AbstractRealQuantity, r::$type)
             new_quantity(typeof(l), ustrip(l) * r, dimension(l))
         end
-        function $type(q::AbstractRealQuantity)
-            @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
-            return $type(ustrip(q))
-        end
     end
 end
-function Bool(q::AbstractRealQuantity)
+function Complex{T}(q::AbstractRealQuantity) where {T<:Real}
     @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
-    return Bool(ustrip(q))
+    return Complex{T}(ustrip(q))
+end
+for type in (:Bool, :Complex)
+    @eval function $type(q::AbstractRealQuantity)
+        @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
+        return $type(ustrip(q))
+    end
 end
 function Base.:/(l::Complex, r::AbstractRealQuantity)
     new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))

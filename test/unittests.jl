@@ -848,7 +848,7 @@ end
             @test typeof(out) == with_type_parameters(promote_quantity_on_value(Q, ComplexF64), Complex{Float64}, DEFAULT_DIM_TYPE)
             @test ustrip(out) ≈ 0.5 ^ (1 + 2im)
 
-            for CT in (Complex, Complex{Float32})
+            for CT in (Complex, Complex{Bool})
                 x = Q(1.0)
                 @test CT(x) == CT(1.0)
                 @test typeof(CT(x)) <: CT
