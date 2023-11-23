@@ -56,7 +56,9 @@ Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
 Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 
 # Defines + and -
-for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-)
+for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-, :mod)
+    # Only define `mod` on `Number` types:
+    base_type = (op == :mod && !(true_base_type <: Number)) ? Number : true_base_type
     @eval begin
         function Base.$op(l::$type, r::$type)
             l, r = promote_except_value(l, r)
@@ -77,7 +79,7 @@ end
 Base.:-(l::UnionAbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 
 # Combining different abstract types
-for op in (:*, :/, :+, :-, :atan, :atand, :copysign, :flipsign, :div),
+for op in (:*, :/, :+, :-, :atan, :atand, :copysign, :flipsign, :div, :mod),
     (t1, _, _) in ABSTRACT_QUANTITY_TYPES,
     (t2, _, _) in ABSTRACT_QUANTITY_TYPES
 
@@ -231,30 +233,6 @@ for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES, rounding_mode in (Roun
         function Base.rem(x::$base_type, y::$type, $(param...))
             iszero(dimension(y)) || throw(DimensionError(y))
             return new_quantity(typeof(y), rem(x, ustrip(y), $(extra_f_args...)), dimension(y))
-        end
-    end
-end
-# Define :mod
-for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES
-
-    # We don't want to go more generic than `Number` for mod and rem
-    base_type = true_base_type <: Number ? true_base_type : Number
-
-    for (type2, _, _) in ABSTRACT_QUANTITY_TYPES
-        @eval function Base.mod(x::$type, y::$type2)
-            x, y = promote_except_value(x, y)
-            dimension(x) == dimension(y) || throw(DimensionError(x, y))
-            return new_quantity(typeof(x), mod(ustrip(x), ustrip(y)), dimension(x))
-        end
-    end
-    @eval begin
-        function Base.mod(x::$type, y::$base_type)
-            iszero(dimension(x)) || throw(DimensionError(x))
-            return new_quantity(typeof(x), mod(ustrip(x), y), dimension(x))
-        end
-        function Base.mod(x::$base_type, y::$type)
-            iszero(dimension(y)) || throw(DimensionError(y))
-            return new_quantity(typeof(y), mod(x, ustrip(y)), dimension(y))
         end
     end
 end
