@@ -52,12 +52,13 @@ struct QuantityArray{T,N,D<:AbstractDimensions,Q<:UnionAbstractQuantity{T,D},V<:
     end
 end
 
-# Construct with a Quantity (easier, as you can use the units):
 QuantityArray(v::AbstractArray; kws...) = QuantityArray(v, DEFAULT_DIM_TYPE(; kws...))
 for (type, base_type, default_type) in ABSTRACT_QUANTITY_TYPES
-    @eval begin
-        QuantityArray(v::AbstractArray{<:$base_type}, q::$type) = QuantityArray(v .* ustrip(q), dimension(q), typeof(q))
-        QuantityArray(v::AbstractArray{<:$base_type}, d::AbstractDimensions) = QuantityArray(v, d, $default_type)
+    @eval QuantityArray(v::AbstractArray{<:$base_type}, q::$type) = QuantityArray(v .* ustrip(q), dimension(q), typeof(q))
+
+    # Only define defaults for Quantity and GenericQuantity. Other types, the user needs to declare explicitly.
+    if type in (AbstractQuantity, AbstractGenericQuantity)
+        @eval QuantityArray(v::AbstractArray{<:$base_type}, d::AbstractDimensions) = QuantityArray(v, d, $default_type)
     end
 end
 QuantityArray(v::QA) where {Q<:UnionAbstractQuantity,QA<:AbstractArray{Q}} =

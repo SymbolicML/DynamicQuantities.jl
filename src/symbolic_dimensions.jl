@@ -104,9 +104,9 @@ end
     uexpand(q::UnionAbstractQuantity{<:Any,<:SymbolicDimensions})
 
 Expand the symbolic units in a quantity to their base SI form.
-In other words, this converts a `Quantity` with `SymbolicDimensions`
+In other words, this converts a quantity with `SymbolicDimensions`
 to one with `Dimensions`. The opposite of this function is `uconvert`,
-for converting to specific symbolic units, or `convert(Quantity{<:Any,<:SymbolicDimensions}, q)`,
+for converting to specific symbolic units, or, e.g., `convert(Quantity{<:Any,<:SymbolicDimensions}, q)`,
 for assuming SI units as the output symbols.
 """
 function uexpand(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:UnionAbstractQuantity{T,D}}
@@ -264,6 +264,8 @@ function map_dimensions(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R
     return SymbolicDimensions(I, V)
 end
 
+const DEFAULT_SYMBOLIC_QUANTITY_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE, DEFAULT_VALUE_TYPE, SymbolicDimensions{DEFAULT_DIM_BASE_TYPE})
+
 """
     SymbolicUnitsParse
 
@@ -277,7 +279,8 @@ module SymbolicUnitsParse
     import ..SYMBOL_CONFLICTS
     import ..SymbolicDimensions
 
-    import ...Quantity
+    import ...constructorof
+    import ...DEFAULT_SYMBOLIC_QUANTITY_TYPE
     import ...DEFAULT_VALUE_TYPE
     import ...DEFAULT_DIM_BASE_TYPE
 
@@ -287,7 +290,8 @@ module SymbolicUnitsParse
         import ..SYMBOL_CONFLICTS
         import ..SymbolicDimensions
 
-        import ..Quantity
+        import ..constructorof
+        import ..DEFAULT_SYMBOLIC_QUANTITY_TYPE
         import ..DEFAULT_VALUE_TYPE
         import ..DEFAULT_DIM_BASE_TYPE
 
@@ -299,11 +303,11 @@ module SymbolicUnitsParse
             CONSTANT_SYMBOLS_EXIST[] || lock(CONSTANT_SYMBOLS_LOCK) do
                 CONSTANT_SYMBOLS_EXIST[] && return nothing
                 for unit in setdiff(CONSTANT_SYMBOLS, SYMBOL_CONFLICTS)
-                    @eval const $unit = Quantity(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
+                    @eval const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
                 end
                 # Evaluate conflicting symbols to non-symbolic form:
                 for unit in SYMBOL_CONFLICTS
-                    @eval const $unit = convert(Quantity{DEFAULT_VALUE_TYPE,SymbolicDimensions}, EagerConstants.$unit)
+                    @eval const $unit = convert(DEFAULT_SYMBOLIC_QUANTITY_TYPE, EagerConstants.$unit)
                 end
                 CONSTANT_SYMBOLS_EXIST[] = true
             end
@@ -318,7 +322,7 @@ module SymbolicUnitsParse
         UNIT_SYMBOLS_EXIST[] || lock(UNIT_SYMBOLS_LOCK) do
             UNIT_SYMBOLS_EXIST[] && return nothing
             for unit in UNIT_SYMBOLS
-                @eval const $unit = Quantity(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
+                @eval const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
             end
             UNIT_SYMBOLS_EXIST[] = true
         end
@@ -345,11 +349,11 @@ module SymbolicUnitsParse
         _generate_unit_symbols()
         Constants._generate_unit_symbols()
         raw_result = eval(Meta.parse(raw_string))
-        return copy(as_quantity(raw_result))::Quantity{DEFAULT_VALUE_TYPE,SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}}
+        return copy(as_quantity(raw_result))::DEFAULT_SYMBOLIC_QUANTITY_TYPE
     end
 
-    as_quantity(q::Quantity) = q
-    as_quantity(x::Number) = Quantity(convert(DEFAULT_VALUE_TYPE, x), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE})
+    as_quantity(q::DEFAULT_SYMBOLIC_QUANTITY_TYPE) = q
+    as_quantity(x::Number) = convert(DEFAULT_SYMBOLIC_QUANTITY_TYPE, x)
     as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 end
 
@@ -378,5 +382,8 @@ function Base.promote_rule(::Type{SymbolicDimensions{R1}}, ::Type{SymbolicDimens
     return SymbolicDimensions{promote_type(R1,R2)}
 end
 function Base.promote_rule(::Type{SymbolicDimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
+    return Dimensions{promote_type(R1,R2)}
+end
+function Base.promote_rule(::Type{Dimensions{R2}}, ::Type{SymbolicDimensions{R1}}) where {R1,R2}
     return Dimensions{promote_type(R1,R2)}
 end
