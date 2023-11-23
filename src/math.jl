@@ -50,6 +50,15 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
             new_quantity(typeof(r), inv(ustrip(r)), l / dimension(r))
         end
     end
+    # Comparison with exact value type, in case we had to artificially limit it to Number
+    !(base_type <: Number) && @eval begin
+        function Base.div(x::$type{T}, y::T, r::RoundingMode=RoundToZero) where {T<:$base_type}
+            new_quantity(typeof(x), div(ustrip(x), y, r), dimension(x))
+        end
+        function Base.div(x::T, y::$type{T}, r::RoundingMode=RoundToZero) where {T<:$base_type}
+            new_quantity(typeof(y), div(x, ustrip(y), r), inv(dimension(y)))
+        end
+    end
 end
 
 Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
@@ -208,10 +217,10 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:copysign, :flipsign,
     end
 end
 # Define :rem
-for (type, _base_type, _) in ABSTRACT_QUANTITY_TYPES, rounding_mode in (RoundingMode, RoundingMode{:ToZero}, RoundingMode{:Down}, RoundingMode{:Up}, RoundingMode{:FromZero})
+for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES, rounding_mode in (RoundingMode, RoundingMode{:ToZero}, RoundingMode{:Down}, RoundingMode{:Up}, RoundingMode{:FromZero})
 
     # We don't want to go more generic than `Number` for mod and rem
-    base_type = _base_type <: Number ? _base_type : Number
+    base_type = true_base_type <: Number ? true_base_type : Number
     # Add extra args:
     param = rounding_mode === RoundingMode ? (()) : (:(::$rounding_mode),)
     extra_f_args = rounding_mode === RoundingMode ? (:RoundToZero,) : (:($rounding_mode()),)
@@ -235,10 +244,10 @@ for (type, _base_type, _) in ABSTRACT_QUANTITY_TYPES, rounding_mode in (Rounding
     end
 end
 # Define :mod
-for (type, _base_type, _) in ABSTRACT_QUANTITY_TYPES
+for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES
 
     # We don't want to go more generic than `Number` for mod and rem
-    base_type = _base_type <: Number ? _base_type : Number
+    base_type = true_base_type <: Number ? true_base_type : Number
 
     for (type2, _, _) in ABSTRACT_QUANTITY_TYPES
         @eval function Base.mod(x::$type, y::$type2)

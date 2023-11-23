@@ -167,9 +167,9 @@ Base.keys(q::UnionAbstractQuantity) = keys(ustrip(q))
 
 
 # Numeric checks
-for op in (:(<=), :(<), :(>=), :(>), :isless),
-    (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
-
+for op in (:(<=), :(<), :(>=), :(>), :isless), (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES
+    # Avoid creating overly generic operations on these:
+    base_type = true_base_type <: Number ? true_base_type : Number
     @eval begin
         function Base.$(op)(l::$type, r::$type)
             l, r = promote_except_value(l, r)
@@ -186,7 +186,9 @@ for op in (:(<=), :(<), :(>=), :(>), :isless),
         end
     end
 end
-for op in (:isequal, :(==)), (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+for op in (:isequal, :(==)), (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES
+    # Avoid creating overly generic operations on these:
+    base_type = true_base_type <: Number ? true_base_type : Number
     @eval begin
         function Base.$(op)(l::$type, r::$type)
             l, r = promote_except_value(l, r)
@@ -211,7 +213,9 @@ for op in (:(<=), :(<), :(>=), :(>), :isless, :isgreater, :isequal, :(==)),
     end
 end
 # Define isapprox:
-for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES
+    # Avoid creating overly generic operations on these:
+    base_type = true_base_type <: Number ? true_base_type : Number
     @eval begin
         function Base.isapprox(l::$type, r::$type; kws...)
             dimension(l) == dimension(r) || throw(DimensionError(l, r))
@@ -306,11 +310,11 @@ tryrationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)
 Base.showerror(io::IO, e::DimensionError) = print(io, "DimensionError: ", e.q1, " and ", e.q2, " have incompatible dimensions")
 Base.showerror(io::IO, e::DimensionError{<:Any,Nothing}) = print(io, "DimensionError: ", e.q1, " is not dimensionless")
 
-for (type, _, _) in ABSTRACT_QUANTITY_TYPES
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES, (type2, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
-        Base.convert(::Type{Q}, q::$type) where {Q<:UnionAbstractQuantity} = q
-        Base.convert(::Type{Q}, q::$type) where {T,Q<:UnionAbstractQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
-        Base.convert(::Type{Q}, q::$type) where {T,D,Q<:UnionAbstractQuantity{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))
+        Base.convert(::Type{Q}, q::$type) where {Q<:$type2} = q
+        Base.convert(::Type{Q}, q::$type) where {T,Q<:$type2{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
+        Base.convert(::Type{Q}, q::$type) where {T,D,Q<:$type2{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))
     end
 end
 
