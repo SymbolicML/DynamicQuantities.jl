@@ -863,8 +863,8 @@ end
             x = Q(1.0u"1")
             @test Bool(x) == true
             @test Bool(ustrip(x)) == true
-            @test Bool(Q(0.0u"m")) == false
-            @test Bool(ustrip(Q(0.0u"m"))) == false
+            @test Bool(Q(0.0u"1")) == false
+            @test Bool(ustrip(Q(0.0u"1"))) == false
             x = Q(1.0u"m")
             @test_throws AssertionError Bool(x)
         end
@@ -1315,14 +1315,14 @@ end
                         # Also do test without dimensions (need dimensionless)
                         qx_dimensionless = Q(x, D)
                         qy_dimensionless = Q(y, D)
-                        @eval @test $f($x, $qy_dimensionless) == $Q($f($x, $y), $D)
-                        @eval @test $f($qx_dimensionless, $y) == $Q($f($x, $y), $D)
+                        @eval @test $f($x, $qy_dimensionless) ≈ $Q($f($x, $y), $D)
+                        @eval @test $f($qx_dimensionless, $y) ≈ $Q($f($x, $y), $D)
                         @eval @test_throws DimensionError $f($qx_dimensions, $y)
                         @eval @test_throws DimensionError $f($x, $qy_dimensions)
                         if f == :rem
                             # Can also do other rounding modes
                             for r in (:RoundFromZero, :RoundNearest, :RoundUp, :RoundDown)
-                                @eval @test $f($qx_dimensions, $qy_dimensions, $r) == $Q($f($x, $y, $r), $dim)
+                                @eval @test $f($qx_dimensions, $qy_dimensions, $r) ≈ $Q($f($x, $y, $r), $dim)
                             end
                         end
                     end

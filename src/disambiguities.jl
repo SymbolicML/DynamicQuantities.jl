@@ -47,24 +47,12 @@ end
 # Assorted calls found by Aqua: ################################################
 ################################################################################
 
-function Complex(q::AbstractRealQuantity)
-    @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
-    return Complex(ustrip(q))
-end
-function Complex{T}(q::AbstractRealQuantity) where {T<:Real}
-    @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
-    return Complex{T}(ustrip(q))
-end
-function Bool(q::AbstractRealQuantity)
-    @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
-    return Bool(ustrip(q))
-end
 for type in (Signed, Float64, Float32, Rational), op in (:flipsign, :copysign)
     @eval function Base.$(op)(x::$type, y::AbstractRealQuantity)
         return $(op)(x, ustrip(y))
     end
 end
-for type in (Complex, Complex{Bool})
+for type in (:(Complex), :(Complex{Bool}))
     @eval begin
         function Base.:*(l::$type, r::AbstractRealQuantity)
             new_quantity(typeof(r), l * ustrip(r), dimension(r))
@@ -72,7 +60,15 @@ for type in (Complex, Complex{Bool})
         function Base.:*(l::AbstractRealQuantity, r::$type)
             new_quantity(typeof(l), ustrip(l) * r, dimension(l))
         end
+        function $type(q::AbstractRealQuantity)
+            @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
+            return $type(ustrip(q))
+        end
     end
+end
+function Bool(q::AbstractRealQuantity)
+    @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
+    return Bool(ustrip(q))
 end
 function Base.:/(l::Complex, r::AbstractRealQuantity)
     new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
