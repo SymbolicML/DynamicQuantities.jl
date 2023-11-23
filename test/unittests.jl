@@ -1319,7 +1319,7 @@ end
                         @eval @test $f($qx_dimensionless, $y) ≈ $Q($f($x, $y), $D)
                         @eval @test_throws DimensionError $f($qx_dimensions, $y)
                         @eval @test_throws DimensionError $f($x, $qy_dimensions)
-                        if f == :rem
+                        if f == :rem && VERSION >= v"1.9"
                             # Can also do other rounding modes
                             for r in (:RoundFromZero, :RoundNearest, :RoundUp, :RoundDown)
                                 @eval @test $f($qx_dimensions, $qy_dimensions, $r) ≈ $Q($f($x, $y, $r), $dim)
