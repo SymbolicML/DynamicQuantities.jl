@@ -1,5 +1,5 @@
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
-    div_base_type = type == AbstractGenericQuantity ? Number : base_type
+    div_base_type = type === AbstractGenericQuantity ? Number : base_type
     @eval begin
         function Base.:*(l::$type, r::$type)
             l, r = promote_except_value(l, r)
