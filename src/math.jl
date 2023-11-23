@@ -1,5 +1,6 @@
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
-    div_base_type = type === AbstractGenericQuantity ? Number : base_type
+    # For div, we don't want to go more generic than `Number`
+    div_base_type = base_type <: Number ? base_type : Number
     @eval begin
         function Base.:*(l::$type, r::$type)
             l, r = promote_except_value(l, r)
@@ -206,34 +207,54 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:copysign, :flipsign,
         end
     end
 end
-for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:rem, :mod)
-    # Need to define all rounding modes to avoid ambiguities
-    rounding_modes = f == :rem ? (RoundingMode, typeof.((RoundToZero, RoundDown, RoundUp, RoundFromZero))...) : (nothing,)
-    for rounding_mode in rounding_modes
-        param, extra_f_args = if rounding_mode == RoundingMode
-            # Add default:
-            ((), (:RoundToZero,))
-        elseif f == :rem
-            ((:(::$rounding_mode),), (:($rounding_mode()),))
-        else # :mod
-            ((), ())
+# Define :rem
+for (type, _base_type, _) in ABSTRACT_QUANTITY_TYPES, rounding_mode in (RoundingMode, RoundingMode{:ToZero}, RoundingMode{:Down}, RoundingMode{:Up}, RoundingMode{:FromZero})
+
+    # We don't want to go more generic than `Number` for mod and rem
+    base_type = _base_type <: Number ? _base_type : Number
+    # Add extra args:
+    param = rounding_mode === RoundingMode ? (()) : (:(::$rounding_mode),)
+    extra_f_args = rounding_mode === RoundingMode ? (:RoundToZero,) : (:($rounding_mode()),)
+
+    for (type2, _, _) in ABSTRACT_QUANTITY_TYPES
+        @eval function Base.rem(x::$type, y::$type2, $(param...))
+            x, y = promote_except_value(x, y)
+            dimension(x) == dimension(y) || throw(DimensionError(x, y))
+            return new_quantity(typeof(x), rem(ustrip(x), ustrip(y), $(extra_f_args...)), dimension(x))
         end
-        for (type2, _, _) in ABSTRACT_QUANTITY_TYPES
-            @eval function Base.$f(x::$type, y::$type2, $(param...))
-                x, y = promote_except_value(x, y)
-                dimension(x) == dimension(y) || throw(DimensionError(x, y))
-                return new_quantity(typeof(x), $f(ustrip(x), ustrip(y), $(extra_f_args...)), dimension(x))
-            end
+    end
+    @eval begin
+        function Base.rem(x::$type, y::$base_type, $(param...))
+            iszero(dimension(x)) || throw(DimensionError(x))
+            return new_quantity(typeof(x), rem(ustrip(x), y, $(extra_f_args...)), dimension(x))
         end
-        @eval begin
-            function Base.$f(x::$type, y::$base_type, $(param...))
-                iszero(dimension(x)) || throw(DimensionError(x))
-                return new_quantity(typeof(x), $f(ustrip(x), y, $(extra_f_args...)), dimension(x))
-            end
-            function Base.$f(x::$base_type, y::$type, $(param...))
-                iszero(dimension(y)) || throw(DimensionError(y))
-                return new_quantity(typeof(y), $f(x, ustrip(y), $(extra_f_args...)), dimension(y))
-            end
+        function Base.rem(x::$base_type, y::$type, $(param...))
+            iszero(dimension(y)) || throw(DimensionError(y))
+            return new_quantity(typeof(y), rem(x, ustrip(y), $(extra_f_args...)), dimension(y))
+        end
+    end
+end
+# Define :mod
+for (type, _base_type, _) in ABSTRACT_QUANTITY_TYPES
+
+    # We don't want to go more generic than `Number` for mod and rem
+    base_type = _base_type <: Number ? _base_type : Number
+
+    for (type2, _, _) in ABSTRACT_QUANTITY_TYPES
+        @eval function Base.mod(x::$type, y::$type2)
+            x, y = promote_except_value(x, y)
+            dimension(x) == dimension(y) || throw(DimensionError(x, y))
+            return new_quantity(typeof(x), mod(ustrip(x), ustrip(y)), dimension(x))
+        end
+    end
+    @eval begin
+        function Base.mod(x::$type, y::$base_type)
+            iszero(dimension(x)) || throw(DimensionError(x))
+            return new_quantity(typeof(x), mod(ustrip(x), y), dimension(x))
+        end
+        function Base.mod(x::$base_type, y::$type)
+            iszero(dimension(y)) || throw(DimensionError(y))
+            return new_quantity(typeof(y), mod(x, ustrip(y)), dimension(y))
         end
     end
 end
