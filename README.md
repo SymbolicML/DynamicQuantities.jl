@@ -1,6 +1,6 @@
 <div align="center">
 
-![dyn_q_logo](https://github.com/SymbolicML/DynamicQuantities.jl/assets/7593028/10b1e6b8-f1c5-43bc-97e6-4ddb4c175293)
+<img src="https://github.com/SymbolicML/DynamicQuantities.jl/assets/7593028/10b1e6b8-f1c5-43bc-97e6-4ddb4c175293" width=500>
 
 
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://symbolicml.org/DynamicQuantities.jl/dev/)
