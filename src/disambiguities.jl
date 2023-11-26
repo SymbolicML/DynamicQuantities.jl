@@ -52,16 +52,6 @@ for type in (Signed, Float64, Float32, Rational), op in (:flipsign, :copysign)
         return $(op)(x, ustrip(y))
     end
 end
-for type in (:(Complex), :(Complex{Bool}))
-    @eval begin
-        function Base.:*(l::$type, r::AbstractRealQuantity)
-            new_quantity(typeof(r), l * ustrip(r), dimension(r))
-        end
-        function Base.:*(l::AbstractRealQuantity, r::$type)
-            new_quantity(typeof(l), ustrip(l) * r, dimension(l))
-        end
-    end
-end
 function Complex{T}(q::AbstractRealQuantity) where {T<:Real}
     @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
     return Complex{T}(ustrip(q))
@@ -71,12 +61,6 @@ for type in (:Bool, :Complex)
         @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
         return $type(ustrip(q))
     end
-end
-function Base.:/(l::Complex, r::AbstractRealQuantity)
-    new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
-end
-function Base.:/(l::AbstractRealQuantity, r::Complex)
-    new_quantity(typeof(l), ustrip(l) / r, dimension(l))
 end
 for op in (:(==), :isequal), base_type in (AbstractIrrational, AbstractFloat)
     @eval begin
