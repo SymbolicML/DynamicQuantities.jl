@@ -3,6 +3,7 @@ for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         function Base.complex(a::$type, b::$type)
             a, b = promote_except_value(a, b)
+            dimension(a) == dimension(b) || throw(DimensionError(a, b))
             return new_quantity(typeof(a), complex(ustrip(a), ustrip(b)), dimension(a))
         end
         function Base.complex(a::$type, b::$base_type)
