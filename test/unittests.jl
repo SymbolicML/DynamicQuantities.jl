@@ -1493,4 +1493,12 @@ end
     x = RealQuantity(2.0)
     y = Quantity(2.0im)
     @test typeof(x^y) <: Quantity
+
+    x = RealQuantity(2.0, length=1)
+    y = Quantity(2.0im)
+    @test_throws DimensionError x^y
+
+    x = RealQuantity(2.0)
+    y = Quantity(2.0im, mass=1)
+    @test_throws DimensionError x^y
 end
