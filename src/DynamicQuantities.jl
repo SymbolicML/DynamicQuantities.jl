@@ -17,6 +17,7 @@ include("units.jl")
 include("constants.jl")
 include("uparse.jl")
 include("symbolic_dimensions.jl")
+include("complex.jl")
 include("disambiguities.jl")
 
 include("deprecated.jl")
