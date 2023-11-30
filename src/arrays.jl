@@ -134,7 +134,7 @@ function Base.setindex!(A::QuantityArray{T,N,D,Q}, v::Q, i...) where {T,N,D,Q<:U
     dimension(A) == dimension(v) || throw(DimensionError(A, v))
     return unsafe_setindex!(A, v, i...)
 end
-function Base.setindex!(A::QuantityArray{T,N,D,Q}, v, i...) where {T,N,D,Q<:UnionAbstractQuantity}
+function Base.setindex!(A::QuantityArray{T,N,D,Q}, v::UnionAbstractQuantity, i...) where {T,N,D,Q<:UnionAbstractQuantity}
     return setindex!(A, convert(Q, v)::Q, i...)
 end
 
