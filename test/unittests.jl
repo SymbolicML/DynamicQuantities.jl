@@ -903,9 +903,9 @@ end
     end
 end
 
-for Q in (RealQuantity, Quantity, GenericQuantity)
-    @testset "Arrays" begin
-        @testset "Basics" begin
+@testset "Arrays" begin
+    for Q in (RealQuantity, Quantity, GenericQuantity)
+        @testset "Basics $Q" begin
             x = QuantityArray(randn(32), Q(u"km/s"))
             @test ustrip(sum(x)) ≈ sum(ustrip(x))
 
@@ -951,7 +951,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @inferred fv_square2(s_x)
         end
 
-        @testset "Copying" begin
+        @testset "Copying $Q" begin
             x = QuantityArray(randn(3), Q(u"km/s"))
             xc = copy(x)
             @test x == xc
@@ -959,13 +959,13 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @test x != xc
         end
 
-        @testset "Utilities" begin
+        @testset "Utilities $Q" begin
             @test fill(Q(u"m/s"), 10) == QuantityArray(fill(1.0, 10) .* Q(u"m/s"))
             @test ndims(fill(Q(u"m/s"), ())) == 0
             @test fill(Q(u"m/s"), ())[begin] == Q(u"m/s")
         end
 
-        @testset "similar" begin
+        @testset "similar $Q" begin
             qa = QuantityArray(rand(3, 4), Q(u"m"))
 
             new_qa = similar(qa)
@@ -1011,7 +1011,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @test eltype(new_qa) <: Q{Float64}
         end
 
-        @testset "Promotion" begin
+        @testset "Promotion $Q" begin
             qarr1 = QuantityArray(randn(32), convert(Dimensions{Rational{Int32}}, dimension(u"km/s")), Q)
             qarr2 = QuantityArray(randn(Float16, 32), convert(Dimensions{Rational{Int64}}, dimension(u"km/s")), Q)
 
@@ -1023,7 +1023,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @test typeof(promote(qarr1, qarr2)) == Tuple{expected_type, expected_type}
         end
 
-        @testset "Array concatenation" begin
+        @testset "Array concatenation $Q" begin
             qarr1 = QuantityArray(randn(3) .* Q(u"km/s"))
             qarr2 = QuantityArray(randn(3) .* Q(u"km/s"))
 
@@ -1046,7 +1046,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
 
         end
 
-        @testset "Generic literal_pow" begin
+        @testset "Generic literal_pow $Q" begin
             y = randn(32)
             y_q = QuantityArray(y, Q(u"m"))
 
@@ -1057,13 +1057,13 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @inferred f4v(y_q)
         end
 
-        @testset "Broadcast with single number" begin
+        @testset "Broadcast with single number $Q" begin
             ar1 = QuantityArray(randn(3), Q(u"km/s"))
             @test ustrip(ar1 .* Q(u"m/s")) == ustrip(ar1)
             @test dimension(ar1 .* Q(u"m/s")) == dimension(u"m^2/s^2")
         end
 
-        @testset "Multiple arrays" begin
+        @testset "Multiple arrays $Q" begin
             ar1 = QuantityArray(randn(3), Q(u"km/s"))
             ar2 = QuantityArray(randn(3, 1), Q(u"km/s"))
             ar3 = randn(3)
@@ -1089,13 +1089,47 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @test g(ar1, array_of_quantities, Q(u"1")) == [f(ar1[i], array_of_quantities[i], 1) for i in eachindex(ar1)]
         end
 
-        @testset "Broadcast nd-arrays" begin
+        @testset "Broadcast nd-arrays $Q" begin
             x = QuantityArray(randn(3, 3), Q(u"A"))
             y = QuantityArray(randn(3, 3), Q(u"cd"))
             @test ustrip(x .* y) == ustrip(x) .* ustrip(y)
         end
 
-        Q in (Quantity, RealQuantity) && @testset "Broadcast different arrays" begin
+        @testset "map $Q" begin
+            qa = fill(Q(2.0u"m"), 3)
+            @test map(x -> x^2, qa) == QuantityArray(fill(4.0, 3), Q(u"m^2"))
+
+            # Test that we can use a function that returns a different type
+            if Q === RealQuantity
+                qa = fill(RealQuantity(2.0u"m"), 3)
+                @test typeof(qa) <: QuantityArray{Float64,1,<:Dimensions,<:RealQuantity{Float64,<:Dimensions},<:Array}
+                qa_complex = map(x -> 1im * x, qa)
+                @test typeof(qa_complex) <: QuantityArray{ComplexF64,1,<:Dimensions,<:Quantity{ComplexF64,<:Dimensions},<:Array}
+                @test dimension(qa_complex) == dimension(u"m")
+                @test sum(qa_complex) == 6im * u"m"
+            end
+        end
+
+        @testset "Reduce and vcat $Q" begin
+            arr1 = QuantityArray([Q(us"hr")])
+            arr2 = QuantityArray([Q(us"hr")])
+
+            arr3 = vcat(arr1, arr2)
+            @test typeof(arr3) <: QuantityArray{Float64,1,<:SymbolicDimensions,<:Q{Float64,<:SymbolicDimensions},<:Array}
+            @test arr3 == QuantityArray(Q.([us"hr", us"hr"]))
+            @test uexpand(arr3) == QuantityArray(Q.([u"hr", u"hr"]))
+
+            arr4 = reduce(vcat, [arr1, arr2])
+            @test typeof(arr4) <: QuantityArray{Float64,1,<:SymbolicDimensions,<:Q{Float64,<:SymbolicDimensions},<:Array}
+            @test arr3 == arr4
+            @test all(arr3 .== arr4)
+
+            # Should work for incompatible units as well
+            @test reduce(vcat, [[0.5us"hr"], [0.5us"m"]]) == [0.5u"hr", 0.5u"m"]
+            @test typeof(reduce(vcat, [[0.5us"hr"], [0.5us"m"]])) <: Vector{<:Quantity{Float64,<:SymbolicDimensions}}
+        end
+
+        Q in (Quantity, RealQuantity) && @testset "Broadcast different arrays $Q" begin
             f(x, y, z, w) = x * y + z * w
             g(x, y, z, w) = f.(x, y, z, w)
 
@@ -1121,7 +1155,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @test typeof(b .* y) <: QuantityArray{Float64}
         end
 
-        Q in (RealQuantity, Quantity) && @testset "Broadcast scalars" begin
+        Q in (RealQuantity, Quantity) && @testset "Broadcast scalars $Q" begin
             for (x, qx) in ((0.5, 0.5u"s"), ([0.5, 0.2], GenericQuantity([0.5, 0.2], time=1)))
                 @test size(qx) == size(x)
                 @test length(qx) == length(x)
@@ -1134,7 +1168,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             end
         end
 
-        @testset "Symbolic units" begin
+        @testset "Symbolic units $Q" begin
             z_ar = randn(32)
             z = QuantityArray(z_ar, Q(us"Constants.h * km/s"))
             z_expanded = QuantityArray(z_ar .* Q(u"Constants.h * km/s"))
@@ -1151,7 +1185,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @test msg2 == msg
         end
 
-        Q == Quantity && @testset "Extra test coverage" begin
+        Q == Quantity && @testset "Extra test coverage $Q" begin
             @test_throws ErrorException DynamicQuantities.materialize_first(())
             VERSION >= v"1.8" &&
                 @test_throws "Unexpected broadcast" DynamicQuantities.materialize_first(())
