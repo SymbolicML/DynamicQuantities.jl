@@ -134,14 +134,13 @@ function Base.setindex!(A::QuantityArray{T,N,D,Q}, v::Q, i...) where {T,N,D,Q<:U
     dimension(A) == dimension(v) || throw(DimensionError(A, v))
     return unsafe_setindex!(A, v, i...)
 end
-function Base.setindex!(A::QuantityArray{T,N,D,Q}, v::UnionAbstractQuantity, i...) where {T,N,D,Q<:UnionAbstractQuantity}
-    return setindex!(A, convert(Q, v), i...)
+function Base.setindex!(A::QuantityArray{T,N,D,Q}, v, i...) where {T,N,D,Q<:UnionAbstractQuantity}
+    return setindex!(A, convert(Q, v)::Q, i...)
 end
 
 unsafe_setindex!(A, v, i...) = setindex!(ustrip(A), ustrip(v), i...)
 
 Base.IndexStyle(::Type{Q}) where {Q<:QuantityArray} = IndexStyle(array_type(Q))
-
 
 Base.similar(A::QuantityArray) = QuantityArray(similar(ustrip(A)), dimension(A), quantity_type(A))
 Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustrip(A), S), dimension(A), quantity_type(A))
@@ -149,8 +148,13 @@ Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustr
 # Unfortunately this mess of `similar` is required to avoid ambiguous methods.
 # c.f. base/abstractarray.jl
 for dim_type in (:(Dims), :(Tuple{Union{Integer,Base.OneTo},Vararg{Union{Integer,Base.OneTo}}}), :(Tuple{Integer, Vararg{Integer}}))
-    @eval Base.similar(A::QuantityArray, dims::$dim_type) = QuantityArray(similar(ustrip(A), dims), dimension(A), quantity_type(A))
-    @eval Base.similar(A::QuantityArray, ::Type{S}, dims::$dim_type) where {S} = QuantityArray(similar(ustrip(A), S, dims), dimension(A), quantity_type(A))
+    @eval begin
+        Base.similar(A::QuantityArray, dims::$dim_type) = QuantityArray(similar(ustrip(A), dims), dimension(A), quantity_type(A))
+        Base.similar(A::QuantityArray, ::Type{S}, dims::$dim_type) where {S} = QuantityArray(similar(ustrip(A), S, dims), dimension(A), quantity_type(A))
+    end
+    for (type, _, _) in ABSTRACT_QUANTITY_TYPES
+        @eval Base.similar(A::QuantityArray, ::Type{S}, dims::$dim_type) where {S<:$type} = QuantityArray(similar(ustrip(A), value_type(S), dims), dimension(A), S)
+    end
 end
 
 Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray} = Broadcast.ArrayStyle{QA}()
