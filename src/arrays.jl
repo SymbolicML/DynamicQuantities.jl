@@ -157,6 +157,15 @@ for dim_type in (:(Dims), :(Tuple{Union{Integer,Base.OneTo},Vararg{Union{Integer
     end
 end
 
+# `_similar_for` in Base does not account for changed dimensions, so
+# we need to overload it for QuantityArray.
+Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape, axs) where {T} =
+    QuantityArray(similar(ustrip(c), value_type(T), axs), dimension(materialize_first(itr))::dim_type(T), T)
+Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.SizeUnknown, ::Nothing) where {T} =
+    QuantityArray(similar(ustrip(c), value_type(T), 0), dimension(materialize_first(itr))::dim_type(T), T)
+Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasLength, len::Integer) where {T} =
+    QuantityArray(similar(ustrip(c), value_type(T), len), dimension(materialize_first(itr))::dim_type(T), T)
+
 Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray} = Broadcast.ArrayStyle{QA}()
 
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType<:UnionAbstractQuantity}
@@ -187,6 +196,7 @@ materialize_first(q::QuantityArray) = first(q)
 materialize_first(q::AbstractArray{Q}) where {Q<:UnionAbstractQuantity} = first(q)
 
 # Derived calls
+materialize_first(g::Base.Generator) = materialize_first(first(g))
 materialize_first(r::Base.RefValue) = materialize_first(r.x)
 materialize_first(x::Base.Broadcast.Extruded) = materialize_first(x.x)
 materialize_first(args::Tuple) = materialize_first(first(args))
