@@ -166,6 +166,24 @@ Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.SizeUnknown, ::Nothin
 Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasLength, len::Integer) where {T} =
     QuantityArray(similar(ustrip(c), value_type(T), len), dimension(materialize_first(itr))::dim_type(T), T)
 
+# In earlier Julia, `Base._similar_for` has different signatures.
+@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasShape})
+    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape) where {T} =
+        QuantityArray(similar(ustrip(c), value_type(T), axes(itr)), dimension(materialize_first(itr))::dim_type(T), T)
+end
+@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasLength})
+    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasLength) where {T} =
+        QuantityArray(similar(ustrip(c), value_type(T), Int(length(itr)::Integer)), dimension(materialize_first(itr))::dim_type(T), T)
+end
+@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.SizeUnknown})
+    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.SizeUnknown) where {T} =
+        QuantityArray(similar(ustrip(c), value_type(T), 0), dimension(materialize_first(itr))::dim_type(T), T)
+end
+@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Any})
+    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, isz) where {T} =
+        QuantityArray(similar(ustrip(c), value_type(T)), dimension(materialize_first(itr))::dim_type(T), T)
+end
+
 Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray} = Broadcast.ArrayStyle{QA}()
 
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType<:UnionAbstractQuantity}
