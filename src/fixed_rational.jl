@@ -113,7 +113,7 @@ Base.show(io::IO, x::FixedRational) = print(io, string(x))
 
 tryrationalize(::Type{F}, x::F) where {F<:FixedRational} = x
 tryrationalize(::Type{F}, x::Union{Rational,Integer}) where {F<:FixedRational} = convert(F, x)
-tryrationalize(::Type{F}, x) where {F<:FixedRational} = unsafe_fixed_rational(round(eltype(F), x * denom(F)), eltype(F), val_denom(F))
+tryrationalize(::Type{F}, x::Number) where {F<:FixedRational} = unsafe_fixed_rational(round(eltype(F), x * denom(F)), eltype(F), val_denom(F))
 
 # Fix method ambiguities
 Base.round(::Type{T}, x::F, r::RoundingMode=RoundNearest) where {T>:Missing, F<:FixedRational} = round(Base.nonmissingtype_checked(T), x, r)

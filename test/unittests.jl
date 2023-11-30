@@ -1452,3 +1452,53 @@ end
         @test div(x, y, RoundFromZero) == Quantity{Int}(4, length=1, mass=1)
     end
 end
+
+@testset "Exponentiation" begin
+    for Q in (RealQuantity, Quantity, GenericQuantity)
+        x = Q(2.0, length=1)
+
+        # Quantity raised to dimensionless quantity
+        p = Q(3)
+        @test x^p == Q(8.0, length=3)
+
+        x = Q(2.0, length=1)
+        @test x^-2.0 == Q(0.25, length=-2)
+
+        x = Q(2.0, time=1)
+        @test x^0.0 ≈ Q(1.0, time=0)
+
+        x = Q(0.5, mass=2)
+        @test x^3.0 == Q(0.125, mass=6)
+
+        # Q raised to negative float
+        x = Q(4.0, current=2)
+        @test x^-2.5 ≈ Q(4.0^-2.5, current=-5.0)
+
+        # Q raised to positive float
+        x = Q(3.0, amount=1)
+        @test x^1.5 ≈ Q(5.196152422706632, amount=3//2)
+
+        # Zero quantity edge cases
+        x = Q(0.0, acceleration=1)
+        @test x^1 == x
+        @test x^0 == Q(1.0)
+
+        # Complex number exponent
+        if Q !== RealQuantity
+            x = Q(0.7 + 0.2im)
+            @test x^(1 - 3im) ≈ (0.7+0.2im)^(1 - 3im) * Q(1)
+        end
+    end
+
+    x = RealQuantity(2.0)
+    y = Quantity(2.0im)
+    @test typeof(x^y) <: Quantity
+
+    x = RealQuantity(2.0, length=1)
+    y = Quantity(2.0im)
+    @test_throws DimensionError x^y
+
+    x = RealQuantity(2.0)
+    y = Quantity(2.0im, mass=1)
+    @test_throws DimensionError x^y
+end

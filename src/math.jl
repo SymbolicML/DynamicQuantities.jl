@@ -79,7 +79,7 @@ end
 Base.:-(l::UnionAbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 
 # Combining different abstract types
-for op in (:*, :/, :+, :-, :atan, :atand, :copysign, :flipsign, :div, :mod),
+for op in (:*, :/, :+, :-, :^, :atan, :atand, :copysign, :flipsign, :div, :mod),
     (t1, _, _) in ABSTRACT_QUANTITY_TYPES,
     (t2, _, _) in ABSTRACT_QUANTITY_TYPES
 
@@ -129,6 +129,10 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
         function Base.:^(l::$type, r::Complex)
             iszero(dimension(l)) || throw(DimensionError(l))
             return new_quantity(typeof(l), ustrip(l)^r, dimension(l))
+        end
+        function Base.:^(l::$type, r::$type)
+            iszero(dimension(r)) || throw(DimensionError(r))
+            return l ^ ustrip(r)
         end
     end
 end
