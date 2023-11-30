@@ -630,7 +630,7 @@ end
     sym4 = @inferred(SymbolicDimensions{Int}(Rational{Int}; m=3, s=-1))
     for (sym, T) in (
         (sym1, DynamicQuantities.DEFAULT_DIM_BASE_TYPE), (sym2, Rational{Int}), (sym3, Rational{Int}), (sym4, Rational{Int}),
-    )  
+    )
         @test sym isa SymbolicDimensions{T}
 
         # Properties
@@ -1099,15 +1099,144 @@ end
             qa = fill(Q(2.0u"m"), 3)
             @test map(x -> x^2, qa) == QuantityArray(fill(4.0, 3), Q(u"m^2"))
 
+            @test mapreduce(x -> x^2, +, qa) == 12.0u"m^2"
+            @inferred mapreduce(x -> x^2, +, qa)
+            @test prod(qa) == 8.0u"m^3"
+            @inferred prod(qa)
+
             # Test that we can use a function that returns a different type
             if Q === RealQuantity
                 qa = fill(RealQuantity(2.0u"m"), 3)
                 @test typeof(qa) <: QuantityArray{Float64,1,<:Dimensions,<:RealQuantity{Float64,<:Dimensions},<:Array}
                 qa_complex = map(x -> 1im * x, qa)
+                @inferred map(x -> 1im * x, qa)
                 @test typeof(qa_complex) <: QuantityArray{ComplexF64,1,<:Dimensions,<:Quantity{ComplexF64,<:Dimensions},<:Array}
                 @test dimension(qa_complex) == dimension(u"m")
                 @test sum(qa_complex) == 6im * u"m"
             end
+        end
+
+        @testset "Collection operations" begin
+            # push!, pushfirst!, insert!, append!, prepend!, pop!,
+            # popfirst!, deleteat!, popat!, resize!, empty!, sizehint!
+
+            # Test for push!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            push!(arr, 4u"m")
+            @test length(arr) == 4
+            @test arr[end] == 4u"m"
+            @test_throws DimensionError push!(arr, 5u"s")
+
+            # Multiple value
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            push!(arr, 4u"m", 5u"m")
+            @test arr == QuantityArray([1u"m", 2u"m", 3u"m", 4u"m", 5u"m"])
+
+            @test_throws DimensionError push!(arr, 4u"m", 5u"m/s")
+
+            # Test for pushfirst!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            pushfirst!(arr, 0u"m")
+            @test length(arr) == 4
+            @test arr[1] == 0u"m"
+            @test_throws DimensionError pushfirst!(arr, 1u"s")
+
+            # Symbolic dimensions also work
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            pushfirst!(arr, 1us"cm")
+            @test arr[1] == 1u"cm"
+
+            # Test for insert!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            insert!(arr, 2, 1.5u"m")
+            @test length(arr) == 4
+            @test arr[2] == 1.5u"m"
+            @test_throws DimensionError insert!(arr, 2, 2u"s")
+
+            # Symbolic dimensions
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            insert!(arr, 2, 1.5us"cm")
+            @test arr[2] == 1.5u"cm"
+
+            # But not an incompatible symbolic dimensions:
+            @test_throws DimensionError insert!(arr, 2, 1.5us"s")
+
+            # Test for append!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            append!(arr, QuantityArray([5u"m", 6u"m"]))
+            @test length(arr) == 5
+            @test arr[end] == 6u"m"
+            @test_throws DimensionError append!(arr, QuantityArray([7u"s", 8u"s"]))
+
+            # Test appending regular array of quantities:
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            append!(arr, [5u"m", 6u"m"])
+            @test length(arr) == 5
+            @test arr[end] == 6u"m"
+            @test_throws DimensionError append!(arr, [7u"s", 8u"s"])
+
+            # Test for prepend!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            prepend!(arr, QuantityArray([-1u"m", -2u"m"]))
+            @test length(arr) == 5
+            @test arr[1] == -1u"m"
+            @test_throws DimensionError prepend!(arr, QuantityArray([-3u"s", -4u"s"]))
+
+            # Test for pop!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            val = pop!(arr)
+            @test val == 3u"m"
+            @test length(arr) == 2
+
+            # Test for popfirst!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            val = popfirst!(arr)
+            @test val == 1u"m"
+            @test length(arr) == 2
+
+            # Test for deleteat!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            deleteat!(arr, 2)
+            @test length(arr) == 2
+            @test arr[2] == 3u"m"
+
+            # Test for popat!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            val = popat!(arr, 2)
+            @test val == 2u"m"
+            @test length(arr) == 2
+            @test arr[1] == 1u"m"
+            @test arr[2] == 3u"m"
+
+            # Test for resize!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            resize!(arr, 5)
+            @test length(arr) == 5
+            @test dimension(arr[end]) == dimension(u"m")
+
+            # Test for empty!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            empty!(arr)
+            @test isempty(arr)
+            # Still stores the dimension:
+            @test dimension(arr) == dimension(u"m")
+
+            # Test for sizehint!
+            # There is no easy way to test whether it actually ran,
+            # so we create a fake array type that has a custom `sizehint!`
+            # which tells us it actually ran.
+            @eval begin
+                mutable struct MyCustomArray{T,N} <: AbstractArray{T,N}
+                    data::Array{T,N}
+                    sizehint_called::Bool
+                end
+                MyCustomArray(data::Array{T,N}) where {T,N} = MyCustomArray(data, false)
+                Base.sizehint!(arr::MyCustomArray, args...) = (arr.sizehint_called = true; arr)
+            end
+            arr = QuantityArray(MyCustomArray([1.0, 2, 3]), dimension(u"m"));
+            @test !ustrip(arr).sizehint_called
+            sizehint!(arr, 5)
+            @test ustrip(arr).sizehint_called
         end
 
         @testset "Reduce and vcat $Q" begin
@@ -1206,7 +1335,7 @@ end
         @test ustrip(x) == 1.5
         @test dimension(x) == Dimensions()
 
-        x = GenericQuantity(big(1.5)) 
+        x = GenericQuantity(big(1.5))
         @test typeof(x) <: GenericQuantity{BigFloat}
 
         x = GenericQuantity([1.5, 2.0], Dimensions{Rational{Int8}}; length=1)

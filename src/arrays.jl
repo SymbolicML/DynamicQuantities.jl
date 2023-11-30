@@ -142,6 +142,57 @@ unsafe_setindex!(A, v, i...) = setindex!(ustrip(A), ustrip(v), i...)
 
 Base.IndexStyle(::Type{Q}) where {Q<:QuantityArray} = IndexStyle(array_type(Q))
 
+# Methods which return a single element
+for f in (:pop!, :popfirst!, :popat!)
+    args = f == :popat! ? (:(i::Integer),) : ()
+    @eval function Base.$(f)(A::QuantityArray, $(args...))
+        new_quantity(quantity_type(A), $(f)(ustrip(A), $(args...)), dimension(A))
+    end
+end
+# Methods which return the array
+for f in (:resize!, :sizehint!, :deleteat!, :empty!)
+    args =
+        if f in (:resize!, :sizehint!)
+            (:(n::Integer),)
+        elseif f == :deleteat!
+            (:(i),)
+        else  # f == :empty!
+            ()
+        end
+    @eval function Base.$(f)(A::QuantityArray, $(args...))
+        $(f)(ustrip(A), $(args...))
+        A
+    end
+end
+# Methods which return the array, and also check the dimension
+for f in (:push!, :pushfirst!, :insert!)
+    args = f == :insert! ? (:(i::Integer),) : ()
+    @eval function Base.$(f)(A::QuantityArray, $(args...), v::UnionAbstractQuantity...)
+        v = (vi -> convert(quantity_type(A), vi)).(v)
+        all(vi -> dimension(A) == dimension(vi), v) || throw(DimensionError(A, v))
+        $(f)(ustrip(A), $(args...), map(ustrip, v)...)
+        A
+    end
+    # TODO: Note that `insert!` is technically the wrong signature (though it will throw
+    #   an error in the called method).
+end
+# Methods which combine arrays
+for f in (:append!, :prepend!)
+    @eval begin
+        function Base.$(f)(A::QuantityArray, B::QuantityArray)
+            dimension(A) == dimension(B) || throw(DimensionError(A, B))
+            $(f)(ustrip(A), ustrip(B))
+            A
+        end
+        function Base.$(f)(A::QuantityArray, B::Vector{<:UnionAbstractQuantity})
+            B = (bi -> convert(quantity_type(A), bi)).(B)
+            dimension(A) == dimension(B) || throw(DimensionError(A, B))
+            $(f)(ustrip(A), ustrip.(B))
+            A
+        end
+    end
+end
+
 Base.similar(A::QuantityArray) = QuantityArray(similar(ustrip(A)), dimension(A), quantity_type(A))
 Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustrip(A), S), dimension(A), quantity_type(A))
 
