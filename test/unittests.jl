@@ -222,6 +222,33 @@ end
     @test ustrip(x) ≈ (1.0 + 0.5im) / 1000.0
     @test ulength(x) == -1.0
     @test utime(x) == 1.0
+
+    # Can also construct using `complex`
+    x = complex(1.0u"km/s", 0.5u"km/s")
+    @test typeof(x) === Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test x == (1.0 + 0.5im) * u"km/s"
+
+    x2 = complex(RealQuantity(1.0u"km/s"), RealQuantity(0.5u"km/s"))
+    @test typeof(x2) === Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test x2 == (1.0 + 0.5im) * u"km/s"
+
+    x3 = complex(RealQuantity(1.0u"km/s"), GenericQuantity(0.5u"km/s"))
+    @test typeof(x2) === GenericQuantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test x2 == (1.0 + 0.5im) * u"km/s"
+
+    # Or, construct from quantity and number
+    x4 = complex(Quantity(1.0), 0.5)
+    @test typeof(x4) === Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test x4 == (1.0 + 0.5im)
+
+    x5 = complex(1.0, Quantity(0.5))
+    @test typeof(x5) === Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test x5 == (1.0 + 0.5im)
+
+    # Error checking
+    @test_throws DimensionError complex(1.0u"km/s", 0.5u"m")
+    @test_throws DimensionError complex(1.0u"m", 0.5)
+    @test_throws DimensionError complex(1.0, 0.5u"m")
 end
 
 @testset "Fallbacks" begin
