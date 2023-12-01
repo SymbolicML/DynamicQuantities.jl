@@ -180,8 +180,9 @@ end
 for f in (:append!, :prepend!)
     @eval begin
         function Base.$(f)(A::QuantityArray, B::QuantityArray)
-            dimension(A) == dimension(B) || throw(DimensionError(A, B))
-            $(f)(ustrip(A), ustrip(B))
+            B2 = convert(typeof(A), B)
+            dimension(A) == dimension(B2) || throw(DimensionError(A, B))
+            $(f)(ustrip(A), ustrip(B2))
             A
         end
         function Base.$(f)(A::QuantityArray, B::Vector{<:UnionAbstractQuantity})

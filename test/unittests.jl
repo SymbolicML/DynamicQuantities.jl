@@ -1175,6 +1175,18 @@ end
             @test arr[end] == 6u"m"
             @test_throws DimensionError append!(arr, [7u"s", 8u"s"])
 
+            # Can also append a QuantityArray of symbolic units:
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            orig_type = typeof(arr)
+            append!(arr, QuantityArray([5us"cm", 6us"cm"]))
+            @test ustrip(arr[end]) == ustrip(6u"cm")
+            @test typeof(arr) === orig_type
+
+            # Or, regular units to symbolic units:
+            arr = QuantityArray([1us"m", 2us"m", 3us"m"])
+            append!(arr, [5u"m", 6u"m"])
+            @test dimension(5us"m") == dimension(arr[end-1])
+
             # Test for prepend!
             arr = QuantityArray([1u"m", 2u"m", 3u"m"])
             prepend!(arr, QuantityArray([-1u"m", -2u"m"]))
