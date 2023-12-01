@@ -213,10 +213,13 @@ end
 # we need to overload it for QuantityArray.
 Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape, axs) where {T} =
     QuantityArray(similar(ustrip(c), value_type(T), axs), dimension(materialize_first(itr))::dim_type(T), T)
-Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.SizeUnknown, ::Nothing) where {T} =
-    QuantityArray(similar(ustrip(c), value_type(T), 0), dimension(materialize_first(itr))::dim_type(T), T)
-Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasLength, len::Integer) where {T} =
-    QuantityArray(similar(ustrip(c), value_type(T), len), dimension(materialize_first(itr))::dim_type(T), T)
+
+# These methods are not yet implemented, but the default implementation is dangerous,
+# as it may cause a stack overflow, so we raise a more helpful error instead.
+Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.SizeUnknown, ::Nothing) where {T} =
+    error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
+Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.HasLength, ::Integer) where {T} =
+    error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
 
 # In earlier Julia, `Base._similar_for` has different signatures.
 @static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasShape})
@@ -224,16 +227,16 @@ Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasLength, len::Integ
         QuantityArray(similar(ustrip(c), value_type(T), axes(itr)), dimension(materialize_first(itr))::dim_type(T), T)
 end
 @static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasLength})
-    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasLength) where {T} =
-        QuantityArray(similar(ustrip(c), value_type(T), Int(length(itr)::Integer)), dimension(materialize_first(itr))::dim_type(T), T)
+    @eval Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.HasLength) where {T} =
+        error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
 end
 @static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.SizeUnknown})
-    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.SizeUnknown) where {T} =
-        QuantityArray(similar(ustrip(c), value_type(T), 0), dimension(materialize_first(itr))::dim_type(T), T)
+    @eval Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.SizeUnknown) where {T} =
+        error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
 end
 @static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Any})
-    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, isz) where {T} =
-        QuantityArray(similar(ustrip(c), value_type(T)), dimension(materialize_first(itr))::dim_type(T), T)
+    @eval Base._similar_for(::QuantityArray, ::Type{T}, _, _) where {T} =
+        error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
 end
 
 Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray} = Broadcast.ArrayStyle{QA}()

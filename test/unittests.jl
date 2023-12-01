@@ -1338,6 +1338,17 @@ end
             @test DynamicQuantities.materialize_first(ref) === x[1]
         end
     end
+
+    @testset "Unimplemented methods" begin
+        qa = QuantityArray(randn(3), u"km/s")
+        @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, Base.SizeUnknown(), nothing)
+        @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, Base.HasLength(), 1)
+        if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasShape})
+            @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, Base.HasLength())
+            @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, Base.SizeUnknown())
+            @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, 1)
+        end
+    end
 end
 
 @testset "GenericQuantity" begin
