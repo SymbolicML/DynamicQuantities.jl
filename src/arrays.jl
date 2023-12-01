@@ -90,14 +90,14 @@ function Base.convert(::Type{QA}, A::QA) where {QA<:QuantityArray}
     return A
 end
 function Base.convert(::Type{QA1}, A::QA2) where {QA1<:QuantityArray,QA2<:QuantityArray}
+    Q1 = quantity_type(QA1)
+    Q2 = quantity_type(QA2)
+    T = value_type(QA1)
     V = array_type(QA1)
-    D = dim_type(QA1)
-    Q = quantity_type(QA1)
 
     return QuantityArray(
         convert(V, ustrip(A)),
-        convert(D, dimension(A)),
-        Q,
+        convert(Q1, new_quantity(Q2, one(T), dimension(A))),
     )::QA1
 end
 
