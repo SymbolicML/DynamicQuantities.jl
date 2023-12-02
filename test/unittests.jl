@@ -1104,6 +1104,10 @@ end
             @test prod(qa) == 8.0u"m^3"
             @inferred prod(qa)
 
+            # Map to non-quantity output:
+            @test map(x -> ustrip(x), qa) == fill(2.0, 3)
+            @test map(x -> cos(x/dimension(x)), qa) == fill(cos(2.0), 3)
+
             # Test that we can use a function that returns a different type
             if Q === RealQuantity
                 qa = fill(RealQuantity(2.0u"m"), 3)

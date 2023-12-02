@@ -211,8 +211,10 @@ end
 
 # `_similar_for` in Base does not account for changed dimensions, so
 # we need to overload it for QuantityArray.
-Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape, axs) where {T} =
+Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape, axs) where {T<:UnionAbstractQuantity} =
     QuantityArray(similar(ustrip(c), value_type(T), axs), dimension(materialize_first(itr))::dim_type(T), T)
+Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape, axs) where {T} =
+    similar(ustrip(c), T, axs)
 
 # These methods are not yet implemented, but the default implementation is dangerous,
 # as it may cause a stack overflow, so we raise a more helpful error instead.
