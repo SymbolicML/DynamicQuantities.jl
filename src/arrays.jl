@@ -225,8 +225,10 @@ Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.HasLength, ::Integer) wh
 
 # In earlier Julia, `Base._similar_for` has different signatures.
 @static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasShape})
-    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape) where {T} =
+    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape) where {T<:UnionAbstractQuantity} =
         QuantityArray(similar(ustrip(c), value_type(T), axes(itr)), dimension(materialize_first(itr))::dim_type(T), T)
+    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape) where {T} =
+        similar(ustrip(c), T, axes(itr))
 end
 @static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasLength})
     @eval Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.HasLength) where {T} =
