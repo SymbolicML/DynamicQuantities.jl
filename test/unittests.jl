@@ -983,6 +983,14 @@ end
             @test dimension(new_qa) == dimension(qa)
             @test isa(ustrip(new_qa), Array{Float32,2})
 
+            if Q !== GenericQuantity
+                new_qa = similar(qa, typeof(GenericQuantity{Float16}(u"km/s")))
+                @test eltype(new_qa) <: GenericQuantity{Float16}
+                @test dim_type(new_qa) == dim_type(qa)
+                @test dimension(new_qa) == dimension(qa)
+                @test isa(ustrip(new_qa), Array{Float16,2})
+            end
+
             new_qa = similar(qa, axes(ones(6, 8)))
             @test size(new_qa) == (6, 8)
             @test eltype(new_qa) <: Q{Float64}

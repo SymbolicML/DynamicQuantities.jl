@@ -196,6 +196,9 @@ end
 
 Base.similar(A::QuantityArray) = QuantityArray(similar(ustrip(A)), dimension(A), quantity_type(A))
 Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustrip(A), S), dimension(A), quantity_type(A))
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES
+    @eval Base.similar(A::QuantityArray, ::Type{S}) where {S<:$type} = QuantityArray(similar(ustrip(A), value_type(S)), dimension(A), S)
+end
 
 # Unfortunately this mess of `similar` is required to avoid ambiguous methods.
 # c.f. base/abstractarray.jl
