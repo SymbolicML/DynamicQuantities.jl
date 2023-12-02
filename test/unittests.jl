@@ -630,7 +630,7 @@ end
     sym4 = @inferred(SymbolicDimensions{Int}(Rational{Int}; m=3, s=-1))
     for (sym, T) in (
         (sym1, DynamicQuantities.DEFAULT_DIM_BASE_TYPE), (sym2, Rational{Int}), (sym3, Rational{Int}), (sym4, Rational{Int}),
-    )  
+    )
         @test sym isa SymbolicDimensions{T}
 
         # Properties
@@ -903,9 +903,9 @@ end
     end
 end
 
-for Q in (RealQuantity, Quantity, GenericQuantity)
-    @testset "Arrays" begin
-        @testset "Basics" begin
+@testset "Arrays" begin
+    for Q in (RealQuantity, Quantity, GenericQuantity)
+        @testset "Basics $Q" begin
             x = QuantityArray(randn(32), Q(u"km/s"))
             @test ustrip(sum(x)) ≈ sum(ustrip(x))
 
@@ -951,7 +951,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @inferred fv_square2(s_x)
         end
 
-        @testset "Copying" begin
+        @testset "Copying $Q" begin
             x = QuantityArray(randn(3), Q(u"km/s"))
             xc = copy(x)
             @test x == xc
@@ -959,13 +959,13 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @test x != xc
         end
 
-        @testset "Utilities" begin
+        @testset "Utilities $Q" begin
             @test fill(Q(u"m/s"), 10) == QuantityArray(fill(1.0, 10) .* Q(u"m/s"))
             @test ndims(fill(Q(u"m/s"), ())) == 0
             @test fill(Q(u"m/s"), ())[begin] == Q(u"m/s")
         end
 
-        @testset "similar" begin
+        @testset "similar $Q" begin
             qa = QuantityArray(rand(3, 4), Q(u"m"))
 
             new_qa = similar(qa)
@@ -1011,7 +1011,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @test eltype(new_qa) <: Q{Float64}
         end
 
-        @testset "Promotion" begin
+        @testset "Promotion $Q" begin
             qarr1 = QuantityArray(randn(32), convert(Dimensions{Rational{Int32}}, dimension(u"km/s")), Q)
             qarr2 = QuantityArray(randn(Float16, 32), convert(Dimensions{Rational{Int64}}, dimension(u"km/s")), Q)
 
@@ -1023,7 +1023,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @test typeof(promote(qarr1, qarr2)) == Tuple{expected_type, expected_type}
         end
 
-        @testset "Array concatenation" begin
+        @testset "Array concatenation $Q" begin
             qarr1 = QuantityArray(randn(3) .* Q(u"km/s"))
             qarr2 = QuantityArray(randn(3) .* Q(u"km/s"))
 
@@ -1046,7 +1046,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
 
         end
 
-        @testset "Generic literal_pow" begin
+        @testset "Generic literal_pow $Q" begin
             y = randn(32)
             y_q = QuantityArray(y, Q(u"m"))
 
@@ -1057,13 +1057,13 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @inferred f4v(y_q)
         end
 
-        @testset "Broadcast with single number" begin
+        @testset "Broadcast with single number $Q" begin
             ar1 = QuantityArray(randn(3), Q(u"km/s"))
             @test ustrip(ar1 .* Q(u"m/s")) == ustrip(ar1)
             @test dimension(ar1 .* Q(u"m/s")) == dimension(u"m^2/s^2")
         end
 
-        @testset "Multiple arrays" begin
+        @testset "Multiple arrays $Q" begin
             ar1 = QuantityArray(randn(3), Q(u"km/s"))
             ar2 = QuantityArray(randn(3, 1), Q(u"km/s"))
             ar3 = randn(3)
@@ -1089,13 +1089,188 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @test g(ar1, array_of_quantities, Q(u"1")) == [f(ar1[i], array_of_quantities[i], 1) for i in eachindex(ar1)]
         end
 
-        @testset "Broadcast nd-arrays" begin
+        @testset "Broadcast nd-arrays $Q" begin
             x = QuantityArray(randn(3, 3), Q(u"A"))
             y = QuantityArray(randn(3, 3), Q(u"cd"))
             @test ustrip(x .* y) == ustrip(x) .* ustrip(y)
         end
 
-        Q in (Quantity, RealQuantity) && @testset "Broadcast different arrays" begin
+        @testset "map $Q" begin
+            qa = fill(Q(2.0u"m"), 3)
+            @test map(x -> x^2, qa) == QuantityArray(fill(4.0, 3), Q(u"m^2"))
+
+            @test mapreduce(x -> x^2, +, qa) == 12.0u"m^2"
+            @inferred mapreduce(x -> x^2, +, qa)
+            @test prod(qa) == 8.0u"m^3"
+            @inferred prod(qa)
+
+            # Test that we can use a function that returns a different type
+            if Q === RealQuantity
+                qa = fill(RealQuantity(2.0u"m"), 3)
+                @test typeof(qa) <: QuantityArray{Float64,1,<:Dimensions,<:RealQuantity{Float64,<:Dimensions},<:Array}
+                qa_complex = map(x -> 1im * x, qa)
+                @inferred map(x -> 1im * x, qa)
+                @test typeof(qa_complex) <: QuantityArray{ComplexF64,1,<:Dimensions,<:Quantity{ComplexF64,<:Dimensions},<:Array}
+                @test dimension(qa_complex) == dimension(u"m")
+                @test sum(qa_complex) == 6im * u"m"
+            end
+        end
+
+        @testset "Collection operations" begin
+            # push!, pushfirst!, insert!, append!, prepend!, pop!,
+            # popfirst!, deleteat!, popat!, resize!, empty!, sizehint!
+
+            # Test for push!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            push!(arr, 4u"m")
+            @test length(arr) == 4
+            @test arr[end] == 4u"m"
+            @test_throws DimensionError push!(arr, 5u"s")
+
+            # Multiple value
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            push!(arr, 4u"m", 5u"m")
+            @test arr == QuantityArray([1u"m", 2u"m", 3u"m", 4u"m", 5u"m"])
+
+            @test_throws DimensionError push!(arr, 4u"m", 5u"m/s")
+
+            # Test for pushfirst!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            pushfirst!(arr, 0u"m")
+            @test length(arr) == 4
+            @test arr[1] == 0u"m"
+            @test_throws DimensionError pushfirst!(arr, 1u"s")
+
+            # Symbolic dimensions also work
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            pushfirst!(arr, 1us"cm")
+            @test arr[1] == 1u"cm"
+
+            # Test for insert!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            insert!(arr, 2, 1.5u"m")
+            @test length(arr) == 4
+            @test arr[2] == 1.5u"m"
+            @test_throws DimensionError insert!(arr, 2, 2u"s")
+
+            # Symbolic dimensions
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            insert!(arr, 2, 1.5us"cm")
+            @test arr[2] == 1.5u"cm"
+
+            # But not an incompatible symbolic dimensions:
+            @test_throws DimensionError insert!(arr, 2, 1.5us"s")
+
+            # Test for append!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            append!(arr, QuantityArray([5u"m", 6u"m"]))
+            @test length(arr) == 5
+            @test arr[end] == 6u"m"
+            @test_throws DimensionError append!(arr, QuantityArray([7u"s", 8u"s"]))
+
+            # Test appending regular array of quantities:
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            append!(arr, [5u"m", 6u"m"])
+            @test length(arr) == 5
+            @test arr[end] == 6u"m"
+            @test_throws DimensionError append!(arr, [7u"s", 8u"s"])
+
+            # Can also append a QuantityArray of symbolic units:
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            orig_type = typeof(arr)
+            append!(arr, QuantityArray([5us"cm", 6us"cm"]))
+            @test ustrip(arr[end]) == ustrip(6u"cm")
+            @test typeof(arr) === orig_type
+
+            # Or, regular units to symbolic units:
+            arr = QuantityArray([1us"m", 2us"m", 3us"m"])
+            append!(arr, [5u"m", 6u"m"])
+            @test dimension(5us"m") == dimension(arr[end-1])
+
+            # Test for prepend!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            prepend!(arr, QuantityArray([-1u"m", -2u"m"]))
+            @test length(arr) == 5
+            @test arr[1] == -1u"m"
+            @test_throws DimensionError prepend!(arr, QuantityArray([-3u"s", -4u"s"]))
+
+            # Test for pop!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            val = pop!(arr)
+            @test val == 3u"m"
+            @test length(arr) == 2
+
+            # Test for popfirst!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            val = popfirst!(arr)
+            @test val == 1u"m"
+            @test length(arr) == 2
+
+            # Test for deleteat!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            deleteat!(arr, 2)
+            @test length(arr) == 2
+            @test arr[2] == 3u"m"
+
+            # Test for popat!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            val = popat!(arr, 2)
+            @test val == 2u"m"
+            @test length(arr) == 2
+            @test arr[1] == 1u"m"
+            @test arr[2] == 3u"m"
+
+            # Test for resize!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            resize!(arr, 5)
+            @test length(arr) == 5
+            @test dimension(arr[end]) == dimension(u"m")
+
+            # Test for empty!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            empty!(arr)
+            @test isempty(arr)
+            # Still stores the dimension:
+            @test dimension(arr) == dimension(u"m")
+
+            # Test for sizehint!
+            # There is no easy way to test whether it actually ran,
+            # so we create a fake array type that has a custom `sizehint!`
+            # which tells us it actually ran.
+            @eval begin
+                mutable struct MyCustomArray{T,N} <: AbstractArray{T,N}
+                    data::Array{T,N}
+                    sizehint_called::Bool
+                end
+                MyCustomArray(data::Array{T,N}) where {T,N} = MyCustomArray(data, false)
+                Base.sizehint!(arr::MyCustomArray, args...) = (arr.sizehint_called = true; arr)
+            end
+            arr = QuantityArray(MyCustomArray([1.0, 2, 3]), dimension(u"m"));
+            @test !ustrip(arr).sizehint_called
+            sizehint!(arr, 5)
+            @test ustrip(arr).sizehint_called
+        end
+
+        @testset "Reduce and vcat $Q" begin
+            arr1 = QuantityArray([Q(us"hr")])
+            arr2 = QuantityArray([Q(us"hr")])
+
+            arr3 = vcat(arr1, arr2)
+            @test typeof(arr3) <: QuantityArray{Float64,1,<:SymbolicDimensions,<:Q{Float64,<:SymbolicDimensions},<:Array}
+            @test arr3 == QuantityArray(Q.([us"hr", us"hr"]))
+            @test uexpand(arr3) == QuantityArray(Q.([u"hr", u"hr"]))
+
+            arr4 = reduce(vcat, [arr1, arr2])
+            @test typeof(arr4) <: QuantityArray{Float64,1,<:SymbolicDimensions,<:Q{Float64,<:SymbolicDimensions},<:Array}
+            @test arr3 == arr4
+            @test all(arr3 .== arr4)
+
+            # Should work for incompatible units as well
+            @test reduce(vcat, [[0.5us"hr"], [0.5us"m"]]) == [0.5u"hr", 0.5u"m"]
+            @test typeof(reduce(vcat, [[0.5us"hr"], [0.5us"m"]])) <: Vector{<:Quantity{Float64,<:SymbolicDimensions}}
+        end
+
+        Q in (Quantity, RealQuantity) && @testset "Broadcast different arrays $Q" begin
             f(x, y, z, w) = x * y + z * w
             g(x, y, z, w) = f.(x, y, z, w)
 
@@ -1121,7 +1296,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @test typeof(b .* y) <: QuantityArray{Float64}
         end
 
-        Q in (RealQuantity, Quantity) && @testset "Broadcast scalars" begin
+        Q in (RealQuantity, Quantity) && @testset "Broadcast scalars $Q" begin
             for (x, qx) in ((0.5, 0.5u"s"), ([0.5, 0.2], GenericQuantity([0.5, 0.2], time=1)))
                 @test size(qx) == size(x)
                 @test length(qx) == length(x)
@@ -1134,7 +1309,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             end
         end
 
-        @testset "Symbolic units" begin
+        @testset "Symbolic units $Q" begin
             z_ar = randn(32)
             z = QuantityArray(z_ar, Q(us"Constants.h * km/s"))
             z_expanded = QuantityArray(z_ar .* Q(u"Constants.h * km/s"))
@@ -1151,7 +1326,7 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @test msg2 == msg
         end
 
-        Q == Quantity && @testset "Extra test coverage" begin
+        Q == Quantity && @testset "Extra test coverage $Q" begin
             @test_throws ErrorException DynamicQuantities.materialize_first(())
             VERSION >= v"1.8" &&
                 @test_throws "Unexpected broadcast" DynamicQuantities.materialize_first(())
@@ -1163,6 +1338,17 @@ for Q in (RealQuantity, Quantity, GenericQuantity)
             @test DynamicQuantities.materialize_first(ref) === x[1]
         end
     end
+
+    @testset "Unimplemented methods" begin
+        qa = QuantityArray(randn(3), u"km/s")
+        @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, Base.SizeUnknown(), nothing)
+        @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, Base.HasLength(), 1)
+        if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasShape})
+            @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, Base.HasLength())
+            @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, Base.SizeUnknown())
+            @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, 1)
+        end
+    end
 end
 
 @testset "GenericQuantity" begin
@@ -1172,7 +1358,7 @@ end
         @test ustrip(x) == 1.5
         @test dimension(x) == Dimensions()
 
-        x = GenericQuantity(big(1.5)) 
+        x = GenericQuantity(big(1.5))
         @test typeof(x) <: GenericQuantity{BigFloat}
 
         x = GenericQuantity([1.5, 2.0], Dimensions{Rational{Int8}}; length=1)

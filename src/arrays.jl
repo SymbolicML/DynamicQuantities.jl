@@ -90,14 +90,14 @@ function Base.convert(::Type{QA}, A::QA) where {QA<:QuantityArray}
     return A
 end
 function Base.convert(::Type{QA1}, A::QA2) where {QA1<:QuantityArray,QA2<:QuantityArray}
+    Q1 = quantity_type(QA1)
+    Q2 = quantity_type(QA2)
+    T = value_type(QA1)
     V = array_type(QA1)
-    D = dim_type(QA1)
-    Q = quantity_type(QA1)
 
     return QuantityArray(
         convert(V, ustrip(A)),
-        convert(D, dimension(A)),
-        Q,
+        convert(Q1, new_quantity(Q2, one(T), dimension(A))),
     )::QA1
 end
 
@@ -135,13 +135,64 @@ function Base.setindex!(A::QuantityArray{T,N,D,Q}, v::Q, i...) where {T,N,D,Q<:U
     return unsafe_setindex!(A, v, i...)
 end
 function Base.setindex!(A::QuantityArray{T,N,D,Q}, v::UnionAbstractQuantity, i...) where {T,N,D,Q<:UnionAbstractQuantity}
-    return setindex!(A, convert(Q, v), i...)
+    return setindex!(A, convert(Q, v)::Q, i...)
 end
 
 unsafe_setindex!(A, v, i...) = setindex!(ustrip(A), ustrip(v), i...)
 
 Base.IndexStyle(::Type{Q}) where {Q<:QuantityArray} = IndexStyle(array_type(Q))
 
+# Methods which return a single element
+for f in (:pop!, :popfirst!, :popat!)
+    args = f == :popat! ? (:(i::Integer),) : ()
+    @eval function Base.$(f)(A::QuantityArray, $(args...))
+        new_quantity(quantity_type(A), $(f)(ustrip(A), $(args...)), dimension(A))
+    end
+end
+# Methods which return the array
+for f in (:resize!, :sizehint!, :deleteat!, :empty!)
+    args =
+        if f in (:resize!, :sizehint!)
+            (:(n::Integer),)
+        elseif f == :deleteat!
+            (:(i),)
+        else  # f == :empty!
+            ()
+        end
+    @eval function Base.$(f)(A::QuantityArray, $(args...))
+        $(f)(ustrip(A), $(args...))
+        A
+    end
+end
+# Methods which return the array, and also check the dimension
+for f in (:push!, :pushfirst!, :insert!)
+    args = f == :insert! ? (:(i::Integer),) : ()
+    @eval function Base.$(f)(A::QuantityArray, $(args...), v::UnionAbstractQuantity...)
+        v = (vi -> convert(quantity_type(A), vi)).(v)
+        all(vi -> dimension(A) == dimension(vi), v) || throw(DimensionError(A, v))
+        $(f)(ustrip(A), $(args...), map(ustrip, v)...)
+        A
+    end
+    # TODO: Note that `insert!` is technically the wrong signature (though it will throw
+    #   an error in the called method).
+end
+# Methods which combine arrays
+for f in (:append!, :prepend!)
+    @eval begin
+        function Base.$(f)(A::QuantityArray, B::QuantityArray)
+            B2 = convert(typeof(A), B)
+            dimension(A) == dimension(B2) || throw(DimensionError(A, B))
+            $(f)(ustrip(A), ustrip(B2))
+            A
+        end
+        function Base.$(f)(A::QuantityArray, B::Vector{<:UnionAbstractQuantity})
+            B = (bi -> convert(quantity_type(A), bi)).(B)
+            dimension(A) == dimension(B) || throw(DimensionError(A, B))
+            $(f)(ustrip(A), ustrip.(B))
+            A
+        end
+    end
+end
 
 Base.similar(A::QuantityArray) = QuantityArray(similar(ustrip(A)), dimension(A), quantity_type(A))
 Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustrip(A), S), dimension(A), quantity_type(A))
@@ -149,8 +200,43 @@ Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustr
 # Unfortunately this mess of `similar` is required to avoid ambiguous methods.
 # c.f. base/abstractarray.jl
 for dim_type in (:(Dims), :(Tuple{Union{Integer,Base.OneTo},Vararg{Union{Integer,Base.OneTo}}}), :(Tuple{Integer, Vararg{Integer}}))
-    @eval Base.similar(A::QuantityArray, dims::$dim_type) = QuantityArray(similar(ustrip(A), dims), dimension(A), quantity_type(A))
-    @eval Base.similar(A::QuantityArray, ::Type{S}, dims::$dim_type) where {S} = QuantityArray(similar(ustrip(A), S, dims), dimension(A), quantity_type(A))
+    @eval begin
+        Base.similar(A::QuantityArray, dims::$dim_type) = QuantityArray(similar(ustrip(A), dims), dimension(A), quantity_type(A))
+        Base.similar(A::QuantityArray, ::Type{S}, dims::$dim_type) where {S} = QuantityArray(similar(ustrip(A), S, dims), dimension(A), quantity_type(A))
+    end
+    for (type, _, _) in ABSTRACT_QUANTITY_TYPES
+        @eval Base.similar(A::QuantityArray, ::Type{S}, dims::$dim_type) where {S<:$type} = QuantityArray(similar(ustrip(A), value_type(S), dims), dimension(A), S)
+    end
+end
+
+# `_similar_for` in Base does not account for changed dimensions, so
+# we need to overload it for QuantityArray.
+Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape, axs) where {T} =
+    QuantityArray(similar(ustrip(c), value_type(T), axs), dimension(materialize_first(itr))::dim_type(T), T)
+
+# These methods are not yet implemented, but the default implementation is dangerous,
+# as it may cause a stack overflow, so we raise a more helpful error instead.
+Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.SizeUnknown, ::Nothing) where {T} =
+    error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
+Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.HasLength, ::Integer) where {T} =
+    error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
+
+# In earlier Julia, `Base._similar_for` has different signatures.
+@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasShape})
+    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape) where {T} =
+        QuantityArray(similar(ustrip(c), value_type(T), axes(itr)), dimension(materialize_first(itr))::dim_type(T), T)
+end
+@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasLength})
+    @eval Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.HasLength) where {T} =
+        error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
+end
+@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.SizeUnknown})
+    @eval Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.SizeUnknown) where {T} =
+        error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
+end
+@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Any})
+    @eval Base._similar_for(::QuantityArray, ::Type{T}, _, _) where {T} =
+        error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
 end
 
 Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray} = Broadcast.ArrayStyle{QA}()
@@ -183,6 +269,7 @@ materialize_first(q::QuantityArray) = first(q)
 materialize_first(q::AbstractArray{Q}) where {Q<:UnionAbstractQuantity} = first(q)
 
 # Derived calls
+materialize_first(g::Base.Generator) = materialize_first(first(g))
 materialize_first(r::Base.RefValue) = materialize_first(r.x)
 materialize_first(x::Base.Broadcast.Extruded) = materialize_first(x.x)
 materialize_first(args::Tuple) = materialize_first(first(args))
