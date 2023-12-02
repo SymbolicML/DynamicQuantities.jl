@@ -196,6 +196,9 @@ end
 
 Base.similar(A::QuantityArray) = QuantityArray(similar(ustrip(A)), dimension(A), quantity_type(A))
 Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustrip(A), S), dimension(A), quantity_type(A))
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES
+    @eval Base.similar(A::QuantityArray, ::Type{S}) where {S<:$type} = QuantityArray(similar(ustrip(A), value_type(S)), dimension(A), S)
+end
 
 # Unfortunately this mess of `similar` is required to avoid ambiguous methods.
 # c.f. base/abstractarray.jl
@@ -211,8 +214,10 @@ end
 
 # `_similar_for` in Base does not account for changed dimensions, so
 # we need to overload it for QuantityArray.
-Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape, axs) where {T} =
+Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape, axs) where {T<:UnionAbstractQuantity} =
     QuantityArray(similar(ustrip(c), value_type(T), axs), dimension(materialize_first(itr))::dim_type(T), T)
+Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape, axs) where {T} =
+    similar(ustrip(c), T, axs)
 
 # These methods are not yet implemented, but the default implementation is dangerous,
 # as it may cause a stack overflow, so we raise a more helpful error instead.
@@ -223,8 +228,10 @@ Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.HasLength, ::Integer) wh
 
 # In earlier Julia, `Base._similar_for` has different signatures.
 @static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasShape})
-    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape) where {T} =
+    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape) where {T<:UnionAbstractQuantity} =
         QuantityArray(similar(ustrip(c), value_type(T), axes(itr)), dimension(materialize_first(itr))::dim_type(T), T)
+    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape) where {T} =
+        similar(ustrip(c), T, axes(itr))
 end
 @static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasLength})
     @eval Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.HasLength) where {T} =

@@ -983,6 +983,14 @@ end
             @test dimension(new_qa) == dimension(qa)
             @test isa(ustrip(new_qa), Array{Float32,2})
 
+            if Q !== GenericQuantity
+                new_qa = similar(qa, typeof(GenericQuantity{Float16}(u"km/s")))
+                @test eltype(new_qa) <: GenericQuantity{Float16}
+                @test dim_type(new_qa) == dim_type(qa)
+                @test dimension(new_qa) == dimension(qa)
+                @test isa(ustrip(new_qa), Array{Float16,2})
+            end
+
             new_qa = similar(qa, axes(ones(6, 8)))
             @test size(new_qa) == (6, 8)
             @test eltype(new_qa) <: Q{Float64}
@@ -1103,6 +1111,10 @@ end
             @inferred mapreduce(x -> x^2, +, qa)
             @test prod(qa) == 8.0u"m^3"
             @inferred prod(qa)
+
+            # Map to non-quantity output:
+            @test map(x -> ustrip(x), qa) == fill(2.0, 3)
+            @test map(x -> cos(x/dimension(x)), qa) == fill(cos(2.0), 3)
 
             # Test that we can use a function that returns a different type
             if Q === RealQuantity
@@ -1237,7 +1249,7 @@ end
             # There is no easy way to test whether it actually ran,
             # so we create a fake array type that has a custom `sizehint!`
             # which tells us it actually ran.
-            @eval begin
+            isdefined(Main, :MyCustomArray) || @eval begin
                 mutable struct MyCustomArray{T,N} <: AbstractArray{T,N}
                     data::Array{T,N}
                     sizehint_called::Bool
