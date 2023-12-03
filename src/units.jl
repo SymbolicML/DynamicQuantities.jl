@@ -56,7 +56,7 @@ end
 @add_prefixes A (n, μ, u, m, k)
 @add_prefixes K (m,)
 @add_prefixes cd (m,)
-@add_prefixes mol (m,)
+@add_prefixes mol (p, n, μ, u, m)
 
 @doc(
     "Length in meters. Available variants: `fm`, `pm`, `nm`, `μm` (/`um`), `cm`, `inch`, `dm`, `mm`, `ft`, `km`, `mi`, `Mm`, `Gm`.",
@@ -83,7 +83,7 @@ end
     cd,
 )
 @doc(
-    "Amount in moles. Available variant: `mmol`.",
+    "Amount in moles. Available variant: `pmol`, `nmol`, `μmol` (/`umol`), `mmol`.",
     mol,
 )
 
