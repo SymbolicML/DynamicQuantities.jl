@@ -47,10 +47,13 @@ using DynamicQuantities
 Set up initial conditions as quantities:
 
 ```julia
-y0 = 10u"km"
-v0 = 250u"m/s"
+# Can explicitly import units:
+using DynamicQuantities: km, m, s, min
+
+y0 = 10km
+v0 = 250m/s
 θ = deg2rad(60)
-g = 9.81u"m/s^2"
+g = 9.81m/s^2
 ```
 
 Next, we use trig functions to calculate x and y components of initial velocity.
@@ -67,7 +70,7 @@ Note that these are the same dimension (time), so it's fine to treat
 them as dimensionally equivalent!
 
 ```julia
-t = range(0u"s", 1.3u"min", length=100)
+t = range(0s, 1.3min, length=100)
 ```
 
 Next, use kinematic equations to calculate x and y as a function of time.

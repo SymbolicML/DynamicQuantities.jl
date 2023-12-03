@@ -78,8 +78,14 @@ julia> x = 0.3u"km/s"
 
 julia> y = 42 * u"kg"
 42.0 kg
+```
 
-julia> room_temp = 100u"kPa"
+or by importing explicitly:
+
+```julia
+julia> using DynamicQuantities: kPa
+
+julia> room_temp = 100kPa
 100000.0 m⁻¹ kg s⁻²
 ```
 
