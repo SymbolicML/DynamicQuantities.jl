@@ -106,7 +106,7 @@ end
 @add_prefixes J (k,)
 @add_prefixes W (m, k, M, G)
 @add_prefixes C ()
-@add_prefixes V (m, k, M, G)
+@add_prefixes V (p, n, μ, u, m, k, M, G)
 @add_prefixes F ()
 @add_prefixes Ω (m,)
 @add_prefixes ohm (m,)
@@ -138,7 +138,7 @@ end
     C,
 )
 @doc(
-    "Voltage in Volts. Available variants: `kV`, `MV`, `GV`.",
+    "Voltage in Volts. Available variants: `pV`, `nV`, `μV` (/`uV`), `mV`, kV`, `MV`, `GV`.",
     V,
 )
 @doc(
