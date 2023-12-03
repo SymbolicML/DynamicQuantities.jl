@@ -4,21 +4,7 @@ import .Constants: CONSTANT_SYMBOLS, CONSTANT_MAPPING, CONSTANT_VALUES
 
 const SYMBOL_CONFLICTS = intersect(UNIT_SYMBOLS, CONSTANT_SYMBOLS)
 
-function disambiguate_symbol(s)
-    if s in SYMBOL_CONFLICTS
-        return Symbol(string(s) * "_constant")
-    else
-        return s
-    end
-end
-function reambiguate_symbol(s)
-    str_s = string(s)
-    if endswith(str_s, "_constant")
-        return Symbol(str_s[1:end-9])
-    else
-        return s
-    end
-end
+disambiguate_symbol(s) = s in SYMBOL_CONFLICTS ? Symbol(string(s) * "_constant") : s
 
 const INDEX_TYPE = UInt8
 # Prefer units over constants:
