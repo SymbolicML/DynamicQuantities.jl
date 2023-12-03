@@ -142,7 +142,7 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
             d = dimension(q)
             for (idx, value) in zip(nzdims(d), nzvals(d))
                 if !iszero(value)
-                    result = result * convert(with_type_parameters(Q, T, D), ALL_VALUES[idx]) ^ value
+                    result *= convert(with_type_parameters(Q, T, D), ALL_VALUES[idx] ^ value)
                 end
             end
             return result

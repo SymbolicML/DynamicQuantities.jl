@@ -215,6 +215,7 @@ for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES
     base_type = true_base_type <: Number ? true_base_type : Number
     @eval begin
         function Base.isapprox(l::$type, r::$type; kws...)
+            l, r = promote_except_value(l, r)
             dimension(l) == dimension(r) || throw(DimensionError(l, r))
             return isapprox(ustrip(l), ustrip(r); kws...)
         end
