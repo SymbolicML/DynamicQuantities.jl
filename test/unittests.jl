@@ -697,8 +697,8 @@ end
     # Actually expands to:
     @test string(dimension(us"Constants.h")) == "h_constant"
 
-    # So the numerical value is different from other constants:
-    @test ustrip(us"Constants.h") == ustrip(u"Constants.h")
+    # Constants have different numerical value from non-symbolic one:
+    @test ustrip(us"Constants.h") != ustrip(u"Constants.h")
     @test ustrip(us"Constants.au") != ustrip(u"Constants.au")
 
     # Test conversion
@@ -912,10 +912,10 @@ end
             @test x[5] == Q(5, length=1, time=-1)
 
             y = randn(32)
-            @test ustrip(QuantityArray(y, Q(u"m"))) == y
+            @test ustrip(QuantityArray(y, Q(u"m"))) ≈ y
 
             f_square(v) = v^2 * 1.5 - v^2
-            @test sum(f_square.(QuantityArray(y, Q(u"m")))) == sum(f_square.(y) .* Q(u"m^2"))
+            @test sum(f_square.(QuantityArray(y, Q(u"m")))) ≈ sum(f_square.(y) .* Q(u"m^2"))
 
             y_q = QuantityArray(y, Q(u"m * cd / s"))
             @test typeof(f_square.(y_q)) == typeof(y_q)
@@ -1057,7 +1057,7 @@ end
             y_q = QuantityArray(y, Q(u"m"))
 
             f4(v) = v^4 * 0.3
-            @test sum(f4.(QuantityArray(y, Q(u"m")))) == sum(f4.(y) .* Q(u"m^4"))
+            @test sum(f4.(QuantityArray(y, Q(u"m")))) ≈ sum(f4.(y) .* Q(u"m^4"))
 
             f4v(v) = f4.(v)
             @inferred f4v(y_q)
@@ -1600,9 +1600,8 @@ end
     y = 5randn(10) .- 2.5
     for Q in (RealQuantity, Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
         ground_truth = @eval $f.($x, $y)
-        dim = convert(D, dimension(u"m/s"))
-        qx_dimensions = [Q(xi, dim) for xi in x]
-        qy_dimensions = [Q(yi, dim) for yi in y]
+        qx_dimensions = [with_type_parameters(Q, Float64, D)(xi, dim) for xi in x]
+        qy_dimensions = [with_type_parameters(Q, Float64, D)(yi, dim) for yi in y]
         @eval @test all($f.($qx_dimensions, $qy_dimensions) .== $ground_truth)
         if f in (:isequal, :(==))
             # These include a dimension check in the result, rather than
