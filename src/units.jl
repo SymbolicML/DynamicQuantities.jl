@@ -187,10 +187,10 @@ end
 ## Pressure
 @register_unit bar 100 * kPa
 
-@add_prefixes bar ()
+@add_prefixes bar (m,)
 
 @doc(
-    "Pressure in bars.",
+    "Pressure in bars. Available variants: `mbar`.",
     bar,
 )
 
