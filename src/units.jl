@@ -180,10 +180,10 @@ end
 ## Volume
 @register_unit L dm^3
 
-@add_prefixes L (m, c, d)
+@add_prefixes L (μ, u, m, c, d)
 
 @doc(
-    "Volume in liters. Available variants: `mL`, `cL`, `dL`.",
+    "Volume in liters. Available variants: `μL` (/`uL`), `mL`, `cL`, `dL`.",
     L,
 )
 
