@@ -59,7 +59,7 @@ end
 @add_prefixes mol (m,)
 
 @doc(
-    "Length in meters. Available variants: `fm`, `pm`, `nm`, `μm` (/`um`), `cm`, `dm`, `mm`, `km`, `Mm`, `Gm`.",
+    "Length in meters. Available variants: `fm`, `pm`, `nm`, `μm` (/`um`), `cm`, `inch`, `dm`, `mm`, `ft`, `km`, `mi`, `Mm`, `Gm`.",
     m,
 )
 @doc(
@@ -104,7 +104,7 @@ end
 @add_prefixes N ()
 @add_prefixes Pa (k,)
 @add_prefixes J (k,)
-@add_prefixes W (k, M, G)
+@add_prefixes W (m, k, M, G)
 @add_prefixes C ()
 @add_prefixes V (m, k, M, G)
 @add_prefixes F ()
@@ -130,7 +130,7 @@ end
     J,
 )
 @doc(
-    "Power in Watts. Available variants: `kW`, `MW`, `GW`.",
+    "Power in Watts. Available variants: `mW`, `kW`, `MW`, `GW`.",
     W,
 )
 @doc(
@@ -164,6 +164,9 @@ end
 @register_unit d day
 @register_unit wk 7 * day
 @register_unit yr 365.25 * day
+@register_unit inch 2.54 * cm
+@register_unit ft 12 * inch
+@register_unit mi 5280 * ft
 
 @add_prefixes min ()
 @add_prefixes minute ()
