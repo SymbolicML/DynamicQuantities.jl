@@ -59,7 +59,7 @@ end
 @add_prefixes mol (m,)
 
 @doc(
-    "Length in meters. Available variants: `fm`, `pm`, `nm`, `μm` (/`um`), `cm`, `dm`, `mm`, `km`, `Mm`, `Gm`.",
+    "Length in meters. Available variants: `fm`, `pm`, `nm`, `μm` (/`um`), `cm`, `inch`, `dm`, `mm`, `ft`, `km`, `mi`, `Mm`, `Gm`.",
     m,
 )
 @doc(
@@ -100,11 +100,11 @@ end
 @register_unit ohm Ω
 @register_unit T N / (A * m)
 
-@add_prefixes Hz (k, M, G)
+@add_prefixes Hz (n, μ, u, m, k, M, G)
 @add_prefixes N ()
 @add_prefixes Pa (k,)
 @add_prefixes J (k,)
-@add_prefixes W (k, M, G)
+@add_prefixes W (m, k, M, G)
 @add_prefixes C ()
 @add_prefixes V (m, k, M, G)
 @add_prefixes F ()
@@ -114,7 +114,7 @@ end
 
 # SI derived units
 @doc(
-    "Frequency in Hertz. Available variants: `kHz`, `MHz`, `GHz`.",
+    "Frequency in Hertz. Available variants: `nHz`, `μHz` (/`uHz`), `mHz`, `kHz`, `MHz`, `GHz`.",
     Hz,
 )
 @doc(
@@ -130,7 +130,7 @@ end
     J,
 )
 @doc(
-    "Power in Watts. Available variants: `kW`, `MW`, `GW`.",
+    "Power in Watts. Available variants: `mW`, `kW`, `MW`, `GW`.",
     W,
 )
 @doc(
@@ -164,6 +164,9 @@ end
 @register_unit d day
 @register_unit wk 7 * day
 @register_unit yr 365.25 * day
+@register_unit inch 2.54 * cm
+@register_unit ft 12 * inch
+@register_unit mi 5280 * ft
 
 @add_prefixes min ()
 @add_prefixes minute ()

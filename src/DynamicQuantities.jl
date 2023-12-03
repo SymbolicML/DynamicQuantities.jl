@@ -28,6 +28,18 @@ import .Units
 import .Constants
 import .UnitsParse: uparse, @u_str
 
+using .Units: UNIT_SYMBOLS
+
+# Copy all units to top level:
+let _units_import_expr = :(using .Units: m, g)
+    append!(
+        _units_import_expr.args[1].args,
+        map(s -> Expr(:(.), s), filter(s -> s ∉ (:m, :g), UNIT_SYMBOLS))
+    )
+    eval(_units_import_expr)
+end
+
+
 function __init__()
     @require_extensions
 end
