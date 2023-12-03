@@ -177,20 +177,20 @@ end
 ## Volume
 @register_unit L dm^3
 
-@add_prefixes L (m, d)
+@add_prefixes L (m, c, d)
 
 @doc(
-    "Volume in liters. Available variants: `mL`, `dL`.",
+    "Volume in liters. Available variants: `mL`, `cL`, `dL`.",
     L,
 )
 
 ## Pressure
 @register_unit bar 100 * kPa
 
-@add_prefixes bar ()
+@add_prefixes bar (m,)
 
 @doc(
-    "Pressure in bars.",
+    "Pressure in bars. Available variants: `mbar`.",
     bar,
 )
 
