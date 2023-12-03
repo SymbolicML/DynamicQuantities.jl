@@ -56,7 +56,7 @@ end
 @add_prefixes A (n, μ, u, m, k)
 @add_prefixes K (m,)
 @add_prefixes cd (m,)
-@add_prefixes mol (m,)
+@add_prefixes mol (p, n, μ, u, m)
 
 @doc(
     "Length in meters. Available variants: `fm`, `pm`, `nm`, `μm` (/`um`), `cm`, `inch`, `dm`, `mm`, `ft`, `km`, `mi`, `Mm`, `Gm`.",
@@ -83,7 +83,7 @@ end
     cd,
 )
 @doc(
-    "Amount in moles. Available variant: `mmol`.",
+    "Amount in moles. Available variant: `pmol`, `nmol`, `μmol` (/`umol`), `mmol`.",
     mol,
 )
 
@@ -106,10 +106,10 @@ end
 @add_prefixes J (k,)
 @add_prefixes W (m, k, M, G)
 @add_prefixes C ()
-@add_prefixes V (m, k, M, G)
+@add_prefixes V (p, n, μ, u, m, k, M, G)
 @add_prefixes F ()
-@add_prefixes Ω (m,)
-@add_prefixes ohm (m,)
+@add_prefixes Ω (n, μ, u, m)
+@add_prefixes ohm (n, μ, u, m)
 @add_prefixes T ()
 
 # SI derived units
@@ -138,7 +138,7 @@ end
     C,
 )
 @doc(
-    "Voltage in Volts. Available variants: `kV`, `MV`, `GV`.",
+    "Voltage in Volts. Available variants: `pV`, `nV`, `μV` (/`uV`), `mV`, kV`, `MV`, `GV`.",
     V,
 )
 @doc(
@@ -146,7 +146,7 @@ end
     F,
 )
 @doc(
-    "Resistance in Ohms. Available variant: `mΩ`. Also available is ASCII `ohm` (with variant `mohm`).",
+    "Resistance in Ohms. Available variant: `nΩ`, `μΩ` (/`uΩ`), `mΩ`. Also available is ASCII `ohm` (with variants `nohm`, `μohm` (/`uohm`), `mohm`).",
     Ω,
 )
 @doc(
@@ -180,10 +180,10 @@ end
 ## Volume
 @register_unit L dm^3
 
-@add_prefixes L (m, c, d)
+@add_prefixes L (μ, u, m, c, d)
 
 @doc(
-    "Volume in liters. Available variants: `mL`, `cL`, `dL`.",
+    "Volume in liters. Available variants: `μL` (/`uL`), `mL`, `cL`, `dL`.",
     L,
 )
 
