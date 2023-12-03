@@ -100,7 +100,7 @@ end
 @register_unit ohm Ω
 @register_unit T N / (A * m)
 
-@add_prefixes Hz (k, M, G)
+@add_prefixes Hz (n, μ, u, m, k, M, G)
 @add_prefixes N ()
 @add_prefixes Pa (k,)
 @add_prefixes J (k,)
@@ -114,7 +114,7 @@ end
 
 # SI derived units
 @doc(
-    "Frequency in Hertz. Available variants: `kHz`, `MHz`, `GHz`.",
+    "Frequency in Hertz. Available variants: `nHz`, `μHz` (/`uHz`), `mHz`, `kHz`, `MHz`, `GHz`.",
     Hz,
 )
 @doc(
