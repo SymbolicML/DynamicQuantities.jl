@@ -695,9 +695,7 @@ end
     @test uexpand(us"Constants.h") == u"Constants.h"
 
     # Actually expands to:
-    @test dimension(us"Constants.h")[:m] == 2
-    @test dimension(us"Constants.h")[:s] == -1
-    @test dimension(us"Constants.h")[:kg] == 1
+    @test string(dimension(us"Constants.h")) == "h_constant"
 
     # So the numerical value is different from other constants:
     @test ustrip(us"Constants.h") == ustrip(u"Constants.h")

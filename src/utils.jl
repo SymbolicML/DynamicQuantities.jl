@@ -319,7 +319,8 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES, (type2, _, _) in ABSTRACT_QUANTITY_
     # with the type for the dimensions being inferred.
 end
 
-Base.convert(::Type{D}, d::AbstractDimensions) where {D<:AbstractDimensions} = d
+Base.convert(::Type{D}, d::D) where {R,D<:AbstractDimensions{R}} = d
+Base.convert(::Type{D}, d::AbstractDimensions) where {D<:AbstractDimensions} = D(d)
 Base.convert(::Type{D}, d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D(d)
 
 Base.copy(d::D) where {D<:AbstractDimensions} = map_dimensions(copy, d)
