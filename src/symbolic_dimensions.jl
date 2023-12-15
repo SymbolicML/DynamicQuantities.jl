@@ -59,11 +59,11 @@ end
 
 # Access:
 function Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R}
-    _nzdims = nzdims(d)
+    nzdims = DynamicQuantities.nzdims(d)
     i = get(ALL_MAPPING, s, INDEX_TYPE(0))
     iszero(i) && error("$s is not available as a symbol in `SymbolicDimensions`. Symbols available: $(ALL_SYMBOLS).")
-    ii = searchsortedfirst(_nzdims, i)
-    if ii <= length(_nzdims) && _nzdims[ii] == i
+    ii = searchsortedfirst(nzdims, i)
+    if ii <= length(nzdims) && nzdims[ii] == i
         return nzvals(d)[ii]
     else
         return zero(R)
@@ -105,18 +105,18 @@ constructorof(::Type{<:SymbolicDimensionsSingleton{R}}) where {R} = SymbolicDime
 with_type_parameters(::Type{<:SymbolicDimensions}, ::Type{R}) where {R} = SymbolicDimensions{R}
 with_type_parameters(::Type{<:SymbolicDimensionsSingleton}, ::Type{R}) where {R} = SymbolicDimensionsSingleton{R}
 nzdims(d::SymbolicDimensions) = getfield(d, :nzdims)
-nzdims(d::SymbolicDimensionsSingleton) = [getfield(d, :dim)]
+nzdims(d::SymbolicDimensionsSingleton) = (getfield(d, :dim),)
 nzvals(d::SymbolicDimensions) = getfield(d, :nzvals)
-nzvals(::SymbolicDimensionsSingleton{R}) where {R} = [one(R)]
+nzvals(::SymbolicDimensionsSingleton{R}) where {R} = (one(R),)
 Base.eltype(::AbstractSymbolicDimensions{R}) where {R} = R
 Base.eltype(::Type{<:AbstractSymbolicDimensions{R}}) where {R} = R
 
 # Conversion:
 function SymbolicDimensions(d::SymbolicDimensionsSingleton{R}) where {R}
-    return SymbolicDimensions{R}(nzdims(d), nzvals(d))
+    return SymbolicDimensions{R}([nzdims(d)...], [nzvals(d)...])
 end
 function SymbolicDimensions{R}(d::SymbolicDimensionsSingleton) where {R}
-    return SymbolicDimensions{R}(nzdims(d), nzvals(d))
+    return SymbolicDimensions{R}([nzdims(d)...], [nzvals(d)...])
 end
 Base.convert(::Type{SymbolicDimensions}, d::SymbolicDimensionsSingleton) = SymbolicDimensions(d)
 Base.convert(::Type{SymbolicDimensions{R}}, d::SymbolicDimensionsSingleton) where {R} = SymbolicDimensions{R}(d)
