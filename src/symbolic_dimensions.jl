@@ -4,7 +4,7 @@ import .Constants: CONSTANT_SYMBOLS, CONSTANT_MAPPING, CONSTANT_VALUES
 
 const SYMBOL_CONFLICTS = intersect(UNIT_SYMBOLS, CONSTANT_SYMBOLS)
 
-disambiguate_symbol(s) = s in SYMBOL_CONFLICTS ? Symbol(string(s) * "_constant") : s
+disambiguate_symbol(s) = s in SYMBOL_CONFLICTS ? Symbol(s, :_constant) : s
 
 const INDEX_TYPE = UInt8
 # Prefer units over constants:
@@ -15,7 +15,7 @@ const ALL_SYMBOLS = (
     disambiguate_symbol.(CONSTANT_SYMBOLS)...
 )
 const ALL_VALUES = (UNIT_VALUES..., CONSTANT_VALUES...)
-const ALL_MAPPING = NamedTuple([s => INDEX_TYPE(i) for (i, s) in enumerate(ALL_SYMBOLS)])
+const ALL_MAPPING = NamedTuple{ALL_SYMBOLS}(INDEX_TYPE(1):INDEX_TYPE(length(ALL_SYMBOLS)))
 
 """
     AbstractSymbolicDimensions{R} <: AbstractDimensions{R}
