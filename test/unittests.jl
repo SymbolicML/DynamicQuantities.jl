@@ -824,12 +824,15 @@ end
         @test promote_rule(typeof(π), typeof(x)) == promote_type(Rational{Int32}, typeof(π))
     end
 
-    @testset "Weakref" begin
+    @testset "Unimplemented on purpose" begin
         x = 1.0u"m"
         s = "test"
         y = WeakRef(s)
         @test_throws ErrorException x == y
         @test_throws ErrorException y == x
+
+        @test_throws ErrorException DynamicQuantities.SymbolicDimensionsSingleton{Int}(Dimensions())
+        @test_throws ErrorException DynamicQuantities.SymbolicDimensionsSingleton{Int}(UInt32)
     end
 
     @testset "Arrays" begin

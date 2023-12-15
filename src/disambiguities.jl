@@ -23,6 +23,9 @@ Base.:*(l::Number, r::AbstractDimensions) = error("Please use an `UnionAbstractQ
 Base.:/(l::AbstractDimensions, r::Number) = error("Please use an `UnionAbstractQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
 Base.:/(l::Number, r::AbstractDimensions) = error("Please use an `UnionAbstractQuantity` for division. You used division on types: $(typeof(l)) and $(typeof(r)).")
 
+SymbolicDimensionsSingleton{R}(::D) where {R,D<:AbstractDimensions} = error("SymbolicDimensionsSingleton must be constructed explicitly rather than converted to.")
+SymbolicDimensionsSingleton{R}(::Type{R2}) where {R,R2} = error("SymbolicDimensionsSingleton requires a dimension to be specified.")
+
 # Promotion ambiguities
 function Base.promote_rule(::Type{F}, ::Type{Bool}) where {F<:FixedRational}
     return F

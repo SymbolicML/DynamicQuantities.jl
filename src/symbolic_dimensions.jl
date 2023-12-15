@@ -53,8 +53,6 @@ be used for constructing symbolic units and constants without needing to allocat
 """
 struct SymbolicDimensionsSingleton{R} <: AbstractSymbolicDimensions{R}
     dim::INDEX_TYPE
-
-    SymbolicDimensionsSingleton(dim::INDEX_TYPE, ::Type{_R}) where {_R} = new{_R}(dim)
 end
 
 # Access:
@@ -93,7 +91,7 @@ end
 function SymbolicDimensionsSingleton{R}(s::Symbol) where {R}
     i = get(ALL_MAPPING, s, INDEX_TYPE(0))
     iszero(i) && error("$s is not available as a symbol in `SymbolicDimensionsSingleton`. Symbols available: $(ALL_SYMBOLS).")
-    return SymbolicDimensionsSingleton(i, R)
+    return SymbolicDimensionsSingleton{R}(i)
 end
 
 # Traits:
@@ -199,7 +197,7 @@ a function equivalent to `q -> uconvert(qout, q)`.
 uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions}) = Base.Fix1(uconvert, qout)
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(nzdims(d)), copy(nzvals(d)))
-Base.copy(d::SymbolicDimensionsSingleton) = SymbolicDimensionsSingleton(getfield(d, :dim), eltype(d))
+Base.copy(d::SymbolicDimensionsSingleton) = constructorof(d)(getfield(d, :dim))
 
 function Base.:(==)(l::AbstractSymbolicDimensions, r::AbstractSymbolicDimensions)
     nzdims_l = nzdims(l)
