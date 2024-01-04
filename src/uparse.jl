@@ -54,7 +54,7 @@ the quantity corresponding to the speed of light multiplied by Hertz,
 squared.
 """
 macro u_str(s)
-    return esc(uparse(s))
+    return esc(Meta.parse(s))
 end
 
 end
