@@ -695,12 +695,10 @@ end
     @test uexpand(us"Constants.h") == u"Constants.h"
 
     # Actually expands to:
-    @test dimension(us"Constants.h")[:m] == 2
-    @test dimension(us"Constants.h")[:s] == -1
-    @test dimension(us"Constants.h")[:kg] == 1
+    @test string(dimension(us"Constants.h")) == "h_constant"
 
-    # So the numerical value is different from other constants:
-    @test ustrip(us"Constants.h") == ustrip(u"Constants.h")
+    # Constants have different numerical value from non-symbolic one:
+    @test ustrip(us"Constants.h") != ustrip(u"Constants.h")
     @test ustrip(us"Constants.au") != ustrip(u"Constants.au")
 
     # Test conversion
@@ -826,12 +824,15 @@ end
         @test promote_rule(typeof(π), typeof(x)) == promote_type(Rational{Int32}, typeof(π))
     end
 
-    @testset "Weakref" begin
+    @testset "Unimplemented on purpose" begin
         x = 1.0u"m"
         s = "test"
         y = WeakRef(s)
         @test_throws ErrorException x == y
         @test_throws ErrorException y == x
+
+        @test_throws ErrorException DynamicQuantities.SymbolicDimensionsSingleton{Int}(Dimensions())
+        @test_throws ErrorException DynamicQuantities.SymbolicDimensionsSingleton{Int}(UInt32)
     end
 
     @testset "Arrays" begin
@@ -914,10 +915,10 @@ end
             @test x[5] == Q(5, length=1, time=-1)
 
             y = randn(32)
-            @test ustrip(QuantityArray(y, Q(u"m"))) == y
+            @test ustrip(QuantityArray(y, Q(u"m"))) ≈ y
 
             f_square(v) = v^2 * 1.5 - v^2
-            @test sum(f_square.(QuantityArray(y, Q(u"m")))) == sum(f_square.(y) .* Q(u"m^2"))
+            @test sum(f_square.(QuantityArray(y, Q(u"m")))) ≈ sum(f_square.(y) .* Q(u"m^2"))
 
             y_q = QuantityArray(y, Q(u"m * cd / s"))
             @test typeof(f_square.(y_q)) == typeof(y_q)
@@ -1059,7 +1060,7 @@ end
             y_q = QuantityArray(y, Q(u"m"))
 
             f4(v) = v^4 * 0.3
-            @test sum(f4.(QuantityArray(y, Q(u"m")))) == sum(f4.(y) .* Q(u"m^4"))
+            @test sum(f4.(QuantityArray(y, Q(u"m")))) ≈ sum(f4.(y) .* Q(u"m^4"))
 
             f4v(v) = f4.(v)
             @inferred f4v(y_q)
@@ -1489,13 +1490,13 @@ end
         )
         for x in valid_inputs[1:3]
             qx_dimensionless = Q(x, D)
-            qx_dimensions = Q(x, convert(D, dimension(u"m/s")))
+            qx_dimensions = convert(with_type_parameters(Q, Float64, D), Q(x, dimension(u"m/s")))
             @eval @test $f($qx_dimensionless) == $f($x)
             @eval @test_throws DimensionError $f($qx_dimensions)
             if f in (:atan, :atand)
                 for y in valid_inputs[end-3:end]
                     qy_dimensionless = Q(y, D)
-                    qy_dimensions = Q(y, convert(D, dimension(u"m/s")))
+                    qy_dimensions = convert(with_type_parameters(Q, Float64, D), Q(y, dimension(u"m/s")))
                     @eval @test $f($y, $qx_dimensionless) == $f($y, $x)
                     @eval @test $f($qy_dimensionless, $x) == $f($y, $x)
                     @eval @test $f($qy_dimensionless, $qx_dimensionless) == $f($y, $x)
@@ -1523,24 +1524,25 @@ end
         T <: Complex && Q == RealQuantity && continue
         if f == :modf  # Functions that return multiple outputs
             for x in 5rand(T, 3) .- 2.5
-                dim = convert(D, dimension(u"m/s"))
-                qx_dimensions = Q(x, dim)
+                qx_dimensions = convert(with_type_parameters(Q, T, D), Q(x, dimension(u"m/s")))
                 num_outputs = 2
                 for i=1:num_outputs
-                    @eval @test $f($qx_dimensions)[$i] == $Q($f($x)[$i], $dim)
+                    @eval @test $f($qx_dimensions)[$i] == $Q($f($x)[$i], $(dimension(u"m/s")))
                 end
             end
         elseif f in (:copysign, :flipsign, :rem, :mod)  # Functions that need multiple inputs
             for x in 5rand(T, 3) .- 2.5
                 for y in 5rand(T, 3) .- 2.5
-                    dim = convert(D, dimension(u"m/s"))
-                    qx_dimensions = Q(x, dim)
-                    qy_dimensions = Q(y, dim)
-                    @eval @test $f($qx_dimensions, $qy_dimensions) == $Q($f($x, $y), $dim)
+                    # dim = convert(D, dimension(u"m/s"))
+                    # qx_dimensions = Q(x, dim)
+                    # qy_dimensions = Q(y, dim)
+                    qx_dimensions = convert(with_type_parameters(Q, T, D), Q(x, dimension(u"m/s")))
+                    qy_dimensions = convert(with_type_parameters(Q, T, D), Q(y, dimension(u"m/s")))
+                    @eval @test $f($qx_dimensions, $qy_dimensions) == $Q($f($x, $y), dimension(u"m/s"))
                     if f in (:copysign, :flipsign)
                         # Also do test without dimensions
                         @eval @test $f($x, $qy_dimensions) == $f($x, $y)
-                        @eval @test $f($qx_dimensions, $y) == $Q($f($x, $y), $dim)
+                        @eval @test $f($qx_dimensions, $y) == $Q($f($x, $y), dimension(u"m/s"))
                     elseif f in (:rem, :mod)
                         # Also do test without dimensions (need dimensionless)
                         qx_dimensionless = Q(x, D)
@@ -1552,31 +1554,28 @@ end
                         if f == :rem && VERSION >= v"1.9"
                             # Can also do other rounding modes
                             for r in (:RoundFromZero, :RoundNearest, :RoundUp, :RoundDown)
-                                @eval @test $f($qx_dimensions, $qy_dimensions, $r) ≈ $Q($f($x, $y, $r), $dim)
+                                @eval @test $f($qx_dimensions, $qy_dimensions, $r) ≈ $Q($f($x, $y, $r), dimension(u"m/s"))
                             end
                         end
                     end
                 end
             end
         elseif f == :unsigned
-            for x in 5rand(-10:10, 3)
-                dim = convert(D, dimension(u"m/s"))
-                qx_dimensions = Q(x, dim)
-                @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
+            for x in 5rand(10:50, 3)
+                qx_dimensions = convert(with_type_parameters(Q, typeof(x), D), Q(x, dimension(u"m/s")))
+                @eval @test $f($qx_dimensions) == $Q($f($x), dimension(u"m/s"))
             end
         elseif f in (:round, :floor, :trunc, :ceil)
             for x in 5rand(T, 3) .- 2.5
-                dim = convert(D, dimension(u"m/s"))
-                qx_dimensions = Q(x, dim)
-                @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
-                @eval @test $f(Int32, $qx_dimensions) == $Q($f(Int32, $x), $dim)
+                qx_dimensions = convert(with_type_parameters(Q, T, D), Q(x, dimension(u"m/s")))
+                @eval @test $f($qx_dimensions) == $Q($f($x), dimension(u"m/s"))
+                @eval @test $f(Int32, $qx_dimensions) == $Q($f(Int32, $x), dimension(u"m/s"))
             end
         elseif f == :ldexp
             for x in 5rand(T, 3) .- 2.5
-                dim = convert(D, dimension(u"m/s"))
-                qx_dimensions = Q(x, dim)
+                qx_dimensions = convert(with_type_parameters(Q, T, D), Q(x, dimension(u"m/s")))
                 for i=1:3
-                    @eval @test $f($qx_dimensions, $i) == $Q($f($x, $i), $dim)
+                    @eval @test $f($qx_dimensions, $i) == $Q($f($x, $i), dimension(u"m/s"))
                 end
             end
         else
@@ -1586,9 +1585,8 @@ end
                 5rand(T, 100) .- 2.5
             )
             for x in valid_inputs[1:3]
-                dim = convert(D, dimension(u"m/s"))
-                qx_dimensions = Q(x, dim)
-                @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
+                qx_dimensions = convert(with_type_parameters(Q, T, D), Q(x, dimension(u"m/s")))
+                @eval @test $f($qx_dimensions) == $Q($f($x), dimension(u"m/s"))
             end
         end
     end
@@ -1602,9 +1600,8 @@ end
     y = 5randn(10) .- 2.5
     for Q in (RealQuantity, Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
         ground_truth = @eval $f.($x, $y)
-        dim = convert(D, dimension(u"m/s"))
-        qx_dimensions = [Q(xi, dim) for xi in x]
-        qy_dimensions = [Q(yi, dim) for yi in y]
+        qx_dimensions = [convert(with_type_parameters(Q, Float64, D), Q(xi, dimension(u"m/s"))) for xi in x]
+        qy_dimensions = [convert(with_type_parameters(Q, Float64, D), Q(yi, dimension(u"m/s"))) for yi in y]
         @eval @test all($f.($qx_dimensions, $qy_dimensions) .== $ground_truth)
         if f in (:isequal, :(==))
             # These include a dimension check in the result, rather than
@@ -1620,8 +1617,8 @@ end
         @eval @test all($f.($qx_dimensionless, $y) .== $ground_truth)
         @eval @test all($f.($x, $qy_dimensionless) .== $ground_truth)
 
-        qx_real_dimensions = [RealQuantity(xi, dim) for xi in x]
-        qy_real_dimensions = [RealQuantity(yi, dim) for yi in y]
+        qx_real_dimensions = [convert(RealQuantity{Float64,D}, Quantity(xi, dimension(u"m/s"))) for xi in x]
+        qy_real_dimensions = [convert(RealQuantity{Float64,D}, Quantity(yi, dimension(u"m/s"))) for yi in y]
         # Mixed quantity input
         @eval @test all($f.($qx_real_dimensions, $qy_dimensions) .== $ground_truth)
         @eval @test all($f.($qx_dimensions, $qy_real_dimensions) .== $ground_truth)

@@ -1,7 +1,10 @@
 import .Units: UNIT_SYMBOLS, UNIT_MAPPING, UNIT_VALUES
 import .Constants: CONSTANT_SYMBOLS, CONSTANT_MAPPING, CONSTANT_VALUES
 
+
 const SYMBOL_CONFLICTS = intersect(UNIT_SYMBOLS, CONSTANT_SYMBOLS)
+
+disambiguate_symbol(s) = s in SYMBOL_CONFLICTS ? Symbol(s, :_constant) : s
 
 const INDEX_TYPE = UInt8
 # Prefer units over constants:
@@ -9,17 +12,20 @@ const INDEX_TYPE = UInt8
 # as it is just "hours" (h), which is more common.
 const ALL_SYMBOLS = (
     UNIT_SYMBOLS...,
-    setdiff(CONSTANT_SYMBOLS, SYMBOL_CONFLICTS)...
+    disambiguate_symbol.(CONSTANT_SYMBOLS)...
 )
-const ALL_VALUES = vcat(
-    UNIT_VALUES...,
-    (
-        v
-        for (k, v) in zip(CONSTANT_SYMBOLS, CONSTANT_VALUES)
-        if k ∉ SYMBOL_CONFLICTS
-    )...
-)
-const ALL_MAPPING = NamedTuple([s => INDEX_TYPE(i) for (i, s) in enumerate(ALL_SYMBOLS)])
+const ALL_VALUES = (UNIT_VALUES..., CONSTANT_VALUES...)
+const ALL_MAPPING = NamedTuple{ALL_SYMBOLS}(INDEX_TYPE(1):INDEX_TYPE(length(ALL_SYMBOLS)))
+
+"""
+    AbstractSymbolicDimensions{R} <: AbstractDimensions{R}
+
+Abstract type to allow for custom types of symbolic dimensions.
+In defining this abstract type we allow for units to declare themselves
+as a special type of symbolic dimensions which are immutable, whereas
+the regular `SymbolicDimensions` type has mutable storage.
+"""
+abstract type AbstractSymbolicDimensions{R} <: AbstractDimensions{R} end
 
 """
     SymbolicDimensions{R} <: AbstractDimensions{R}
@@ -34,31 +40,45 @@ You can convert a quantity using `SymbolicDimensions` as its dimensions
 to one which uses `Dimensions` as its dimensions (i.e., base SI units)
 `uexpand`.
 """
-struct SymbolicDimensions{R} <: AbstractDimensions{R}
+struct SymbolicDimensions{R} <: AbstractSymbolicDimensions{R}
     nzdims::Vector{INDEX_TYPE}
     nzvals::Vector{R}
 end
 
-@inline dimension_names(::Type{<:SymbolicDimensions}) = ALL_SYMBOLS
+"""
+    SymbolicDimensionsSingleton{R} <: AbstractSymbolicDimensions{R}
+
+This special symbolic dimensions types stores a single unit or constant, and can
+be used for constructing symbolic units and constants without needing to allocate mutable storage.
+"""
+struct SymbolicDimensionsSingleton{R} <: AbstractSymbolicDimensions{R}
+    dim::INDEX_TYPE
+end
+
+# Access:
 function Base.getproperty(d::SymbolicDimensions{R}, s::Symbol) where {R}
-    nzdims = getfield(d, :nzdims)
+    nzdims = DynamicQuantities.nzdims(d)
     i = get(ALL_MAPPING, s, INDEX_TYPE(0))
-    iszero(i) && error("$s is not available as a symbol in SymbolicDimensions. Symbols available: $(ALL_SYMBOLS).")
+    iszero(i) && error("$s is not available as a symbol in `SymbolicDimensions`. Symbols available: $(ALL_SYMBOLS).")
     ii = searchsortedfirst(nzdims, i)
     if ii <= length(nzdims) && nzdims[ii] == i
-        return getfield(d, :nzvals)[ii]
+        return nzvals(d)[ii]
     else
         return zero(R)
     end
 end
-Base.propertynames(::SymbolicDimensions) = ALL_SYMBOLS
-Base.getindex(d::SymbolicDimensions, k::Symbol) = getproperty(d, k)
+function Base.getproperty(d::SymbolicDimensionsSingleton{R}, s::Symbol) where {R}
+    i = get(ALL_MAPPING, s, INDEX_TYPE(0))
+    iszero(i) && error("$s is not available as a symbol in `SymbolicDimensionsSingleton`. Symbols available: $(ALL_SYMBOLS).")
+    return i == getfield(d, :dim) ? one(R) : zero(R)
+end
 
-constructorof(::Type{<:SymbolicDimensions}) = SymbolicDimensions
-with_type_parameters(::Type{<:SymbolicDimensions}, ::Type{R}) where {R} = SymbolicDimensions{R}
 
-SymbolicDimensions{R}(d::SymbolicDimensions) where {R} = SymbolicDimensions{R}(getfield(d, :nzdims), convert(Vector{R}, getfield(d, :nzvals)))
+# Constructors:
+(::Type{<:SymbolicDimensions})(::Type{R}; kws...) where {R} = SymbolicDimensions{R}(; kws...)
+SymbolicDimensions{R}(d::SymbolicDimensions) where {R} = SymbolicDimensions{R}(nzdims(d), convert(Vector{R}, nzvals(d)))
 SymbolicDimensions(; kws...) = SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}(; kws...)
+SymbolicDimensionsSingleton(s::Symbol) = SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}(s)
 function SymbolicDimensions{R}(; kws...) where {R}
     if isempty(kws)
         return SymbolicDimensions{R}(Vector{INDEX_TYPE}(undef, 0), Vector{R}(undef, 0))
@@ -68,7 +88,36 @@ function SymbolicDimensions{R}(; kws...) where {R}
     V = R[tryrationalize(R, kws[i]) for i in p]
     return SymbolicDimensions{R}(permute!(I, p), V)
 end
-(::Type{<:SymbolicDimensions})(::Type{R}; kws...) where {R} = SymbolicDimensions{R}(; kws...)
+function SymbolicDimensionsSingleton{R}(s::Symbol) where {R}
+    i = get(ALL_MAPPING, s, INDEX_TYPE(0))
+    iszero(i) && error("$s is not available as a symbol in `SymbolicDimensionsSingleton`. Symbols available: $(ALL_SYMBOLS).")
+    return SymbolicDimensionsSingleton{R}(i)
+end
+
+# Traits:
+dimension_names(::Type{<:AbstractSymbolicDimensions}) = ALL_SYMBOLS
+Base.propertynames(::AbstractSymbolicDimensions) = ALL_SYMBOLS
+Base.getindex(d::AbstractSymbolicDimensions, k::Symbol) = getproperty(d, k)
+constructorof(::Type{<:SymbolicDimensions}) = SymbolicDimensions
+constructorof(::Type{<:SymbolicDimensionsSingleton{R}}) where {R} = SymbolicDimensionsSingleton{R}
+with_type_parameters(::Type{<:SymbolicDimensions}, ::Type{R}) where {R} = SymbolicDimensions{R}
+with_type_parameters(::Type{<:SymbolicDimensionsSingleton}, ::Type{R}) where {R} = SymbolicDimensionsSingleton{R}
+nzdims(d::SymbolicDimensions) = getfield(d, :nzdims)
+nzdims(d::SymbolicDimensionsSingleton) = (getfield(d, :dim),)
+nzvals(d::SymbolicDimensions) = getfield(d, :nzvals)
+nzvals(::SymbolicDimensionsSingleton{R}) where {R} = (one(R),)
+Base.eltype(::AbstractSymbolicDimensions{R}) where {R} = R
+Base.eltype(::Type{<:AbstractSymbolicDimensions{R}}) where {R} = R
+
+# Conversion:
+function SymbolicDimensions(d::SymbolicDimensionsSingleton{R}) where {R}
+    return SymbolicDimensions{R}([nzdims(d)...], [nzvals(d)...])
+end
+function SymbolicDimensions{R}(d::SymbolicDimensionsSingleton) where {R}
+    return SymbolicDimensions{R}([nzdims(d)...], [nzvals(d)...])
+end
+Base.convert(::Type{SymbolicDimensions}, d::SymbolicDimensionsSingleton) = SymbolicDimensions(d)
+Base.convert(::Type{SymbolicDimensions{R}}, d::SymbolicDimensionsSingleton) where {R} = SymbolicDimensions{R}(d)
 
 for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
@@ -86,12 +135,12 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
             dims = SymbolicDimensions{R}(I, V)
             return constructorof(Q)(convert(T, ustrip(q)), dims)
         end
-        function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:SymbolicDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
+        function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
             result = constructorof(Q)(convert(T, ustrip(q)), D())
             d = dimension(q)
-            for (idx, value) in zip(getfield(d, :nzdims), getfield(d, :nzvals))
+            for (idx, value) in zip(nzdims(d), nzvals(d))
                 if !iszero(value)
-                    result = result * convert(with_type_parameters(Q, T, D), ALL_VALUES[idx]) ^ value
+                    result *= convert(with_type_parameters(Q, T, D), ALL_VALUES[idx] ^ value)
                 end
             end
             return result
@@ -101,27 +150,27 @@ end
 
 
 """
-    uexpand(q::UnionAbstractQuantity{<:Any,<:SymbolicDimensions})
+    uexpand(q::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions})
 
 Expand the symbolic units in a quantity to their base SI form.
-In other words, this converts a quantity with `SymbolicDimensions`
+In other words, this converts a quantity with `AbstractSymbolicDimensions`
 to one with `Dimensions`. The opposite of this function is `uconvert`,
-for converting to specific symbolic units, or, e.g., `convert(Quantity{<:Any,<:SymbolicDimensions}, q)`,
+for converting to specific symbolic units, or, e.g., `convert(Quantity{<:Any,<:AbstractSymbolicDimensions}, q)`,
 for assuming SI units as the output symbols.
 """
-function uexpand(q::Q) where {T,R,D<:SymbolicDimensions{R},Q<:UnionAbstractQuantity{T,D}}
+function uexpand(q::Q) where {T,R,D<:AbstractSymbolicDimensions{R},Q<:UnionAbstractQuantity{T,D}}
     return convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
 uexpand(q::QuantityArray) = uexpand.(q)
 # TODO: Make the array-based one more efficient
 
 """
-    uconvert(qout::UnionAbstractQuantity{<:Any, <:SymbolicDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
+    uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
 
 Convert a quantity `q` with base SI units to the symbolic units of `qout`, for `q` and `qout` with compatible units.
 Mathematically, the result has value `q / uexpand(qout)` and units `dimension(qout)`. 
 """
-function uconvert(qout::UnionAbstractQuantity{<:Any, <:SymbolicDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
+function uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
     @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
     qout_expanded = uexpand(qout)
     dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
@@ -129,7 +178,7 @@ function uconvert(qout::UnionAbstractQuantity{<:Any, <:SymbolicDimensions}, q::U
     new_dim = dimension(qout)
     return new_quantity(typeof(q), new_val, new_dim)
 end
-function uconvert(qout::UnionAbstractQuantity{<:Any,<:SymbolicDimensions}, q::QuantityArray{<:Any,<:Any,<:Dimensions})
+function uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions}, q::QuantityArray{<:Any,<:Any,<:Dimensions})
     @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
     qout_expanded = uexpand(qout)
     dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
@@ -140,19 +189,21 @@ end
 # TODO: Method for converting SymbolicDimensions -> SymbolicDimensions
 
 """
-    uconvert(qout::UnionAbstractQuantity{<:Any, <:SymbolicDimensions})
+    uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions})
 
 Create a function that converts an input quantity `q` with base SI units to the symbolic units of `qout`, i.e 
 a function equivalent to `q -> uconvert(qout, q)`.
 """
-uconvert(qout::UnionAbstractQuantity{<:Any, <:SymbolicDimensions}) = Base.Fix1(uconvert, qout)
+uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions}) = Base.Fix1(uconvert, qout)
 
-Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(getfield(d, :nzdims)), copy(getfield(d, :nzvals)))
-function Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions)
-    nzdims_l = getfield(l, :nzdims)
-    nzvals_l = getfield(l, :nzvals)
-    nzdims_r = getfield(r, :nzdims)
-    nzvals_r = getfield(r, :nzvals)
+Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(nzdims(d)), copy(nzvals(d)))
+Base.copy(d::SymbolicDimensionsSingleton) = constructorof(d)(getfield(d, :dim))
+
+function Base.:(==)(l::AbstractSymbolicDimensions, r::AbstractSymbolicDimensions)
+    nzdims_l = nzdims(l)
+    nzvals_l = nzvals(l)
+    nzdims_r = nzdims(r)
+    nzvals_r = nzvals(r)
     nl = length(nzdims_l)
     nr = length(nzdims_r)
     il = ir = 1
@@ -194,12 +245,15 @@ function Base.:(==)(l::SymbolicDimensions, r::SymbolicDimensions)
 
     return true
 end
-Base.iszero(d::SymbolicDimensions) = iszero(getfield(d, :nzvals))
+Base.iszero(d::AbstractSymbolicDimensions) = iszero(nzvals(d))
+Base.iszero(d::SymbolicDimensionsSingleton) = false
 
 # Defines `inv(::SymbolicDimensions)` and `^(::SymbolicDimensions, ::Number)`
 function map_dimensions(op::Function, d::SymbolicDimensions)
-    return SymbolicDimensions(copy(getfield(d, :nzdims)), map(op, getfield(d, :nzvals)))
+    return SymbolicDimensions(copy(nzdims(d)), map(op, nzvals(d)))
 end
+# Ensure we always do operations with SymbolicDimensions:
+map_dimensions(op::Function, d::SymbolicDimensionsSingleton) = map_dimensions(op, SymbolicDimensions(d))
 
 # Defines `*(::SymbolicDimensions, ::SymbolicDimensions)` and `/(::SymbolicDimensions, ::SymbolicDimensions)`
 function map_dimensions(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R}) where {O<:Function,L,R}
@@ -208,10 +262,10 @@ function map_dimensions(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R
     T = typeof(op(zero(L), zero(R)))
     I = Vector{INDEX_TYPE}(undef, 0)
     V = Vector{T}(undef, 0)
-    nzdims_l = getfield(l, :nzdims)
-    nzvals_l = getfield(l, :nzvals)
-    nzdims_r = getfield(r, :nzdims)
-    nzvals_r = getfield(r, :nzvals)
+    nzdims_l = nzdims(l)
+    nzvals_l = nzvals(l)
+    nzdims_r = nzdims(r)
+    nzvals_r = nzvals(r)
     nl = length(nzdims_l)
     nr = length(nzdims_r)
     il = ir = 1
@@ -263,71 +317,59 @@ function map_dimensions(op::O, l::SymbolicDimensions{L}, r::SymbolicDimensions{R
 
     return SymbolicDimensions(I, V)
 end
+# Ensure we always do operations with SymbolicDimensions:
+map_dimensions(op::Function, l::SymbolicDimensionsSingleton, r::SymbolicDimensionsSingleton) = map_dimensions(op, SymbolicDimensions(l), SymbolicDimensions(r))
+map_dimensions(op::Function, l::SymbolicDimensions, r::SymbolicDimensionsSingleton) = map_dimensions(op, l, SymbolicDimensions(r))
+map_dimensions(op::Function, l::SymbolicDimensionsSingleton, r::SymbolicDimensions) = map_dimensions(op, SymbolicDimensions(l), r)
 
-const DEFAULT_SYMBOLIC_QUANTITY_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE, DEFAULT_VALUE_TYPE, SymbolicDimensions{DEFAULT_DIM_BASE_TYPE})
+# Units are stored using SymbolicDimensionsSingleton
+const DEFAULT_SYMBOLIC_QUANTITY_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE, DEFAULT_VALUE_TYPE, SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE})
+# However, we output units from `us_str` using SymbolicDimensions, for type stability
+const DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE, DEFAULT_VALUE_TYPE, SymbolicDimensions{DEFAULT_DIM_BASE_TYPE})
 
 """
-    SymbolicUnitsParse
+    SymbolicUnits
 
 A separate module where each unit is treated as a separate dimension,
 to enable pretty-printing of units.
 """
-module SymbolicUnitsParse
+module SymbolicUnits
 
     import ..UNIT_SYMBOLS
-    import ..CONSTANT_SYMBOLS
-    import ..SYMBOL_CONFLICTS
-    import ..SymbolicDimensions
-
+    import ..SymbolicDimensionsSingleton
     import ...constructorof
     import ...DEFAULT_SYMBOLIC_QUANTITY_TYPE
+    import ...DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE
     import ...DEFAULT_VALUE_TYPE
     import ...DEFAULT_DIM_BASE_TYPE
 
     # Lazily create unit symbols (since there are so many)
     module Constants
-        import ..CONSTANT_SYMBOLS
-        import ..SYMBOL_CONFLICTS
-        import ..SymbolicDimensions
+        import ...CONSTANT_SYMBOLS
+        import ...SymbolicDimensionsSingleton
+        import ...constructorof
+        import ...disambiguate_symbol
+        import ....DEFAULT_SYMBOLIC_QUANTITY_TYPE
+        import ....DEFAULT_VALUE_TYPE
+        import ....DEFAULT_DIM_BASE_TYPE
 
-        import ..constructorof
-        import ..DEFAULT_SYMBOLIC_QUANTITY_TYPE
-        import ..DEFAULT_VALUE_TYPE
-        import ..DEFAULT_DIM_BASE_TYPE
-
-        import ...Constants as EagerConstants
-
-        const CONSTANT_SYMBOLS_EXIST = Ref{Bool}(false)
-        const CONSTANT_SYMBOLS_LOCK = Threads.SpinLock()
-        function _generate_unit_symbols()
-            CONSTANT_SYMBOLS_EXIST[] || lock(CONSTANT_SYMBOLS_LOCK) do
-                CONSTANT_SYMBOLS_EXIST[] && return nothing
-                for unit in setdiff(CONSTANT_SYMBOLS, SYMBOL_CONFLICTS)
-                    @eval const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
-                end
-                # Evaluate conflicting symbols to non-symbolic form:
-                for unit in SYMBOL_CONFLICTS
-                    @eval const $unit = convert(DEFAULT_SYMBOLIC_QUANTITY_TYPE, EagerConstants.$unit)
-                end
-                CONSTANT_SYMBOLS_EXIST[] = true
-            end
-            return nothing
+        for unit in CONSTANT_SYMBOLS
+            @eval const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(
+                DEFAULT_VALUE_TYPE(1.0),
+                SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(disambiguate_symbol(unit))))
+            )
         end
     end
     import .Constants
+    import .Constants as SymbolicConstants
 
-    const UNIT_SYMBOLS_EXIST = Ref{Bool}(false)
-    const UNIT_SYMBOLS_LOCK = Threads.SpinLock()
-    function _generate_unit_symbols()
-        UNIT_SYMBOLS_EXIST[] || lock(UNIT_SYMBOLS_LOCK) do
-            UNIT_SYMBOLS_EXIST[] && return nothing
-            for unit in UNIT_SYMBOLS
-                @eval const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(DEFAULT_VALUE_TYPE(1.0), SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}; $(unit)=1)
-            end
-            UNIT_SYMBOLS_EXIST[] = true
-        end
-        return nothing
+    for unit in UNIT_SYMBOLS
+        @eval const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(
+            DEFAULT_VALUE_TYPE(1.0),
+            SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(unit)))
+        )
     end
+
 
     """
         sym_uparse(raw_string::AbstractString)
@@ -346,18 +388,17 @@ module SymbolicUnitsParse
     namespace collisions, a few physical constants are automatically converted.
     """
     function sym_uparse(raw_string::AbstractString)
-        _generate_unit_symbols()
-        Constants._generate_unit_symbols()
         raw_result = eval(Meta.parse(raw_string))
-        return copy(as_quantity(raw_result))::DEFAULT_SYMBOLIC_QUANTITY_TYPE
+        return copy(as_quantity(raw_result))::DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE
     end
 
-    as_quantity(q::DEFAULT_SYMBOLIC_QUANTITY_TYPE) = q
-    as_quantity(x::Number) = convert(DEFAULT_SYMBOLIC_QUANTITY_TYPE, x)
+    as_quantity(q::DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE) = q
+    as_quantity(x::Number) = convert(DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE, x)
     as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 end
 
-import .SymbolicUnitsParse: sym_uparse
+import .SymbolicUnits: sym_uparse
+import .SymbolicUnits: SymbolicConstants
 
 """
     us"[unit expression]"
@@ -375,9 +416,15 @@ module. So, for example, `us"Constants.c^2 * Hz^2"` would evaluate to
 namespace collisions, a few physical constants are automatically converted.
 """
 macro us_str(s)
-    return esc(SymbolicUnitsParse.sym_uparse(s))
+    return esc(SymbolicUnits.sym_uparse(s))
 end
 
+function Base.promote_rule(::Type{SymbolicDimensionsSingleton{R1}}, ::Type{SymbolicDimensionsSingleton{R2}}) where {R1,R2}
+    return SymbolicDimensions{promote_type(R1,R2)}
+end
+function Base.promote_rule(::Type{SymbolicDimensionsSingleton{R1}}, ::Type{D}) where {R1,D<:AbstractDimensions}
+    return promote_type(SymbolicDimensions{R1}, D)
+end
 function Base.promote_rule(::Type{SymbolicDimensions{R1}}, ::Type{SymbolicDimensions{R2}}) where {R1,R2}
     return SymbolicDimensions{promote_type(R1,R2)}
 end
