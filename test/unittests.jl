@@ -471,7 +471,9 @@ end
     @test typeof(u"fm") == DEFAULT_QUANTITY_TYPE
     @test typeof(u"fm"^2) == DEFAULT_QUANTITY_TYPE
 
-    @test_throws ArgumentError eval(:(u":x"))
+    @test_throws LoadError eval(:(u"x"))
+    VERSION >= v"1.9" && @test_throws "Symbol x not found" uparse("x")
+    VERSION >= v"1.9" && @test_throws "Symbol c found in `Constants` but not `Units`" uparse("c")
 end
 
 @testset "Constants" begin
