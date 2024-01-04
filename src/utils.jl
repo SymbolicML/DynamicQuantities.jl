@@ -28,6 +28,13 @@ end
 function Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
     return Dimensions{promote_type(R1,R2)}
 end
+function Base.promote_rule(::Type{NoDims{R1}}, ::Type{NoDims{R2}}) where {R1,R2}
+    return NoDims{promote_type(R1,R2)}
+end
+function Base.promote_rule(::Type{NoDims{R1}}, ::Type{D}) where {R1,R2,D<:AbstractDimensions{R2}}
+    # The `R1` type is "unused" so we ignore it
+    return D
+end
 
 # Define all the quantity x quantity promotion rules
 """
@@ -340,12 +347,14 @@ ustrip(::AbstractDimensions) = error("Cannot remove units from an `AbstractDimen
 """
     dimension(q::AbstractQuantity)
     dimension(q::AbstractGenericQuantity)
+    dimension(x)
 
 Get the dimensions of a quantity, returning an `AbstractDimensions` object.
 """
 dimension(q::UnionAbstractQuantity) = q.dimensions
 dimension(d::AbstractDimensions) = d
 dimension(aq::AbstractArray{<:UnionAbstractQuantity}) = allequal(dimension.(aq)) ? dimension(first(aq)) : throw(DimensionError(aq[begin], aq[begin+1:end]))
+dimension(_) = DEFAULT_DIMENSIONLESS_TYPE()
 
 """
     ulength(q::AbstractQuantity)
