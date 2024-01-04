@@ -437,11 +437,11 @@ module SymbolicUnits
     end
     function lookup_unit(ex::Symbol)
         i = findfirst(==(ex), UNIT_SYMBOLS)::Int
-        return SYMBOLIC_UNIT_VALUES[i]
+        return as_quantity(SYMBOLIC_UNIT_VALUES[i])
     end
     function lookup_constant(ex::Symbol)
         i = findfirst(==(ex), CONSTANT_SYMBOLS)::Int
-        return SYMBOLIC_CONSTANT_VALUES[i]
+        return as_quantity(SYMBOLIC_CONSTANT_VALUES[i])
     end
 end
 
