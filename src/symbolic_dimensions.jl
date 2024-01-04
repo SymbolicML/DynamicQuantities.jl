@@ -336,6 +336,7 @@ to enable pretty-printing of units.
 module SymbolicUnits
 
     import ..UNIT_SYMBOLS
+    import ..CONSTANT_SYMBOLS
     import ..SymbolicDimensionsSingleton
     import ...constructorof
     import ...DEFAULT_SYMBOLIC_QUANTITY_TYPE
@@ -353,22 +354,34 @@ module SymbolicUnits
         import ....DEFAULT_VALUE_TYPE
         import ....DEFAULT_DIM_BASE_TYPE
 
+        const _SYMBOLIC_CONSTANT_VALUES = DEFAULT_SYMBOLIC_QUANTITY_TYPE[]
+
         for unit in CONSTANT_SYMBOLS
-            @eval const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(
-                DEFAULT_VALUE_TYPE(1.0),
-                SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(disambiguate_symbol(unit))))
-            )
+            @eval begin
+                const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(
+                    DEFAULT_VALUE_TYPE(1.0),
+                    SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(disambiguate_symbol(unit))))
+                )
+                push!(_SYMBOLIC_CONSTANT_VALUES, $unit)
+            end
         end
+        const SYMBOLIC_CONSTANT_VALUES = Tuple(_SYMBOLIC_CONSTANT_VALUES)
     end
     import .Constants
     import .Constants as SymbolicConstants
+    import .Constants: SYMBOLIC_CONSTANT_VALUES
 
+    const _SYMBOLIC_UNIT_VALUES = DEFAULT_SYMBOLIC_QUANTITY_TYPE[]
     for unit in UNIT_SYMBOLS
-        @eval const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(
-            DEFAULT_VALUE_TYPE(1.0),
-            SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(unit)))
-        )
+        @eval begin
+            const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(
+                DEFAULT_VALUE_TYPE(1.0),
+                SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(unit)))
+            )
+            push!(_SYMBOLIC_UNIT_VALUES, $unit)
+        end
     end
+    const SYMBOLIC_UNIT_VALUES = Tuple(_SYMBOLIC_UNIT_VALUES)
 
 
     """
@@ -388,17 +401,53 @@ module SymbolicUnits
     namespace collisions, a few physical constants are automatically converted.
     """
     function sym_uparse(raw_string::AbstractString)
-        raw_result = eval(Meta.parse(raw_string))
+        raw_result = eval(map_to_scope(Meta.parse(raw_string)))
         return copy(as_quantity(raw_result))::DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE
     end
 
     as_quantity(q::DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE) = q
     as_quantity(x::Number) = convert(DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE, x)
     as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
+
+    function map_to_scope(ex::Expr)
+        if ex.head == :call
+            ex.args[2:end] = map(map_to_scope, ex.args[2:end])
+            return ex
+        elseif ex.head == :tuple
+            ex.args[:] = map(map_to_scope, ex.args)
+            return ex
+        elseif ex.head == :. && ex.args[1] == :Constants
+            @assert ex.args[2] isa QuoteNode
+            return lookup_constant(ex.args[2].value)
+        else
+            throw(ArgumentError("Unexpected expression: $ex. Only `:call`, `:tuple`, and `:.` (for `SymbolicConstants`) are expected."))
+        end
+    end
+    function map_to_scope(sym::Symbol)
+        if sym in UNIT_SYMBOLS
+            return lookup_unit(sym)
+        elseif sym in CONSTANT_SYMBOLS
+            throw(ArgumentError("Symbol $sym found in `SymbolicConstants` but not `SymbolicUnits`. Please access the `SymbolicConstants` module. For example, `u\"SymbolicConstants.$sym\"`."))
+        else
+            throw(ArgumentError("Symbol $sym not found in `SymbolicUnits` or `SymbolicConstants`."))
+        end
+    end
+    function map_to_scope(ex)
+        return ex
+    end
+    function lookup_unit(ex::Symbol)
+        i = findfirst(==(ex), UNIT_SYMBOLS)::Int
+        return SYMBOLIC_UNIT_VALUES[i]
+    end
+    function lookup_constant(ex::Symbol)
+        i = findfirst(==(ex), CONSTANT_SYMBOLS)::Int
+        return SYMBOLIC_CONSTANT_VALUES[i]
+    end
 end
 
 import .SymbolicUnits: sym_uparse
 import .SymbolicUnits: SymbolicConstants
+import .SymbolicUnits: map_to_scope
 
 """
     us"[unit expression]"
@@ -416,7 +465,8 @@ module. So, for example, `us"Constants.c^2 * Hz^2"` would evaluate to
 namespace collisions, a few physical constants are automatically converted.
 """
 macro us_str(s)
-    return esc(SymbolicUnits.sym_uparse(s))
+    ex = Meta.parse(s)
+    return esc(map_to_scope(ex))
 end
 
 function Base.promote_rule(::Type{SymbolicDimensionsSingleton{R1}}, ::Type{SymbolicDimensionsSingleton{R2}}) where {R1,R2}

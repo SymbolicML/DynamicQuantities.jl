@@ -30,7 +30,7 @@ for (_, _, Q) in ABSTRACT_QUANTITY_TYPES
             validate_upreferred()
             cumulator = DynamicQuantities.ustrip(x)
             dims = DynamicQuantities.dimension(x)
-            if dims isa DynamicQuantities.SymbolicDimensions
+            if dims isa DynamicQuantities.AbstractSymbolicDimensions
                 throw(ArgumentError("Conversion of a `DynamicQuantities." * string($Q) * "` to a `Unitful.Quantity` is not defined with dimensions of type `SymbolicDimensions`. Instead, you can first use the `uexpand` function to convert the dimensions to their base SI form of type `Dimensions`, then convert this quantity to a `Unitful.Quantity`."))
             end
             equiv = unitful_equivalences()
