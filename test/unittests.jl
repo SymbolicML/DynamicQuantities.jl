@@ -480,7 +480,7 @@ end
     VERSION >= v"1.9" && @test_throws "Unexpected expression" uparse("import ..Units")
     @test_throws LoadError eval(:(us"x"))
     VERSION >= v"1.9" && @test_throws "Symbol x not found" sym_uparse("x")
-    VERSION >= v"1.9" && @test_throws "Symbol c found in `Constants` but not `Units`" sym_uparse("c")
+    VERSION >= v"1.9" && @test_throws "Symbol c found in `SymbolicConstants` but not `SymbolicUnits`" sym_uparse("c")
     VERSION >= v"1.9" && @test_throws "Unexpected expression" sym_uparse("import ..Units")
 end
 
