@@ -254,6 +254,7 @@ for f in (
     @eval Base.$f(q::UnionAbstractQuantity) = $f(ustrip(q))
 end
 Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
+Base.iszero(::NoDims) = true
 Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 
 
