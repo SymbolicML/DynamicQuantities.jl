@@ -66,16 +66,11 @@ function map_to_scope(ex::Expr)
     elseif ex.head == :tuple
         ex.args[:] = map(map_to_scope, ex.args)
         return ex
-    elseif ex.head == :.
-        if ex.args[1] == :Constants
-            @assert ex.args[2] isa QuoteNode
-            return lookup_constant(ex.args[2].value)
-        else
-            return ex
-        end
+    elseif ex.head == :. && ex.args[1] == :Constants
+        @assert ex.args[2] isa QuoteNode
+        return lookup_constant(ex.args[2].value)
     else
-        throw(ArgumentError("Unexpected expression: $ex. Only `:call`, `:tuple`, and `:.` are expected."))
-        return ex
+        throw(ArgumentError("Unexpected expression: $ex. Only `:call`, `:tuple`, and `:.` (for `Constants`) are expected."))
     end
 end
 function map_to_scope(sym::Symbol)
@@ -83,10 +78,8 @@ function map_to_scope(sym::Symbol)
         return lookup_unit(sym)
     elseif sym in CONSTANT_SYMBOLS
         throw(ArgumentError("Symbol $sym found in `Constants` but not `Units`. Please access the `Constants` module. For example, `u\"Constants.$sym\"`."))
-        return sym
     else
         throw(ArgumentError("Symbol $sym not found in `Units` or `Constants`."))
-        return sym
     end
 end
 function map_to_scope(ex)
