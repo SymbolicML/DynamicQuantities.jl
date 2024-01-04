@@ -462,16 +462,16 @@ end
     @test utime(z) == 1
     @test ustrip(z) ≈ 60 * 60 * 24 * 365.25
 
-    # Test type stability of extreme range of units
-    @test typeof(u"1") == DEFAULT_QUANTITY_TYPE
-    @test typeof(u"1f0") == DEFAULT_QUANTITY_TYPE
+    # Test that `u_str` respects original type:
+    @test typeof(u"1") == Int
+    @test typeof(u"1f0") == Float32
     @test typeof(u"s"^2) == DEFAULT_QUANTITY_TYPE
     @test typeof(u"Ω") == DEFAULT_QUANTITY_TYPE
     @test typeof(u"Gyr") == DEFAULT_QUANTITY_TYPE
     @test typeof(u"fm") == DEFAULT_QUANTITY_TYPE
     @test typeof(u"fm"^2) == DEFAULT_QUANTITY_TYPE
 
-    @test_throws LoadError eval(:(u":x"))
+    @test_throws ArgumentError eval(:(u":x"))
 end
 
 @testset "Constants" begin
