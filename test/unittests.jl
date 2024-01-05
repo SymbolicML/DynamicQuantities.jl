@@ -1,5 +1,5 @@
 using DynamicQuantities
-using DynamicQuantities: FixedRational
+using DynamicQuantities: FixedRational, NoDims
 using DynamicQuantities: DEFAULT_QUANTITY_TYPE, DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 using DynamicQuantities: array_type, value_type, dim_type, quantity_type
 using DynamicQuantities: GenericQuantity, with_type_parameters, constructorof
@@ -1633,6 +1633,18 @@ end
         @eval @test all($f.($qx_real_dimensions, $qy_dimensions) .== $ground_truth)
         @eval @test all($f.($qx_dimensions, $qy_real_dimensions) .== $ground_truth)
     end
+
+    # Should be able to compare against `NoDims`:
+    @test Quantity(1.0) >= 1.0
+    @test !(Quantity(1.0) > 1.0)
+end
+
+@testset "Extra tests of `NoDims`" begin
+    @test promote_type(NoDims{Int16}, NoDims{Int32}) === NoDims{Int32}
+
+    # Prefer other types, always:
+    @test promote_type(Dimensions{Int16}, NoDims{Int32}) === Dimensions{Int16}
+    @test promote_type(MyDimensions{Int16}, NoDims{Int32}) === MyDimensions{Int16}
 end
 
 @testset "Test div" begin
