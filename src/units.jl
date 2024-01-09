@@ -6,26 +6,29 @@ import ..DEFAULT_QUANTITY_TYPE
 
 @assert DEFAULT_VALUE_TYPE == Float64 "`units.jl` must be updated to support a different default value type."
 
-const _UNIT_SYMBOLS = Symbol[]
-const _UNIT_VALUES = DEFAULT_QUANTITY_TYPE[]
+const UNIT_SYMBOLS = Symbol[]
+const UNIT_VALUES = DEFAULT_QUANTITY_TYPE[]
+const UNIT_MAPPING = Dict{Symbol,Int}()
 
-macro register_unit(name, value)
-    return esc(_register_unit(name, value))
+macro _lazy_register_unit(name, value)
+    return esc(_lazy_register_unit(name, value))
 end
 
 macro add_prefixes(base_unit, prefixes)
     @assert prefixes.head == :tuple
-    return esc(_add_prefixes(base_unit, prefixes.args, _register_unit))
+    return esc(_add_prefixes(base_unit, prefixes.args, _lazy_register_unit))
 end
 
-function _register_unit(name::Symbol, value)
-    s = string(name)
-    return quote
+function _lazy_register_unit(name::Symbol, value)
+    name_symbol = Meta.quot(name)
+    quote
+        haskey($UNIT_MAPPING, $name_symbol) && throw("Unit $($name_symbol) already exists.")
         const $name = $value
-        push!(_UNIT_SYMBOLS, Symbol($s))
-        push!(_UNIT_VALUES, $name)
+        push!($UNIT_SYMBOLS, $name_symbol)
+        push!($UNIT_VALUES, $name)
     end
 end
+
 
 function _add_prefixes(base_unit::Symbol, prefixes, register_function)
     all_prefixes = (
@@ -42,13 +45,13 @@ function _add_prefixes(base_unit::Symbol, prefixes, register_function)
 end
 
 # SI base units
-@register_unit m DEFAULT_QUANTITY_TYPE(1.0, length=1)
-@register_unit g DEFAULT_QUANTITY_TYPE(1e-3, mass=1)
-@register_unit s DEFAULT_QUANTITY_TYPE(1.0, time=1)
-@register_unit A DEFAULT_QUANTITY_TYPE(1.0, current=1)
-@register_unit K DEFAULT_QUANTITY_TYPE(1.0, temperature=1)
-@register_unit cd DEFAULT_QUANTITY_TYPE(1.0, luminosity=1)
-@register_unit mol DEFAULT_QUANTITY_TYPE(1.0, amount=1)
+@_lazy_register_unit m DEFAULT_QUANTITY_TYPE(1.0, length = 1)
+@_lazy_register_unit g DEFAULT_QUANTITY_TYPE(1e-3, mass = 1)
+@_lazy_register_unit s DEFAULT_QUANTITY_TYPE(1.0, time = 1)
+@_lazy_register_unit A DEFAULT_QUANTITY_TYPE(1.0, current = 1)
+@_lazy_register_unit K DEFAULT_QUANTITY_TYPE(1.0, temperature = 1)
+@_lazy_register_unit cd DEFAULT_QUANTITY_TYPE(1.0, luminosity = 1)
+@_lazy_register_unit mol DEFAULT_QUANTITY_TYPE(1.0, amount = 1)
 
 @add_prefixes m (f, p, n, μ, u, c, d, m, k, M, G)
 @add_prefixes g (p, n, μ, u, m, k)
@@ -88,17 +91,17 @@ end
 )
 
 # SI derived units
-@register_unit Hz inv(s)
-@register_unit N kg * m / s^2
-@register_unit Pa N / m^2
-@register_unit J N * m
-@register_unit W J / s
-@register_unit C A * s
-@register_unit V W / A
-@register_unit F C / V
-@register_unit Ω V / A
-@register_unit ohm Ω
-@register_unit T N / (A * m)
+@_lazy_register_unit Hz inv(s)
+@_lazy_register_unit N kg * m / s^2
+@_lazy_register_unit Pa N / m^2
+@_lazy_register_unit J N * m
+@_lazy_register_unit W J / s
+@_lazy_register_unit C A * s
+@_lazy_register_unit V W / A
+@_lazy_register_unit F C / V
+@_lazy_register_unit Ω V / A
+@_lazy_register_unit ohm Ω
+@_lazy_register_unit T N / (A * m)
 
 @add_prefixes Hz (n, μ, u, m, k, M, G)
 @add_prefixes N ()
@@ -156,17 +159,17 @@ end
 
 # Common assorted units
 ## Time
-@register_unit min 60 * s
-@register_unit minute min
-@register_unit h 60 * min
-@register_unit hr h
-@register_unit day 24 * h
-@register_unit d day
-@register_unit wk 7 * day
-@register_unit yr 365.25 * day
-@register_unit inch 2.54 * cm
-@register_unit ft 12 * inch
-@register_unit mi 5280 * ft
+@_lazy_register_unit min 60 * s
+@_lazy_register_unit minute min
+@_lazy_register_unit h 60 * min
+@_lazy_register_unit hr h
+@_lazy_register_unit day 24 * h
+@_lazy_register_unit d day
+@_lazy_register_unit wk 7 * day
+@_lazy_register_unit yr 365.25 * day
+@_lazy_register_unit inch 2.54 * cm
+@_lazy_register_unit ft 12 * inch
+@_lazy_register_unit mi 5280 * ft
 
 @add_prefixes min ()
 @add_prefixes minute ()
@@ -178,7 +181,7 @@ end
 @add_prefixes yr (k, M, G)
 
 ## Volume
-@register_unit L dm^3
+@_lazy_register_unit L dm^3
 
 @add_prefixes L (μ, u, m, c, d)
 
@@ -188,7 +191,7 @@ end
 )
 
 ## Pressure
-@register_unit bar 100 * kPa
+@_lazy_register_unit bar 100 * kPa
 
 @add_prefixes bar (m,)
 
@@ -203,9 +206,7 @@ end
 # Do not wish to define physical constants, as the number of symbols might lead to ambiguity.
 # The user should define these instead.
 
-"""A tuple of all possible unit symbols."""
-const UNIT_SYMBOLS = Tuple(_UNIT_SYMBOLS)
-const UNIT_VALUES = Tuple(_UNIT_VALUES)
-const UNIT_MAPPING = NamedTuple([s => i for (i, s) in enumerate(UNIT_SYMBOLS)])
+# Update `UNIT_MAPPING` with all internally defined unit symbols.
+merge!(UNIT_MAPPING, Dict(UNIT_SYMBOLS .=> 1:lastindex(UNIT_SYMBOLS)))
 
 end

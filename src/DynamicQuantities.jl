@@ -23,9 +23,10 @@ include("uparse.jl")
 include("symbolic_dimensions.jl")
 include("complex.jl")
 include("disambiguities.jl")
-
+include("register_units.jl")
 include("deprecated.jl")
 export expand_units
+export @register_unit
 
 import PackageExtensionCompat: @require_extensions
 import .Units
@@ -42,7 +43,6 @@ let _units_import_expr = :(using .Units: m, g)
     )
     eval(_units_import_expr)
 end
-
 
 function __init__()
     @require_extensions

@@ -1,9 +1,12 @@
 using DynamicQuantities
 using DynamicQuantities: FixedRational, NoDims, AbstractSymbolicDimensions
-using DynamicQuantities: DEFAULT_QUANTITY_TYPE, DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
+using DynamicQuantities:
+    DEFAULT_QUANTITY_TYPE, DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 using DynamicQuantities: array_type, value_type, dim_type, quantity_type
 using DynamicQuantities: GenericQuantity, with_type_parameters, constructorof
 using DynamicQuantities: promote_quantity_on_quantity, promote_quantity_on_value
+using DynamicQuantities: UNIT_VALUES, UNIT_MAPPING, UNIT_SYMBOLS, ALL_MAPPING, ALL_SYMBOLS, ALL_VALUES
+using DynamicQuantities.SymbolicUnits: SYMBOLIC_UNIT_VALUES
 using DynamicQuantities: map_dimensions
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
@@ -686,8 +689,8 @@ end
         @test !iszero(sym)
     end
 
-    q = 1.5us"km/s"
-    @test q == 1.5 * us"km" / us"s"
+            q = 1.5us"km/s"
+            @test q == 1.5 * us"km" / us"s"
     @test typeof(q) <: with_type_parameters(DEFAULT_QUANTITY_TYPE, Float64, SymbolicDimensions{DEFAULT_DIM_BASE_TYPE})
     @test string(dimension(q)) == "s⁻¹ km"
     @test uexpand(q) == 1.5u"km/s"
@@ -1727,7 +1730,7 @@ end
         ) isa SymbolicDimensions{Int32}
 
     @test copy(km) == km
-    
+
     # Any operation should immediately convert it:
     @test km ^ -1 isa Quantity{T,DynamicQuantities.SymbolicDimensions{R}} where {T,R}
 
@@ -1847,4 +1850,33 @@ end
     x = RealQuantity(2.0)
     y = Quantity(2.0im, mass=1)
     @test_throws DimensionError x^y
+end
+
+# `@testset` rewrites the test block with a `let...end`, resulting in an invalid
+# local `const` (ref: src/units.jl:26). To avoid it, register units outside the
+# test block.
+map_count_before_registering = length(UNIT_MAPPING)
+all_map_count_before_registering = length(ALL_MAPPING)
+@register_unit MyV u"V"
+@register_unit MySV us"V"
+@register_unit MySV2 us"km/h"
+
+@testset "Register Unit" begin
+    @test MyV === u"V"
+    @test MyV == us"V"
+    @test MySV == us"V"
+    @test MySV2 == us"km/h"
+
+    @test length(UNIT_MAPPING) == map_count_before_registering + 3
+    @test length(ALL_MAPPING) == all_map_count_before_registering + 3
+
+    for my_unit in (MySV, MyV)
+        @test my_unit in UNIT_VALUES
+        @test my_unit in ALL_VALUES
+        @test my_unit in SYMBOLIC_UNIT_VALUES
+    end
+    for my_unit in (:MySV, :MyV)
+        @test my_unit in UNIT_SYMBOLS
+        @test my_unit in ALL_SYMBOLS
+    end
 end
