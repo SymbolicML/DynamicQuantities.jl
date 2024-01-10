@@ -288,9 +288,32 @@ true
 
 ## Types
 
-Both a `Quantity`'s values and dimensions are of arbitrary type.
-By default, dimensions are stored as a `Dimensions{FixedRational{Int32,C}}`
-object, whose exponents are stored as rational numbers
+Both a `Quantity`'s values and dimensions are of arbitrary type. The default
+`Dimensions` (for the `u"..."` macro) performs exponent tracking for SI units,
+and `SymbolicDimensions` (for the `us"..."` macro) performs exponent tracking
+for all known unit and constant symbols, using a sparse array.
+
+You can create custom spaces dimension spaces by simply creating
+a Julia struct subtyped to `AbstractDimensions`:
+
+```julia
+julia> struct CookiesAndMilk{R} <: AbstractDimensions{R}
+           cookies::R
+           milk::R
+       end
+
+julia> cookie_rate = Quantity(0.9, CookiesAndMilk(cookies=1, milk=-1))
+0.9 cookies milk⁻¹
+
+julia> total_milk = Quantity(103, CookiesAndMilk(milk=1))
+103 milk
+
+julia> total_cookies = cookie_rate * total_milk
+92.7 cookies
+```
+
+Exponents are tracked with the `FixedRational{Int32,C}}`
+object, which represents rational numbers
 with a fixed denominator `C`. This is much faster than `Rational`.
 
 ```julia
