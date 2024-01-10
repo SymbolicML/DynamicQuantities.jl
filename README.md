@@ -349,15 +349,15 @@ julia> R8 = Dimensions{DynamicQuantities.FixedRational{Int8,6}};
 
 julia> R32 = Dimensions{DynamicQuantities.FixedRational{Int32,2^4 * 3^2 * 5^2 * 7}};  # Default
 
-julia> q8 = [Quantity(randn(), R8, length=rand(-2:2)) for i in 1:1000];
+julia> q8 = [Quantity{Float64,R8}(randn(), length=rand(-2:2)) for i in 1:1000];
 
-julia> q32 = [Quantity(randn(), R32, length=rand(-2:2)) for i in 1:1000];
+julia> q32 = [Quantity{Float64,R32}(randn(), length=rand(-2:2)) for i in 1:1000];
 
 julia> f(x) = @. x ^ 2 * 0.5;
 
 julia> @btime f($q8);
-  7.750 μs (1 allocation: 15.75 KiB)
+  1.433 μs (3 allocations: 15.77 KiB)
 
 julia> @btime f($q32);
-  8.417 μs (2 allocations: 39.11 KiB)
+  1.883 μs (4 allocations: 39.12 KiB)
 ```
