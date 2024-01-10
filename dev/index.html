@@ -121,14 +121,14 @@ julia&gt; R8 = Dimensions{DynamicQuantities.FixedRational{Int8,6}};
 
 julia&gt; R32 = Dimensions{DynamicQuantities.FixedRational{Int32,2^4 * 3^2 * 5^2 * 7}};  # Default
 
-julia&gt; q8 = [Quantity(randn(), R8, length=rand(-2:2)) for i in 1:1000];
+julia&gt; q8 = [Quantity{Float64,R8}(randn(), length=rand(-2:2)) for i in 1:1000];
 
-julia&gt; q32 = [Quantity(randn(), R32, length=rand(-2:2)) for i in 1:1000];
+julia&gt; q32 = [Quantity{Float64,R32}(randn(), length=rand(-2:2)) for i in 1:1000];
 
 julia&gt; f(x) = @. x ^ 2 * 0.5;
 
 julia&gt; @btime f($q8);
-  7.750 μs (1 allocation: 15.75 KiB)
+  1.433 μs (3 allocations: 15.77 KiB)
 
 julia&gt; @btime f($q32);
-  8.417 μs (2 allocations: 39.11 KiB)</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="examples/">Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Wednesday 10 January 2024 01:50">Wednesday 10 January 2024</span>. Using Julia version 1.10.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  1.883 μs (4 allocations: 39.12 KiB)</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="examples/">Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Wednesday 10 January 2024 01:55">Wednesday 10 January 2024</span>. Using Julia version 1.10.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
