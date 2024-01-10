@@ -312,9 +312,9 @@ julia> total_cookies = cookie_rate * total_milk
 92.7 cookies
 ```
 
-Exponents are tracked with the `FixedRational{Int32,C}}`
-object, which represents rational numbers
-with a fixed denominator `C`. This is much faster than `Rational`.
+Exponents are tracked by default with the type `R = FixedRational{Int32,C}`,
+which represents rational numbers with a fixed denominator `C`.
+This is much faster than `Rational`.
 
 ```julia
 julia> typeof(0.5u"kg")
