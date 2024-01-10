@@ -142,7 +142,7 @@ end
     V,
 )
 @doc(
-    "Capacitance in Farads. Available variants: `fF`, `nF`, `μF` (/`uF`), `mF`.",
+    "Capacitance in Farads. Available variants: `fF`, `pF`, `nF`, `μF` (/`uF`), `mF`.",
     F,
 )
 @doc(
