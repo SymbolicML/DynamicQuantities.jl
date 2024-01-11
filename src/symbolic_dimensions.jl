@@ -400,9 +400,10 @@ module SymbolicUnits
     `Quantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
     namespace collisions, a few physical constants are automatically converted.
     """
-    function sym_uparse(raw_string::AbstractString)
-        raw_result = eval(map_to_scope(Meta.parse(raw_string)))
-        return copy(as_quantity(raw_result))::DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE
+    function sym_uparse(s::AbstractString)
+        ex = map_to_scope(Meta.parse(s))
+        ex = :($as_quantity($ex))
+        return copy(eval(ex))::DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE
     end
 
     as_quantity(q::DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE) = q
@@ -445,9 +446,7 @@ module SymbolicUnits
     end
 end
 
-import .SymbolicUnits: sym_uparse
-import .SymbolicUnits: SymbolicConstants
-import .SymbolicUnits: map_to_scope
+import .SymbolicUnits: as_quantity, sym_uparse, SymbolicConstants, map_to_scope
 
 """
     us"[unit expression]"
@@ -465,8 +464,9 @@ module. So, for example, `us"Constants.c^2 * Hz^2"` would evaluate to
 namespace collisions, a few physical constants are automatically converted.
 """
 macro us_str(s)
-    ex = Meta.parse(s)
-    return esc(map_to_scope(ex))
+    ex = map_to_scope(Meta.parse(s))
+    ex = :($as_quantity($ex))
+    return esc(ex)
 end
 
 function Base.promote_rule(::Type{SymbolicDimensionsSingleton{R1}}, ::Type{SymbolicDimensionsSingleton{R2}}) where {R1,R2}

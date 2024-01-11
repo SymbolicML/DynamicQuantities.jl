@@ -35,7 +35,9 @@ the quantity corresponding to the speed of light multiplied by Hertz,
 squared.
 """
 function uparse(s::AbstractString)
-    return as_quantity(eval(map_to_scope(Meta.parse(s))))::DEFAULT_QUANTITY_TYPE
+    ex = map_to_scope(Meta.parse(s))
+    ex = :($as_quantity($ex))
+    return eval(ex)::DEFAULT_QUANTITY_TYPE
 end
 
 as_quantity(q::DEFAULT_QUANTITY_TYPE) = q
@@ -55,8 +57,9 @@ the quantity corresponding to the speed of light multiplied by Hertz,
 squared.
 """
 macro u_str(s)
-    ex = Meta.parse(s)
-    return esc(map_to_scope(ex))
+    ex = map_to_scope(Meta.parse(s))
+    ex = :($as_quantity($ex))
+    return esc(ex)
 end
 
 function map_to_scope(ex::Expr)
