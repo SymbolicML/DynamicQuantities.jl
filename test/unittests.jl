@@ -462,26 +462,26 @@ end
     @test utime(z) == 1
     @test ustrip(z) ≈ 60 * 60 * 24 * 365.25
 
-    # Test that `u_str` respects original type:
-    @test typeof(u"1") == Int
-    @test typeof(u"1f0") == Float32
+    # Test type stability of extreme range of units
+    @test typeof(u"1") == DEFAULT_QUANTITY_TYPE
+    @test typeof(u"1f0") == DEFAULT_QUANTITY_TYPE
     @test typeof(u"s"^2) == DEFAULT_QUANTITY_TYPE
     @test typeof(u"Ω") == DEFAULT_QUANTITY_TYPE
     @test typeof(u"Gyr") == DEFAULT_QUANTITY_TYPE
     @test typeof(u"fm") == DEFAULT_QUANTITY_TYPE
     @test typeof(u"fm"^2) == DEFAULT_QUANTITY_TYPE
 
-    # Can also use tuples:
-    @test typeof(u"(m, s)") == Tuple{DEFAULT_QUANTITY_TYPE, DEFAULT_QUANTITY_TYPE}
+    @test_throws ErrorException eval(:(u":x"))
 
-    @test_throws LoadError eval(:(u"x"))
     VERSION >= v"1.9" && @test_throws "Symbol x not found" uparse("x")
     VERSION >= v"1.9" && @test_throws "Symbol c found in `Constants` but not `Units`" uparse("c")
     VERSION >= v"1.9" && @test_throws "Unexpected expression" uparse("import ..Units")
+    VERSION >= v"1.9" && @test_throws "Unexpected expression" uparse("(m, m)")
     @test_throws LoadError eval(:(us"x"))
     VERSION >= v"1.9" && @test_throws "Symbol x not found" sym_uparse("x")
     VERSION >= v"1.9" && @test_throws "Symbol c found in `SymbolicConstants` but not `SymbolicUnits`" sym_uparse("c")
     VERSION >= v"1.9" && @test_throws "Unexpected expression" sym_uparse("import ..Units")
+    VERSION >= v"1.9" && @test_throws "Unexpected expression" sym_uparse("(m, m)")
 end
 
 @testset "Constants" begin

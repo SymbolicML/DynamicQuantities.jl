@@ -66,14 +66,11 @@ function map_to_scope(ex::Expr)
     if ex.head == :call
         ex.args[2:end] = map(map_to_scope, ex.args[2:end])
         return ex
-    elseif ex.head == :tuple
-        ex.args[:] = map(map_to_scope, ex.args)
-        return ex
     elseif ex.head == :. && ex.args[1] == :Constants
         @assert ex.args[2] isa QuoteNode
         return lookup_constant(ex.args[2].value)
     else
-        throw(ArgumentError("Unexpected expression: $ex. Only `:call`, `:tuple`, and `:.` (for `Constants`) are expected."))
+        throw(ArgumentError("Unexpected expression: $ex. Only `:call` and `:.` (for `Constants`) are expected."))
     end
 end
 function map_to_scope(sym::Symbol)
