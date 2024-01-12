@@ -40,6 +40,19 @@ which is subtyped to `Any`.
 ```@docs
 GenericQuantity
 AbstractGenericQuantity
+```
+
+In the other direction, there is also `RealQuantity`,
+which is subtyped to `Real`.
+
+```@docs
+RealQuantity
+AbstractRealQuantity
+```
+
+More general, these are each contained in the following:
+
+```@docs
 UnionAbstractQuantity
 DynamicQuantities.ABSTRACT_QUANTITY_TYPES
 ```
