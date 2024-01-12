@@ -93,7 +93,7 @@ Note that `Units` is an exported submodule, so you can
 also access this as `Units.kPa`. You may like to define
 
 ```julia
-julia> const U = Units; const C = Constants;
+julia> const U = Units
 ```
 
 so that you can simply write, say, `U.kPa` or `C.m_e`.
@@ -178,6 +178,12 @@ julia> Constants.c
 2.99792458e8 m s⁻¹
 ```
 
+which you may like to define as
+
+```julia
+julia> const C = Constants
+```
+
 These can also be used inside the `u"..."` macro:
 
 ```julia
@@ -185,10 +191,10 @@ julia> u"Constants.c * Hz"
 2.99792458e8 m s⁻²
 ```
 
-Similarly, you can just import these:
+Similarly, you can just import each individual constant:
 
 ```julia
-julia> using DynamicQuantities.Constants: c
+julia> using DynamicQuantities.Constants: h
 ```
 
 For the full list, see the [docs](https://symbolicml.org/DynamicQuantities.jl/dev/constants/).
