@@ -156,6 +156,8 @@ end
     @test abs(x) == abs(Quantity(1.2, length=2 // 5))
     @test abs2(x) == Quantity(abs2(-1.2), length=4 // 5)
 
+    @test copy(x) == x
+
     @test iszero(x) == false
     @test iszero(x * 0) == true
     @test isfinite(x) == true
@@ -461,6 +463,7 @@ end
     z = u"yr"
     @test utime(z) == 1
     @test ustrip(z) ≈ 60 * 60 * 24 * 365.25
+    @test z == uparse("yr")
 
     # Test type stability of extreme range of units
     @test typeof(u"1") == DEFAULT_QUANTITY_TYPE
@@ -694,6 +697,7 @@ end
     @inferred f2(5)
     @test uexpand(f2(5)) == u"s"^5
 
+    @test_throws ErrorException uparse("'c'")
     @test_throws ErrorException sym_uparse("'c'")
 
     # For constants which have a namespace collision, the numerical expansion is used:
@@ -733,6 +737,17 @@ end
     qa = [x, y]
     @test qa isa Vector{Quantity{Float64,SymbolicDimensions{Rational{Int}}}}
     DynamicQuantities.with_type_parameters(SymbolicDimensions{Float64}, Rational{Int}) == SymbolicDimensions{Rational{Int}}
+
+    # Many symbols in one:
+    x = us"pm * fm * nm * μm * mm * cm * dm * m * km"
+    y = us"s"
+    @test inv(x) != x
+    @test dimension(inv(x)).pm == -1
+    @test x != y
+    @test y != x
+    @test dimension(uexpand(x * y)) == dimension(u"m^9 * s")
+    z = uexpand(x)
+    @test x == z
 
     @testset "Promotion with Dimensions" begin
         x = 0.5u"cm"
@@ -1639,12 +1654,63 @@ end
     @test !(Quantity(1.0) > 1.0)
 end
 
-@testset "Extra tests of `NoDims`" begin
+@testset "Tests of `NoDims`" begin
     @test promote_type(NoDims{Int16}, NoDims{Int32}) === NoDims{Int32}
 
     # Prefer other types, always:
     @test promote_type(Dimensions{Int16}, NoDims{Int32}) === Dimensions{Int16}
     @test promote_type(MyDimensions{Int16}, NoDims{Int32}) === MyDimensions{Int16}
+
+    # Always zero dimensions
+    @test iszero(dimension(1.0))
+    @test iszero(dimension([1.0, 2.0]))
+    @test dimension(1.0) * u"1" == u"1"
+    @test typeof(dimension(1.0) * u"1") === typeof(u"1")
+
+    # Even when accessed:
+    @test NoDims().km == 0
+    @test NoDims().m != 1
+
+    # Even weird user-defined dimensions:
+    @test NoDims().cookie == 0
+
+    # Always returns the same type:
+    @test NoDims{Int32}().cookie isa Int32
+    @test NoDims{Int32}().cookie == 0
+end
+
+@testset "Tests of SymbolicDimensionsSingleton" begin
+    km = SymbolicUnits.km
+    @test km isa Quantity{T,SymbolicDimensionsSingleton{R}} where {T,R}
+    @test dimension(km) isa SymbolicDimensionsSingleton
+    @test dimension(km) isa AbstractSymbolicDimensions
+
+    @test dimension(km).km == 1
+    @test dimension(km).m == 0
+    VERSION >= v"1.9" &&
+        @test_throws "is not available as a symbol" dimension(km).γ
+    @test !iszero(km)
+    @test inv(km) == us"km^-1"
+    @test inv(km) == u"km^-1"
+
+    # Constructors
+    @test SymbolicDimensionsSingleton(:cm) isa SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}
+    @test constructorof(SymbolicDimensionsSingleton) === SymbolicDimensionsSingleton
+
+    @test with_type_parameters(
+            SymbolicDimensionsSingleton{Int64},
+            Int32
+        ) === SymbolicDimensionsSingleton{Int32}
+
+    @test convert(
+            SymbolicDimensions,
+            SymbolicDimensionsSingleton{Int32}(:cm)
+        ) isa SymbolicDimensions{Int32}
+
+    @test copy(km) == km
+    
+    # Any operation should immediately convert it:
+    @test km ^ -1 isa Quantity{T,DynamicQuantities.SymbolicDimensions{R}} where {T,R}
 end
 
 @testset "Test div" begin

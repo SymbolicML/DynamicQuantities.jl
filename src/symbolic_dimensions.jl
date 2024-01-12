@@ -99,15 +99,16 @@ dimension_names(::Type{<:AbstractSymbolicDimensions}) = ALL_SYMBOLS
 Base.propertynames(::AbstractSymbolicDimensions) = ALL_SYMBOLS
 Base.getindex(d::AbstractSymbolicDimensions, k::Symbol) = getproperty(d, k)
 constructorof(::Type{<:SymbolicDimensions}) = SymbolicDimensions
-constructorof(::Type{<:SymbolicDimensionsSingleton{R}}) where {R} = SymbolicDimensionsSingleton{R}
+constructorof(::Type{<:SymbolicDimensionsSingleton}) = SymbolicDimensionsSingleton
 with_type_parameters(::Type{<:SymbolicDimensions}, ::Type{R}) where {R} = SymbolicDimensions{R}
 with_type_parameters(::Type{<:SymbolicDimensionsSingleton}, ::Type{R}) where {R} = SymbolicDimensionsSingleton{R}
 nzdims(d::SymbolicDimensions) = getfield(d, :nzdims)
 nzdims(d::SymbolicDimensionsSingleton) = (getfield(d, :dim),)
 nzvals(d::SymbolicDimensions) = getfield(d, :nzvals)
 nzvals(::SymbolicDimensionsSingleton{R}) where {R} = (one(R),)
-Base.eltype(::AbstractSymbolicDimensions{R}) where {R} = R
-Base.eltype(::Type{<:AbstractSymbolicDimensions{R}}) where {R} = R
+
+# Need to construct with `R` if available, as can't figure it out otherwise:
+constructorof(::Type{<:SymbolicDimensionsSingleton{R}}) where {R} = SymbolicDimensionsSingleton{R}
 
 # Conversion:
 function SymbolicDimensions(d::SymbolicDimensionsSingleton{R}) where {R}
@@ -197,7 +198,7 @@ a function equivalent to `q -> uconvert(qout, q)`.
 uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions}) = Base.Fix1(uconvert, qout)
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(nzdims(d)), copy(nzvals(d)))
-Base.copy(d::SymbolicDimensionsSingleton) = constructorof(d)(getfield(d, :dim))
+Base.copy(d::SymbolicDimensionsSingleton) = constructorof(typeof(d))(getfield(d, :dim))
 
 function Base.:(==)(l::AbstractSymbolicDimensions, r::AbstractSymbolicDimensions)
     nzdims_l = nzdims(l)
