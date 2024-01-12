@@ -123,6 +123,20 @@ end
 const DEFAULT_DIM_TYPE = Dimensions{DEFAULT_DIM_BASE_TYPE}
 
 """
+    NoDims{R}
+
+A type representing the dimensions of a non-quantity.
+
+For any `getproperty` call on this type, the result is `zero(R)`.
+"""
+struct NoDims{R<:Real} <: AbstractDimensions{R}
+end
+
+Base.getproperty(::NoDims{R}, ::Symbol) where {R} = zero(R)
+
+const DEFAULT_DIMENSIONLESS_TYPE = NoDims{DEFAULT_DIM_BASE_TYPE}
+
+"""
     Quantity{T<:Number,D<:AbstractDimensions} <: AbstractQuantity{T,D} <: Number
 
 Physical quantity with value `value` of type `T` and dimensions `dimensions` of type `D`.

@@ -4,7 +4,8 @@ import ..constructorof
 import ..DEFAULT_QUANTITY_TYPE
 import ..DEFAULT_DIM_TYPE
 import ..DEFAULT_VALUE_TYPE
-import ..Units: UNIT_SYMBOLS
+import ..Units: UNIT_SYMBOLS, UNIT_VALUES
+import ..Constants: CONSTANT_SYMBOLS, CONSTANT_VALUES
 import ..Constants
 
 function _generate_units_import()
@@ -34,11 +35,13 @@ the quantity corresponding to the speed of light multiplied by Hertz,
 squared.
 """
 function uparse(s::AbstractString)
-    return as_quantity(eval(Meta.parse(s)))::DEFAULT_QUANTITY_TYPE
+    ex = map_to_scope(Meta.parse(s))
+    ex = :($as_quantity($ex))
+    return eval(ex)::DEFAULT_QUANTITY_TYPE
 end
 
 as_quantity(q::DEFAULT_QUANTITY_TYPE) = q
-as_quantity(x::Number) = convert(DEFAULT_QUANTITY_TYPE,  x)
+as_quantity(x::Number) = convert(DEFAULT_QUANTITY_TYPE, x)
 as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 
 """
@@ -54,7 +57,41 @@ the quantity corresponding to the speed of light multiplied by Hertz,
 squared.
 """
 macro u_str(s)
-    return esc(uparse(s))
+    ex = map_to_scope(Meta.parse(s))
+    ex = :($as_quantity($ex))
+    return esc(ex)
+end
+
+function map_to_scope(ex::Expr)
+    if ex.head == :call
+        ex.args[2:end] = map(map_to_scope, ex.args[2:end])
+        return ex
+    elseif ex.head == :. && ex.args[1] == :Constants
+        @assert ex.args[2] isa QuoteNode
+        return lookup_constant(ex.args[2].value)
+    else
+        throw(ArgumentError("Unexpected expression: $ex. Only `:call` and `:.` (for `Constants`) are expected."))
+    end
+end
+function map_to_scope(sym::Symbol)
+    if sym in UNIT_SYMBOLS
+        return lookup_unit(sym)
+    elseif sym in CONSTANT_SYMBOLS
+        throw(ArgumentError("Symbol $sym found in `Constants` but not `Units`. Please access the `Constants` module. For example, `u\"Constants.$sym\"`."))
+    else
+        throw(ArgumentError("Symbol $sym not found in `Units` or `Constants`."))
+    end
+end
+function map_to_scope(ex)
+    return ex
+end
+function lookup_unit(ex::Symbol)
+    i = findfirst(==(ex), UNIT_SYMBOLS)::Int
+    return UNIT_VALUES[i]
+end
+function lookup_constant(ex::Symbol)
+    i = findfirst(==(ex), CONSTANT_SYMBOLS)::Int
+    return CONSTANT_VALUES[i]
 end
 
 end
