@@ -4,6 +4,7 @@ using DynamicQuantities: DEFAULT_QUANTITY_TYPE, DEFAULT_DIM_BASE_TYPE, DEFAULT_D
 using DynamicQuantities: array_type, value_type, dim_type, quantity_type
 using DynamicQuantities: GenericQuantity, with_type_parameters, constructorof
 using DynamicQuantities: promote_quantity_on_quantity, promote_quantity_on_value
+using DynamicQuantities: map_dimensions
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
@@ -748,6 +749,14 @@ end
     @test dimension(uexpand(x * y)) == dimension(u"m^9 * s")
     z = uexpand(x)
     @test x == z
+
+    # Trigger part of map_dimensions missed elsewhere
+    x = us"km"
+    y = us"km"
+    @test x * y |> uexpand == u"km^2"
+    @test x / y |> uexpand == u"1"
+    @test map_dimensions(+, dimension(us"km"), dimension(us"km")) == dimension(us"km^2")
+    @test map_dimensions(-, dimension(us"km"), dimension(us"km")) == dimension(us"1")
 
     @testset "Promotion with Dimensions" begin
         x = 0.5u"cm"
