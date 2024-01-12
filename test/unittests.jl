@@ -1760,6 +1760,11 @@ end
     @test [km, km] isa Vector{Quantity{T,SymbolicDimensionsSingleton{R}}} where {T,R}
     @test [km^2, km] isa Vector{Quantity{T,SymbolicDimensions{R}}} where {T,R}
 
+    # No issue when converting to SymbolicDimensionsSingleton (gets
+    # converted)
+    @test uconvert(km, u"m") == 0.001km
+    @test uconvert(km, u"m") isa Quantity{T,SymbolicDimensions{R}} where {T,R}
+
     # Symbolic dimensions retain symbols:
     @test QuantityArray([km, km]) |> uconvert(us"m") == [1000m, 1000m]
     @test QuantityArray([km, km]) |> uconvert(us"m") != [km, km]
