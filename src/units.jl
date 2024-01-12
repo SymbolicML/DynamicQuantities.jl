@@ -107,9 +107,9 @@ end
 @add_prefixes W (m, k, M, G)
 @add_prefixes C ()
 @add_prefixes V (p, n, μ, u, m, k, M, G)
-@add_prefixes F ()
-@add_prefixes Ω (n, μ, u, m)
-@add_prefixes ohm (n, μ, u, m)
+@add_prefixes F (f, p, n, μ, u, m)
+@add_prefixes Ω (n, μ, u, m, k, M, G)
+@add_prefixes ohm (n, μ, u, m, k, M, G)
 @add_prefixes T ()
 
 # SI derived units
@@ -142,11 +142,11 @@ end
     V,
 )
 @doc(
-    "Capacitance in Farads.",
+    "Capacitance in Farads. Available variants: `fF`, `pF`, `nF`, `μF` (/`uF`), `mF`.",
     F,
 )
 @doc(
-    "Resistance in Ohms. Available variant: `nΩ`, `μΩ` (/`uΩ`), `mΩ`. Also available is ASCII `ohm` (with variants `nohm`, `μohm` (/`uohm`), `mohm`).",
+    "Resistance in Ohms. Available variant: `nΩ`, `μΩ` (/`uΩ`), `mΩ`, `kΩ`, `MΩ`, `GΩ`. Also available is ASCII `ohm` (with variants `nohm`, `μohm` (/`uohm`), `mohm`, `kohm`, `Mohm`, `Gohm`).",
     Ω,
 )
 @doc(
