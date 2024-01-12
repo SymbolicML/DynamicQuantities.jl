@@ -89,6 +89,9 @@ julia> room_temp = 100kPa
 100000.0 m⁻¹ kg s⁻²
 ```
 
+Note that `Units` is an exported submodule, so you can
+also access this as `Units.kPa`.
+
 This supports a wide range of SI base and derived units, with common
 prefixes.
 
@@ -176,6 +179,12 @@ julia> u"Constants.c * Hz"
 2.99792458e8 m s⁻²
 ```
 
+Similarly, you can just import these:
+
+```julia
+julia> using DynamicQuantities.Constants: c
+```
+
 For the full list, see the [docs](https://symbolicml.org/DynamicQuantities.jl/dev/constants/).
 
 
@@ -219,6 +228,23 @@ You can also convert a quantity in regular base SI units to symbolic units with 
 julia> uconvert(us"nm", 5e-9u"m") # can also write 5e-9u"m" |> uconvert(us"nm")
 5.0 nm
 ```
+
+Finally, you can also import these directly:
+
+```julia
+julia> using DynamicQuantities.SymbolicUnits: cm
+```
+
+or constants:
+
+```julia
+julia> using DynamicQuantities.SymbolicConstants: h
+```
+
+Note that `SymbolicUnits` and `SymbolicConstants` are exported,
+so you can simply access these as `SymbolicUnits.cm` and `SymbolicConstants.h`,
+respectively.
+
 
 ### Arrays
 
