@@ -90,7 +90,13 @@ julia> room_temp = 100kPa
 ```
 
 Note that `Units` is an exported submodule, so you can
-also access this as `Units.kPa`.
+also access this as `Units.kPa`. You may like to define
+
+```julia
+julia> const U = Units; const C = Constants;
+```
+
+so that you can simply write, say, `U.kPa` or `C.m_e`.
 
 This supports a wide range of SI base and derived units, with common
 prefixes.
@@ -243,20 +249,7 @@ julia> using DynamicQuantities.SymbolicConstants: h
 
 Note that `SymbolicUnits` and `SymbolicConstants` are exported,
 so you can simply access these as `SymbolicUnits.cm` and `SymbolicConstants.h`,
-respectively. I like to work with these like so:
-
-```julia
-julia> const u = DynamicQuantities.SymbolicUnits;
-
-julia> const C = DynamicQuantities.SymbolicConstants;
-```
-
-so that I can simply write things like:
-
-```julia
-julia> u.yr * C.c |> uexpand |> uconvert(u.km)
-```
-
+respectively.
 
 ### Arrays
 

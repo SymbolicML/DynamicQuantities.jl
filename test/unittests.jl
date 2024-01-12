@@ -1753,6 +1753,16 @@ end
     @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).km == 1
     @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).m == 1
     @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).cm == 0
+
+    # Note that we avoid converting to SymbolicDimensionsSingleton for uconvert:
+    @test km |> uconvert(us"m") == 1000m
+    @test km |> uconvert(us"m") isa Quantity{T,SymbolicDimensions{R}} where {T,R}
+    @test [km, km] isa Vector{Quantity{T,SymbolicDimensionsSingleton{R}}} where {T,R}
+    @test [km^2, km] isa Vector{Quantity{T,SymbolicDimensions{R}}} where {T,R}
+
+    # Symbolic dimensions retain symbols:
+    @test QuantityArray([km, km]) |> uconvert(us"m") == [1000m, 1000m]
+    @test QuantityArray([km, km]) |> uconvert(us"m") != [km, km]
 end
 
 @testset "Test div" begin

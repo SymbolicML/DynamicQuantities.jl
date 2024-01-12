@@ -171,7 +171,7 @@ uexpand(q::QuantityArray) = uexpand.(q)
 Convert a quantity `q` with base SI units to the symbolic units of `qout`, for `q` and `qout` with compatible units.
 Mathematically, the result has value `q / uexpand(qout)` and units `dimension(qout)`. 
 """
-function uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
+function uconvert(qout::UnionAbstractQuantity{<:Any, <:SymbolicDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
     @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
     qout_expanded = uexpand(qout)
     dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
@@ -179,7 +179,7 @@ function uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimension
     new_dim = dimension(qout)
     return new_quantity(typeof(q), new_val, new_dim)
 end
-function uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions}, q::QuantityArray{<:Any,<:Any,<:Dimensions})
+function uconvert(qout::UnionAbstractQuantity{<:Any,<:SymbolicDimensions}, q::QuantityArray{<:Any,<:Any,<:Dimensions})
     @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
     qout_expanded = uexpand(qout)
     dimension(q) == dimension(qout_expanded) || throw(DimensionError(q, qout_expanded))
@@ -187,7 +187,39 @@ function uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions
     new_dim = dimension(qout)
     return QuantityArray(new_array, new_dim, quantity_type(q))
 end
-# TODO: Method for converting SymbolicDimensions -> SymbolicDimensions
+
+# Ensure we always do operations with SymbolicDimensions:
+function uconvert(
+    qout::UnionAbstractQuantity{T,<:SymbolicDimensionsSingleton{R}},
+    q::Union{
+        <:UnionAbstractQuantity{<:Any,<:Dimensions},
+        <:QuantityArray{<:Any,<:Any,<:Dimensions},
+    },
+) where {T,R}
+    return uconvert(
+        convert(
+            with_type_parameters(
+                typeof(qout),
+                T,
+                with_type_parameters(SymbolicDimensions, R),
+            ),
+            qout,
+        ),
+        q,
+    )
+end
+
+# Allow user to convert SymbolicDimensions -> SymbolicDimensions
+function uconvert(
+    qout::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions{R}},
+    q::Union{
+        <:UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions},
+        <:QuantityArray{<:Any,<:Any,<:AbstractSymbolicDimensions},
+    },
+) where {R}
+    return uconvert(qout, uexpand(q))
+end
+
 
 """
     uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions})
