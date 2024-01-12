@@ -1689,9 +1689,12 @@ end
     @test dimension(km).m == 0
     VERSION >= v"1.9" &&
         @test_throws "is not available as a symbol" dimension(km).γ
-    @test !iszero(km)
+    @test !iszero(dimension(km))
     @test inv(km) == us"km^-1"
     @test inv(km) == u"km^-1"
+
+    @test !iszero(dimension(SymbolicConstants.c))
+    @test SymbolicConstants.c isa Quantity{T,SymbolicDimensionsSingleton{R}} where {T,R}
 
     # Constructors
     @test SymbolicDimensionsSingleton(:cm) isa SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}
