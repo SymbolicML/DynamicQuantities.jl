@@ -25,6 +25,17 @@ Another type which subtypes `AbstractDimensions` is `SymbolicDimensions`:
 SymbolicDimensions
 ```
 
+Just note that all of the symbolic units and constants are stored using the
+immutable `SymbolicDimensionsSingleton`, which shares the same
+supertype `AbstractSymbolicDimensions <: SymbolicDimensions`. These get immediately
+converted to the mutable `SymbolicDimensions` when used in any
+calculation.
+
+```@docs
+SymbolicDimensionsSingleton
+AbstractSymbolicDimensions
+```
+
 ## Arrays
 
 ```@docs

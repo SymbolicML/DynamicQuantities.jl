@@ -1681,6 +1681,7 @@ end
 
 @testset "Tests of SymbolicDimensionsSingleton" begin
     km = SymbolicUnits.km
+    m = SymbolicUnits.m
     @test km isa Quantity{T,SymbolicDimensionsSingleton{R}} where {T,R}
     @test dimension(km) isa SymbolicDimensionsSingleton
     @test dimension(km) isa AbstractSymbolicDimensions
@@ -1730,6 +1731,19 @@ end
             SymbolicDimensionsSingleton{Int64},
             Dimensions{Int16}
         ) === Dimensions{Int64}
+
+    # Test map_dimensions explicitly for coverage:
+    @test map_dimensions(-, dimension(km)).km == -1
+    @test map_dimensions(-, dimension(km)) isa SymbolicDimensions
+    @test map_dimensions(+, dimension(km), dimension(m)).km == 1
+    @test map_dimensions(+, dimension(km), dimension(m)).m == 1
+    @test map_dimensions(+, dimension(km), dimension(m)).cm == 0
+    @test map_dimensions(+, dimension(km), SymbolicDimensions(dimension(m))).km == 1
+    @test map_dimensions(+, dimension(km), SymbolicDimensions(dimension(m))).m == 1
+    @test map_dimensions(+, dimension(km), SymbolicDimensions(dimension(m))).cm == 0
+    @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).km == 1
+    @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).m == 1
+    @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).cm == 0
 end
 
 @testset "Test div" begin

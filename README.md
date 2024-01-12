@@ -243,7 +243,19 @@ julia> using DynamicQuantities.SymbolicConstants: h
 
 Note that `SymbolicUnits` and `SymbolicConstants` are exported,
 so you can simply access these as `SymbolicUnits.cm` and `SymbolicConstants.h`,
-respectively.
+respectively. I like to work with these like so:
+
+```julia
+julia> const u = DynamicQuantities.SymbolicUnits;
+
+julia> const C = DynamicQuantities.SymbolicConstants;
+```
+
+so that I can simply write things like:
+
+```julia
+julia> u.yr * C.c |> uexpand |> uconvert(u.km)
+```
 
 
 ### Arrays
