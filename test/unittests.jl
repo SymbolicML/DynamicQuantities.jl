@@ -1714,6 +1714,22 @@ end
     
     # Any operation should immediately convert it:
     @test km ^ -1 isa Quantity{T,DynamicQuantities.SymbolicDimensions{R}} where {T,R}
+
+    # Test promotion explicitly for coverage:
+    @test promote_type(
+            SymbolicDimensionsSingleton{Int16},
+            SymbolicDimensionsSingleton{Int32}
+        ) === SymbolicDimensions{Int32}
+    # ^ Note how we ALWAYS convert to SymbolicDimensions, even
+    # if the types are the same.
+    @test promote_type(
+            SymbolicDimensionsSingleton{Int16},
+            SymbolicDimensions{Int32}
+        ) === SymbolicDimensions{Int32}
+    @test promote_type(
+            SymbolicDimensionsSingleton{Int64},
+            Dimensions{Int16}
+        ) === Dimensions{Int64}
 end
 
 @testset "Test div" begin
