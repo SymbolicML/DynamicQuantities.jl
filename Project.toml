@@ -9,22 +9,28 @@ PackageExtensionCompat = "65ce6f38-6b18-4e1d-a461-8949797d7930"
 Tricks = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
 
 [weakdeps]
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [extensions]
+DynamicQuantitiesDiffEqBaseExt = "DiffEqBase"
 DynamicQuantitiesLinearAlgebraExt = "LinearAlgebra"
 DynamicQuantitiesMeasurementsExt = "Measurements"
+DynamicQuantitiesRecursiveArrayToolsExt = "RecursiveArrayTools"
 DynamicQuantitiesScientificTypesExt = "ScientificTypes"
 DynamicQuantitiesUnitfulExt = "Unitful"
 
 [compat]
 Aqua = "0.7"
 Compat = "3.42, 4"
+DiffEqBase = "6"
 Measurements = "2"
 PackageExtensionCompat = "1.0.2"
+RecursiveArrayTools = "2"
 ScientificTypes = "3"
 Tricks = "0.1"
 Unitful = "1"
@@ -32,9 +38,11 @@ julia = "1.6"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
 Ratios = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SaferIntegers = "88634af6-177f-5301-88b8-7819386cfa38"
 ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
@@ -43,4 +51,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Aqua", "LinearAlgebra", "Measurements", "Ratios", "SaferIntegers", "SafeTestsets", "ScientificTypes", "StaticArrays", "Test", "Unitful"]
+test = ["Aqua", "DiffEqBase", "LinearAlgebra", "Measurements", "Ratios", "RecursiveArrayTools", "SaferIntegers", "SafeTestsets", "ScientificTypes", "StaticArrays", "Test", "Unitful"]

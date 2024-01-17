@@ -6,6 +6,7 @@ using DynamicQuantities: GenericQuantity, with_type_parameters, constructorof
 using DynamicQuantities: promote_quantity_on_quantity, promote_quantity_on_value
 using DynamicQuantities: map_dimensions
 using Ratios: SimpleRatio
+using RecursiveArrayTools: RecursiveArrayTools as RAT
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
 using LinearAlgebra: norm
@@ -1841,4 +1842,12 @@ end
     x = RealQuantity(2.0)
     y = Quantity(2.0im, mass=1)
     @test_throws DimensionError x^y
+end
+
+@testset "RecursiveArrayTools" begin
+    for f in (RAT.recursive_unitless_bottom_eltype, RAT.recursive_unitless_eltype)
+        @test f([0.3u"km/s"]) == Float64
+        @test f([Quantity{Float32}(0.3u"km/s")]) == Float64
+        @test f([0.3Unitful.u"km/s"]) == Float64
+    end
 end

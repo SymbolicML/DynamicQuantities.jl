@@ -141,6 +141,7 @@ single value type.
 end
 @inline promote_except_value(q1::Q, q2::Q) where {Q<:UnionAbstractQuantity} = (q1, q2)
 
+Base.eltype(::Type{Q}) where {Q<:UnionAbstractQuantity} = Q
 Base.keys(d::AbstractDimensions) = dimension_names(typeof(d))
 Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
 
@@ -279,6 +280,7 @@ Base.zero(q::Q) where {Q<:UnionAbstractQuantity} = new_quantity(Q, zero(ustrip(q
 Base.zero(::AbstractDimensions) = error("There is no such thing as an additive identity for a `AbstractDimensions` object, as + is only defined for `UnionAbstractQuantity`.")
 Base.zero(::Type{<:UnionAbstractQuantity}) = error("Cannot create an additive identity for a `UnionAbstractQuantity` type, as the dimensions are unknown. Please use `zero(::UnionAbstractQuantity)` instead.")
 Base.zero(::Type{<:AbstractDimensions}) = error("There is no such thing as an additive identity for a `AbstractDimensions` type, as + is only defined for `UnionAbstractQuantity`.")
+Base.zero(x::Array{Q}) where {Q<:UnionAbstractQuantity} = zero.(x)
 
 # Dimensionful 1 (oneunit)
 Base.oneunit(q::Q) where {Q<:UnionAbstractQuantity} = new_quantity(Q, oneunit(ustrip(q)), dimension(q))

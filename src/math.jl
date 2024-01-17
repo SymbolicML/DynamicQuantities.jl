@@ -149,6 +149,7 @@ Base.cbrt(q::UnionAbstractQuantity) = new_quantity(typeof(q), cbrt(ustrip(q)), c
 
 Base.abs2(q::UnionAbstractQuantity) = new_quantity(typeof(q), abs2(ustrip(q)), dimension(q)^2)
 Base.angle(q::UnionAbstractQuantity{T}) where {T<:Complex} = angle(ustrip(q))
+Base.sign(q::UnionAbstractQuantity) = sign(ustrip(q))
 
 ############################## Require dimensionless input ##############################
 # Note that :clamp, :cmp, :sign already work
