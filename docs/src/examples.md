@@ -11,10 +11,11 @@ On your chemistry homework, you are faced with the following problem on the phot
 
 Let's solve this problem with `DynamicQuantities.jl`!
 
-```jldoctest examples
-julia> using DynamicQuantities
+```julia
+using DynamicQuantities
+from DynamicQuantities import units
 
-julia> using DynamicQuantities.Constants: h, m_e
+julia> from DynamicQuantities.Constants import h, m_e
 
 julia> Φ = 4.33u"Constants.eV" # work function
 6.93742482522e-19 m² kg s⁻²
@@ -103,7 +104,12 @@ y_km = ustrip.(uconvert(us"km").(y_si))
 Now, we plot:
 
 ```julia
-plot(x_km, y_km, label="Trajectory", xlabel="x [km]", ylabel="y [km]")
+import matplotlib.pyplot as plt
+plt.plot(x_km, y_km, label="Trajectory")
+plt.xlabel("x [km]")
+plt.ylabel("y [km]")
+plt.legend()
+plt.show()
 ```
 
 ## 3. Various Simple Examples
