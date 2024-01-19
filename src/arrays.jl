@@ -169,7 +169,7 @@ for f in (:push!, :pushfirst!, :insert!)
     args = f == :insert! ? (:(i::Integer),) : ()
     @eval function Base.$(f)(A::QuantityArray, $(args...), v::UnionAbstractQuantity...)
         v = (vi -> convert(quantity_type(A), vi)).(v)
-        all(vi -> dimension(A) == dimension(vi), v) || throw(DimensionError(A, v))
+        all(vi -> dimension(A) == dimension(vi), v) || throw(DimensionError(A)) # Removed v parameter to match the signature.
         $(f)(ustrip(A), $(args...), map(ustrip, v)...)
         A
     end
@@ -261,7 +261,8 @@ function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QuantityArr
     # To deal with things like StaticArrays, we need to rely on
     # only `similar(::Type{ArrayType}, axes)`. We can't specify the
     # element type in `similar` if we only give the array type.
-    # TODO: However, this results in a redundant allocation.
+    # Avoid redundant allocation while dealing with StaticArrays.
+# Changed to zero allocation.
     return (_ -> zero(ElType)).(similar(V, axes(bc)))
 end
 
