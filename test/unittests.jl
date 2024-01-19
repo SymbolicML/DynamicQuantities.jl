@@ -438,6 +438,12 @@ end
         @test typeof(d) == D
         @test typeof(ulength(d)) == R
     end
+
+    # Can convert type with float(...):
+    x = Quantity{Int}(u"m/s")
+    @test typeof(x) == Quantity{Int64,DEFAULT_DIM_TYPE}
+    y = float(typeof(x))
+    @test typeof(y) == Quantity{Float64,DEFAULT_DIM_TYPE}
 end
 
 @testset "Units" begin
