@@ -286,6 +286,8 @@ Base.oneunit(::AbstractDimensions) = error("There is no such thing as a dimensio
 Base.oneunit(::Type{<:UnionAbstractQuantity}) = error("Cannot create a dimensionful 1 for a `UnionAbstractQuantity` type without knowing the dimensions. Please use `oneunit(::UnionAbstractQuantity)` instead.")
 Base.oneunit(::Type{<:AbstractDimensions}) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` type, as + is only defined for `UnionAbstractQuantity`.")
 
+Base.float(::Type{Q}) where {T,D,Q<:UnionAbstractQuantity{T,D}} = with_type_parameters(Q, Base.float(T), D)
+
 Base.show(io::IO, d::AbstractDimensions) =
     let tmp_io = IOBuffer()
         for k in filter(k -> !iszero(d[k]), keys(d))
