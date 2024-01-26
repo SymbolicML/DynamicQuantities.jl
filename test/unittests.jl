@@ -806,7 +806,7 @@ end
         q = convert(Q{Float16}, 1.5u"g")
         qs = uconvert(convert(Q{Float16}, us"g"), 5 * q)
         @test typeof(qs) <: Q{Float16,<:SymbolicDimensions{<:Any}}
-        @test isapprox(qs, 7.5us"g"; atol=0.01)
+        @test isapprox(qs, 7.5us"g"; atol=0.01us"g")
 
         # Arrays
         x = [1.0, 2.0, 3.0] .* Q(u"kg")
