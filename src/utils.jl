@@ -257,12 +257,11 @@ end
 
 # Define isapprox for vectors
 function Base.isapprox(
-    u::AbstractArray{<:UnionAbstractQuantity{T,D}},
-	v::AbstractArray{<:UnionAbstractQuantity{T,D}};
-    atol=new_quantity(T, zero(T), dimension(first(u))),
+    u::AbstractArray{Q}, v::AbstractArray{Q};
+    atol=new_quantity(Q, zero(T), dimension(first(u))),
     rtol=Base.rtoldefault(ustrip(first(u))),
     nans::Bool=false, norm::Function=norm
-) where {T,D}
+) where {T, D, Q<:UnionAbstractQuantity{T,D}}
     d = norm(u - v)
     if isfinite(d)
         return d <= max(atol, rtol*max(norm(u), norm(v)))
