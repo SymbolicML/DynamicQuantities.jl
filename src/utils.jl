@@ -173,11 +173,13 @@ Base.keys(q::UnionAbstractQuantity) = keys(ustrip(q))
 function _strip_kws(dimcheck, kws)
     if :atol in keys(kws)
         dimension(dimcheck) == dimension(kws[:atol]) || throw(DimensionError(dimcheck, kws[:atol]))
-        kws = replace(kws) do kv
+        new_kws = replace(kws) do kv
             first(kv) == :atol ? first(kv)=>ustrip(last(kv)) : kv
         end
     end
-    return kws
+    @info kws
+    @info new_kws
+    return new_kws
 end
 
 # Numeric checks
