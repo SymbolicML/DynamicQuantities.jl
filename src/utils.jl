@@ -259,7 +259,7 @@ end
 function Base.isapprox(
     u::AbstractArray{Q}, v::AbstractArray{Q};
     atol=new_quantity(Q, zero(T), dimension(first(u))),
-    rtol=Base.rtoldefault(ustrip(first(u))),
+    rtol=Base.rtoldefault(T),
     nans::Bool=false, norm::Function=norm
 ) where {T, D, Q<:UnionAbstractQuantity{T,D}}
     d = norm(u - v)
