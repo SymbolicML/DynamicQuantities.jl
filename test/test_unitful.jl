@@ -18,12 +18,12 @@ for T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_BASE
     x_unitful = T(0.2)u"m*mol^2*A^(-1//2)*cd^(2//5)"
     tol_unitful = T(1e-6)u"m*mol^2*A^(-1//2)*cd^(2//5)"
 
-    @test risapprox(convert(Unitful.Quantity, x), x_unitful; atol=tol_unitful)
+    @test risapprox(convert(Unitful.Quantity, x), x_unitful; atol=1e-6)
     @test typeof(convert(DynamicQuantities.Quantity, convert(Unitful.Quantity, x))) <: DynamicQuantities.Quantity{T,DynamicQuantities.DEFAULT_DIM_TYPE}
     @test isapprox(convert(DynamicQuantities.Quantity, convert(Unitful.Quantity, x)), x; atol=tol_dq)
 
     @test isapprox(convert(DynamicQuantities.Quantity{T,D}, x_unitful), x; atol=tol_dq)
-    @test risapprox(convert(Unitful.Quantity, convert(DynamicQuantities.Quantity{T,D}, x_unitful)), Unitful.upreferred(x_unitful); atol=tol_unitful)
+    @test risapprox(convert(Unitful.Quantity, convert(DynamicQuantities.Quantity{T,D}, x_unitful)), Unitful.upreferred(x_unitful); atol=1e-6)
 
     @test typeof(convert(DynamicQuantities.Dimensions, Unitful.dimension(x_unitful))) == DynamicQuantities.Dimensions{DEFAULT_DIM_BASE_TYPE}
 end
