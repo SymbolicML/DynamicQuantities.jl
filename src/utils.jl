@@ -255,6 +255,23 @@ for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES
     end
 end
 
+# Define isapprox for vectors
+function Base.isapprox(
+    u::AbstractArray{<:UnionAbstractQuantity{T,D}},
+	v::AbstractArray{<:UnionAbstractQuantity{T,D}};
+    atol=new_quantity(T, zero(T), dimension(first(u))),
+    rtol=Base.rtoldefault(ustrip(first(u))),
+    nans::Bool=false, norm::Function=norm
+) where {T,D}
+    d = norm(u - v)
+    if isfinite(d)
+        return d <= max(atol, rtol*max(norm(u), norm(v)))
+    else
+        # Fall back to a component-wise approximate comparison
+        return all(ab -> isapprox(uv[1], uv[2]; rtol=rtol, atol=atol, nans=nans), zip(u, v))
+    end
+end
+
 # Simple flags:
 for f in (
     :isone, :iszero, :isfinite, :isinf, :isnan, :isreal, :signbit,
