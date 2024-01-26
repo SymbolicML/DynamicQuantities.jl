@@ -177,8 +177,6 @@ function _strip_kws(dimcheck, kws)
             first(kv) == :atol ? first(kv)=>ustrip(last(kv)) : kv
         end
     end
-    @info kws
-    @info new_kws
     return new_kws
 end
 
@@ -236,7 +234,9 @@ for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES
         function Base.isapprox(l::$type, r::$type; kws...)
             l, r = promote_except_value(l, r)
             dimension(l) == dimension(r) || throw(DimensionError(l, r))
-            return isapprox(ustrip(l), ustrip(r); _strip_kws(l, kws)...)
+            new_kws = _strip_kws(l, kws)
+            @info new_kws
+            return isapprox(ustrip(l), ustrip(r); new_kws...)
         end
         function Base.isapprox(l::$base_type, r::$type; kws...)
             iszero(dimension(r)) || throw(DimensionError(l, r))
