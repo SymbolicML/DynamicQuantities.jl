@@ -1,4 +1,3 @@
-
 import .Units: UNIT_MAPPING, UNIT_SYMBOLS, UNIT_VALUES, _lazy_register_unit
 import .SymbolicUnits:
     SymbolicDimensionsSingleton, SYMBOLIC_UNIT_VALUES, update_symbolic_unit_values!
@@ -13,7 +12,6 @@ function update_all_values(name_symbol, unit)
     push!(ALL_VALUES, unit)
     ALL_MAPPING[name_symbol] = INDEX_TYPE(length(ALL_MAPPING) + 1)
 end
-
 
 # Register
 macro register_unit(name, value)

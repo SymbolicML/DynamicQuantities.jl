@@ -90,7 +90,7 @@ end
 function SymbolicDimensionsSingleton{R}(s::Symbol) where {R}
     i = get(ALL_MAPPING, s, INDEX_TYPE(0))
     iszero(i) && error("$s is not available as a symbol in `SymbolicDimensionsSingleton`. Symbols available: $(ALL_SYMBOLS).")
-    SymbolicDimensionsSingleton{R}(i)
+    return SymbolicDimensionsSingleton{R}(i)
 end
 
 # Traits:
@@ -367,15 +367,14 @@ to enable pretty-printing of units.
 """
 module SymbolicUnits
 
-
     import ..UNIT_SYMBOLS
     import ..CONSTANT_SYMBOLS
     import ..SymbolicDimensionsSingleton
-    import ...constructorof
-    import ...DEFAULT_SYMBOLIC_QUANTITY_TYPE
-    import ...DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE
-    import ...DEFAULT_VALUE_TYPE
-    import ...DEFAULT_DIM_BASE_TYPE
+    import ..DEFAULT_SYMBOLIC_QUANTITY_TYPE
+    import ..constructorof
+    import ..DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE
+    import ..DEFAULT_VALUE_TYPE
+    import ..DEFAULT_DIM_BASE_TYPE
 
     # Lazily create unit symbols (since there are so many)
     module Constants
@@ -393,9 +392,7 @@ module SymbolicUnits
             @eval begin
                 const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(
                     DEFAULT_VALUE_TYPE(1.0),
-                    SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}(
-                        $(QuoteNode(disambiguate_symbol(unit))),
-                    ),
+                    SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(disambiguate_symbol(unit))))
                 )
                 push!(_SYMBOLIC_CONSTANT_VALUES, $unit)
             end
@@ -412,7 +409,7 @@ module SymbolicUnits
         @eval begin
             const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(
                 DEFAULT_VALUE_TYPE(1.0),
-                SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(unit))),
+                SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(unit)))
             )
             push!($symbolic_unit_values, $unit)
         end

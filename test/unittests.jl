@@ -689,8 +689,8 @@ end
         @test !iszero(sym)
     end
 
-            q = 1.5us"km/s"
-            @test q == 1.5 * us"km" / us"s"
+    q = 1.5us"km/s"
+    @test q == 1.5 * us"km" / us"s"
     @test typeof(q) <: with_type_parameters(DEFAULT_QUANTITY_TYPE, Float64, SymbolicDimensions{DEFAULT_DIM_BASE_TYPE})
     @test string(dimension(q)) == "s⁻¹ km"
     @test uexpand(q) == 1.5u"km/s"
