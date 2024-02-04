@@ -11,8 +11,11 @@ export ustrip, dimension
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 export uparse, @u_str, sym_uparse, @us_str, uexpand, uconvert
 
+const INDEX_TYPE = UInt16
+
 include("internal_utils.jl")
 include("fixed_rational.jl")
+include("write_once_read_many.jl")
 include("types.jl")
 include("utils.jl")
 include("math.jl")
@@ -39,7 +42,7 @@ using .Units: UNIT_SYMBOLS
 let _units_import_expr = :(using .Units: m, g)
     append!(
         _units_import_expr.args[1].args,
-        map(s -> Expr(:(.), s), filter(s -> s ∉ (:m, :g), UNIT_SYMBOLS))
+        Expr(:(.), s) for s in UNIT_SYMBOLS if s ∉ (:m, :g)
     )
     eval(_units_import_expr)
 end

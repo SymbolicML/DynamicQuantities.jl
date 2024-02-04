@@ -1,14 +1,14 @@
 module Units
 
+import ..WriteOnceReadMany
 import ..DEFAULT_DIM_TYPE
 import ..DEFAULT_VALUE_TYPE
 import ..DEFAULT_QUANTITY_TYPE
 
 @assert DEFAULT_VALUE_TYPE == Float64 "`units.jl` must be updated to support a different default value type."
 
-const UNIT_SYMBOLS = Symbol[]
-const UNIT_VALUES = DEFAULT_QUANTITY_TYPE[]
-const UNIT_MAPPING = Dict{Symbol,Int}()
+const UNIT_SYMBOLS = WriteOnceReadMany{Vector{Symbol}}()
+const UNIT_VALUES = WriteOnceReadMany{Vector{DEFAULT_QUANTITY_TYPE}}()
 
 macro _lazy_register_unit(name, value)
     return esc(_lazy_register_unit(name, value))
@@ -22,7 +22,6 @@ end
 function _lazy_register_unit(name::Symbol, value)
     name_symbol = Meta.quot(name)
     quote
-        haskey($UNIT_MAPPING, $name_symbol) && throw("Unit $($name_symbol) already exists.")
         const $name = $value
         push!($UNIT_SYMBOLS, $name_symbol)
         push!($UNIT_VALUES, $name)
@@ -207,6 +206,6 @@ end
 # The user should define these instead.
 
 # Update `UNIT_MAPPING` with all internally defined unit symbols.
-merge!(UNIT_MAPPING, Dict(UNIT_SYMBOLS .=> 1:lastindex(UNIT_SYMBOLS)))
+const UNIT_MAPPING = WriteOnceReadMany(Dict(s => i for (i, s) in enumerate(UNIT_SYMBOLS)))
 
 end

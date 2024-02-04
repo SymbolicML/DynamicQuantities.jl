@@ -1,3 +1,5 @@
+import ..WriteOnceReadMany
+import ..INDEX_TYPE
 import .Units: UNIT_SYMBOLS, UNIT_MAPPING, UNIT_VALUES
 import .Constants: CONSTANT_SYMBOLS, CONSTANT_MAPPING, CONSTANT_VALUES
 
@@ -8,13 +10,9 @@ disambiguate_symbol(s) = s in SYMBOL_CONFLICTS ? Symbol(s, :_constant) : s
 # Prefer units over constants:
 # For example, this means we can't have a symbolic Planck's constant,
 # as it is just "hours" (h), which is more common.
-const INDEX_TYPE = UInt16
-# Prefer units over constants:
-# For example, this means we can't have a symbolic Planck's constant,
-# as it is just "hours" (h), which is more common.
-const ALL_SYMBOLS = [UNIT_SYMBOLS..., disambiguate_symbol.(CONSTANT_SYMBOLS)...]
-const ALL_VALUES = [UNIT_VALUES..., CONSTANT_VALUES...]
-const ALL_MAPPING = Dict(ALL_SYMBOLS .=> (INDEX_TYPE(1):INDEX_TYPE(length(ALL_SYMBOLS))))
+const ALL_SYMBOLS = WriteOnceReadMany([UNIT_SYMBOLS..., disambiguate_symbol.(CONSTANT_SYMBOLS)...])
+const ALL_VALUES = WriteOnceReadMany([UNIT_VALUES..., CONSTANT_VALUES...])
+const ALL_MAPPING = WriteOnceReadMany(Dict(s => INDEX_TYPE(i) for (i, s) in enumerate(ALL_SYMBOLS)))
 
 """
     AbstractSymbolicDimensions{R} <: AbstractDimensions{R}
@@ -375,6 +373,7 @@ module SymbolicUnits
     import ..DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE
     import ..DEFAULT_VALUE_TYPE
     import ..DEFAULT_DIM_BASE_TYPE
+    import ..WriteOnceReadMany
 
     # Lazily create unit symbols (since there are so many)
     module Constants
@@ -403,7 +402,7 @@ module SymbolicUnits
     import .Constants as SymbolicConstants
     import .Constants: SYMBOLIC_CONSTANT_VALUES
 
-    const SYMBOLIC_UNIT_VALUES = DEFAULT_SYMBOLIC_QUANTITY_TYPE[]
+    const SYMBOLIC_UNIT_VALUES = WriteOnceReadMany{Vector{DEFAULT_SYMBOLIC_QUANTITY_TYPE}}()
 
     function update_symbolic_unit_values!(unit, symbolic_unit_values = SYMBOLIC_UNIT_VALUES)
         @eval begin
@@ -415,7 +414,8 @@ module SymbolicUnits
         end
     end
 
-    update_symbolic_unit_values!.(UNIT_SYMBOLS)
+    update_symbolic_unit_values!(w::WriteOnceReadMany) = update_symbolic_unit_values!.(w._raw_data)
+    update_symbolic_unit_values!(UNIT_SYMBOLS)
 
     """
         sym_uparse(raw_string::AbstractString)
