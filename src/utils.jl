@@ -170,14 +170,13 @@ end
 Base.keys(q::UnionAbstractQuantity) = keys(ustrip(q))
 
 # If atol specified in kwargs, validate its dimensions and then strip units
-function _strip_kws(dimcheck, kws)
-    if :atol in keys(kws)
+@inline function _validate_isapprox(dimcheck, kws)
+    if haskey(kws, :atol)
         dimension(dimcheck) == dimension(kws[:atol]) || throw(DimensionError(dimcheck, kws[:atol]))
-        kws = Dict{Symbol,Any}(kws)
-        kws[:atol] = ustrip(kws[:atol])
+        return (; kws..., atol=ustrip(kws[:atol]))
+    else
+        return kws
     end
-
-    return kws
 end
 
 # Numeric checks
@@ -234,15 +233,15 @@ for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES
         function Base.isapprox(l::$type, r::$type; kws...)
             l, r = promote_except_value(l, r)
             dimension(l) == dimension(r) || throw(DimensionError(l, r))
-            return isapprox(ustrip(l), ustrip(r); _strip_kws(l, kws)...)
+            return isapprox(ustrip(l), ustrip(r); _validate_isapprox(l, kws)...)
         end
         function Base.isapprox(l::$base_type, r::$type; kws...)
             iszero(dimension(r)) || throw(DimensionError(l, r))
-            return isapprox(l, ustrip(r); _strip_kws(r, kws)...)
+            return isapprox(l, ustrip(r); _validate_isapprox(r, kws)...)
         end
         function Base.isapprox(l::$type, r::$base_type; kws...)
             iszero(dimension(l)) || throw(DimensionError(l, r))
-            return isapprox(ustrip(l), r; _strip_kws(l, kws)...)
+            return isapprox(ustrip(l), r; _validate_isapprox(l, kws)...)
         end
     end
     for (type2, _, _) in ABSTRACT_QUANTITY_TYPES
