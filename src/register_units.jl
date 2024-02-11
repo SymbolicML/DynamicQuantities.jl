@@ -1,6 +1,5 @@
 import .Units: UNIT_MAPPING, UNIT_SYMBOLS, UNIT_VALUES, _lazy_register_unit
-import .SymbolicUnits:
-    SymbolicDimensionsSingleton, SYMBOLIC_UNIT_VALUES, update_symbolic_unit_values!
+import .SymbolicUnits: update_external_symbolic_unit_value
 
 # Update the unit collections
 const UNIT_UPDATE_LOCK = Threads.SpinLock()
@@ -12,7 +11,7 @@ function update_all_values(name_symbol, unit)
         i = lastindex(ALL_VALUES)
         ALL_MAPPING[name_symbol] = i
         UNIT_MAPPING[name_symbol] = i
-        update_symbolic_unit_values!(name_symbol)
+        update_external_symbolic_unit_value(name_symbol)
     end
 end
 

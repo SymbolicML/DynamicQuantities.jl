@@ -417,7 +417,17 @@ module SymbolicUnits
     update_symbolic_unit_values!(w::WriteOnceReadMany) = update_symbolic_unit_values!.(w._raw_data)
     update_symbolic_unit_values!(UNIT_SYMBOLS)
 
-    """
+    # Non-eval version of `update_symbolic_unit_values!` for registering units in
+    # an external module.
+    function update_external_symbolic_unit_value(unit)
+        unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(
+            DEFAULT_VALUE_TYPE(1.0),
+            SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}(unit)
+        )
+        push!(SYMBOLIC_UNIT_VALUES, unit)
+    end
+
+"""
         sym_uparse(raw_string::AbstractString)
 
     Parse a string containing an expression of units and return the

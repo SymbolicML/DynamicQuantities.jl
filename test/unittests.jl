@@ -8,6 +8,7 @@ using DynamicQuantities: promote_quantity_on_quantity, promote_quantity_on_value
 using DynamicQuantities: UNIT_VALUES, UNIT_MAPPING, UNIT_SYMBOLS, ALL_MAPPING, ALL_SYMBOLS, ALL_VALUES
 using DynamicQuantities.SymbolicUnits: SYMBOLIC_UNIT_VALUES
 using DynamicQuantities: map_dimensions
+using DynamicQuantities: _register_unit
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
@@ -1861,6 +1862,8 @@ all_map_count_before_registering = length(ALL_MAPPING)
 @register_unit MySV us"V"
 @register_unit MySV2 us"km/h"
 
+@test_throws "Unit `m` is already defined as `1.0 m`" esc(_register_unit(:m, u"s"))
+
 @testset "Register Unit" begin
     @test MyV === u"V"
     @test MyV == us"V"
@@ -1880,3 +1883,13 @@ all_map_count_before_registering = length(ALL_MAPPING)
         @test my_unit in ALL_SYMBOLS
     end
 end
+
+push!(LOAD_PATH, joinpath(@__DIR__, "precompile_test"))
+
+using ExternalUnitRegistration: Wb
+@testset "Type of Extenral Unit" begin
+    @test Wb isa DEFAULT_QUANTITY_TYPE
+    @test Wb/u"m^2*kg*s^-2*A^-1" == 1.0
+end
+
+pop!(LOAD_PATH)
