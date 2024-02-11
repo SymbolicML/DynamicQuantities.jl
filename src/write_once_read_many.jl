@@ -17,7 +17,14 @@ for f in (:enumerate, :length, :lastindex)
     end
 end
 
-Base.getindex(w::WriteOnceReadMany, i::Union{Int, INDEX_TYPE,  Symbol}) = getindex(w._raw_data, i)
+Base.getindex(w::WriteOnceReadMany, i::Union{Integer,Symbol}) = getindex(w._raw_data, i)
+Base.get(w::WriteOnceReadMany{<:Dict}, a, b) = get(w._raw_data, a, b)
+
+# Only define setindex! for Dicts, and throw an error if the key already exists
+function Base.setindex!(w::DynamicQuantities.WriteOnceReadMany{<:Dict}, i, s::Symbol)
+    haskey(w._raw_data, s) && throw("Unit $s already exists at index $(w[s])")
+    setindex!(w._raw_data, i, s)
+end
 
 Base.iterate(w::WriteOnceReadMany) = iterate(w._raw_data)
 Base.iterate(w::WriteOnceReadMany, i::Int) = iterate(w._raw_data, i)
@@ -33,10 +40,3 @@ for f in (:findfirst, :filter)
     end
 end
 
-Base.setindex!(w::DynamicQuantities.WriteOnceReadMany{Dict{Symbol, INDEX_TYPE}}, i::Int, s::Symbol) = setindex!(w, INDEX_TYPE(i), s)
-function Base.setindex!(w::DynamicQuantities.WriteOnceReadMany{Dict{Symbol, T}}, i::T, s::Symbol) where T <: Union{Int, INDEX_TYPE}
-    haskey(w._raw_data, s) && throw("Unit $s already exists at index $(w[s])")
-    setindex!(w._raw_data, i, s)
-end
-
-Base.get(w::WriteOnceReadMany{Dict{Symbol, INDEX_TYPE}}, a, b) = get(w._raw_data, a, b)
