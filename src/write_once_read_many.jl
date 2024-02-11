@@ -29,9 +29,6 @@ end
 Base.iterate(w::WriteOnceReadMany) = iterate(w._raw_data)
 Base.iterate(w::WriteOnceReadMany, i::Int) = iterate(w._raw_data, i)
 
-Base.intersect(w::WriteOnceReadMany, v::AbstractSet) = intersect(w._raw_data, v)
-Base.intersect(v::AbstractSet, w::WriteOnceReadMany) = intersect(v, w._raw_data)
-
 Base.push!(w::WriteOnceReadMany, val...) = push!(w._raw_data, val...)
 
 for f in (:findfirst, :filter)

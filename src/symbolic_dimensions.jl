@@ -3,14 +3,12 @@ import ..INDEX_TYPE
 import .Units: UNIT_SYMBOLS, UNIT_MAPPING, UNIT_VALUES
 import .Constants: CONSTANT_SYMBOLS, CONSTANT_MAPPING, CONSTANT_VALUES
 
-const SYMBOL_CONFLICTS = intersect(UNIT_SYMBOLS, CONSTANT_SYMBOLS)
-
-disambiguate_symbol(s) = s in SYMBOL_CONFLICTS ? Symbol(s, :_constant) : s
+disambiguate_constant_symbol(s) = s in UNIT_SYMBOLS ? Symbol(s, :_constant) : s
 
 # Prefer units over constants:
 # For example, this means we can't have a symbolic Planck's constant,
 # as it is just "hours" (h), which is more common.
-const ALL_SYMBOLS = WriteOnceReadMany([UNIT_SYMBOLS..., disambiguate_symbol.(CONSTANT_SYMBOLS)...])
+const ALL_SYMBOLS = WriteOnceReadMany([UNIT_SYMBOLS..., disambiguate_constant_symbol.(CONSTANT_SYMBOLS)...])
 const ALL_VALUES = WriteOnceReadMany([UNIT_VALUES..., CONSTANT_VALUES...])
 const ALL_MAPPING = WriteOnceReadMany(Dict(s => INDEX_TYPE(i) for (i, s) in enumerate(ALL_SYMBOLS)))
 
@@ -380,7 +378,7 @@ module SymbolicUnits
         import ...CONSTANT_SYMBOLS
         import ...SymbolicDimensionsSingleton
         import ...constructorof
-        import ...disambiguate_symbol
+        import ...disambiguate_constant_symbol
         import ...DEFAULT_SYMBOLIC_QUANTITY_TYPE
         import ...DEFAULT_VALUE_TYPE
         import ...DEFAULT_DIM_BASE_TYPE
@@ -391,7 +389,7 @@ module SymbolicUnits
             @eval begin
                 const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(
                     DEFAULT_VALUE_TYPE(1.0),
-                    SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(disambiguate_symbol(unit))))
+                    SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(disambiguate_constant_symbol(unit))))
                 )
                 push!(_SYMBOLIC_CONSTANT_VALUES, $unit)
             end
