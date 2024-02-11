@@ -12,9 +12,10 @@ end
 
 # Utility functions
 for f in (:enumerate, :length, :lastindex)
-    @eval begin
-        Base.$f(w::WriteOnceReadMany) = $f(w._raw_data)
-    end
+    @eval Base.$f(w::WriteOnceReadMany) = $f(w._raw_data)
+end
+for f in (:findfirst, :filter)
+    @eval Base.$f(val::Function, w::WriteOnceReadMany) = $f(val, w._raw_data)
 end
 
 Base.getindex(w::WriteOnceReadMany, i::Union{Integer,Symbol}) = getindex(w._raw_data, i)
@@ -27,13 +28,7 @@ function Base.setindex!(w::DynamicQuantities.WriteOnceReadMany{<:Dict}, i, s::Sy
 end
 
 Base.iterate(w::WriteOnceReadMany) = iterate(w._raw_data)
-Base.iterate(w::WriteOnceReadMany, i::Int) = iterate(w._raw_data, i)
+Base.iterate(w::WriteOnceReadMany, i) = iterate(w._raw_data, i)
 
 Base.push!(w::WriteOnceReadMany, val...) = push!(w._raw_data, val...)
-
-for f in (:findfirst, :filter)
-    @eval begin
-        Base.$f(val::Function, w::WriteOnceReadMany) = $f(val, w._raw_data)
-    end
-end
 
