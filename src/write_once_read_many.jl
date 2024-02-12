@@ -30,5 +30,5 @@ end
 Base.iterate(w::WriteOnceReadMany) = iterate(w._raw_data)
 Base.iterate(w::WriteOnceReadMany, i) = iterate(w._raw_data, i)
 
-Base.push!(w::WriteOnceReadMany, val...) = push!(w._raw_data, val...)
+Base.push!(w::WriteOnceReadMany, val...) = (push!(w._raw_data, val...); w)
 
