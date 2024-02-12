@@ -1,7 +1,6 @@
 using DynamicQuantities
 using DynamicQuantities: FixedRational, NoDims, AbstractSymbolicDimensions
-using DynamicQuantities:
-    DEFAULT_QUANTITY_TYPE, DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
+using DynamicQuantities: DEFAULT_QUANTITY_TYPE, DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 using DynamicQuantities: array_type, value_type, dim_type, quantity_type
 using DynamicQuantities: GenericQuantity, with_type_parameters, constructorof
 using DynamicQuantities: promote_quantity_on_quantity, promote_quantity_on_value
@@ -1731,7 +1730,6 @@ end
         ) isa SymbolicDimensions{Int32}
 
     @test copy(km) == km
-
     # Any operation should immediately convert it:
     @test km ^ -1 isa Quantity{T,DynamicQuantities.SymbolicDimensions{R}} where {T,R}
 

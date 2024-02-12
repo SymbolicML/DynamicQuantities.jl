@@ -9,7 +9,7 @@ export QuantityArray
 export DimensionError
 export ustrip, dimension
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
-export uparse, @u_str, sym_uparse, @us_str, uexpand, uconvert
+export uparse, @u_str, sym_uparse, @us_str, uexpand, uconvert, @register_unit
 
 
 include("internal_utils.jl")
@@ -24,11 +24,11 @@ include("constants.jl")
 include("uparse.jl")
 include("symbolic_dimensions.jl")
 include("complex.jl")
-include("disambiguities.jl")
 include("register_units.jl")
+include("disambiguities.jl")
+
 include("deprecated.jl")
 export expand_units
-export @register_unit
 
 import PackageExtensionCompat: @require_extensions
 import .Units

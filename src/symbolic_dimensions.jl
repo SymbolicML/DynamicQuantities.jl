@@ -367,8 +367,8 @@ module SymbolicUnits
     import ..UNIT_SYMBOLS
     import ..CONSTANT_SYMBOLS
     import ..SymbolicDimensionsSingleton
-    import ..DEFAULT_SYMBOLIC_QUANTITY_TYPE
     import ..constructorof
+    import ..DEFAULT_SYMBOLIC_QUANTITY_TYPE
     import ..DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE
     import ..DEFAULT_VALUE_TYPE
     import ..DEFAULT_DIM_BASE_TYPE
@@ -426,7 +426,7 @@ module SymbolicUnits
         push!(SYMBOLIC_UNIT_VALUES, unit)
     end
 
-"""
+    """
         sym_uparse(raw_string::AbstractString)
 
     Parse a string containing an expression of units and return the

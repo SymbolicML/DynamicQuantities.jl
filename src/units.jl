@@ -28,7 +28,6 @@ function _lazy_register_unit(name::Symbol, value)
     end
 end
 
-
 function _add_prefixes(base_unit::Symbol, prefixes, register_function)
     all_prefixes = (
         f=1e-15, p=1e-12, n=1e-9, μ=1e-6, u=1e-6, m=1e-3, c=1e-2, d=1e-1,
@@ -44,13 +43,13 @@ function _add_prefixes(base_unit::Symbol, prefixes, register_function)
 end
 
 # SI base units
-@_lazy_register_unit m DEFAULT_QUANTITY_TYPE(1.0, length = 1)
-@_lazy_register_unit g DEFAULT_QUANTITY_TYPE(1e-3, mass = 1)
-@_lazy_register_unit s DEFAULT_QUANTITY_TYPE(1.0, time = 1)
-@_lazy_register_unit A DEFAULT_QUANTITY_TYPE(1.0, current = 1)
-@_lazy_register_unit K DEFAULT_QUANTITY_TYPE(1.0, temperature = 1)
-@_lazy_register_unit cd DEFAULT_QUANTITY_TYPE(1.0, luminosity = 1)
-@_lazy_register_unit mol DEFAULT_QUANTITY_TYPE(1.0, amount = 1)
+@_lazy_register_unit m DEFAULT_QUANTITY_TYPE(1.0, length=1)
+@_lazy_register_unit g DEFAULT_QUANTITY_TYPE(1e-3, mass=1)
+@_lazy_register_unit s DEFAULT_QUANTITY_TYPE(1.0, time=1)
+@_lazy_register_unit A DEFAULT_QUANTITY_TYPE(1.0, current=1)
+@_lazy_register_unit K DEFAULT_QUANTITY_TYPE(1.0, temperature=1)
+@_lazy_register_unit cd DEFAULT_QUANTITY_TYPE(1.0, luminosity=1)
+@_lazy_register_unit mol DEFAULT_QUANTITY_TYPE(1.0, amount=1)
 
 @add_prefixes m (f, p, n, μ, u, c, d, m, k, M, G)
 @add_prefixes g (p, n, μ, u, m, k)
