@@ -100,9 +100,9 @@ end
 @_lazy_register_unit Ω V / A
 @_lazy_register_unit ohm Ω
 @_lazy_register_unit S A / V
-@_lazy_register_unit H kg * m^2 * s^-2 * A^-2
+@_lazy_register_unit H N * m / A^2
 @_lazy_register_unit T N / (A * m)
-@_lazy_register_unit Wb m^2 * kg * s^-2 * A^-1
+@_lazy_register_unit Wb V * s
 
 @add_prefixes Hz (n, μ, u, m, k, M, G)
 @add_prefixes N ()
@@ -115,6 +115,7 @@ end
 @add_prefixes Ω (n, μ, u, m, k, M, G)
 @add_prefixes ohm (n, μ, u, m, k, M, G)
 @add_prefixes S (n, μ, u, m, k, M, G)
+@add_prefixes H ()
 @add_prefixes T ()
 @add_prefixes Wb (n, μ, u, m)
 
@@ -160,7 +161,7 @@ end
     S,
 )
 @doc(
-    "Electrical inductance in henry.",
+    "Electrical inductance in henries.",
     H,
 )
 @doc(
