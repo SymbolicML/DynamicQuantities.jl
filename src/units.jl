@@ -99,6 +99,7 @@ end
 @_lazy_register_unit F C / V
 @_lazy_register_unit Ω V / A
 @_lazy_register_unit ohm Ω
+@_lazy_register_unit H kg * m^2 * s^-2 * A^-2
 @_lazy_register_unit T N / (A * m)
 @_lazy_register_unit Wb m^2 * kg * s^-2 * A^-1
 
@@ -151,6 +152,10 @@ end
 @doc(
     "Resistance in Ohms. Available variant: `nΩ`, `μΩ` (/`uΩ`), `mΩ`, `kΩ`, `MΩ`, `GΩ`. Also available is ASCII `ohm` (with variants `nohm`, `μohm` (/`uohm`), `mohm`, `kohm`, `Mohm`, `Gohm`).",
     Ω,
+)
+@doc(
+    "Electrical inductance in henry.",
+    H,
 )
 @doc(
     "Magnetic flux density in Teslas.",
