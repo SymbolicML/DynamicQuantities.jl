@@ -15,9 +15,14 @@ function update_all_values(name_symbol, unit)
     end
 end
 
-# Register
-macro register_unit(name, value)
-    return esc(_register_unit(name, value))
+"""
+    @register_unit symbol value
+
+Register a new unit under the given symbol to have
+a particular value.
+"""
+macro register_unit(symbol, value)
+    return esc(_register_unit(symbol, value))
 end
 
 function _register_unit(name::Symbol, value)
