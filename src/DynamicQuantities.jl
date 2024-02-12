@@ -11,7 +11,6 @@ export ustrip, dimension
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 export uparse, @u_str, sym_uparse, @us_str, uexpand, uconvert
 
-const INDEX_TYPE = UInt16
 
 include("internal_utils.jl")
 include("fixed_rational.jl")

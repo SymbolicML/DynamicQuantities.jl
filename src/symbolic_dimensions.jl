@@ -1,10 +1,11 @@
 import ..WriteOnceReadMany
-import ..INDEX_TYPE
 import .Units: UNIT_SYMBOLS, UNIT_MAPPING, UNIT_VALUES
 import .Constants: CONSTANT_SYMBOLS, CONSTANT_MAPPING, CONSTANT_VALUES
 
+
 disambiguate_constant_symbol(s) = s in UNIT_SYMBOLS ? Symbol(s, :_constant) : s
 
+const INDEX_TYPE = UInt16
 # Prefer units over constants:
 # For example, this means we can't have a symbolic Planck's constant,
 # as it is just "hours" (h), which is more common.
