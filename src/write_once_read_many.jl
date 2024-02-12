@@ -23,7 +23,7 @@ Base.get(w::WriteOnceReadMany{<:Dict}, a, b) = get(w._raw_data, a, b)
 
 # Only define setindex! for Dicts, and throw an error if the key already exists
 function Base.setindex!(w::DynamicQuantities.WriteOnceReadMany{<:Dict}, i, s::Symbol)
-    haskey(w._raw_data, s) && throw("Unit $s already exists at index $(w[s])")
+    haskey(w._raw_data, s) && error("Unit $s already exists at index $(w[s])")
     setindex!(w._raw_data, i, s)
     return w
 end

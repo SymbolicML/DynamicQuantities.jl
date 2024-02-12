@@ -52,19 +52,21 @@ end
 function _register_unit(name::Symbol, value)
     name_symbol = Meta.quot(name)
     index = get(ALL_MAPPING, name, INDEX_TYPE(0))
-    if iszero(index)
-        reg_expr = _lazy_register_unit(name, value)
-        push!(reg_expr.args, quote
-            $update_all_values($name_symbol, $value)
-            nothing
-        end)
-        return reg_expr
-    else
+    if !iszero(index)
         unit = ALL_VALUES[index]
         # When a utility function to expand `value` to its final form becomes
         # available, enable the following check. This will avoid throwing an error
         # if user is trying to register an existing unit with matching values.
         # unit.value != value && throw("Unit $name is already defined as $unit")
-        throw("Unit `$name` is already defined as `$unit`")
+        error("Unit `$name` is already defined as `$unit`")
     end
+    reg_expr = _lazy_register_unit(name, value)
+    push!(
+        reg_expr.args,
+        quote
+            $update_all_values($name_symbol, $value)
+            nothing
+        end
+    )
+    return reg_expr
 end
