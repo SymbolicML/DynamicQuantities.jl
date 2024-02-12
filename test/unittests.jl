@@ -1860,7 +1860,12 @@ all_map_count_before_registering = length(ALL_MAPPING)
 @register_unit MySV us"V"
 @register_unit MySV2 us"km/h"
 
-@test_throws "Unit `m` is already defined as `1.0 m`" esc(_register_unit(:m, u"s"))
+if VERSION >= v"1.9"
+    @test_throws "Unit `m` is already defined as `1.0 m`" esc(_register_unit(:m, u"s"))
+
+    # Constants as well:
+    @test_throws "Unit `Ryd` is already defined" esc(_register_unit(:Ryd, u"Constants.Ryd"))
+end
 
 @testset "Register Unit" begin
     @test MyV === u"V"
