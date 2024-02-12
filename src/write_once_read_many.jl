@@ -1,7 +1,12 @@
 """
-    WriteOnceReadMany()
+    WriteOnceReadMany{V}(container::V)
 
-Used for storing units, values, symbolic-units.
+A wrapper type for container that only defines methods
+for appending to and reading to, but not modifying the container.
+
+This is so that we can safely define a `@register_unit` interface
+without needing to worry about the user overwriting previously
+defined units and voiding the indexing of symbolic dimensions.
 """
 struct WriteOnceReadMany{V}
     _raw_data::V
