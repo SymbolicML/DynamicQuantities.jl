@@ -25,6 +25,7 @@ Base.get(w::WriteOnceReadMany{<:Dict}, a, b) = get(w._raw_data, a, b)
 function Base.setindex!(w::DynamicQuantities.WriteOnceReadMany{<:Dict}, i, s::Symbol)
     haskey(w._raw_data, s) && throw("Unit $s already exists at index $(w[s])")
     setindex!(w._raw_data, i, s)
+    return w
 end
 
 Base.iterate(w::WriteOnceReadMany) = iterate(w._raw_data)
