@@ -4,7 +4,10 @@ using DynamicQuantities: DEFAULT_QUANTITY_TYPE, DEFAULT_DIM_BASE_TYPE, DEFAULT_D
 using DynamicQuantities: array_type, value_type, dim_type, quantity_type
 using DynamicQuantities: GenericQuantity, with_type_parameters, constructorof
 using DynamicQuantities: promote_quantity_on_quantity, promote_quantity_on_value
+using DynamicQuantities: UNIT_VALUES, UNIT_MAPPING, UNIT_SYMBOLS, ALL_MAPPING, ALL_SYMBOLS, ALL_VALUES
+using DynamicQuantities.SymbolicUnits: SYMBOLIC_UNIT_VALUES
 using DynamicQuantities: map_dimensions
+using DynamicQuantities: _register_unit
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
@@ -1727,7 +1730,6 @@ end
         ) isa SymbolicDimensions{Int32}
 
     @test copy(km) == km
-    
     # Any operation should immediately convert it:
     @test km ^ -1 isa Quantity{T,DynamicQuantities.SymbolicDimensions{R}} where {T,R}
 
@@ -1848,3 +1850,49 @@ end
     y = Quantity(2.0im, mass=1)
     @test_throws DimensionError x^y
 end
+
+# `@testset` rewrites the test block with a `let...end`, resulting in an invalid
+# local `const` (ref: src/units.jl:26). To avoid it, register units outside the
+# test block.
+map_count_before_registering = length(UNIT_MAPPING)
+all_map_count_before_registering = length(ALL_MAPPING)
+@register_unit MyV u"V"
+@register_unit MySV us"V"
+@register_unit MySV2 us"km/h"
+
+if VERSION >= v"1.9"
+    @test_throws "Unit `m` is already defined as `1.0 m`" esc(_register_unit(:m, u"s"))
+
+    # Constants as well:
+    @test_throws "Unit `Ryd` is already defined" esc(_register_unit(:Ryd, u"Constants.Ryd"))
+end
+
+@testset "Register Unit" begin
+    @test MyV === u"V"
+    @test MyV == us"V"
+    @test MySV == us"V"
+    @test MySV2 == us"km/h"
+
+    @test length(UNIT_MAPPING) == map_count_before_registering + 3
+    @test length(ALL_MAPPING) == all_map_count_before_registering + 3
+
+    for my_unit in (MySV, MyV)
+        @test my_unit in UNIT_VALUES
+        @test my_unit in ALL_VALUES
+        @test my_unit in SYMBOLIC_UNIT_VALUES
+    end
+    for my_unit in (:MySV, :MyV)
+        @test my_unit in UNIT_SYMBOLS
+        @test my_unit in ALL_SYMBOLS
+    end
+end
+
+push!(LOAD_PATH, joinpath(@__DIR__, "precompile_test"))
+
+using ExternalUnitRegistration: Wb
+@testset "Type of Extenral Unit" begin
+    @test Wb isa DEFAULT_QUANTITY_TYPE
+    @test Wb/u"m^2*kg*s^-2*A^-1" == 1.0
+end
+
+pop!(LOAD_PATH)
