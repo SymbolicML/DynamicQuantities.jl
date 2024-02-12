@@ -100,6 +100,7 @@ end
 @_lazy_register_unit Ω V / A
 @_lazy_register_unit ohm Ω
 @_lazy_register_unit T N / (A * m)
+@_lazy_register_unit Wb m^2 * kg * s^-2 * A^-1
 
 @add_prefixes Hz (n, μ, u, m, k, M, G)
 @add_prefixes N ()
@@ -112,6 +113,7 @@ end
 @add_prefixes Ω (n, μ, u, m, k, M, G)
 @add_prefixes ohm (n, μ, u, m, k, M, G)
 @add_prefixes T ()
+@add_prefixes Wb (n, μ, u, m)
 
 # SI derived units
 @doc(
@@ -153,6 +155,10 @@ end
 @doc(
     "Magnetic flux density in Teslas.",
     T,
+)
+@doc(
+    "Magnetic flux in webers. Available variants: `nWb`, `μWb` (/`uWb`), `mWb`.",
+    Wb,
 )
 
 # Common assorted units
