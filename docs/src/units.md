@@ -42,3 +42,11 @@ Units.T
 Units.L
 Units.bar
 ```
+
+## Custom Units
+
+You can define custom units with the `@register_unit` macro:
+
+```@docs
+@register_unit
+```

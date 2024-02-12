@@ -20,6 +20,30 @@ end
 
 Register a new unit under the given symbol to have
 a particular value.
+
+# Example
+
+```julia
+julia> @register_unit MyVolt 1.5u"V"
+```
+
+This will register a new unit `MyVolt` with a value of `1.5u"V"`.
+You can then use this unit in your calculations:
+
+```julia
+julia> x = 20us"MyVolt^2"
+20.0 MyVolt²
+
+julia> y = 2.5us"A"
+2.5 A
+
+julia> x * y^2 |> uconvert(us"W^2")
+281.25 W²
+
+julia> x * y^2 |> uconvert(us"W^2") |> sqrt |> uexpand
+16.77050983124842 m² kg s⁻³
+```
+
 """
 macro register_unit(symbol, value)
     return esc(_register_unit(symbol, value))
