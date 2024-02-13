@@ -99,7 +99,10 @@ end
 @_lazy_register_unit F C / V
 @_lazy_register_unit Ω V / A
 @_lazy_register_unit ohm Ω
+@_lazy_register_unit S A / V
+@_lazy_register_unit H N * m / A^2
 @_lazy_register_unit T N / (A * m)
+@_lazy_register_unit Wb V * s
 
 @add_prefixes Hz (n, μ, u, m, k, M, G)
 @add_prefixes N ()
@@ -111,7 +114,10 @@ end
 @add_prefixes F (f, p, n, μ, u, m)
 @add_prefixes Ω (n, μ, u, m, k, M, G)
 @add_prefixes ohm (n, μ, u, m, k, M, G)
+@add_prefixes S (n, μ, u, m, k, M, G)
+@add_prefixes H ()
 @add_prefixes T ()
+@add_prefixes Wb (n, μ, u, m)
 
 # SI derived units
 @doc(
@@ -151,8 +157,20 @@ end
     Ω,
 )
 @doc(
+    "Electrical conductance, electric susceptance, and electric admittance in siemens. Available variants: `nS`, `μS` (/`uS`), `mS`, `kS`, `MS`, `GS`.",
+    S,
+)
+@doc(
+    "Electrical inductance in henries.",
+    H,
+)
+@doc(
     "Magnetic flux density in Teslas.",
     T,
+)
+@doc(
+    "Magnetic flux in webers. Available variants: `nWb`, `μWb` (/`uWb`), `mWb`.",
+    Wb,
 )
 
 # Common assorted units

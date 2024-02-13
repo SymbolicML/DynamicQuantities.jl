@@ -1889,10 +1889,10 @@ end
 
 push!(LOAD_PATH, joinpath(@__DIR__, "precompile_test"))
 
-using ExternalUnitRegistration: Wb
+using ExternalUnitRegistration: MyWb
 @testset "Type of Extenral Unit" begin
-    @test Wb isa DEFAULT_QUANTITY_TYPE
-    @test Wb/u"m^2*kg*s^-2*A^-1" == 1.0
+    @test MyWb isa DEFAULT_QUANTITY_TYPE
+    @test MyWb/u"m^2*kg*s^-2*A^-1" == 1.0
 end
 
 pop!(LOAD_PATH)
