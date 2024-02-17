@@ -121,7 +121,7 @@ end
 
 # SI derived units
 @doc(
-    "Frequency in Hertz. Available variants: `nHz`, `μHz` (/`uHz`), `mHz`, `kHz`, `MHz`, `GHz`.",
+    "Frequency in Hertz. Available variants: `nHz`, `μHz` (/`uHz`), `mHz`, `kHz`, `MHz`, `GHz`, `rpm`.",
     Hz,
 )
 @doc(
@@ -215,6 +215,33 @@ end
     "Pressure in bars. Available variants: `mbar`.",
     bar,
 )
+
+## Angles
+@_lazy_register_unit rad DEFAULT_QUANTITY_TYPE(1.0)
+@_lazy_register_unit sr DEFAULT_QUANTITY_TYPE(1.0)
+
+@add_prefixes rad (n, μ, u, m)
+@add_prefixes sr ()
+
+@doc(
+    "Angle in radians. Note that the SI definition is simply 1 rad = 1, so use symbolic units to avoid this. Available variants: `nrad`, `μrad` (/`urad`), `mrad`, `deg`, `arcmin`, `arcsec`, `μarcsec` (/`uarcsec`), `marcsec`.",
+    rad,
+)
+@doc(
+    "Solid angle in steradians. Note that the SI definition is simply 1 sr = 1, so use symbolic units to avoid this.",
+    sr,
+)
+
+@_lazy_register_unit deg pi / 180 * rad
+@_lazy_register_unit arcmin deg / 60
+@_lazy_register_unit arcsec arcmin / 60
+
+@add_prefixes deg ()
+@add_prefixes arcmin ()
+@add_prefixes arcsec (μ, u, m)
+
+## Angular velocity
+@_lazy_register_unit rpm 2 * pi / min
 
 # Do not wish to define Gaussian units, as it changes
 # some formulas. Safer to force user to work exclusively in one unit system.
