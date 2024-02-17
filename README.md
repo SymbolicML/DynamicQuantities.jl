@@ -257,6 +257,26 @@ Note that `SymbolicUnits` and `SymbolicConstants` are exported,
 so you can simply access these as `SymbolicUnits.cm` and `SymbolicConstants.h`,
 respectively.
 
+
+### Custom Units
+
+You can create custom units with the `@register_unit` macro:
+
+```julia
+julia> @register_unit OneFiveV 1.5u"V"
+```
+
+and then use it in calculations normally:
+
+```julia
+julia> x = us"OneFiveV"
+1.0 OneFiveV
+
+julia> x * 10u"A" |> uconvert(us"W")
+15.0 W
+```
+
+
 ### Arrays
 
 For working with an array of quantities that have the same dimensions,
