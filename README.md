@@ -258,7 +258,7 @@ so you can simply access these as `SymbolicUnits.cm` and `SymbolicConstants.h`,
 respectively.
 
 
-### Custom Units
+#### Custom Units
 
 You can create custom units with the `@register_unit` macro:
 
