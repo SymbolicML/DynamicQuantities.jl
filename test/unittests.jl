@@ -799,6 +799,8 @@ end
     @test dimension(qs)[:M_sun] == 1
     @test uexpand(qs) ≈ 5.0 * q
 
+    @test uconvert(us"nm",1u"m") == 1u"m" |> us"nm"
+    
     # Refuses to convert to non-unit quantities:
     @test_throws AssertionError uconvert(1.2us"m", 1.0u"m")
     VERSION >= v"1.8" &&
@@ -817,15 +819,30 @@ end
         @test typeof(xs) <: Vector{<:Q{Float64,<:SymbolicDimensions{<:Any}}}
         @test xs[2] ≈ Q(2000us"g")
 
+        # Arrays
+        x2 = [1.0, 2.0, 3.0] .* Q(u"kg")
+        xs2 = x2 .|> us"g"
+        @test typeof(xs2) <: Vector{<:Q{Float64,<:SymbolicDimensions{<:Any}}}
+        @test xs2[2] ≈ Q(2000us"g")
+        
         x_qa = QuantityArray(x)
         xs_qa = x_qa .|> uconvert(us"g")
         @test typeof(xs_qa) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
         @test xs_qa[2] ≈ Q(2000us"g")
 
+        x_qa1 = QuantityArray(x)
+        xs_qa1 = x_qa1 .|> us"g"
+        @test typeof(xs_qa1) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
+        @test xs_qa1[2] ≈ Q(2000us"g")
+
         # Without vectorized call:
         xs_qa2 = x_qa |> uconvert(us"g")
         @test typeof(xs_qa2) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
         @test xs_qa2[2] ≈ Q(2000us"g")
+
+        xs_qa3 = x_qa |> us"g"
+        @test typeof(xs_qa3) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
+        @test xs_qa3[2] ≈ Q(2000us"g")
     end
 end
 

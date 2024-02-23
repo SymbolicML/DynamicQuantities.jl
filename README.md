@@ -237,9 +237,10 @@ julia> uexpand(x^2)
 
 You can also convert a quantity in regular base SI units to symbolic units with `uconvert`:
 ```julia
-julia> uconvert(us"nm", 5e-9u"m") # can also write 5e-9u"m" |> uconvert(us"nm")
+julia> uconvert(us"nm", 5e-9u"m") # can also write 5e-9u"m" |> uconvert(us"nm") or 5e-9u"m" |> us"nm"
 5.0 nm
 ```
+
 
 Finally, you can also import these directly:
 

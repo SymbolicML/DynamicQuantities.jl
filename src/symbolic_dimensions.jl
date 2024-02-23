@@ -225,6 +225,15 @@ a function equivalent to `q -> uconvert(qout, q)`.
 """
 uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions}) = Base.Fix1(uconvert, qout)
 
+
+"""
+   (qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions})(x)
+
+Make quantities with symbolic units callabele, thus allowing for e.g. ` 15m|> us"km" `
+"""
+(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions})(x) = uconvert(qout,x)
+
+
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(nzdims(d)), copy(nzvals(d)))
 Base.copy(d::SymbolicDimensionsSingleton) = constructorof(typeof(d))(getfield(d, :dim))
 
