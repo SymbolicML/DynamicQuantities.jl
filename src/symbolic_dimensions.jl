@@ -227,11 +227,12 @@ uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions}) = Base
 
 
 """
-   (qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions})(x)
+   (qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions})(q)
 
-Make quantities with symbolic units callabele, thus allowing for e.g. ` 15m|> us"km" `
+Quantities with symbolic units are callable, and act as a `uconvert` function with
+the symbolic units of the quantity as the desired output units.
 """
-(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions})(x) = uconvert(qout,x)
+(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions})(q) = uconvert(qout, q)
 
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(nzdims(d)), copy(nzvals(d)))
