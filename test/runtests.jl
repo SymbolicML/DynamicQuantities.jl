@@ -19,9 +19,10 @@ else
     @safetestset "Measurements.jl integration tests" begin
         include("test_measurements.jl")
     end
-    @safetestset "Meshes.jl integration tests" begin
-        include("test_meshes.jl")
-    end
+    ## Broken; see https://github.com/SymbolicML/DynamicQuantities.jl/issues/118
+    # @safetestset "Meshes.jl integration tests" begin
+    #     include("test_meshes.jl")
+    # end
     @safetestset "Unit tests" begin
         include("unittests.jl")
     end
