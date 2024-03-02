@@ -735,7 +735,7 @@ end
     # Helpful error if symbol not found:
     sym5 = dimension(us"km/s")
     VERSION >= v"1.8" &&
-        @test_throws "rad is not available as a symbol" sym5.rad
+        @test_throws "my_special_symbol is not available as a symbol" sym5.my_special_symbol
 
     # Test deprecated method
     q = 1.5us"km/s"
