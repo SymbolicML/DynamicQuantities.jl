@@ -121,7 +121,7 @@ end
 
 # SI derived units
 @doc(
-    "Frequency in Hertz. Available variants: `nHz`, `μHz` (/`uHz`), `mHz`, `kHz`, `MHz`, `GHz`, `rpm`.",
+    "Frequency in Hertz. Available variants: `nHz`, `μHz` (/`uHz`), `mHz`, `kHz`, `MHz`, `GHz`.",
     Hz,
 )
 @doc(
@@ -239,9 +239,6 @@ end
 @add_prefixes deg ()
 @add_prefixes arcmin ()
 @add_prefixes arcsec (μ, u, m)
-
-## Angular velocity
-@_lazy_register_unit rpm 2 * pi / min
 
 # Do not wish to define Gaussian units, as it changes
 # some formulas. Safer to force user to work exclusively in one unit system.
