@@ -238,6 +238,12 @@ a function equivalent to `q -> uconvert(qout, q)`.
 uconvert(qout::UnionAbstractQuantity) = Base.Fix1(uconvert, qout)
 
 
+"""
+    |>(q::Union{UnionAbstractQuantity,QuantityArray,Number}, qout::UnionAbstractQuantity)
+
+
+Using `q |> qout` is an alias for `uconvert(qout, q)`.
+"""
 function Base.:(|>)(
     q::Union{UnionAbstractQuantity,QuantityArray,Number},
     qout::UnionAbstractQuantity
