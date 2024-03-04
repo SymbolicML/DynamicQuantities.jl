@@ -807,6 +807,11 @@ end
     VERSION >= v"1.8" &&
         @test_throws "You passed a quantity" uconvert(1.2us"m", 1.0u"m")
 
+    # Refuses to convert to `Dimensions`:
+    @test_throws AssertionError uconvert(1u"m", 5.0us"m")
+    VERSION >= v"1.8" &&
+        @test_throws "You can only `uconvert`" uconvert(1u"m", 5.0us"m")
+
     for Q in (RealQuantity, Quantity, GenericQuantity)
         # Different types require converting both arguments:
         q = convert(Q{Float16}, 1.5u"g")
@@ -1791,6 +1796,7 @@ end
     @test [km, km] isa Vector{Quantity{T,SymbolicDimensionsSingleton{R}}} where {T,R}
     @test [km^2, km] isa Vector{Quantity{T,SymbolicDimensions{R}}} where {T,R}
 
+    @test km |> uconvert(us"m") == km |> us"m"
     # No issue when converting to SymbolicDimensionsSingleton (gets
     # converted)
     @test uconvert(km, u"m") == 0.001km
