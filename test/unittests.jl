@@ -808,7 +808,7 @@ end
         @test_throws "You passed a quantity" uconvert(1.2us"m", 1.0u"m")
 
     # Refuses to convert to `Dimensions`:
-    @test_throws AssertionError uconvert(1u"m", 5.0us"m")
+    @test_throws ErrorException uconvert(1u"m", 5.0us"m")
     VERSION >= v"1.8" &&
         @test_throws "You can only `uconvert`" uconvert(1u"m", 5.0us"m")
 
