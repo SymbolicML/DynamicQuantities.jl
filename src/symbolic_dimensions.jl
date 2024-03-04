@@ -225,7 +225,7 @@ end
 function uconvert(::UnionAbstractQuantity{<:Any,<:Dimensions}, _)
     error(
         "You can only `uconvert` to quantities with `SymbolicDimensions` type, not `Dimensions`. "
-        "Try using `us\"km\"` instead of `u\"km\"`."
+        * "Try using `us\"km\"` instead of `u\"km\"`."
     )
 end
 
