@@ -166,6 +166,12 @@ uexpand(q::QuantityArray) = uexpand.(q)
 
 Convert a quantity `q` with base SI units to the symbolic units of `qout`, for `q` and `qout` with compatible units.
 Mathematically, the result has value `q / uexpand(qout)` and units `dimension(qout)`.
+
+You can also use `|>` as a shorthand for `uconvert`:
+```julia
+julia> q = 1u"m/s^2" |> us"km/h^2"
+12960.0 km h⁻²
+```
 """
 function uconvert(qout::UnionAbstractQuantity{<:Any, <:SymbolicDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
     @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
@@ -216,6 +222,12 @@ function uconvert(
     return uconvert(qout, uexpand(q))
 end
 
+function uconvert(::UnionAbstractQuantity{<:Any,<:Dimensions}, _)
+    error(
+        "You can only `uconvert` to quantities with `SymbolicDimensions` type, not `Dimensions`. "
+        "Try using `us\"km\"` instead of `u\"km\"`."
+    )
+end
 
 """
     uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions})
@@ -223,16 +235,15 @@ end
 Create a function that converts an input quantity `q` with base SI units to the symbolic units of `qout`, i.e
 a function equivalent to `q -> uconvert(qout, q)`.
 """
-uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions}) = Base.Fix1(uconvert, qout)
+uconvert(qout::UnionAbstractQuantity) = Base.Fix1(uconvert, qout)
 
 
-"""
-   (qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions})(q)
-
-Quantities with symbolic units are callable, and act as a `uconvert` function with
-the symbolic units of the quantity as the desired output units.
-"""
-(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions})(q) = uconvert(qout, q)
+function Base.:(|>)(
+    q::Union{UnionAbstractQuantity,QuantityArray,Number},
+    qout::UnionAbstractQuantity
+)
+    return uconvert(qout, q)
+end
 
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(nzdims(d)), copy(nzvals(d)))
