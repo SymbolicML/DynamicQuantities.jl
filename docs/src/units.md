@@ -10,9 +10,9 @@ uparse
 ## Available units
 
 The base SI units are as follows.
-Instead of calling directly, it is recommended to access them via
-the `@u_str` macro, which evaluates the expression
-in a namespace with all the units available.
+You can either use the `@u_str` macro like `1.5u"m"`,
+or simply import these explicitly from the package
+with `using DynamicQuantities: m`.
 
 ```@docs
 Units.m
@@ -28,19 +28,10 @@ Units.mol
 
 Several derived SI units are available as well:
 
-```@docs
-Units.Hz
-Units.N
-Units.Pa
-Units.J
-Units.W
-Units.C
-Units.V
-Units.F
-Units.Ω
-Units.T
-Units.L
-Units.bar
+```@autodocs
+Modules = [Units]
+Order = [:constant]
+Filter = t -> t ∉ (Units.m, Units.kg, Units.s, Units.A, Units.K, Units.cd, Units.mol)
 ```
 
 ## Custom Units
