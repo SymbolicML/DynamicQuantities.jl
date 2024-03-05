@@ -66,7 +66,7 @@ function map_to_scope(ex::Expr)
     if ex.head == :call
         ex.args[2:end] = map(map_to_scope, ex.args[2:end])
         return ex
-    elseif ex.head == :. && ex.args[1] == :Constants
+    elseif ex.head == :. && ex.args[1] in (:Constants, :Co)
         @assert ex.args[2] isa QuoteNode
         return lookup_constant(ex.args[2].value)
     else
@@ -77,7 +77,7 @@ function map_to_scope(sym::Symbol)
     if sym in UNIT_SYMBOLS
         return lookup_unit(sym)
     elseif sym in CONSTANT_SYMBOLS
-        throw(ArgumentError("Symbol $sym found in `Constants` but not `Units`. Please use `u\"Constants.$sym\"` instead."))
+        throw(ArgumentError("Symbol $sym found in `Constants` but not `Units`. Please use `u\"Constants.$sym\"` or `u\"Co.$sym\"` instead."))
     else
         throw(ArgumentError("Symbol $sym not found in `Units` or `Constants`."))
     end
