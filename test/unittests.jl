@@ -799,10 +799,18 @@ end
     @test dimension(qs)[:M_sun] == 1
     @test uexpand(qs) ≈ 5.0 * q
 
+    @test dimension(1u"m" |> us"nm")[:nm] == 1
+    @test dimension(1u"m" |> us"nm")[:m] == 0
+
     # Refuses to convert to non-unit quantities:
     @test_throws AssertionError uconvert(1.2us"m", 1.0u"m")
     VERSION >= v"1.8" &&
         @test_throws "You passed a quantity" uconvert(1.2us"m", 1.0u"m")
+
+    # Refuses to convert to `Dimensions`:
+    @test_throws ErrorException uconvert(1u"m", 5.0us"m")
+    VERSION >= v"1.8" &&
+        @test_throws "You can only `uconvert`" uconvert(1u"m", 5.0us"m")
 
     for Q in (RealQuantity, Quantity, GenericQuantity)
         # Different types require converting both arguments:
@@ -817,15 +825,35 @@ end
         @test typeof(xs) <: Vector{<:Q{Float64,<:SymbolicDimensions{<:Any}}}
         @test xs[2] ≈ Q(2000us"g")
 
+        # Arrays
+        x2 = [1.0, 2.0, 3.0] .* Q(u"kg")
+        xs2 = x2 .|> us"g"
+        @test typeof(xs2) <: Vector{<:Q{Float64,<:SymbolicDimensions{<:Any}}}
+        @test xs2[2] ≈ Q(2000us"g")
+        @test ustrip(xs2[2]) ≈ 2000
+        
         x_qa = QuantityArray(x)
         xs_qa = x_qa .|> uconvert(us"g")
         @test typeof(xs_qa) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
         @test xs_qa[2] ≈ Q(2000us"g")
+        @test ustrip(xs_qa[1]) ≈ 1000
+
+        x_qa1 = QuantityArray(x)
+        xs_qa1 = x_qa1 .|> us"g"
+        @test typeof(xs_qa1) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
+        @test xs_qa1[2] ≈ Q(2000us"g")
+        @test ustrip(xs_qa1[3]) ≈ 3000
 
         # Without vectorized call:
         xs_qa2 = x_qa |> uconvert(us"g")
         @test typeof(xs_qa2) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
         @test xs_qa2[2] ≈ Q(2000us"g")
+        @test ustrip(xs_qa2[2]) ≈ 2000
+
+        xs_qa3 = x_qa |> us"g"
+        @test typeof(xs_qa3) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
+        @test xs_qa3[2] ≈ Q(2000us"g")
+        @test ustrip(xs_qa3[3]) ≈ 3000
     end
 end
 
@@ -1768,6 +1796,7 @@ end
     @test [km, km] isa Vector{Quantity{T,SymbolicDimensionsSingleton{R}}} where {T,R}
     @test [km^2, km] isa Vector{Quantity{T,SymbolicDimensions{R}}} where {T,R}
 
+    @test km |> uconvert(us"m") == km |> us"m"
     # No issue when converting to SymbolicDimensionsSingleton (gets
     # converted)
     @test uconvert(km, u"m") == 0.001km
