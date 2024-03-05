@@ -494,9 +494,9 @@ module SymbolicUnits
         if sym in UNIT_SYMBOLS
             return lookup_unit(sym)
         elseif sym in CONSTANT_SYMBOLS
-            throw(ArgumentError("Symbol $sym found in `SymbolicConstants` but not `SymbolicUnits`. Please access the `SymbolicConstants` module. For example, `u\"SymbolicConstants.$sym\"`."))
+            throw(ArgumentError("Symbol $sym found in `Constants` but not `Units`. Please use `us\"Constants.$sym\"` instead."))
         else
-            throw(ArgumentError("Symbol $sym not found in `SymbolicUnits` or `SymbolicConstants`."))
+            throw(ArgumentError("Symbol $sym not found in `Units` or `Constants`."))
         end
     end
     function map_to_scope(ex)
