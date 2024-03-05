@@ -235,14 +235,15 @@ julia> uexpand(x^2)
 8.987551787368176e16 m² s⁻⁴
 ```
 
-You can also convert a quantity in regular base SI units to symbolic units by using it as a function:
+You can also convert a quantity in regular base SI units to symbolic units with the `|>` infix operator
 ```julia
 julia> 5e-9u"m" |> us"nm"
 5.0 nm
 ```
 
-We can also simply write this more explicitly
-with `uconvert(us"nm", 5e-9u"m")`.
+You can also convert between different symbolic units.
+(Note that you can write this more explicitly
+with `uconvert(us"nm", 5e-9u"m")`.)
 
 
 Finally, you can also import these directly:
@@ -276,8 +277,11 @@ and then use it in calculations normally:
 julia> x = us"OneFiveV"
 1.0 OneFiveV
 
-julia> x * 10u"A" |> uconvert(us"W")
+julia> x * 10u"A" |> us"W"
 15.0 W
+
+julia> 3us"V" |> us"OneFiveV"
+2.0 OneFiveV
 ```
 
 
