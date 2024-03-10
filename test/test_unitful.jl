@@ -21,7 +21,7 @@ for T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_BASE
     @test risapprox(convert(Unitful.Quantity, x), x_unitful; atol=1e-6)
     @test typeof(convert(DynamicQuantities.Quantity, convert(Unitful.Quantity, x))) <: DynamicQuantities.Quantity{T,DynamicQuantities.DEFAULT_DIM_TYPE}
     @test isapprox(convert(DynamicQuantities.Quantity, convert(Unitful.Quantity, x)), x; atol=tol_dq)
-    @test_throws DimensionError isapprox(convert(DynamicQuantities.Quantity, convert(Unitful.Quantity, x)), x; atol=1e-6)
+    @test_throws DynamicQuantities.DimensionError isapprox(convert(DynamicQuantities.Quantity, convert(Unitful.Quantity, x)), x; atol=1e-6)
 
     @test isapprox(convert(DynamicQuantities.Quantity{T,D}, x_unitful), x; atol=tol_dq)
     @test risapprox(convert(Unitful.Quantity, convert(DynamicQuantities.Quantity{T,D}, x_unitful)), Unitful.upreferred(x_unitful); atol=1e-6)
