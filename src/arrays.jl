@@ -320,6 +320,46 @@ end
 Base.fill(x::UnionAbstractQuantity, dims::Dims...) = QuantityArray(fill(ustrip(x), dims...), dimension(x), typeof(x))
 Base.fill(x::UnionAbstractQuantity, t::Tuple{}) = QuantityArray(fill(ustrip(x), t), dimension(x), typeof(x))
 
+# Will be overloaded by `DynamicQuantitiesLinearAlgebraExt`:
+_norm(_) = error("Please load the `LinearAlgebra.jl` package.")
+
+# Define isapprox for vectors of Quantity's
+function Base.isapprox(
+    u::AbstractArray{Q1},
+    v::AbstractArray{Q2};
+    atol=new_quantity(Q1, zero(T1), dimension(first(u))),
+    rtol=Base.rtoldefault(T1),
+    nans::Bool=false,
+    norm::F=_norm
+) where {T1,D1,Q1<:UnionAbstractQuantity{T1,D1},T2,D2,Q2<:UnionAbstractQuantity{T2,D2},F<:Function}
+    d = norm(u - v)
+    if isfinite(d)
+        return d <= max(atol, rtol*max(norm(u), norm(v)))
+    else
+        # Fall back to a component-wise approximate comparison
+        return all(ab -> isapprox(uv[1], uv[2]; rtol=rtol, atol=atol, nans=nans), zip(u, v))
+    end
+end
+
+# Define isapprox for QuantityArray's
+function Base.isapprox(
+    u::QuantityArray{T1,Q1},
+    v::QuantityArray{T2,Q2};
+    atol=new_quantity(Q1, zero(T1), dimension(u)),
+    rtol=Base.rtoldefault(T1),
+    nans::Bool=false,
+    norm::F=_norm
+) where {T1,D1,Q1<:UnionAbstractQuantity{T1,D1},T2,D2,Q2<:UnionAbstractQuantity{T2,D2},F<:Function}
+    d = norm(u - v)
+    if isfinite(d)
+        return d <= max(atol, rtol*max(norm(u), norm(v)))
+    else
+        # Fall back to a component-wise approximate comparison
+        return all(ab -> isapprox(uv[1], uv[2]; rtol=rtol, atol=atol, nans=nans), zip(u, v))
+    end
+end
+
+# Unit functions
 ulength(q::QuantityArray) = ulength(dimension(q))
 umass(q::QuantityArray) = umass(dimension(q))
 utime(q::QuantityArray) = utime(dimension(q))
