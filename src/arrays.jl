@@ -336,7 +336,7 @@ function Base.isapprox(
     nans::Bool=false,
     norm::F=_norm
 ) where {F<:Function}
-    if all(i -> dimension(u[i]) == dimension(v[i]), eachindex(u, v))
+    if allequal(dimension.(u)) && allequal(dimension.(v)) && dimension(first(u)) == dimension(first(v))
         d = norm(u .- v)
         if isfinite(d)
             return d <= max(get_atol(first(u), atol), rtol*max(norm(u), norm(v)))
