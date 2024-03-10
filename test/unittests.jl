@@ -4,7 +4,10 @@ using DynamicQuantities: DEFAULT_QUANTITY_TYPE, DEFAULT_DIM_BASE_TYPE, DEFAULT_D
 using DynamicQuantities: array_type, value_type, dim_type, quantity_type
 using DynamicQuantities: GenericQuantity, with_type_parameters, constructorof
 using DynamicQuantities: promote_quantity_on_quantity, promote_quantity_on_value
+using DynamicQuantities: UNIT_VALUES, UNIT_MAPPING, UNIT_SYMBOLS, ALL_MAPPING, ALL_SYMBOLS, ALL_VALUES
+using DynamicQuantities.SymbolicUnits: SYMBOLIC_UNIT_VALUES
 using DynamicQuantities: map_dimensions
+using DynamicQuantities: _register_unit
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
@@ -489,7 +492,7 @@ end
     VERSION >= v"1.9" && @test_throws "Unexpected expression" uparse("(m, m)")
     @test_throws LoadError eval(:(us"x"))
     VERSION >= v"1.9" && @test_throws "Symbol x not found" sym_uparse("x")
-    VERSION >= v"1.9" && @test_throws "Symbol c found in `SymbolicConstants` but not `SymbolicUnits`" sym_uparse("c")
+    VERSION >= v"1.9" && @test_throws "Symbol c found in `Constants` but not `Units`" sym_uparse("c")
     VERSION >= v"1.9" && @test_throws "Unexpected expression" sym_uparse("import ..Units")
     VERSION >= v"1.9" && @test_throws "Unexpected expression" sym_uparse("(m, m)")
 end
@@ -732,7 +735,7 @@ end
     # Helpful error if symbol not found:
     sym5 = dimension(us"km/s")
     VERSION >= v"1.8" &&
-        @test_throws "rad is not available as a symbol" sym5.rad
+        @test_throws "my_special_symbol is not available as a symbol" sym5.my_special_symbol
 
     # Test deprecated method
     q = 1.5us"km/s"
@@ -796,10 +799,18 @@ end
     @test dimension(qs)[:M_sun] == 1
     @test uexpand(qs) ≈ 5.0 * q
 
+    @test dimension(1u"m" |> us"nm")[:nm] == 1
+    @test dimension(1u"m" |> us"nm")[:m] == 0
+
     # Refuses to convert to non-unit quantities:
     @test_throws AssertionError uconvert(1.2us"m", 1.0u"m")
     VERSION >= v"1.8" &&
         @test_throws "You passed a quantity" uconvert(1.2us"m", 1.0u"m")
+
+    # Refuses to convert to `Dimensions`:
+    @test_throws ErrorException uconvert(1u"m", 5.0us"m")
+    VERSION >= v"1.8" &&
+        @test_throws "You can only `uconvert`" uconvert(1u"m", 5.0us"m")
 
     for Q in (RealQuantity, Quantity, GenericQuantity)
         # Different types require converting both arguments:
@@ -814,15 +825,35 @@ end
         @test typeof(xs) <: Vector{<:Q{Float64,<:SymbolicDimensions{<:Any}}}
         @test xs[2] ≈ Q(2000us"g")
 
+        # Arrays
+        x2 = [1.0, 2.0, 3.0] .* Q(u"kg")
+        xs2 = x2 .|> us"g"
+        @test typeof(xs2) <: Vector{<:Q{Float64,<:SymbolicDimensions{<:Any}}}
+        @test xs2[2] ≈ Q(2000us"g")
+        @test ustrip(xs2[2]) ≈ 2000
+        
         x_qa = QuantityArray(x)
         xs_qa = x_qa .|> uconvert(us"g")
         @test typeof(xs_qa) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
         @test xs_qa[2] ≈ Q(2000us"g")
+        @test ustrip(xs_qa[1]) ≈ 1000
+
+        x_qa1 = QuantityArray(x)
+        xs_qa1 = x_qa1 .|> us"g"
+        @test typeof(xs_qa1) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
+        @test xs_qa1[2] ≈ Q(2000us"g")
+        @test ustrip(xs_qa1[3]) ≈ 3000
 
         # Without vectorized call:
         xs_qa2 = x_qa |> uconvert(us"g")
         @test typeof(xs_qa2) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
         @test xs_qa2[2] ≈ Q(2000us"g")
+        @test ustrip(xs_qa2[2]) ≈ 2000
+
+        xs_qa3 = x_qa |> us"g"
+        @test typeof(xs_qa3) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
+        @test xs_qa3[2] ≈ Q(2000us"g")
+        @test ustrip(xs_qa3[3]) ≈ 3000
     end
 end
 
@@ -1727,7 +1758,6 @@ end
         ) isa SymbolicDimensions{Int32}
 
     @test copy(km) == km
-    
     # Any operation should immediately convert it:
     @test km ^ -1 isa Quantity{T,DynamicQuantities.SymbolicDimensions{R}} where {T,R}
 
@@ -1766,6 +1796,7 @@ end
     @test [km, km] isa Vector{Quantity{T,SymbolicDimensionsSingleton{R}}} where {T,R}
     @test [km^2, km] isa Vector{Quantity{T,SymbolicDimensions{R}}} where {T,R}
 
+    @test km |> uconvert(us"m") == km |> us"m"
     # No issue when converting to SymbolicDimensionsSingleton (gets
     # converted)
     @test uconvert(km, u"m") == 0.001km
@@ -1848,3 +1879,49 @@ end
     y = Quantity(2.0im, mass=1)
     @test_throws DimensionError x^y
 end
+
+# `@testset` rewrites the test block with a `let...end`, resulting in an invalid
+# local `const` (ref: src/units.jl:26). To avoid it, register units outside the
+# test block.
+map_count_before_registering = length(UNIT_MAPPING)
+all_map_count_before_registering = length(ALL_MAPPING)
+@register_unit MyV u"V"
+@register_unit MySV us"V"
+@register_unit MySV2 us"km/h"
+
+if VERSION >= v"1.9"
+    @test_throws "Unit `m` is already defined as `1.0 m`" esc(_register_unit(:m, u"s"))
+
+    # Constants as well:
+    @test_throws "Unit `Ryd` is already defined" esc(_register_unit(:Ryd, u"Constants.Ryd"))
+end
+
+@testset "Register Unit" begin
+    @test MyV === u"V"
+    @test MyV == us"V"
+    @test MySV == us"V"
+    @test MySV2 == us"km/h"
+
+    @test length(UNIT_MAPPING) == map_count_before_registering + 3
+    @test length(ALL_MAPPING) == all_map_count_before_registering + 3
+
+    for my_unit in (MySV, MyV)
+        @test my_unit in UNIT_VALUES
+        @test my_unit in ALL_VALUES
+        @test my_unit in SYMBOLIC_UNIT_VALUES
+    end
+    for my_unit in (:MySV, :MyV)
+        @test my_unit in UNIT_SYMBOLS
+        @test my_unit in ALL_SYMBOLS
+    end
+end
+
+push!(LOAD_PATH, joinpath(@__DIR__, "precompile_test"))
+
+using ExternalUnitRegistration: MyWb
+@testset "Type of Extenral Unit" begin
+    @test MyWb isa DEFAULT_QUANTITY_TYPE
+    @test MyWb/u"m^2*kg*s^-2*A^-1" == 1.0
+end
+
+pop!(LOAD_PATH)

@@ -77,7 +77,7 @@ function map_to_scope(sym::Symbol)
     if sym in UNIT_SYMBOLS
         return lookup_unit(sym)
     elseif sym in CONSTANT_SYMBOLS
-        throw(ArgumentError("Symbol $sym found in `Constants` but not `Units`. Please access the `Constants` module. For example, `u\"Constants.$sym\"`."))
+        throw(ArgumentError("Symbol $sym found in `Constants` but not `Units`. Please use `u\"Constants.$sym\"` instead."))
     else
         throw(ArgumentError("Symbol $sym not found in `Units` or `Constants`."))
     end

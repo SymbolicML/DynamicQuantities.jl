@@ -235,11 +235,16 @@ julia> uexpand(x^2)
 8.987551787368176e16 m² s⁻⁴
 ```
 
-You can also convert a quantity in regular base SI units to symbolic units with `uconvert`:
+You can also convert a quantity in regular base SI units to symbolic units with the `|>` infix operator
 ```julia
-julia> uconvert(us"nm", 5e-9u"m") # can also write 5e-9u"m" |> uconvert(us"nm")
+julia> 5e-9u"m" |> us"nm"
 5.0 nm
 ```
+
+You can also convert between different symbolic units.
+(Note that you can write this more explicitly
+with `uconvert(us"nm", 5e-9u"m")`.)
+
 
 Finally, you can also import these directly:
 
@@ -256,6 +261,29 @@ julia> using DynamicQuantities.SymbolicConstants: h
 Note that `SymbolicUnits` and `SymbolicConstants` are exported,
 so you can simply access these as `SymbolicUnits.cm` and `SymbolicConstants.h`,
 respectively.
+
+
+#### Custom Units
+
+You can create custom units with the `@register_unit` macro:
+
+```julia
+julia> @register_unit OneFiveV 1.5u"V"
+```
+
+and then use it in calculations normally:
+
+```julia
+julia> x = us"OneFiveV"
+1.0 OneFiveV
+
+julia> x * 10u"A" |> us"W"
+15.0 W
+
+julia> 3us"V" |> us"OneFiveV"
+2.0 OneFiveV
+```
+
 
 ### Arrays
 

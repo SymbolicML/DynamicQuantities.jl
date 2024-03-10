@@ -1,21 +1,17 @@
+import ..WriteOnceReadMany
 import .Units: UNIT_SYMBOLS, UNIT_MAPPING, UNIT_VALUES
 import .Constants: CONSTANT_SYMBOLS, CONSTANT_MAPPING, CONSTANT_VALUES
 
 
-const SYMBOL_CONFLICTS = intersect(UNIT_SYMBOLS, CONSTANT_SYMBOLS)
+disambiguate_constant_symbol(s) = s in UNIT_SYMBOLS ? Symbol(s, :_constant) : s
 
-disambiguate_symbol(s) = s in SYMBOL_CONFLICTS ? Symbol(s, :_constant) : s
-
-const INDEX_TYPE = UInt8
+const INDEX_TYPE = UInt16
 # Prefer units over constants:
 # For example, this means we can't have a symbolic Planck's constant,
 # as it is just "hours" (h), which is more common.
-const ALL_SYMBOLS = (
-    UNIT_SYMBOLS...,
-    disambiguate_symbol.(CONSTANT_SYMBOLS)...
-)
-const ALL_VALUES = (UNIT_VALUES..., CONSTANT_VALUES...)
-const ALL_MAPPING = NamedTuple{ALL_SYMBOLS}(INDEX_TYPE(1):INDEX_TYPE(length(ALL_SYMBOLS)))
+const ALL_SYMBOLS = WriteOnceReadMany([UNIT_SYMBOLS..., disambiguate_constant_symbol.(CONSTANT_SYMBOLS)...])
+const ALL_VALUES = WriteOnceReadMany([UNIT_VALUES..., CONSTANT_VALUES...])
+const ALL_MAPPING = WriteOnceReadMany(Dict(s => INDEX_TYPE(i) for (i, s) in enumerate(ALL_SYMBOLS)))
 
 """
     AbstractSymbolicDimensions{R} <: AbstractDimensions{R}
@@ -169,7 +165,13 @@ uexpand(q::QuantityArray) = uexpand.(q)
     uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
 
 Convert a quantity `q` with base SI units to the symbolic units of `qout`, for `q` and `qout` with compatible units.
-Mathematically, the result has value `q / uexpand(qout)` and units `dimension(qout)`. 
+Mathematically, the result has value `q / uexpand(qout)` and units `dimension(qout)`.
+
+You can also use `|>` as a shorthand for `uconvert`:
+```julia
+julia> q = 1u"m/s^2" |> us"km/h^2"
+12960.0 km h⁻²
+```
 """
 function uconvert(qout::UnionAbstractQuantity{<:Any, <:SymbolicDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
     @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
@@ -220,14 +222,35 @@ function uconvert(
     return uconvert(qout, uexpand(q))
 end
 
+function uconvert(::UnionAbstractQuantity{<:Any,<:Dimensions}, _)
+    error(
+        "You can only `uconvert` to quantities with `SymbolicDimensions` type, not `Dimensions`. "
+        * "Try using `us\"km\"` instead of `u\"km\"`."
+    )
+end
 
 """
     uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions})
 
-Create a function that converts an input quantity `q` with base SI units to the symbolic units of `qout`, i.e 
+Create a function that converts an input quantity `q` with base SI units to the symbolic units of `qout`, i.e
 a function equivalent to `q -> uconvert(qout, q)`.
 """
-uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions}) = Base.Fix1(uconvert, qout)
+uconvert(qout::UnionAbstractQuantity) = Base.Fix1(uconvert, qout)
+
+
+"""
+    |>(q::Union{UnionAbstractQuantity,QuantityArray,Number}, qout::UnionAbstractQuantity)
+
+
+Using `q |> qout` is an alias for `uconvert(qout, q)`.
+"""
+function Base.:(|>)(
+    q::Union{UnionAbstractQuantity,QuantityArray,Number},
+    qout::UnionAbstractQuantity
+)
+    return uconvert(qout, q)
+end
+
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(nzdims(d)), copy(nzvals(d)))
 Base.copy(d::SymbolicDimensionsSingleton) = constructorof(typeof(d))(getfield(d, :dim))
@@ -371,21 +394,22 @@ module SymbolicUnits
     import ..UNIT_SYMBOLS
     import ..CONSTANT_SYMBOLS
     import ..SymbolicDimensionsSingleton
-    import ...constructorof
-    import ...DEFAULT_SYMBOLIC_QUANTITY_TYPE
-    import ...DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE
-    import ...DEFAULT_VALUE_TYPE
-    import ...DEFAULT_DIM_BASE_TYPE
+    import ..constructorof
+    import ..DEFAULT_SYMBOLIC_QUANTITY_TYPE
+    import ..DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE
+    import ..DEFAULT_VALUE_TYPE
+    import ..DEFAULT_DIM_BASE_TYPE
+    import ..WriteOnceReadMany
 
     # Lazily create unit symbols (since there are so many)
     module Constants
         import ...CONSTANT_SYMBOLS
         import ...SymbolicDimensionsSingleton
         import ...constructorof
-        import ...disambiguate_symbol
-        import ....DEFAULT_SYMBOLIC_QUANTITY_TYPE
-        import ....DEFAULT_VALUE_TYPE
-        import ....DEFAULT_DIM_BASE_TYPE
+        import ...disambiguate_constant_symbol
+        import ...DEFAULT_SYMBOLIC_QUANTITY_TYPE
+        import ...DEFAULT_VALUE_TYPE
+        import ...DEFAULT_DIM_BASE_TYPE
 
         const _SYMBOLIC_CONSTANT_VALUES = DEFAULT_SYMBOLIC_QUANTITY_TYPE[]
 
@@ -393,7 +417,7 @@ module SymbolicUnits
             @eval begin
                 const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(
                     DEFAULT_VALUE_TYPE(1.0),
-                    SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(disambiguate_symbol(unit))))
+                    SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(disambiguate_constant_symbol(unit))))
                 )
                 push!(_SYMBOLIC_CONSTANT_VALUES, $unit)
             end
@@ -404,18 +428,30 @@ module SymbolicUnits
     import .Constants as SymbolicConstants
     import .Constants: SYMBOLIC_CONSTANT_VALUES
 
-    const _SYMBOLIC_UNIT_VALUES = DEFAULT_SYMBOLIC_QUANTITY_TYPE[]
-    for unit in UNIT_SYMBOLS
+    const SYMBOLIC_UNIT_VALUES = WriteOnceReadMany{Vector{DEFAULT_SYMBOLIC_QUANTITY_TYPE}}()
+
+    function update_symbolic_unit_values!(unit, symbolic_unit_values = SYMBOLIC_UNIT_VALUES)
         @eval begin
             const $unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(
                 DEFAULT_VALUE_TYPE(1.0),
                 SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}($(QuoteNode(unit)))
             )
-            push!(_SYMBOLIC_UNIT_VALUES, $unit)
+            push!($symbolic_unit_values, $unit)
         end
     end
-    const SYMBOLIC_UNIT_VALUES = Tuple(_SYMBOLIC_UNIT_VALUES)
 
+    update_symbolic_unit_values!(w::WriteOnceReadMany) = update_symbolic_unit_values!.(w._raw_data)
+    update_symbolic_unit_values!(UNIT_SYMBOLS)
+
+    # Non-eval version of `update_symbolic_unit_values!` for registering units in
+    # an external module.
+    function update_external_symbolic_unit_value(unit)
+        unit = constructorof(DEFAULT_SYMBOLIC_QUANTITY_TYPE)(
+            DEFAULT_VALUE_TYPE(1.0),
+            SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}(unit)
+        )
+        push!(SYMBOLIC_UNIT_VALUES, unit)
+    end
 
     """
         sym_uparse(raw_string::AbstractString)
@@ -458,9 +494,9 @@ module SymbolicUnits
         if sym in UNIT_SYMBOLS
             return lookup_unit(sym)
         elseif sym in CONSTANT_SYMBOLS
-            throw(ArgumentError("Symbol $sym found in `SymbolicConstants` but not `SymbolicUnits`. Please access the `SymbolicConstants` module. For example, `u\"SymbolicConstants.$sym\"`."))
+            throw(ArgumentError("Symbol $sym found in `Constants` but not `Units`. Please use `us\"Constants.$sym\"` instead."))
         else
-            throw(ArgumentError("Symbol $sym not found in `SymbolicUnits` or `SymbolicConstants`."))
+            throw(ArgumentError("Symbol $sym not found in `Units` or `Constants`."))
         end
     end
     function map_to_scope(ex)

@@ -14,6 +14,12 @@ units are `sym_uparse` and `us_str`:
 sym_uparse
 ```
 
+You can also access these from the exported modules
+`SymbolicUnits` for the units and `SymbolicConstants`.
+The same units and constants are available as for `u"..."`,
+simply in the symbolic form.
+
+
 To convert a quantity to its regular base SI units, use `uexpand`:
 
 ```@docs

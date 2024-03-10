@@ -28,7 +28,7 @@ julia> p = sqrt(2 * m_e * (E - Φ)) # momentum of ejected electrons
 julia> λ = h / p # wavelength of ejected electrons
 3.029491247878056e-9 m
 
-julia> uconvert(us"nm", λ) # return answer in nanometers
+julia> λ |> us"nm" # return answer in nanometers (equivalent to `uconvert(us"nm", λ)`)
 3.0294912478780556 nm
 ```
 
@@ -96,8 +96,8 @@ Next, let's plot the trajectory.
 First convert to km and strip units:
 
 ```julia
-x_km = ustrip.(uconvert(us"km").(x_si))
-y_km = ustrip.(uconvert(us"km").(y_si))
+x_km = ustrip.(x_si .|> us"km")
+y_km = ustrip.(y_si .|> us"km")
 ```
 
 Now, we plot:
@@ -284,7 +284,7 @@ coord2 = GenericQuantity(Coords(0.2, -0.1), length=1)
 and perform operations on these:
 
 ```julia
-coord1 + coord2 |> uconvert(us"cm")
+coord1 + coord2 |> us"cm"
 # (Coords(50.0, 80.0)) cm
 ```
 
