@@ -288,6 +288,9 @@ end
         uX = X .* Quantity(2, length=2.5, luminosity=0.5)
         @test sum(X) == 0.5 * ustrip(sum(uX))
 
+        @test isapprox(uX, uX, atol=Quantity{T,D}(1e-6, length=2.5, luminosity=0.5))
+        @test_throws DimensionError isapprox(uX, uX, atol=1e-6)
+
         x = GenericQuantity(ones(T, 32))
         @test ustrip(x + ones(T, 32))[32] == 2
         @test typeof(x + ones(T, 32)) <: GenericQuantity{Vector{T}}
@@ -1021,6 +1024,10 @@ end
             @test dimension(output_s_x) == dimension(x)^2
             fv_square2(x) = (xi -> xi^2).(x)
             @inferred fv_square2(s_x)
+
+            # isapprox for QuantityArray's
+            @test isapprox(x, x, atol=Q(1e-6u"km/s"))
+            @test_throws DimensionError isapprox(x, x, atol=1e-6)
         end
 
         @testset "Copying $Q" begin
