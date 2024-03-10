@@ -290,6 +290,9 @@ end
 
         @test isapprox(uX, uX, atol=Quantity{T,D}(1e-6, length=2.5, luminosity=0.5))
         @test_throws DimensionError isapprox(uX, uX, atol=1e-6)
+        @test_throws ErrorException DynamicQuantities._norm(1.0)
+        VERSION >= v"1.9" &&
+            @test_throws "Please load the `LinearAlgebra.jl` package." DynamicQuantities._norm(1.0)
 
         x = GenericQuantity(ones(T, 32))
         @test ustrip(x + ones(T, 32))[32] == 2
