@@ -377,7 +377,7 @@ function Base.isapprox(
     _atol = atoldefault(first(u), atol)
     _rtol = rtoldefault(ustrip(first(u)), ustrip(first(v)), _atol, rtol)
     if isfinite(d)
-        return d <= max(_atol, _rtol*max(norm(u), norm(v)))
+        return iszero(_rtol) ? d <= _atol : d <= max(_atol, _rtol*max(norm(u), norm(v)))
     end
     # Fall back to a component-wise approximate comparison
     return all(
