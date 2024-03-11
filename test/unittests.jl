@@ -334,6 +334,22 @@ end
         A = [1u"m", 2u"m"]
         B = [1u"m", 2u"s"]
         @test_throws DimensionError isapprox(A, B)
+        @test_throws DimensionError isapprox(B, A)
+
+        # With different rtoldefault:
+        A = QuantityArray([1, 2, 3], Quantity{Float16}(u"m"))
+        B = QuantityArray([1.01, 2.01, 3.01], Quantity{Float64}(u"m"))
+        @test isapprox(A, B)
+        @test isapprox(B, A)  # Because we get it from Float16
+        @test !isapprox(Quantity{Float64}.(A), B)
+        @test !isapprox(B, Quantity{Float64}.(A))
+
+        # With explicit atol=0, rtol=0
+        A = [1u"m", 2u"m", 3u"m"]
+        B = [1u"m", 2u"m", 3u"m"]
+        @test isapprox(A, B, atol=0u"m", rtol=0)
+        B = [1.00000001u"m", 2u"m", 3u"m"]
+        @test !isapprox(A, B, atol=0u"m", rtol=0)
     end
 
     x = randn(32) .* u"km/s"
