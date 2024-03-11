@@ -324,27 +324,42 @@ Base.fill(x::UnionAbstractQuantity, t::Tuple{}) = QuantityArray(fill(ustrip(x), 
 _norm(_) = error("Please load the `LinearAlgebra.jl` package.")
 
 # Define isapprox for vectors of Quantity's
-struct AutoATol end
-get_atol(el, ::AutoATol) = zero(el)
-get_atol(_, atol) = atol
+struct AutoTolerance end
+
+atoldefault(_, atol) = atol
+rtoldefault(_, _, _, rtol) = rtol
+
+function atoldefault(el, ::AutoTolerance)
+    return zero(el)
+end
+function rtoldefault(::Union{T1,Type{T1}}, ::Union{T2,Type{T2}}, atol, ::AutoTolerance) where {T1,T2}
+    rtol = max(Base.rtoldefault(real(T1)), Base.rtoldefault(real(T2)))
+    return iszero(atol) ? rtol : zero(rtol)
+end
 
 function Base.isapprox(
     u::AbstractArray{<:UnionAbstractQuantity},
     v::AbstractArray{<:UnionAbstractQuantity};
-    atol=AutoATol(),
-    rtol=Base.rtoldefault(promote_type(value_type(eltype(u)), value_type(eltype(v)))),
+    atol=AutoTolerance(),
+    rtol=AutoTolerance(),
     nans::Bool=false,
     norm::F=_norm
 ) where {F<:Function}
     if allequal(dimension.(u)) && allequal(dimension.(v)) && dimension(first(u)) == dimension(first(v))
         d = norm(u .- v)
         if isfinite(d)
-            return d <= max(get_atol(first(u), atol), rtol*max(norm(u), norm(v)))
+            _atol = atoldefault(first(u), atol)
+            _rtol = rtoldefault(ustrip(first(u)), ustrip(first(v)), _atol, rtol)
+            return iszero(_rtol) ? d <= _atol : d <= max(_atol, _rtol*max(norm(u), norm(v)))
         end
     end
     # Fall back to a component-wise approximate comparison
     return all(
-        i -> isapprox(u[i], v[i]; rtol=rtol, atol=get_atol(u[i], atol), nans=nans),
+        i -> let ui = u[i], vi = v[i]
+            _atol = atoldefault(ui, atol)
+            _rtol = rtoldefault(ustrip(ui), ustrip(vi), _atol, rtol)
+            isapprox(ui, vi; rtol=_rtol, atol=_atol, nans=nans)
+        end,
         eachindex(u, v)
     )
 end
@@ -353,19 +368,20 @@ end
 function Base.isapprox(
     u::QuantityArray,
     v::QuantityArray;
-    atol=AutoATol(),
-    rtol=Base.rtoldefault(promote_type(value_type(u), value_type(v))),
+    atol=AutoTolerance(),
+    rtol=AutoTolerance(),
     nans::Bool=false,
     norm::F=_norm
 ) where {F<:Function}
     d = norm(u .- v)
-    _atol = get_atol(first(u), atol)
+    _atol = atoldefault(first(u), atol)
+    _rtol = rtoldefault(ustrip(first(u)), ustrip(first(v)), _atol, rtol)
     if isfinite(d)
-        return d <= max(_atol, rtol*max(norm(u), norm(v)))
+        return d <= max(_atol, _rtol*max(norm(u), norm(v)))
     end
     # Fall back to a component-wise approximate comparison
     return all(
-        i -> isapprox(u[i], v[i]; rtol=rtol, atol=_atol, nans=nans),
+        i -> isapprox(u[i], v[i]; rtol=_rtol, atol=_atol, nans=nans),
         eachindex(u, v)
     )
 end
