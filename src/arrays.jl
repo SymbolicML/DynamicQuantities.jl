@@ -337,53 +337,25 @@ function rtoldefault(::Union{T1,Type{T1}}, ::Union{T2,Type{T2}}, atol, ::AutoTol
     return iszero(atol) ? rtol : zero(rtol)
 end
 
-function Base.isapprox(
-    u::AbstractArray{<:UnionAbstractQuantity},
-    v::AbstractArray{<:UnionAbstractQuantity};
-    atol=AutoTolerance(),
-    rtol=AutoTolerance(),
-    nans::Bool=false,
-    norm::F=_norm
-) where {F<:Function}
-    if allequal(dimension.(u)) && allequal(dimension.(v)) && dimension(first(u)) == dimension(first(v))
-        d = norm(u .- v)
-        if isfinite(d)
-            _atol = atoldefault(first(u), atol)
-            _rtol = rtoldefault(ustrip(first(u)), ustrip(first(v)), _atol, rtol)
-            return iszero(_rtol) ? d <= _atol : d <= max(_atol, _rtol*max(norm(u), norm(v)))
-        end
-    end
-    # Fall back to a component-wise approximate comparison
-    return all(
-        i -> let ui = u[i], vi = v[i]
-            _atol = atoldefault(ui, atol)
-            _rtol = rtoldefault(ustrip(ui), ustrip(vi), _atol, rtol)
-            isapprox(ui, vi; rtol=_rtol, atol=_atol, nans=nans)
-        end,
-        eachindex(u, v)
-    )
+all_dimensions_equal(A::QuantityArray, B::QuantityArray) = dimension(A) == dimension(B)
+all_dimensions_equal(A::QuantityArray, B::AbstractArray{<:UnionAbstractQuantity}) = all(i -> dimension(A) == dimension(B[i]), eachindex(B))
+all_dimensions_equal(A::AbstractArray{<:UnionAbstractQuantity}, B::QuantityArray) = all(i -> dimension(B) == dimension(A[i]), eachindex(A))
+function all_dimensions_equal(A::AbstractArray{<:UnionAbstractQuantity}, B::AbstractArray{<:UnionAbstractQuantity})
+    return dimension(first(A)) == dimension(first(B)) && allequal(dimension.(A)) && allequal(dimension.(B))
 end
 
-# Define isapprox for QuantityArray's
 function Base.isapprox(
-    u::QuantityArray,
-    v::QuantityArray;
+    u::Union{QuantityArray,AbstractArray{<:UnionAbstractQuantity}},
+    v::Union{QuantityArray,AbstractArray{<:UnionAbstractQuantity}};
     atol=AutoTolerance(),
     rtol=AutoTolerance(),
-    nans::Bool=false,
     norm::F=_norm
 ) where {F<:Function}
+    all_dimensions_equal(u, v) || throw(DimensionError(u, v))
     d = norm(u .- v)
     _atol = atoldefault(first(u), atol)
     _rtol = rtoldefault(ustrip(first(u)), ustrip(first(v)), _atol, rtol)
-    if isfinite(d)
-        return iszero(_rtol) ? d <= _atol : d <= max(_atol, _rtol*max(norm(u), norm(v)))
-    end
-    # Fall back to a component-wise approximate comparison
-    return all(
-        i -> isapprox(u[i], v[i]; rtol=_rtol, atol=_atol, nans=nans),
-        eachindex(u, v)
-    )
+    return iszero(_rtol) ? d <= _atol : d <= max(_atol, _rtol*max(norm(u), norm(v)))
 end
 
 # Unit functions
