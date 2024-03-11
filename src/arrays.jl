@@ -320,6 +320,46 @@ end
 Base.fill(x::UnionAbstractQuantity, dims::Dims...) = QuantityArray(fill(ustrip(x), dims...), dimension(x), typeof(x))
 Base.fill(x::UnionAbstractQuantity, t::Tuple{}) = QuantityArray(fill(ustrip(x), t), dimension(x), typeof(x))
 
+# Will be overloaded by `DynamicQuantitiesLinearAlgebraExt`:
+_norm(_) = error("Please load the `LinearAlgebra.jl` package.")
+
+# Define isapprox for vectors of Quantity's
+struct AutoTolerance end
+
+atoldefault(_, atol) = atol
+rtoldefault(_, _, _, rtol) = rtol
+
+function atoldefault(el, ::AutoTolerance)
+    return zero(el)
+end
+function rtoldefault(::Union{T1,Type{T1}}, ::Union{T2,Type{T2}}, atol, ::AutoTolerance) where {T1,T2}
+    rtol = max(Base.rtoldefault(real(T1)), Base.rtoldefault(real(T2)))
+    return iszero(atol) ? rtol : zero(rtol)
+end
+
+all_dimensions_equal(A::QuantityArray, B::QuantityArray) = dimension(A) == dimension(B)
+all_dimensions_equal(A::QuantityArray, B::AbstractArray{<:UnionAbstractQuantity}) = all(i -> dimension(A) == dimension(B[i]), eachindex(B))
+all_dimensions_equal(A::AbstractArray{<:UnionAbstractQuantity}, B::QuantityArray) = all(i -> dimension(B) == dimension(A[i]), eachindex(A))
+function all_dimensions_equal(A::AbstractArray{<:UnionAbstractQuantity}, B::AbstractArray{<:UnionAbstractQuantity})
+    d = dimension(first(A))
+    return d == dimension(first(B)) && all(i -> d == dimension(A[i]), eachindex(A)) && all(i -> d == dimension(B[i]), eachindex(B))
+end
+
+function Base.isapprox(
+    u::Union{QuantityArray,AbstractArray{<:UnionAbstractQuantity}},
+    v::Union{QuantityArray,AbstractArray{<:UnionAbstractQuantity}};
+    atol=AutoTolerance(),
+    rtol=AutoTolerance(),
+    norm::F=_norm
+) where {F<:Function}
+    all_dimensions_equal(u, v) || throw(DimensionError(u, v))
+    d = norm(u .- v)
+    _atol = atoldefault(first(u), atol)
+    _rtol = rtoldefault(ustrip(first(u)), ustrip(first(v)), _atol, rtol)
+    return iszero(_rtol) ? d <= _atol : d <= max(_atol, _rtol*max(norm(u), norm(v)))
+end
+
+# Unit functions
 ulength(q::QuantityArray) = ulength(dimension(q))
 umass(q::QuantityArray) = umass(dimension(q))
 utime(q::QuantityArray) = utime(dimension(q))

@@ -288,6 +288,12 @@ end
         uX = X .* Quantity(2, length=2.5, luminosity=0.5)
         @test sum(X) == 0.5 * ustrip(sum(uX))
 
+        @test isapprox(uX, uX, atol=Quantity{T,D}(1e-6, length=2.5, luminosity=0.5))
+        @test_throws DimensionError isapprox(uX, uX, atol=1e-6)
+        @test_throws ErrorException DynamicQuantities._norm(1.0)
+        VERSION >= v"1.9" &&
+            @test_throws "Please load the `LinearAlgebra.jl` package." DynamicQuantities._norm(1.0)
+
         x = GenericQuantity(ones(T, 32))
         @test ustrip(x + ones(T, 32))[32] == 2
         @test typeof(x + ones(T, 32)) <: GenericQuantity{Vector{T}}
@@ -295,6 +301,55 @@ end
         @test typeof(ones(T, 32) * GenericQuantity(T(1), D, length=1)) <: GenericQuantity{Vector{T}}
         @test typeof(ones(T, 32) / GenericQuantity(T(1), D, length=1)) <: GenericQuantity{Vector{T}}
         @test ones(T, 32) / GenericQuantity(T(1), length=1) == GenericQuantity(ones(T, 32), length=-1)
+    end
+
+    @testset "isapprox" begin
+        A = QuantityArray([1, 2, 3], u"m")
+        B = QuantityArray([1, 2, 3], u"m")
+        @test isapprox(A, B)
+
+        A = QuantityArray([1, 2, 3], u"m")
+        B = QuantityArray([1, 2, 3], u"s")
+        @test_throws DimensionError isapprox(A, B)
+
+        A = QuantityArray([1, 2, 3], u"m")
+        B = QuantityArray([1.001, 2.001, 3.001], u"m")
+        @test !isapprox(A, B, atol=1e-4u"m")
+        @test isapprox(A, B, atol=1e-2u"m")
+
+        A = QuantityArray([1, 2, 3], u"m")
+        B = QuantityArray([1.1, 2.1, 3.1], u"m")
+        @test !isapprox(A, B, rtol=0.01)
+        @test isapprox(A, B, rtol=0.05)
+
+        A = [1u"m", 2u"m", 3u"m"]
+        B = QuantityArray([1, 2, 3], u"m")
+        @test isapprox(A, B)
+
+        A = [1u"m", 2u"m", 3u"s"]
+        B = QuantityArray([1, 2, 3], u"m")
+        @test_throws DimensionError isapprox(A, B)
+        @test_throws DimensionError isapprox(B, A)
+
+        A = [1u"m", 2u"m"]
+        B = [1u"m", 2u"s"]
+        @test_throws DimensionError isapprox(A, B)
+        @test_throws DimensionError isapprox(B, A)
+
+        # With different rtoldefault:
+        A = QuantityArray([1, 2, 3], Quantity{Float16}(u"m"))
+        B = QuantityArray([1.01, 2.01, 3.01], Quantity{Float64}(u"m"))
+        @test isapprox(A, B)
+        @test isapprox(B, A)  # Because we get it from Float16
+        @test !isapprox(Quantity{Float64}.(A), B)
+        @test !isapprox(B, Quantity{Float64}.(A))
+
+        # With explicit atol=0, rtol=0
+        A = [1u"m", 2u"m", 3u"m"]
+        B = [1u"m", 2u"m", 3u"m"]
+        @test isapprox(A, B, atol=0u"m", rtol=0)
+        B = [1.00000001u"m", 2u"m", 3u"m"]
+        @test !isapprox(A, B, atol=0u"m", rtol=0)
     end
 
     x = randn(32) .* u"km/s"
@@ -817,7 +872,7 @@ end
         q = convert(Q{Float16}, 1.5u"g")
         qs = uconvert(convert(Q{Float16}, us"g"), 5 * q)
         @test typeof(qs) <: Q{Float16,<:SymbolicDimensions{<:Any}}
-        @test isapprox(qs, 7.5us"g"; atol=0.01)
+        @test isapprox(qs, 7.5us"g"; atol=0.01us"g")
 
         # Arrays
         x = [1.0, 2.0, 3.0] .* Q(u"kg")
@@ -1021,6 +1076,10 @@ end
             @test dimension(output_s_x) == dimension(x)^2
             fv_square2(x) = (xi -> xi^2).(x)
             @inferred fv_square2(s_x)
+
+            # isapprox for QuantityArray's
+            @test isapprox(x, x, atol=Q(1e-6u"km/s"))
+            @test_throws DimensionError isapprox(x, x, atol=1e-6)
         end
 
         @testset "Copying $Q" begin
