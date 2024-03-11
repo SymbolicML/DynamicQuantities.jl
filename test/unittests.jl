@@ -303,6 +303,39 @@ end
         @test ones(T, 32) / GenericQuantity(T(1), length=1) == GenericQuantity(ones(T, 32), length=-1)
     end
 
+    @testset "isapprox" begin
+        A = QuantityArray([1, 2, 3], u"m")
+        B = QuantityArray([1, 2, 3], u"m")
+        @test isapprox(A, B)
+
+        A = QuantityArray([1, 2, 3], u"m")
+        B = QuantityArray([1, 2, 3], u"s")
+        @test_throws DimensionError isapprox(A, B)
+
+        A = QuantityArray([1, 2, 3], u"m")
+        B = QuantityArray([1.001, 2.001, 3.001], u"m")
+        @test !isapprox(A, B, atol=1e-4u"m")
+        @test isapprox(A, B, atol=1e-2u"m")
+
+        A = QuantityArray([1, 2, 3], u"m")
+        B = QuantityArray([1.1, 2.1, 3.1], u"m")
+        @test !isapprox(A, B, rtol=0.01)
+        @test isapprox(A, B, rtol=0.05)
+
+        A = [1u"m", 2u"m", 3u"m"]
+        B = QuantityArray([1, 2, 3], u"m")
+        @test isapprox(A, B)
+
+        A = [1u"m", 2u"m", 3u"s"]
+        B = QuantityArray([1, 2, 3], u"m")
+        @test_throws DimensionError isapprox(A, B)
+        @test_throws DimensionError isapprox(B, A)
+
+        A = [1u"m", 2u"m"]
+        B = [1u"m", 2u"s"]
+        @test_throws DimensionError isapprox(A, B)
+    end
+
     x = randn(32) .* u"km/s"
     @test ustrip.(x) == [ustrip(xi) for xi in x]
     @test dimension.(x) == [dimension(u"km/s") for xi in x]
