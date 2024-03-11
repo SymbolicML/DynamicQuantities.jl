@@ -341,7 +341,8 @@ all_dimensions_equal(A::QuantityArray, B::QuantityArray) = dimension(A) == dimen
 all_dimensions_equal(A::QuantityArray, B::AbstractArray{<:UnionAbstractQuantity}) = all(i -> dimension(A) == dimension(B[i]), eachindex(B))
 all_dimensions_equal(A::AbstractArray{<:UnionAbstractQuantity}, B::QuantityArray) = all(i -> dimension(B) == dimension(A[i]), eachindex(A))
 function all_dimensions_equal(A::AbstractArray{<:UnionAbstractQuantity}, B::AbstractArray{<:UnionAbstractQuantity})
-    return dimension(first(A)) == dimension(first(B)) && allequal(dimension.(A)) && allequal(dimension.(B))
+    d = dimension(first(A))
+    return d == dimension(first(B)) && all(i -> d == dimension(A[i]), eachindex(A)) && all(i -> d == dimension(B[i]), eachindex(B))
 end
 
 function Base.isapprox(
