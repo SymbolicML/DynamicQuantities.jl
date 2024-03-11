@@ -37,10 +37,10 @@ julia> x = 20us"MyVolt^2"
 julia> y = 2.5us"A"
 2.5 A
 
-julia> x * y^2 |> uconvert(us"W^2")
+julia> x * y^2 |> us"W^2"
 281.25 W²
 
-julia> x * y^2 |> uconvert(us"W^2") |> sqrt |> uexpand
+julia> x * y^2 |> us"W^2" |> sqrt |> uexpand
 16.77050983124842 m² kg s⁻³
 ```
 
