@@ -32,7 +32,7 @@ val_denom(::Type{<:F}) where {F<:FixedRational} = Val(_denom(F))
 Base.eltype(::Type{<:FixedRational{T}}) where {T} = T
 
 const DEFAULT_NUMERATOR_TYPE = Int32
-const DEFAULT_DENOM = DEFAULT_NUMERATOR_TYPE(2^4 * 3^2 * 5^2 * 7)
+const DEFAULT_DENOM = 2^4 * 3^2 * 5^2 * 7
 
 (::Type{F})(x::F) where {F<:FixedRational} = x
 (::Type{F})(x::F2) where {T,T2,den,F<:FixedRational{T,den},F2<:FixedRational{T2,den}} = unsafe_fixed_rational(x.num, eltype(F), val_denom(F))
