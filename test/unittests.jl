@@ -595,6 +595,12 @@ end
     @test promote_type(FixedRational{Int64,10},FixedRational{BigInt,10}) == FixedRational{BigInt,10}
     @test promote_type(Rational{Int8}, FixedRational{Int,12345}) == Rational{Int}
     @test promote_type(Int8, FixedRational{Int,12345}) == FixedRational{Int,12345}
+
+    # Bug where user would create a FixedRational{::Type{Int32}, ::Int64} and get stack overflow,
+    # because the stored type was FixedRational{::Type{Int32}, ::Int32}
+    x = 10u"m"
+    user_quantity = Quantity(10.0, Dimensions{FixedRational{Int32,25200}}(1, 0, 0, 0, 0, 0, 0))
+    @test x == user_quantity
 end
 
 @testset "Quantity promotion" begin
@@ -1978,7 +1984,7 @@ end
 push!(LOAD_PATH, joinpath(@__DIR__, "precompile_test"))
 
 using ExternalUnitRegistration: MyWb
-@testset "Type of Extenral Unit" begin
+@testset "Type of External Unit" begin
     @test MyWb isa DEFAULT_QUANTITY_TYPE
     @test MyWb/u"m^2*kg*s^-2*A^-1" == 1.0
 end
