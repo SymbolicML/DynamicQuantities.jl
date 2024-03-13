@@ -16,13 +16,10 @@ struct WriteOnceReadMany{V}
 end
 
 # Utility functions
-for f in (:enumerate, :length, :lastindex)
-    @eval Base.$f(w::WriteOnceReadMany) = $f(w._raw_data)
-end
-for f in (:findfirst, :filter)
-    @eval Base.$f(val::Function, w::WriteOnceReadMany) = $f(val, w._raw_data)
-end
-
+Base.length(w::WriteOnceReadMany) = length(w._raw_data)
+Base.lastindex(w::WriteOnceReadMany) = lastindex(w._raw_data)
+Base.findfirst(val::Function, w::WriteOnceReadMany) = findfirst(val, w._raw_data)
+Base.filter(val::Function, w::WriteOnceReadMany) = filter(val, w._raw_data)
 Base.getindex(w::WriteOnceReadMany, i::Union{Integer,Symbol}) = getindex(w._raw_data, i)
 Base.get(w::WriteOnceReadMany{<:AbstractDict}, a, b) = get(w._raw_data, a, b)
 
