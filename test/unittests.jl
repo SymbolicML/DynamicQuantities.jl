@@ -1616,7 +1616,7 @@ end
         :coth, :asech, :acsch, :acoth, :sinc, :cosc, :cosd, :cotd, :cscd, :secd,
         :sinpi, :cospi, :sind, :tand, :acosd, :acotd, :acscd, :asecd, :asind,
         :log, :log2, :log10, :log1p, :exp, :exp2, :exp10, :expm1, :frexp, :exponent,
-        :atan, :atand
+        :atan, :atand, :factorial
     )
     for Q in (RealQuantity, Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
         # Only test on valid domain
