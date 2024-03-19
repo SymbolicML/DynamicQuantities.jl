@@ -159,7 +159,6 @@ for f in (
     :coth, :asech, :acsch, :acoth, :sinc, :cosc, :cosd, :cotd, :cscd, :secd,
     :sinpi, :cospi, :sind, :tand, :acosd, :acotd, :acscd, :asecd, :asind,
     :log, :log2, :log10, :log1p, :exp, :exp2, :exp10, :expm1, :frexp, :exponent,
-    :factorial
 )
     @eval function Base.$f(q::UnionAbstractQuantity)
         iszero(dimension(q)) || throw(DimensionError(q))
