@@ -188,11 +188,26 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:atan, :atand)
     end
 end
 
+# Explicit declaration of `factorial` function.
+function Base.factorial(q::UnionAbstractQuantity{<:Integer})
+    iszero(dimension(q)) || throw(DimensionError(q))
+    return factorial(ustrip(q))
+end
+
+
 # Explicit declaration of `binomial` function.
-function Base.binomial(q1::UnionAbstractQuantity, q2::UnionAbstractQuantity)
+function Base.binomial(q1::UnionAbstractQuantity{<:Integer}, q2::UnionAbstractQuantity{<:Integer})
     iszero(dimension(q1)) || throw(DimensionError(q1))
     iszero(dimension(q2)) || throw(DimensionError(q2))
-    return binomial(ustrip(q), ustrip(q))
+    return binomial(ustrip(q1), ustrip(q2))
+end
+function Base.binomial(q1::Integer, q2::UnionAbstractQuantity{<:Integer})
+    iszero(dimension(q2)) || throw(DimensionError(q2))
+    return binomial(q1, ustrip(q2))
+end
+function Base.binomial(q1::UnionAbstractQuantity{<:Integer}, q2::Integer)
+    iszero(dimension(q1)) || throw(DimensionError(q1))
+    return binomial(ustrip(q1), q2)
 end
 
 #########################################################################################
