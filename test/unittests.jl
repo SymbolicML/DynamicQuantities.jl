@@ -1643,6 +1643,19 @@ end
             end
         end
     end
+    for Q in (RealQuantity, Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions)
+        for x in rand(3, 1:10), y in rand(3, 1:10)
+            qx_dimensionless = Q(x, D)
+            qx_dimensions = convert(with_type_parameters(Q, Float64, D), Q(x, dimension(u"m/s")))
+            qy_dimensionless = Q(y, D)
+            qy_dimensions = convert(with_type_parameters(Q, Float64, D), Q(y, dimension(u"m/s")))
+            @eval @test $f($y, $qx_dimensionless) == $f($y, $x)
+            @eval @test $f($qy_dimensionless, $x) == $f($y, $x)
+            @eval @test $f($qy_dimensionless, $qx_dimensionless) == $f($y, $x)
+            @eval @test $f($qy_dimensions, $qx_dimensions) == $f($y, $x)
+            @eval @test_throws DimensionError $f($qy_dimensions, $x)
+            @eval @test_throws DimensionError $f($y, $qx_dimensions)
+    end
     s = record_show(DimensionError(u"km/s"), showerror)
     @test occursin("not dimensionless", s)
 end

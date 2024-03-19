@@ -187,6 +187,14 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:atan, :atand)
         end
     end
 end
+
+# Explicit declaration of `binomial` function.
+function Base.binomial(q1::UnionAbstractQuantity, q2::UnionAbstractQuantity)
+    iszero(dimension(q1)) || throw(DimensionError(q1))
+    iszero(dimension(q2)) || throw(DimensionError(q2))
+    return binomial(ustrip(q), ustrip(q))
+end
+
 #########################################################################################
 
 ############################## Same dimension as input ##################################
