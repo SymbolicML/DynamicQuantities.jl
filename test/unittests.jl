@@ -1616,7 +1616,7 @@ end
         :coth, :asech, :acsch, :acoth, :sinc, :cosc, :cosd, :cotd, :cscd, :secd,
         :sinpi, :cospi, :sind, :tand, :acosd, :acotd, :acscd, :asecd, :asind,
         :log, :log2, :log10, :log1p, :exp, :exp2, :exp10, :expm1, :frexp, :exponent,
-        :atan, :atand, :factorial
+        :atan, :atand
     )
     for Q in (RealQuantity, Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
         # Only test on valid domain
@@ -1643,6 +1643,18 @@ end
             end
         end
     end
+
+    # Tests factorial (single integer input).
+    for Q in (RealQuantity, Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions)
+        for x in rand(3, 1:10)
+            qx_dimensionless = Q(x, D)
+            qx_dimensions = convert(with_type_parameters(Q, Float64, D), Q(x, dimension(u"m/s")))
+            @eval @test $f($qx_dimensionless) == $f($x)
+            @eval @test_throws DimensionError $f($qx_dimensions)
+        end
+    end
+
+    # Tests binomial (two integer inputs).
     for Q in (RealQuantity, Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions)
         for x in rand(3, 1:10), y in rand(3, 1:10)
             qx_dimensionless = Q(x, D)
@@ -1655,6 +1667,7 @@ end
             @eval @test $f($qy_dimensions, $qx_dimensions) == $f($y, $x)
             @eval @test_throws DimensionError $f($qy_dimensions, $x)
             @eval @test_throws DimensionError $f($y, $qx_dimensions)
+        end
     end
     s = record_show(DimensionError(u"km/s"), showerror)
     @test occursin("not dimensionless", s)
