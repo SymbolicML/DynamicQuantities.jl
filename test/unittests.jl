@@ -1643,6 +1643,33 @@ end
             end
         end
     end
+    
+    # Tests factorial (single integer input).
+    for Q in (Quantity{Int64},), D in (Dimensions, SymbolicDimensions)
+        for x in rand(1:10, 3)
+            qx_dimensionless = Q(x, D)
+            qx_dimensions = convert(with_type_parameters(Q, Int64, D), Q(x*u"m/s"))
+            @eval @test $factorial($qx_dimensionless) == $factorial($x)
+            @eval @test_throws DimensionError $factorial($qx_dimensions)
+        end
+    end
+
+    # Tests binomial (two integer inputs).
+    for Q in (Quantity{Int64},), D in (Dimensions, SymbolicDimensions)
+        for x in rand(1:10, 3), y in rand(1:10, 3)
+            qx_dimensionless = Q(x, D)
+            qx_dimensions = convert(with_type_parameters(Q, Int64, D), Q(x*u"m/s"))
+            qy_dimensionless = Q(y, D)
+            qy_dimensions = convert(with_type_parameters(Q, Int64, D), Q(y*u"m/s"))
+            @eval @test $binomial($y, $qx_dimensionless) == $binomial($y, $x)
+            @eval @test $binomial($qy_dimensionless, $x) == $binomial($y, $x)
+            @eval @test $binomial($qy_dimensionless, $qx_dimensionless) == $binomial($y, $x)
+            @eval @test_throws DimensionError $binomial($qy_dimensions, $qx_dimensions) == $binomial($y, $x)
+            @eval @test_throws DimensionError $binomial($qy_dimensions, $x)
+            @eval @test_throws DimensionError $binomial($y, $qx_dimensions)
+        end
+    end
+
     s = record_show(DimensionError(u"km/s"), showerror)
     @test occursin("not dimensionless", s)
 end

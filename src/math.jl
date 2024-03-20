@@ -186,6 +186,19 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:atan, :atand)
         end
     end
 end
+function Base.factorial(q::UnionAbstractQuantity{<:Integer})
+    iszero(dimension(q)) || throw(DimensionError(q))
+    return factorial(ustrip(q))
+end
+for Q1 in (UnionAbstractQuantity{<:Integer}, Integer), Q2 in (UnionAbstractQuantity{<:Integer}, Integer)
+    Q1 === Q2 === Integer && continue
+    @eval function Base.binomial(q1::$Q1, q2::$Q2)
+        iszero(dimension(q1)) || throw(DimensionError(q1))
+        iszero(dimension(q2)) || throw(DimensionError(q2))
+        return binomial(ustrip(q1), ustrip(q2))
+    end
+end
+
 #########################################################################################
 
 ############################## Same dimension as input ##################################
