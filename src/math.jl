@@ -186,27 +186,17 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:atan, :atand)
         end
     end
 end
-
-# Explicit declaration of `factorial` function.
 function Base.factorial(q::UnionAbstractQuantity{<:Integer})
     iszero(dimension(q)) || throw(DimensionError(q))
     return factorial(ustrip(q))
 end
-
-
-# Explicit declaration of `binomial` function.
-function Base.binomial(q1::UnionAbstractQuantity{<:Integer}, q2::UnionAbstractQuantity{<:Integer})
-    iszero(dimension(q1)) || throw(DimensionError(q1))
-    iszero(dimension(q2)) || throw(DimensionError(q2))
-    return binomial(ustrip(q1), ustrip(q2))
-end
-function Base.binomial(q1::Integer, q2::UnionAbstractQuantity{<:Integer})
-    iszero(dimension(q2)) || throw(DimensionError(q2))
-    return binomial(q1, ustrip(q2))
-end
-function Base.binomial(q1::UnionAbstractQuantity{<:Integer}, q2::Integer)
-    iszero(dimension(q1)) || throw(DimensionError(q1))
-    return binomial(ustrip(q1), q2)
+for Q1 in (UnionAbstractQuantity{<:Integer}, Integer), Q2 in (UnionAbstractQuantity{<:Integer}, Integer)
+    Q1 === Q2 === Integer && continue
+    @eval function Base.binomial(q1::$Q1, q2::$Q2)
+        iszero(dimension(q1)) || throw(DimensionError(q1))
+        iszero(dimension(q2)) || throw(DimensionError(q2))
+        return binomial(ustrip(q1), ustrip(q2))
+    end
 end
 
 #########################################################################################
