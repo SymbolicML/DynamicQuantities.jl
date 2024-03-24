@@ -20,7 +20,6 @@ jobs:
         version:
           - '1.6'
           - '1'
-          - 'alpha'
         os:
           - ubuntu-latest
         arch:
