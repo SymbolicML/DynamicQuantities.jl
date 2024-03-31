@@ -103,6 +103,7 @@ end
 @_lazy_register_unit H N * m / A^2
 @_lazy_register_unit T N / (A * m)
 @_lazy_register_unit Wb V * s
+@_lazy_register_unit M mol / dm^3
 
 @add_prefixes Hz (n, μ, u, m, k, M, G)
 @add_prefixes N ()
@@ -118,6 +119,7 @@ end
 @add_prefixes H ()
 @add_prefixes T ()
 @add_prefixes Wb (n, μ, u, m)
+@add_prefixes M (p, n, μ, u, m)
 
 # SI derived units
 @doc(
@@ -171,6 +173,10 @@ end
 @doc(
     "Magnetic flux in webers. Available variants: `nWb`, `μWb` (/`uWb`), `mWb`.",
     Wb,
+)
+@doc(
+    "Molar concentration in molar. Available variants: `pM`, `nM`, `μM` (/`uM`), `mM`.",
+    M,
 )
 
 # Common assorted units
