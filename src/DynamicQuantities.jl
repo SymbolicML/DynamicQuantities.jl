@@ -3,6 +3,7 @@ module DynamicQuantities
 export Units, Constants, SymbolicUnits, SymbolicConstants
 export AbstractQuantity, AbstractGenericQuantity, AbstractRealQuantity, UnionAbstractQuantity
 export Quantity, GenericQuantity, RealQuantity
+export FixedRational
 export AbstractDimensions, Dimensions, NoDims
 export AbstractSymbolicDimensions, SymbolicDimensions, SymbolicDimensionsSingleton
 export QuantityArray

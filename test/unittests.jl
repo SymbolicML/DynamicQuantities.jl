@@ -1,5 +1,5 @@
 using DynamicQuantities
-using DynamicQuantities: FixedRational, NoDims, AbstractSymbolicDimensions
+using DynamicQuantities: NoDims, AbstractSymbolicDimensions
 using DynamicQuantities: DEFAULT_QUANTITY_TYPE, DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 using DynamicQuantities: array_type, value_type, dim_type, quantity_type
 using DynamicQuantities: GenericQuantity, with_type_parameters, constructorof
