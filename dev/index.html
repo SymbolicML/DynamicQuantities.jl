@@ -76,7 +76,7 @@ julia&gt; x * 10u&quot;A&quot; |&gt; us&quot;W&quot;
 
 julia&gt; 3us&quot;V&quot; |&gt; us&quot;OneFiveV&quot;
 2.0 OneFiveV</code></pre><h3 id="Arrays"><a class="docs-heading-anchor" href="#Arrays">Arrays</a><a id="Arrays-1"></a><a class="docs-heading-anchor-permalink" href="#Arrays" title="Permalink"></a></h3><p>For working with an array of quantities that have the same dimensions, you can use a <code>QuantityArray</code>:</p><pre><code class="language-julia hljs">julia&gt; ar = QuantityArray(rand(3), u&quot;m/s&quot;)
-3-element QuantityArray(::Vector{Float64}, ::Quantity{Float64, Dimensions{DynamicQuantities.FixedRational{Int32, 25200}}}):
+3-element QuantityArray(::Vector{Float64}, ::Quantity{Float64, Dimensions{FixedRational{Int32, 25200}}}):
  0.2729202669351497 m s⁻¹
  0.992546340360901 m s⁻¹
  0.16863543422972482 m s⁻¹</code></pre><p>This <code>QuantityArray</code> is a subtype <code>&lt;:AbstractArray{Quantity{Float64,Dimensions{...}},1}</code>, meaning that indexing a specific element will return a <code>Quantity</code>:</p><pre><code class="language-julia hljs">julia&gt; ar[2]
@@ -124,9 +124,9 @@ Quantity{Float64, Dimensions{FixedRational{Int32, 25200}}}</code></pre><p>You ca
 Quantity{Float16, Dimensions{FixedRational{Int32, 25200}}}</code></pre><p>or by conversion:</p><pre><code class="language-julia hljs">julia&gt; typeof(convert(Quantity{Float16}, 0.5u&quot;m/s&quot;))
 Quantity{Float16, Dimensions{FixedRational{Int32, 25200}}}</code></pre><p>For many applications, <code>FixedRational{Int8,6}</code> will suffice, and can be faster as it means the entire <code>Dimensions</code> struct will fit into 64 bits. You can change the type of the dimensions field by passing the type you wish to use as the second argument to <code>Quantity</code>:</p><pre><code class="language-julia hljs">julia&gt; using DynamicQuantities
 
-julia&gt; R8 = Dimensions{DynamicQuantities.FixedRational{Int8,6}};
+julia&gt; R8 = Dimensions{FixedRational{Int8,6}};
 
-julia&gt; R32 = Dimensions{DynamicQuantities.FixedRational{Int32,2^4 * 3^2 * 5^2 * 7}};  # Default
+julia&gt; R32 = Dimensions{FixedRational{Int32,2^4 * 3^2 * 5^2 * 7}};  # Default
 
 julia&gt; q8 = [Quantity{Float64,R8}(randn(), length=rand(-2:2)) for i in 1:1000];
 
@@ -138,4 +138,4 @@ julia&gt; @btime f($q8);
   1.433 μs (3 allocations: 15.77 KiB)
 
 julia&gt; @btime f($q32);
-  1.883 μs (4 allocations: 39.12 KiB)</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="examples/">Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.3.0 on <span class="colophon-date" title="Monday 1 April 2024 18:00">Monday 1 April 2024</span>. Using Julia version 1.10.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  1.883 μs (4 allocations: 39.12 KiB)</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="examples/">Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.3.0 on <span class="colophon-date" title="Thursday 11 April 2024 02:38">Thursday 11 April 2024</span>. Using Julia version 1.10.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
