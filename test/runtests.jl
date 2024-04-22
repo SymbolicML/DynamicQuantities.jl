@@ -1,8 +1,8 @@
 using SafeTestsets
 import Ratios: SimpleRatio
 
-@static if !hasmethod(round, Tuple{Int, SimpleRatio{Int}})
-    @eval Base.round(T, x::SimpleRatio) = round(T, x.num // x.den)
+if !hasmethod(round, Tuple{Int, SimpleRatio{Int}})
+    Base.round(::Type{T}, x::SimpleRatio) where {T} = round(T, x.num // x.den)
 end
 
 if parse(Bool, get(ENV, "DQ_TEST_UPREFERRED", "false"))
