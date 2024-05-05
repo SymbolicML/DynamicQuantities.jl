@@ -22,6 +22,7 @@ DynamicQuantitiesUnitfulExt = "Unitful"
 
 [compat]
 Compat = "3.42, 4"
+LinearAlgebra = "1"
 Measurements = "2"
 PackageExtensionCompat = "1.0.2"
 ScientificTypes = "3"
