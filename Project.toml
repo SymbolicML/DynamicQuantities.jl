@@ -21,8 +21,8 @@ DynamicQuantitiesScientificTypesExt = "ScientificTypes"
 DynamicQuantitiesUnitfulExt = "Unitful"
 
 [compat]
-Aqua = "0.7"
 Compat = "3.42, 4"
+LinearAlgebra = "1"
 Measurements = "2"
 PackageExtensionCompat = "1.0.2"
 ScientificTypes = "3"
@@ -31,17 +31,7 @@ Unitful = "1"
 julia = "1.6"
 
 [extras]
-Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
-Meshes = "eacbb407-ea5a-433e-ab97-5258b1ca43fa"
-Ratios = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
-SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
-SaferIntegers = "88634af6-177f-5301-88b8-7819386cfa38"
 ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
-StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
-
-[targets]
-test = ["Aqua", "LinearAlgebra", "Measurements", "Meshes", "Ratios", "SaferIntegers", "SafeTestsets", "ScientificTypes", "StaticArrays", "Test", "Unitful"]
