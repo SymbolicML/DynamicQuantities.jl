@@ -1,6 +1,7 @@
 <div align="center">
 
-![logo](https://github.com/SymbolicML/DynamicQuantities.jl/assets/7593028/a278d0c1-2f95-416b-ba04-82750074146b)
+<img src="https://github.com/SymbolicML/DynamicQuantities.jl/assets/7593028/10b1e6b8-f1c5-43bc-97e6-4ddb4c175293" width=500>
+
 
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://symbolicml.org/DynamicQuantities.jl/dev/)
 [![Build Status](https://github.com/SymbolicML/DynamicQuantities.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/SymbolicML/DynamicQuantities.jl/actions/workflows/CI.yml?query=branch%3Amain)
@@ -77,10 +78,25 @@ julia> x = 0.3u"km/s"
 
 julia> y = 42 * u"kg"
 42.0 kg
+```
 
-julia> room_temp = 100u"kPa"
+or by importing explicitly:
+
+```julia
+julia> using DynamicQuantities: kPa
+
+julia> room_temp = 100kPa
 100000.0 m⁻¹ kg s⁻²
 ```
+
+Note that `Units` is an exported submodule, so you can
+also access this as `Units.kPa`. You may like to define
+
+```julia
+julia> const U = Units
+```
+
+so that you can simply write, say, `U.kPa` or `C.m_e`.
 
 This supports a wide range of SI base and derived units, with common
 prefixes.
@@ -162,11 +178,23 @@ julia> Constants.c
 2.99792458e8 m s⁻¹
 ```
 
+which you may like to define as
+
+```julia
+julia> const C = Constants
+```
+
 These can also be used inside the `u"..."` macro:
 
 ```julia
 julia> u"Constants.c * Hz"
 2.99792458e8 m s⁻²
+```
+
+Similarly, you can just import each individual constant:
+
+```julia
+julia> using DynamicQuantities.Constants: h
 ```
 
 For the full list, see the [docs](https://symbolicml.org/DynamicQuantities.jl/dev/constants/).
@@ -207,11 +235,55 @@ julia> uexpand(x^2)
 8.987551787368176e16 m² s⁻⁴
 ```
 
-You can also convert a quantity in regular base SI units to symbolic units with `uconvert`:
+You can also convert a quantity in regular base SI units to symbolic units with the `|>` infix operator
 ```julia
-julia> uconvert(us"nm", 5e-9u"m") # can also write 5e-9u"m" |> uconvert(us"nm")
+julia> 5e-9u"m" |> us"nm"
 5.0 nm
 ```
+
+You can also convert between different symbolic units.
+(Note that you can write this more explicitly
+with `uconvert(us"nm", 5e-9u"m")`.)
+
+
+Finally, you can also import these directly:
+
+```julia
+julia> using DynamicQuantities.SymbolicUnits: cm
+```
+
+or constants:
+
+```julia
+julia> using DynamicQuantities.SymbolicConstants: h
+```
+
+Note that `SymbolicUnits` and `SymbolicConstants` are exported,
+so you can simply access these as `SymbolicUnits.cm` and `SymbolicConstants.h`,
+respectively.
+
+
+#### Custom Units
+
+You can create custom units with the `@register_unit` macro:
+
+```julia
+julia> @register_unit OneFiveV 1.5u"V"
+```
+
+and then use it in calculations normally:
+
+```julia
+julia> x = us"OneFiveV"
+1.0 OneFiveV
+
+julia> x * 10u"A" |> us"W"
+15.0 W
+
+julia> 3us"V" |> us"OneFiveV"
+2.0 OneFiveV
+```
+
 
 ### Arrays
 
@@ -220,7 +292,7 @@ you can use a `QuantityArray`:
 
 ```julia
 julia> ar = QuantityArray(rand(3), u"m/s")
-3-element QuantityArray(::Vector{Float64}, ::Quantity{Float64, Dimensions{DynamicQuantities.FixedRational{Int32, 25200}}}):
+3-element QuantityArray(::Vector{Float64}, ::Quantity{Float64, Dimensions{FixedRational{Int32, 25200}}}):
  0.2729202669351497 m s⁻¹
  0.992546340360901 m s⁻¹
  0.16863543422972482 m s⁻¹
@@ -281,10 +353,33 @@ true
 
 ## Types
 
-Both a `Quantity`'s values and dimensions are of arbitrary type.
-By default, dimensions are stored as a `Dimensions{FixedRational{Int32,C}}`
-object, whose exponents are stored as rational numbers
-with a fixed denominator `C`. This is much faster than `Rational`.
+Both a `Quantity`'s values and dimensions are of arbitrary type. The default
+`Dimensions` (for the `u"..."` macro) performs exponent tracking for SI units,
+and `SymbolicDimensions` (for the `us"..."` macro) performs exponent tracking
+for all known unit and constant symbols, using a sparse array.
+
+You can create custom spaces dimension spaces by simply creating
+a Julia struct subtyped to `AbstractDimensions`:
+
+```julia
+julia> struct CookiesAndMilk{R} <: AbstractDimensions{R}
+           cookies::R
+           milk::R
+       end
+
+julia> cookie_rate = Quantity(0.9, CookiesAndMilk(cookies=1, milk=-1))
+0.9 cookies milk⁻¹
+
+julia> total_milk = Quantity(103, CookiesAndMilk(milk=1))
+103 milk
+
+julia> total_cookies = cookie_rate * total_milk
+92.7 cookies
+```
+
+Exponents are tracked by default with the type `R = FixedRational{Int32,C}`,
+which represents rational numbers with a fixed denominator `C`.
+This is much faster than `Rational`.
 
 ```julia
 julia> typeof(0.5u"kg")
@@ -315,19 +410,19 @@ the type you wish to use as the second argument to `Quantity`:
 ```julia
 julia> using DynamicQuantities
 
-julia> R8 = Dimensions{DynamicQuantities.FixedRational{Int8,6}};
+julia> R8 = Dimensions{FixedRational{Int8,6}};
 
-julia> R32 = Dimensions{DynamicQuantities.FixedRational{Int32,2^4 * 3^2 * 5^2 * 7}};  # Default
+julia> R32 = Dimensions{FixedRational{Int32,2^4 * 3^2 * 5^2 * 7}};  # Default
 
-julia> q8 = [Quantity(randn(), R8, length=rand(-2:2)) for i in 1:1000];
+julia> q8 = [Quantity{Float64,R8}(randn(), length=rand(-2:2)) for i in 1:1000];
 
-julia> q32 = [Quantity(randn(), R32, length=rand(-2:2)) for i in 1:1000];
+julia> q32 = [Quantity{Float64,R32}(randn(), length=rand(-2:2)) for i in 1:1000];
 
 julia> f(x) = @. x ^ 2 * 0.5;
 
 julia> @btime f($q8);
-  7.750 μs (1 allocation: 15.75 KiB)
+  1.433 μs (3 allocations: 15.77 KiB)
 
 julia> @btime f($q32);
-  8.417 μs (2 allocations: 39.11 KiB)
+  1.883 μs (4 allocations: 39.12 KiB)
 ```

@@ -1,4 +1,6 @@
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+    # For div, we don't want to go more generic than `Number`
+    div_base_type = base_type <: Number ? base_type : Number
     @eval begin
         function Base.:*(l::$type, r::$type)
             l, r = promote_except_value(l, r)
@@ -20,7 +22,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
         function Base.:/(l::$type, r::$base_type)
             new_quantity(typeof(l), ustrip(l) / r, dimension(l))
         end
-        function Base.div(x::$type, y::Number, r::RoundingMode=RoundToZero)
+        function Base.div(x::$type, y::$div_base_type, r::RoundingMode=RoundToZero)
             new_quantity(typeof(x), div(ustrip(x), y, r), dimension(x))
         end
 
@@ -30,7 +32,7 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
         function Base.:/(l::$base_type, r::$type)
             new_quantity(typeof(r), l / ustrip(r), inv(dimension(r)))
         end
-        function Base.div(x::Number, y::$type, r::RoundingMode=RoundToZero)
+        function Base.div(x::$div_base_type, y::$type, r::RoundingMode=RoundToZero)
             new_quantity(typeof(y), div(x, ustrip(y), r), inv(dimension(y)))
         end
 
@@ -53,8 +55,10 @@ end
 Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
 Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 
-# Defines + and -
-for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-)
+# Defines +, -, and mod
+for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-, :mod)
+    # Only define `mod` on `Number` types:
+    base_type = (op == :mod && !(true_base_type <: Number)) ? Number : true_base_type
     @eval begin
         function Base.$op(l::$type, r::$type)
             l, r = promote_except_value(l, r)
@@ -75,13 +79,17 @@ end
 Base.:-(l::UnionAbstractQuantity) = new_quantity(typeof(l), -ustrip(l), dimension(l))
 
 # Combining different abstract types
-for op in (:*, :/, :+, :-, :div, :atan, :atand, :copysign, :flipsign, :mod),
+for op in (:*, :/, :+, :-, :^, :atan, :atand, :copysign, :flipsign, :div, :mod),
     (t1, _, _) in ABSTRACT_QUANTITY_TYPES,
     (t2, _, _) in ABSTRACT_QUANTITY_TYPES
 
     t1 == t2 && continue
 
-    @eval Base.$op(l::$t1, r::$t2) = $op(promote_except_value(l, r)...)
+    if op == :div
+        @eval Base.$op(x::$t1, y::$t2, r::RoundingMode=RoundToZero) = $op(promote_except_value(x, y)..., r)
+    else
+        @eval Base.$op(l::$t1, r::$t2) = $op(promote_except_value(l, r)...)
+    end
 end
 
 # We don't promote on the dimension types:
@@ -118,6 +126,14 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
         Base.:^(l::$type, r::Integer) = _pow_int(l, r)
         Base.:^(l::$type, r::Number) = _pow(l, r)
         Base.:^(l::$type, r::Rational) = _pow(l, r)
+        function Base.:^(l::$type, r::Complex)
+            iszero(dimension(l)) || throw(DimensionError(l))
+            return new_quantity(typeof(l), ustrip(l)^r, dimension(l))
+        end
+        function Base.:^(l::$type, r::$type)
+            iszero(dimension(r)) || throw(DimensionError(r))
+            return l ^ ustrip(r)
+        end
     end
 end
 @inline Base.literal_pow(::typeof(^), l::AbstractDimensions, ::Val{p}) where {p} = map_dimensions(Base.Fix1(*, p), l)
@@ -170,18 +186,31 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:atan, :atand)
         end
     end
 end
+function Base.factorial(q::UnionAbstractQuantity{<:Integer})
+    iszero(dimension(q)) || throw(DimensionError(q))
+    return factorial(ustrip(q))
+end
+for Q1 in (UnionAbstractQuantity{<:Integer}, Integer), Q2 in (UnionAbstractQuantity{<:Integer}, Integer)
+    Q1 === Q2 === Integer && continue
+    @eval function Base.binomial(q1::$Q1, q2::$Q2)
+        iszero(dimension(q1)) || throw(DimensionError(q1))
+        iszero(dimension(q2)) || throw(DimensionError(q2))
+        return binomial(ustrip(q1), ustrip(q2))
+    end
+end
+
 #########################################################################################
 
 ############################## Same dimension as input ##################################
 for f in (
     :float, :abs, :real, :imag, :conj, :adjoint, :unsigned,
-    :nextfloat, :prevfloat, :identity, :transpose, :significand
+    :nextfloat, :prevfloat, :transpose, :significand
 )
     @eval function Base.$f(q::UnionAbstractQuantity)
         return new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
     end
 end
-for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:copysign, :flipsign, :mod)
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:copysign, :flipsign,)
     # These treat the x as the magnitude, so we take the dimensions from there,
     # and ignore any dimensions on y, since those will cancel out.
     @eval begin
@@ -194,6 +223,33 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:copysign, :flipsign,
         end
         function Base.$f(x::$base_type, y::$type)
             return $f(x, ustrip(y))
+        end
+    end
+end
+# Define :rem (unfortunately we have to create a method for each rounding mode to avoid ambiguity)
+for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES, rounding_mode in (RoundingMode, RoundingMode{:ToZero}, RoundingMode{:Down}, RoundingMode{:Up}, RoundingMode{:FromZero})
+
+    # We don't want to go more generic than `Number` for mod and rem
+    base_type = true_base_type <: Number ? true_base_type : Number
+    # Add extra args:
+    param = rounding_mode === RoundingMode ? (()) : (:(::$rounding_mode),)
+    extra_f_args = rounding_mode === RoundingMode ? (:RoundToZero,) : (:($rounding_mode()),)
+
+    for (type2, _, _) in ABSTRACT_QUANTITY_TYPES
+        @eval function Base.rem(x::$type, y::$type2, $(param...))
+            x, y = promote_except_value(x, y)
+            dimension(x) == dimension(y) || throw(DimensionError(x, y))
+            return new_quantity(typeof(x), rem(ustrip(x), ustrip(y), $(extra_f_args...)), dimension(x))
+        end
+    end
+    @eval begin
+        function Base.rem(x::$type, y::$base_type, $(param...))
+            iszero(dimension(x)) || throw(DimensionError(x))
+            return new_quantity(typeof(x), rem(ustrip(x), y, $(extra_f_args...)), dimension(x))
+        end
+        function Base.rem(x::$base_type, y::$type, $(param...))
+            iszero(dimension(y)) || throw(DimensionError(y))
+            return new_quantity(typeof(y), rem(x, ustrip(y), $(extra_f_args...)), dimension(y))
         end
     end
 end

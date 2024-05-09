@@ -33,6 +33,6 @@ Filter  = t -> !(t in [ustrip, dimension, ulength, umass, utime, ucurrent, utemp
 ### FixedRational
 
 ```@docs
-DynamicQuantities.FixedRational
+FixedRational
 DynamicQuantities.denom
 ```

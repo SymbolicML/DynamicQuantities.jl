@@ -13,8 +13,8 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v2
-            - uses: julia-actions/setup-julia@v1
+            - uses: actions/checkout@v4
+            - uses: julia-actions/setup-julia@v2
               with:
                 version: "1"
             - uses: julia-actions/cache@v1
@@ -44,7 +44,7 @@ jobs:
                 mkdir -p plots
                 benchpkgplot ${{ steps.extract-package-name.outputs.package_name }} --rev="${{github.event.repository.default_branch}},${{github.event.pull_request.head.sha}}" --npart=10 --format=png --input-dir=results/ --output-dir=plots/
             - name: Upload plot as artifact
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v4
               with:
                 name: plots
                 path: plots
@@ -62,7 +62,7 @@ jobs:
                 echo 'Go to "Actions"->"Benchmark a pull request"->[the most recent run]->"Artifacts" (at the bottom).' >> body.md
 
             - name: Find Comment
-              uses: peter-evans/find-comment@v2
+              uses: peter-evans/find-comment@v3
               id: fcbenchmark
               with:
                 issue-number: ${{ github.event.pull_request.number }}
@@ -70,7 +70,7 @@ jobs:
                 body-includes: Benchmark Results
 
             - name: Comment on PR
-              uses: peter-evans/create-or-update-comment@v3
+              uses: peter-evans/create-or-update-comment@v4
               with:
                 comment-id: ${{ steps.fcbenchmark.outputs.comment-id }}
                 issue-number: ${{ github.event.pull_request.number }}

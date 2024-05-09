@@ -1,8 +1,8 @@
 using SafeTestsets
 import Ratios: SimpleRatio
 
-@static if !hasmethod(round, Tuple{Int, SimpleRatio{Int}})
-    @eval Base.round(T, x::SimpleRatio) = round(T, x.num // x.den)
+if !hasmethod(round, Tuple{Int, SimpleRatio{Int}})
+    Base.round(::Type{T}, x::SimpleRatio) where {T} = round(T, x.num // x.den)
 end
 
 if parse(Bool, get(ENV, "DQ_TEST_UPREFERRED", "false"))
@@ -19,6 +19,10 @@ else
     @safetestset "Measurements.jl integration tests" begin
         include("test_measurements.jl")
     end
+    ## Broken; see https://github.com/SymbolicML/DynamicQuantities.jl/issues/118
+    # @safetestset "Meshes.jl integration tests" begin
+    #     include("test_meshes.jl")
+    # end
     @safetestset "Unit tests" begin
         include("unittests.jl")
     end

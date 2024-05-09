@@ -1,6 +1,9 @@
 module DynamicQuantitiesLinearAlgebraExt
 
+using DynamicQuantities: UnionAbstractQuantity, QuantityArray, ustrip, dimension, new_quantity
+
 import LinearAlgebra: norm, svd, Diagonal, eigen, det, diagm
+import DynamicQuantities: _norm
 
 using LinearAlgebra: Algorithm, default_svd_alg, SVD, Adjoint, eigsortby, Eigen
 using DynamicQuantities:
@@ -8,6 +11,7 @@ using DynamicQuantities:
     new_quantity, AbstractDimensions, QuantityArray,
     constructorof, quantity_type
 
+_norm(u::AbstractArray) = norm(u)
 norm(q::UnionAbstractQuantity, p::Real=2) = new_quantity(typeof(q), norm(ustrip(q), p), dimension(q))
 
 function svd(A::QuantityArray; full=false, alg::Algorithm=default_svd_alg(ustrip(A)))

@@ -25,8 +25,8 @@ jobs:
         arch:
           - x64
     steps:
-      - uses: actions/checkout@v3
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
@@ -41,7 +41,6 @@ jobs:
           julia --color=yes coverage.jl
       - name: "Coveralls"
         uses: coverallsapp/github-action@v2
-        if: matrix.version == '1'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: lcov.info
@@ -66,8 +65,8 @@ jobs:
       contents: write
       statuses: write
     steps:
-      - uses: actions/checkout@v3
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
       - name: Configure doc environment

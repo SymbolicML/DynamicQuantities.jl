@@ -1,8 +1,13 @@
 using DynamicQuantities
-using DynamicQuantities: FixedRational
-using DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
+using DynamicQuantities: NoDims, AbstractSymbolicDimensions
+using DynamicQuantities: DEFAULT_QUANTITY_TYPE, DEFAULT_DIM_BASE_TYPE, DEFAULT_DIM_TYPE, DEFAULT_VALUE_TYPE
 using DynamicQuantities: array_type, value_type, dim_type, quantity_type
-using DynamicQuantities: GenericQuantity
+using DynamicQuantities: GenericQuantity, with_type_parameters, constructorof
+using DynamicQuantities: promote_quantity_on_quantity, promote_quantity_on_value
+using DynamicQuantities: UNIT_VALUES, UNIT_MAPPING, UNIT_SYMBOLS, ALL_MAPPING, ALL_SYMBOLS, ALL_VALUES
+using DynamicQuantities.SymbolicUnits: SYMBOLIC_UNIT_VALUES
+using DynamicQuantities: map_dimensions
+using DynamicQuantities: _register_unit
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
@@ -14,10 +19,18 @@ function record_show(s, f=show)
     f(io, s)
     return String(take!(io))
 end
+function unsafe_isapprox(x, y; kwargs...)
+    return isapprox(ustrip(x), ustrip(y); kwargs...) && dimension(x) == dimension(y)
+end
+
+# Just in case `runtests.jl` hasn't been run yet:
+@static if !hasmethod(round, Tuple{Int, SimpleRatio{Int}})
+    @eval Base.round(T, x::SimpleRatio) = round(T, x.num // x.den)
+end
 
 @testset "Basic utilities" begin
 
-    for Q in [Quantity, GenericQuantity], T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_BASE_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
+    for Q in [Quantity, GenericQuantity, RealQuantity], T in [DEFAULT_VALUE_TYPE, Float16, Float32, Float64], R in [DEFAULT_DIM_BASE_TYPE, Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
         D = Dimensions{R}
         x = Q(T(0.2), D, length=1, mass=2.5)
 
@@ -94,7 +107,7 @@ end
 
         y = Q(T(2 // 10), D, length=1, mass=6 // 2)
 
-        @test !(y ≈ x)
+        @test !(unsafe_isapprox(y, x))
 
         y = x * Inf32
 
@@ -147,6 +160,8 @@ end
     @test abs(x) == abs(Quantity(1.2, length=2 // 5))
     @test abs2(x) == Quantity(abs2(-1.2), length=4 // 5)
 
+    @test copy(x) == x
+
     @test iszero(x) == false
     @test iszero(x * 0) == true
     @test isfinite(x) == true
@@ -166,6 +181,8 @@ end
     @test iseven(Quantity(3, length=1)) == false
     @test isodd(Quantity(2, length=1)) == false
     @test isodd(Quantity(3, length=1)) == true
+    @test isone(Quantity(1, length=1)) == true
+    @test isone(Quantity(2, length=1)) == false
     @test isinteger(Quantity(2, length=1)) == true
     @test isinteger(Quantity(2.1, length=1)) == false
     @test ispow2(Quantity(2, length=1)) == true
@@ -183,6 +200,12 @@ end
 
 end
 
+@testset "Ranges" begin
+    x = [xi for xi in 0.0u"km/s":0.1u"km/s":1.0u"km/s"]
+    @test x[2] == 0.1u"km/s"
+    @test x[end] == 1.0u"km/s"
+end
+
 @testset "Complex numbers" begin
     x = (0.5 + 0.6im) * u"km/s"
     @test string(x) == "(500.0 + 600.0im) m s⁻¹"
@@ -197,6 +220,46 @@ end
     @test conj(x) == (0.5 - 0.6im) * u"km/s"
     @test angle(x) == angle(ustrip(x))
     @test adjoint(ustrip(x^2)) ≈ adjoint(x^2) / u"m/s"^2
+
+    # Can create by division as well:
+    x = RealQuantity(1.0u"km/s") / (1.0 + 0.5im)
+    @test typeof(x) == Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test ustrip(x) ≈ 1000.0 / (1.0 + 0.5im)
+    @test ulength(x) == 1.0
+    @test utime(x) == -1.0
+
+    x = (1.0 + 0.5im) / RealQuantity(1.0u"km/s")
+    @test typeof(x) == Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test ustrip(x) ≈ (1.0 + 0.5im) / 1000.0
+    @test ulength(x) == -1.0
+    @test utime(x) == 1.0
+
+    # Can also construct using `complex`
+    x = complex(1.0u"km/s", 0.5u"km/s")
+    @test typeof(x) === Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test x == (1.0 + 0.5im) * u"km/s"
+
+    x2 = complex(RealQuantity(1.0u"km/s"), RealQuantity(0.5u"km/s"))
+    @test typeof(x2) === Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test x2 == (1.0 + 0.5im) * u"km/s"
+
+    x3 = complex(RealQuantity(1.0u"km/s"), GenericQuantity(0.5u"km/s"))
+    @test typeof(x3) === GenericQuantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test x3 == (1.0 + 0.5im) * u"km/s"
+
+    # Or, construct from quantity and number
+    x4 = complex(Quantity(1.0), 0.5)
+    @test typeof(x4) === Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test x4 == (1.0 + 0.5im)
+
+    x5 = complex(1.0, Quantity(0.5))
+    @test typeof(x5) === Quantity{Complex{Float64}, DEFAULT_DIM_TYPE}
+    @test x5 == (1.0 + 0.5im)
+
+    # Error checking
+    @test_throws DimensionError complex(1.0u"km/s", 0.5u"m")
+    @test_throws DimensionError complex(1.0u"m", 0.5)
+    @test_throws DimensionError complex(1.0, 0.5u"m")
 end
 
 @testset "Fallbacks" begin
@@ -225,6 +288,12 @@ end
         uX = X .* Quantity(2, length=2.5, luminosity=0.5)
         @test sum(X) == 0.5 * ustrip(sum(uX))
 
+        @test isapprox(uX, uX, atol=Quantity{T,D}(1e-6, length=2.5, luminosity=0.5))
+        @test_throws DimensionError isapprox(uX, uX, atol=1e-6)
+        @test_throws ErrorException DynamicQuantities._norm(1.0)
+        VERSION >= v"1.9" &&
+            @test_throws "Please load the `LinearAlgebra.jl` package." DynamicQuantities._norm(1.0)
+
         x = GenericQuantity(ones(T, 32))
         @test ustrip(x + ones(T, 32))[32] == 2
         @test typeof(x + ones(T, 32)) <: GenericQuantity{Vector{T}}
@@ -232,6 +301,55 @@ end
         @test typeof(ones(T, 32) * GenericQuantity(T(1), D, length=1)) <: GenericQuantity{Vector{T}}
         @test typeof(ones(T, 32) / GenericQuantity(T(1), D, length=1)) <: GenericQuantity{Vector{T}}
         @test ones(T, 32) / GenericQuantity(T(1), length=1) == GenericQuantity(ones(T, 32), length=-1)
+    end
+
+    @testset "isapprox" begin
+        A = QuantityArray([1, 2, 3], u"m")
+        B = QuantityArray([1, 2, 3], u"m")
+        @test isapprox(A, B)
+
+        A = QuantityArray([1, 2, 3], u"m")
+        B = QuantityArray([1, 2, 3], u"s")
+        @test_throws DimensionError isapprox(A, B)
+
+        A = QuantityArray([1, 2, 3], u"m")
+        B = QuantityArray([1.001, 2.001, 3.001], u"m")
+        @test !isapprox(A, B, atol=1e-4u"m")
+        @test isapprox(A, B, atol=1e-2u"m")
+
+        A = QuantityArray([1, 2, 3], u"m")
+        B = QuantityArray([1.1, 2.1, 3.1], u"m")
+        @test !isapprox(A, B, rtol=0.01)
+        @test isapprox(A, B, rtol=0.05)
+
+        A = [1u"m", 2u"m", 3u"m"]
+        B = QuantityArray([1, 2, 3], u"m")
+        @test isapprox(A, B)
+
+        A = [1u"m", 2u"m", 3u"s"]
+        B = QuantityArray([1, 2, 3], u"m")
+        @test_throws DimensionError isapprox(A, B)
+        @test_throws DimensionError isapprox(B, A)
+
+        A = [1u"m", 2u"m"]
+        B = [1u"m", 2u"s"]
+        @test_throws DimensionError isapprox(A, B)
+        @test_throws DimensionError isapprox(B, A)
+
+        # With different rtoldefault:
+        A = QuantityArray([1, 2, 3], Quantity{Float16}(u"m"))
+        B = QuantityArray([1.01, 2.01, 3.01], Quantity{Float64}(u"m"))
+        @test isapprox(A, B)
+        @test isapprox(B, A)  # Because we get it from Float16
+        @test !isapprox(Quantity{Float64}.(A), B)
+        @test !isapprox(B, Quantity{Float64}.(A))
+
+        # With explicit atol=0, rtol=0
+        A = [1u"m", 2u"m", 3u"m"]
+        B = [1u"m", 2u"m", 3u"m"]
+        @test isapprox(A, B, atol=0u"m", rtol=0)
+        B = [1.00000001u"m", 2u"m", 3u"m"]
+        @test !isapprox(A, B, atol=0u"m", rtol=0)
     end
 
     x = randn(32) .* u"km/s"
@@ -378,6 +496,12 @@ end
         @test typeof(d) == D
         @test typeof(ulength(d)) == R
     end
+
+    # Can convert type with float(...):
+    x = Quantity{Int}(u"m/s")
+    @test typeof(x) == Quantity{Int64,DEFAULT_DIM_TYPE}
+    y = float(typeof(x))
+    @test y == Quantity{Float64,DEFAULT_DIM_TYPE}
 end
 
 @testset "Units" begin
@@ -387,34 +511,45 @@ end
     @test utime(x) == -2
 
     y = 0.9u"sqrt(mΩ)"
-    @test typeof(y) == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(y) == with_type_parameters(DEFAULT_QUANTITY_TYPE, Float64, DEFAULT_DIM_TYPE)
     @test ustrip(y) ≈ 0.02846049894151541
     @test ucurrent(y) == -1
     @test ulength(y) == 1
 
     y = BigFloat(0.3) * u"mΩ"
-    @test typeof(y) == Quantity{BigFloat,DEFAULT_DIM_TYPE}
+    @test typeof(y) == with_type_parameters(DEFAULT_QUANTITY_TYPE, BigFloat, DEFAULT_DIM_TYPE)
     @test ustrip(y) ≈ 0.0003
     @test ulength(y) == 2
 
-    y32 = convert(Quantity{Float32,Dimensions{Rational{Int16}}}, y)
-    @test typeof(y32) == Quantity{Float32,Dimensions{Rational{Int16}}}
+    y32 = convert(with_type_parameters(DEFAULT_QUANTITY_TYPE, Float32, Dimensions{Rational{Int16}}), y)
+    @test typeof(y32) == with_type_parameters(DEFAULT_QUANTITY_TYPE, Float32, Dimensions{Rational{Int16}})
     @test ustrip(y32) ≈ 0.0003
 
     z = u"yr"
     @test utime(z) == 1
     @test ustrip(z) ≈ 60 * 60 * 24 * 365.25
+    @test z == uparse("yr")
 
     # Test type stability of extreme range of units
-    @test typeof(u"1") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"1f0") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"s"^2) == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"Ω") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"Gyr") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"fm") == Quantity{Float64,DEFAULT_DIM_TYPE}
-    @test typeof(u"fm"^2) == Quantity{Float64,DEFAULT_DIM_TYPE}
+    @test typeof(u"1") == DEFAULT_QUANTITY_TYPE
+    @test typeof(u"1f0") == DEFAULT_QUANTITY_TYPE
+    @test typeof(u"s"^2) == DEFAULT_QUANTITY_TYPE
+    @test typeof(u"Ω") == DEFAULT_QUANTITY_TYPE
+    @test typeof(u"Gyr") == DEFAULT_QUANTITY_TYPE
+    @test typeof(u"fm") == DEFAULT_QUANTITY_TYPE
+    @test typeof(u"fm"^2) == DEFAULT_QUANTITY_TYPE
 
-    @test_throws LoadError eval(:(u":x"))
+    @test_throws ErrorException eval(:(u":x"))
+
+    VERSION >= v"1.9" && @test_throws "Symbol x not found" uparse("x")
+    VERSION >= v"1.9" && @test_throws "Symbol c found in `Constants` but not `Units`" uparse("c")
+    VERSION >= v"1.9" && @test_throws "Unexpected expression" uparse("import ..Units")
+    VERSION >= v"1.9" && @test_throws "Unexpected expression" uparse("(m, m)")
+    @test_throws LoadError eval(:(us"x"))
+    VERSION >= v"1.9" && @test_throws "Symbol x not found" sym_uparse("x")
+    VERSION >= v"1.9" && @test_throws "Symbol c found in `Constants` but not `Units`" sym_uparse("c")
+    VERSION >= v"1.9" && @test_throws "Unexpected expression" sym_uparse("import ..Units")
+    VERSION >= v"1.9" && @test_throws "Unexpected expression" sym_uparse("(m, m)")
 end
 
 @testset "Constants" begin
@@ -460,6 +595,12 @@ end
     @test promote_type(FixedRational{Int64,10},FixedRational{BigInt,10}) == FixedRational{BigInt,10}
     @test promote_type(Rational{Int8}, FixedRational{Int,12345}) == Rational{Int}
     @test promote_type(Int8, FixedRational{Int,12345}) == FixedRational{Int,12345}
+
+    # Bug where user would create a FixedRational{::Type{Int32}, ::Int64} and get stack overflow,
+    # because the stored type was FixedRational{::Type{Int32}, ::Int32}
+    x = 10u"m"
+    user_quantity = Quantity(10.0, Dimensions{FixedRational{Int32,25200}}(1, 0, 0, 0, 0, 0, 0))
+    @test x == user_quantity
 end
 
 @testset "Quantity promotion" begin
@@ -480,13 +621,13 @@ end
     @eval struct MyNumber <: Real
         x::Float64
     end
-    a = 0.5u"km/s"
+    a = RealQuantity(0.5u"km/s")
     b = MyNumber(0.5)
     ar = [a, b]
-    @test ar isa Vector{Number}
+    @test ar isa Vector{Real}
     @test a === ar[1]
     @test b === ar[2]
-    @test promote_type(MyNumber, typeof(a)) == Number
+    @test promote_type(MyNumber, typeof(a)) == Real
 
     # Explicit conversion so coverage can see it:
     D = DEFAULT_DIM_TYPE
@@ -496,6 +637,8 @@ end
     @test promote_type(GenericQuantity{Float32,D}, GenericQuantity{Float64,D}) == GenericQuantity{Float64,D}
     @test promote_type(SymbolicDimensions{Rational{Int}}, SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}) == SymbolicDimensions{Rational{Int}}
     @test promote_type(Dimensions{Rational{Int}}, SymbolicDimensions{DEFAULT_DIM_BASE_TYPE}) == Dimensions{Rational{Int}}
+
+    @test promote_quantity_on_quantity(RealQuantity, RealQuantity) == RealQuantity
 end
 
 struct MyDimensions{R} <: AbstractDimensions{R}
@@ -558,6 +701,9 @@ end
 
     # But, we always need to use a quantity when mixing with mathematical operations:
     @test_throws ErrorException MyQuantity(0.1) + 0.1 * MyDimensions()
+
+    # Explicitly test that `promote_quantity_on_quantity` has a reasonable default
+    @test promote_quantity_on_quantity(typeof(MyQuantity(0.1)), typeof(MyQuantity(0.1))) == MyQuantity{Float64,DEFAULT_DIM_TYPE}
 end
 
 @testset "Symbolic dimensions" begin
@@ -568,7 +714,7 @@ end
     sym4 = @inferred(SymbolicDimensions{Int}(Rational{Int}; m=3, s=-1))
     for (sym, T) in (
         (sym1, DynamicQuantities.DEFAULT_DIM_BASE_TYPE), (sym2, Rational{Int}), (sym3, Rational{Int}), (sym4, Rational{Int}),
-    )  
+    )
         @test sym isa SymbolicDimensions{T}
 
         # Properties
@@ -606,7 +752,7 @@ end
 
     q = 1.5us"km/s"
     @test q == 1.5 * us"km" / us"s"
-    @test typeof(q) <: Quantity{Float64,<:SymbolicDimensions}
+    @test typeof(q) <: with_type_parameters(DEFAULT_QUANTITY_TYPE, Float64, SymbolicDimensions{DEFAULT_DIM_BASE_TYPE})
     @test string(dimension(q)) == "s⁻¹ km"
     @test uexpand(q) == 1.5u"km/s"
     @test string(dimension(us"Constants.au^1.5")) == "au³ᐟ²"
@@ -622,6 +768,7 @@ end
     @inferred f2(5)
     @test uexpand(f2(5)) == u"s"^5
 
+    @test_throws ErrorException uparse("'c'")
     @test_throws ErrorException sym_uparse("'c'")
 
     # For constants which have a namespace collision, the numerical expansion is used:
@@ -633,12 +780,10 @@ end
     @test uexpand(us"Constants.h") == u"Constants.h"
 
     # Actually expands to:
-    @test dimension(us"Constants.h")[:m] == 2
-    @test dimension(us"Constants.h")[:s] == -1
-    @test dimension(us"Constants.h")[:kg] == 1
+    @test string(dimension(us"Constants.h")) == "h_constant"
 
-    # So the numerical value is different from other constants:
-    @test ustrip(us"Constants.h") == ustrip(u"Constants.h")
+    # Constants have different numerical value from non-symbolic one:
+    @test ustrip(us"Constants.h") != ustrip(u"Constants.h")
     @test ustrip(us"Constants.au") != ustrip(u"Constants.au")
 
     # Test conversion
@@ -651,7 +796,7 @@ end
     # Helpful error if symbol not found:
     sym5 = dimension(us"km/s")
     VERSION >= v"1.8" &&
-        @test_throws "rad is not available as a symbol" sym5.rad
+        @test_throws "my_special_symbol is not available as a symbol" sym5.my_special_symbol
 
     # Test deprecated method
     q = 1.5us"km/s"
@@ -663,6 +808,25 @@ end
     qa = [x, y]
     @test qa isa Vector{Quantity{Float64,SymbolicDimensions{Rational{Int}}}}
     DynamicQuantities.with_type_parameters(SymbolicDimensions{Float64}, Rational{Int}) == SymbolicDimensions{Rational{Int}}
+
+    # Many symbols in one:
+    x = us"pm * fm * nm * μm * mm * cm * dm * m * km"
+    y = us"s"
+    @test inv(x) != x
+    @test dimension(inv(x)).pm == -1
+    @test x != y
+    @test y != x
+    @test dimension(uexpand(x * y)) == dimension(u"m^9 * s")
+    z = uexpand(x)
+    @test x == z
+
+    # Trigger part of map_dimensions missed elsewhere
+    x = us"km"
+    y = us"km"
+    @test x * y |> uexpand == u"km^2"
+    @test x / y |> uexpand == u"1"
+    @test map_dimensions(+, dimension(us"km"), dimension(us"km")) == dimension(us"km^2")
+    @test map_dimensions(-, dimension(us"km"), dimension(us"km")) == dimension(us"1")
 
     @testset "Promotion with Dimensions" begin
         x = 0.5u"cm"
@@ -680,13 +844,13 @@ end
     @test_throws DimensionError uconvert(us"nm * J", 5e-9u"m")
 
     # Types:
-    @test typeof(uconvert(us"nm", 5e-9u"m")) <: Quantity{Float64,<:SymbolicDimensions}
+    @test typeof(uconvert(us"nm", 5e-9u"m")) <: constructorof(DEFAULT_QUANTITY_TYPE){Float64,<:SymbolicDimensions}
     @test typeof(uconvert(us"nm", GenericQuantity(5e-9u"m"))) <: GenericQuantity{Float64,<:SymbolicDimensions}
     @test uconvert(GenericQuantity(us"nm"), GenericQuantity(5e-9u"m")) ≈ 5us"nm"
     @test uconvert(GenericQuantity(us"nm"), GenericQuantity(5e-9u"m")) ≈ GenericQuantity(5us"nm")
 
     # We only want to convert the dimensions, and ignore the quantity type:
-    @test typeof(uconvert(GenericQuantity(us"nm"), 5e-9u"m")) <: Quantity{Float64,<:SymbolicDimensions}
+    @test typeof(uconvert(GenericQuantity(us"nm"), 5e-9u"m")) <: constructorof(DEFAULT_QUANTITY_TYPE){Float64,<:SymbolicDimensions}
 
     q = 1.5u"Constants.M_sun"
     qs = uconvert(us"Constants.M_sun", 5.0 * q)
@@ -696,17 +860,25 @@ end
     @test dimension(qs)[:M_sun] == 1
     @test uexpand(qs) ≈ 5.0 * q
 
+    @test dimension(1u"m" |> us"nm")[:nm] == 1
+    @test dimension(1u"m" |> us"nm")[:m] == 0
+
     # Refuses to convert to non-unit quantities:
     @test_throws AssertionError uconvert(1.2us"m", 1.0u"m")
     VERSION >= v"1.8" &&
         @test_throws "You passed a quantity" uconvert(1.2us"m", 1.0u"m")
 
-    for Q in (Quantity, GenericQuantity)
+    # Refuses to convert to `Dimensions`:
+    @test_throws ErrorException uconvert(1u"m", 5.0us"m")
+    VERSION >= v"1.8" &&
+        @test_throws "You can only `uconvert`" uconvert(1u"m", 5.0us"m")
+
+    for Q in (RealQuantity, Quantity, GenericQuantity)
         # Different types require converting both arguments:
         q = convert(Q{Float16}, 1.5u"g")
         qs = uconvert(convert(Q{Float16}, us"g"), 5 * q)
         @test typeof(qs) <: Q{Float16,<:SymbolicDimensions{<:Any}}
-        @test isapprox(qs, 7.5us"g"; atol=0.01)
+        @test isapprox(qs, 7.5us"g"; atol=0.01us"g")
 
         # Arrays
         x = [1.0, 2.0, 3.0] .* Q(u"kg")
@@ -714,15 +886,35 @@ end
         @test typeof(xs) <: Vector{<:Q{Float64,<:SymbolicDimensions{<:Any}}}
         @test xs[2] ≈ Q(2000us"g")
 
+        # Arrays
+        x2 = [1.0, 2.0, 3.0] .* Q(u"kg")
+        xs2 = x2 .|> us"g"
+        @test typeof(xs2) <: Vector{<:Q{Float64,<:SymbolicDimensions{<:Any}}}
+        @test xs2[2] ≈ Q(2000us"g")
+        @test ustrip(xs2[2]) ≈ 2000
+        
         x_qa = QuantityArray(x)
         xs_qa = x_qa .|> uconvert(us"g")
         @test typeof(xs_qa) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
         @test xs_qa[2] ≈ Q(2000us"g")
+        @test ustrip(xs_qa[1]) ≈ 1000
+
+        x_qa1 = QuantityArray(x)
+        xs_qa1 = x_qa1 .|> us"g"
+        @test typeof(xs_qa1) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
+        @test xs_qa1[2] ≈ Q(2000us"g")
+        @test ustrip(xs_qa1[3]) ≈ 3000
 
         # Without vectorized call:
         xs_qa2 = x_qa |> uconvert(us"g")
         @test typeof(xs_qa2) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
         @test xs_qa2[2] ≈ Q(2000us"g")
+        @test ustrip(xs_qa2[2]) ≈ 2000
+
+        xs_qa3 = x_qa |> us"g"
+        @test typeof(xs_qa3) <: QuantityArray{Float64,1,<:SymbolicDimensions{<:Any}}
+        @test xs_qa3[2] ≈ Q(2000us"g")
+        @test ustrip(xs_qa3[3]) ≈ 3000
     end
 end
 
@@ -746,32 +938,107 @@ end
 
 
 @testset "Test ambiguities" begin
-    R = DEFAULT_DIM_BASE_TYPE
-    x = convert(R, 10)
-    y = convert(R, 5)
-    @test promote(x, y) == (x, y)
-    @test_throws ErrorException promote(x, convert(FixedRational{Int32,100}, 10))
-    @test promote_type(typeof(u"km/s"), typeof(convert(Quantity{Float32}, u"km/s"))) <: Quantity{Float64}
+    @testset "FixedRational" begin
+        R = DEFAULT_DIM_BASE_TYPE
+        x = convert(R, 10)
+        y = convert(R, 5)
+        @test promote(x, y) == (x, y)
+        @test_throws ErrorException promote(x, convert(FixedRational{Int32,100}, 10))
+        @test promote_type(typeof(u"km/s"), typeof(convert(Quantity{Float32}, u"km/s"))) <: Quantity{Float64}
 
-    x = 1.0u"m"
-    s = "test"
-    y = WeakRef(s)
-    @test_throws ErrorException x == y
-    @test_throws ErrorException y == x
+        x = FixedRational{Int32,100}(1)
+        # Need explicit `promote_rule` calls here so coverage picks it up
+        @test promote_rule(typeof(x), typeof(true)) == typeof(x)
+        @test promote_rule(typeof(true), typeof(x)) == typeof(x)
+        @test promote_rule(typeof(x), typeof(BigFloat(1))) == promote_type(Rational{Int32}, BigFloat)
+        @test promote_rule(typeof(BigFloat(1)), typeof(x)) == promote_type(Rational{Int32}, BigFloat)
+        @test promote_rule(typeof(x), typeof(π)) == promote_type(Rational{Int32}, typeof(π))
+        @test promote_rule(typeof(π), typeof(x)) == promote_type(Rational{Int32}, typeof(π))
+    end
 
-    qarr1 = QuantityArray(randn(3), u"km/s")
-    qarr2 = qarr1
-    @test convert(typeof(qarr2), qarr2) === qarr1
+    @testset "Unimplemented on purpose" begin
+        x = 1.0u"m"
+        s = "test"
+        y = WeakRef(s)
+        @test_throws ErrorException x == y
+        @test_throws ErrorException y == x
 
-    x = 1.0u"m"
-    y = x ^ (3//2)
-    @test y == Quantity(1.0, length=3//2)
-    @test typeof(y) == Quantity{Float64,DEFAULT_DIM_TYPE}
+        @test_throws ErrorException DynamicQuantities.SymbolicDimensionsSingleton{Int}(Dimensions())
+        @test_throws ErrorException DynamicQuantities.SymbolicDimensionsSingleton{Int}(UInt32)
+    end
+
+    @testset "Arrays" begin
+        qarr1 = QuantityArray(randn(3), u"km/s")
+        qarr2 = qarr1
+        @test convert(typeof(qarr2), qarr2) === qarr1
+    end
+
+    @testset "Rational power law" begin
+        x = RealQuantity(1.0u"m")
+        y = x ^ (3//2)
+        @test y == Quantity(1.0, length=3//2)
+        @test typeof(y) == RealQuantity{Float64,DEFAULT_DIM_TYPE}
+    end
+
+    @testset "Numeric promotion rules" begin
+        for Q in (RealQuantity, Quantity, GenericQuantity)
+            x = Q(1.0u"m")
+            @test promote_type(typeof(x), Bool) == typeof(x)
+            @test promote_type(Bool, typeof(x)) == typeof(x)
+            @test promote_type(typeof(x), BigFloat) == with_type_parameters(Q, BigFloat, DEFAULT_DIM_TYPE)
+            @test promote_type(BigFloat, typeof(x)) == with_type_parameters(Q, BigFloat, DEFAULT_DIM_TYPE)
+        end
+    end
+
+    @testset "Complex numbers" begin
+        for Q in (RealQuantity, Quantity, GenericQuantity)
+            x = 1.0im
+            y = Q(0.5u"m")
+            @test typeof(x * y) == with_type_parameters(promote_quantity_on_value(Q, ComplexF64), Complex{Float64}, DEFAULT_DIM_TYPE)
+            @test typeof(y * x) == with_type_parameters(promote_quantity_on_value(Q, ComplexF64), Complex{Float64}, DEFAULT_DIM_TYPE)
+            @test ustrip(x * y) == 0.5im
+            @test ustrip(y * x) == 0.5im
+
+            # Bool version
+            x = true * im
+            y = Q(0.5u"m")
+            @test typeof(x * y) == with_type_parameters(promote_quantity_on_value(Q, ComplexF64), Complex{Float64}, DEFAULT_DIM_TYPE)
+            @test typeof(y * x) == with_type_parameters(promote_quantity_on_value(Q, ComplexF64), Complex{Float64}, DEFAULT_DIM_TYPE)
+            @test ustrip(x * y) == 0.5im
+            @test ustrip(y * x) == 0.5im
+
+            # Complex powers
+            x = Q(0.5u"1")
+            out = x ^ (1 + 2im)
+            @test typeof(out) == with_type_parameters(promote_quantity_on_value(Q, ComplexF64), Complex{Float64}, DEFAULT_DIM_TYPE)
+            @test ustrip(out) ≈ 0.5 ^ (1 + 2im)
+
+            for CT in (Complex, Complex{Bool})
+                x = Q(1.0)
+                @test CT(x) == CT(1.0)
+                @test typeof(CT(x)) <: CT
+                x = Q(1.0, length=1)
+                @test_throws AssertionError CT(x)
+            end
+        end
+    end
+
+    @testset "Bool" begin
+        for Q in (RealQuantity, Quantity, GenericQuantity)
+            x = Q(1.0u"1")
+            @test Bool(x) == true
+            @test Bool(ustrip(x)) == true
+            @test Bool(Q(0.0u"1")) == false
+            @test Bool(ustrip(Q(0.0u"1"))) == false
+            x = Q(1.0u"m")
+            @test_throws AssertionError Bool(x)
+        end
+    end
 end
 
-for Q in (Quantity, GenericQuantity)
-    @testset "Arrays" begin
-        @testset "Basics" begin
+@testset "Arrays" begin
+    for Q in (RealQuantity, Quantity, GenericQuantity)
+        @testset "Basics $Q" begin
             x = QuantityArray(randn(32), Q(u"km/s"))
             @test ustrip(sum(x)) ≈ sum(ustrip(x))
 
@@ -780,10 +1047,10 @@ for Q in (Quantity, GenericQuantity)
             @test x[5] == Q(5, length=1, time=-1)
 
             y = randn(32)
-            @test ustrip(QuantityArray(y, Q(u"m"))) == y
+            @test ustrip(QuantityArray(y, Q(u"m"))) ≈ y
 
             f_square(v) = v^2 * 1.5 - v^2
-            @test sum(f_square.(QuantityArray(y, Q(u"m")))) == sum(f_square.(y) .* Q(u"m^2"))
+            @test sum(f_square.(QuantityArray(y, Q(u"m")))) ≈ sum(f_square.(y) .* Q(u"m^2"))
 
             y_q = QuantityArray(y, Q(u"m * cd / s"))
             @test typeof(f_square.(y_q)) == typeof(y_q)
@@ -795,7 +1062,7 @@ for Q in (Quantity, GenericQuantity)
 
             # Test default constructors:
             @test QuantityArray(ones(3), u"m/s") == QuantityArray(ones(3), length=1, time=-1)
-            @test typeof(QuantityArray(ones(3), u"m/s")) <: QuantityArray{Float64,1,<:Dimensions,<:Quantity,<:Array}
+            @test typeof(QuantityArray(ones(3), u"m/s")) <: QuantityArray{Float64,1,<:Dimensions,<:constructorof(DEFAULT_QUANTITY_TYPE),<:Array}
 
             # We can create quantity arrays with generic quantity
             @test typeof(QuantityArray([[1.0], [2.0, 3.0]], dimension(u"m/s"))) <: QuantityArray{<:Any,1,<:Dimensions,<:GenericQuantity,<:Array}
@@ -815,9 +1082,13 @@ for Q in (Quantity, GenericQuantity)
             @test dimension(output_s_x) == dimension(x)^2
             fv_square2(x) = (xi -> xi^2).(x)
             @inferred fv_square2(s_x)
+
+            # isapprox for QuantityArray's
+            @test isapprox(x, x, atol=Q(1e-6u"km/s"))
+            @test_throws DimensionError isapprox(x, x, atol=1e-6)
         end
 
-        @testset "Copying" begin
+        @testset "Copying $Q" begin
             x = QuantityArray(randn(3), Q(u"km/s"))
             xc = copy(x)
             @test x == xc
@@ -825,13 +1096,13 @@ for Q in (Quantity, GenericQuantity)
             @test x != xc
         end
 
-        @testset "Utilities" begin
+        @testset "Utilities $Q" begin
             @test fill(Q(u"m/s"), 10) == QuantityArray(fill(1.0, 10) .* Q(u"m/s"))
             @test ndims(fill(Q(u"m/s"), ())) == 0
             @test fill(Q(u"m/s"), ())[begin] == Q(u"m/s")
         end
 
-        @testset "similar" begin
+        @testset "similar $Q" begin
             qa = QuantityArray(rand(3, 4), Q(u"m"))
 
             new_qa = similar(qa)
@@ -848,6 +1119,14 @@ for Q in (Quantity, GenericQuantity)
             @test dim_type(new_qa) == dim_type(qa)
             @test dimension(new_qa) == dimension(qa)
             @test isa(ustrip(new_qa), Array{Float32,2})
+
+            if Q !== GenericQuantity
+                new_qa = similar(qa, typeof(GenericQuantity{Float16}(u"km/s")))
+                @test eltype(new_qa) <: GenericQuantity{Float16}
+                @test dim_type(new_qa) == dim_type(qa)
+                @test dimension(new_qa) == dimension(qa)
+                @test isa(ustrip(new_qa), Array{Float16,2})
+            end
 
             new_qa = similar(qa, axes(ones(6, 8)))
             @test size(new_qa) == (6, 8)
@@ -877,7 +1156,7 @@ for Q in (Quantity, GenericQuantity)
             @test eltype(new_qa) <: Q{Float64}
         end
 
-        @testset "Promotion" begin
+        @testset "Promotion $Q" begin
             qarr1 = QuantityArray(randn(32), convert(Dimensions{Rational{Int32}}, dimension(u"km/s")), Q)
             qarr2 = QuantityArray(randn(Float16, 32), convert(Dimensions{Rational{Int64}}, dimension(u"km/s")), Q)
 
@@ -889,7 +1168,7 @@ for Q in (Quantity, GenericQuantity)
             @test typeof(promote(qarr1, qarr2)) == Tuple{expected_type, expected_type}
         end
 
-        @testset "Array concatenation" begin
+        @testset "Array concatenation $Q" begin
             qarr1 = QuantityArray(randn(3) .* Q(u"km/s"))
             qarr2 = QuantityArray(randn(3) .* Q(u"km/s"))
 
@@ -912,24 +1191,24 @@ for Q in (Quantity, GenericQuantity)
 
         end
 
-        @testset "Generic literal_pow" begin
+        @testset "Generic literal_pow $Q" begin
             y = randn(32)
             y_q = QuantityArray(y, Q(u"m"))
 
             f4(v) = v^4 * 0.3
-            @test sum(f4.(QuantityArray(y, Q(u"m")))) == sum(f4.(y) .* Q(u"m^4"))
+            @test sum(f4.(QuantityArray(y, Q(u"m")))) ≈ sum(f4.(y) .* Q(u"m^4"))
 
             f4v(v) = f4.(v)
             @inferred f4v(y_q)
         end
 
-        @testset "Broadcast with single number" begin
+        @testset "Broadcast with single number $Q" begin
             ar1 = QuantityArray(randn(3), Q(u"km/s"))
             @test ustrip(ar1 .* Q(u"m/s")) == ustrip(ar1)
             @test dimension(ar1 .* Q(u"m/s")) == dimension(u"m^2/s^2")
         end
 
-        @testset "Multiple arrays" begin
+        @testset "Multiple arrays $Q" begin
             ar1 = QuantityArray(randn(3), Q(u"km/s"))
             ar2 = QuantityArray(randn(3, 1), Q(u"km/s"))
             ar3 = randn(3)
@@ -955,20 +1234,199 @@ for Q in (Quantity, GenericQuantity)
             @test g(ar1, array_of_quantities, Q(u"1")) == [f(ar1[i], array_of_quantities[i], 1) for i in eachindex(ar1)]
         end
 
-        @testset "Broadcast nd-arrays" begin
+        @testset "Broadcast nd-arrays $Q" begin
             x = QuantityArray(randn(3, 3), Q(u"A"))
             y = QuantityArray(randn(3, 3), Q(u"cd"))
             @test ustrip(x .* y) == ustrip(x) .* ustrip(y)
         end
 
-        Q == Quantity && @testset "Broadcast different arrays" begin
+        @testset "map $Q" begin
+            qa = fill(Q(2.0u"m"), 3)
+            @test map(x -> x^2, qa) == QuantityArray(fill(4.0, 3), Q(u"m^2"))
+
+            @test mapreduce(x -> x^2, +, qa) == 12.0u"m^2"
+            @inferred mapreduce(x -> x^2, +, qa)
+            @test prod(qa) == 8.0u"m^3"
+            @inferred prod(qa)
+
+            # Map to non-quantity output:
+            @test map(x -> ustrip(x), qa) == fill(2.0, 3)
+            @test map(x -> cos(x/dimension(x)), qa) == fill(cos(2.0), 3)
+
+            # Test that we can use a function that returns a different type
+            if Q === RealQuantity
+                qa = fill(RealQuantity(2.0u"m"), 3)
+                @test typeof(qa) <: QuantityArray{Float64,1,<:Dimensions,<:RealQuantity{Float64,<:Dimensions},<:Array}
+                qa_complex = map(x -> 1im * x, qa)
+                @inferred map(x -> 1im * x, qa)
+                @test typeof(qa_complex) <: QuantityArray{ComplexF64,1,<:Dimensions,<:Quantity{ComplexF64,<:Dimensions},<:Array}
+                @test dimension(qa_complex) == dimension(u"m")
+                @test sum(qa_complex) == 6im * u"m"
+            end
+        end
+
+        @testset "Collection operations" begin
+            # push!, pushfirst!, insert!, append!, prepend!, pop!,
+            # popfirst!, deleteat!, popat!, resize!, empty!, sizehint!
+
+            # Test for push!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            push!(arr, 4u"m")
+            @test length(arr) == 4
+            @test arr[end] == 4u"m"
+            @test_throws DimensionError push!(arr, 5u"s")
+
+            # Multiple value
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            push!(arr, 4u"m", 5u"m")
+            @test arr == QuantityArray([1u"m", 2u"m", 3u"m", 4u"m", 5u"m"])
+
+            @test_throws DimensionError push!(arr, 4u"m", 5u"m/s")
+
+            # Test for pushfirst!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            pushfirst!(arr, 0u"m")
+            @test length(arr) == 4
+            @test arr[1] == 0u"m"
+            @test_throws DimensionError pushfirst!(arr, 1u"s")
+
+            # Symbolic dimensions also work
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            pushfirst!(arr, 1us"cm")
+            @test arr[1] == 1u"cm"
+
+            # Test for insert!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            insert!(arr, 2, 1.5u"m")
+            @test length(arr) == 4
+            @test arr[2] == 1.5u"m"
+            @test_throws DimensionError insert!(arr, 2, 2u"s")
+
+            # Symbolic dimensions
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            insert!(arr, 2, 1.5us"cm")
+            @test arr[2] == 1.5u"cm"
+
+            # But not an incompatible symbolic dimensions:
+            @test_throws DimensionError insert!(arr, 2, 1.5us"s")
+
+            # Test for append!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            append!(arr, QuantityArray([5u"m", 6u"m"]))
+            @test length(arr) == 5
+            @test arr[end] == 6u"m"
+            @test_throws DimensionError append!(arr, QuantityArray([7u"s", 8u"s"]))
+
+            # Test appending regular array of quantities:
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            append!(arr, [5u"m", 6u"m"])
+            @test length(arr) == 5
+            @test arr[end] == 6u"m"
+            @test_throws DimensionError append!(arr, [7u"s", 8u"s"])
+
+            # Can also append a QuantityArray of symbolic units:
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            orig_type = typeof(arr)
+            append!(arr, QuantityArray([5us"cm", 6us"cm"]))
+            @test ustrip(arr[end]) == ustrip(6u"cm")
+            @test typeof(arr) === orig_type
+
+            # Or, regular units to symbolic units:
+            arr = QuantityArray([1us"m", 2us"m", 3us"m"])
+            append!(arr, [5u"m", 6u"m"])
+            @test dimension(5us"m") == dimension(arr[end-1])
+
+            # Test for prepend!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            prepend!(arr, QuantityArray([-1u"m", -2u"m"]))
+            @test length(arr) == 5
+            @test arr[1] == -1u"m"
+            @test_throws DimensionError prepend!(arr, QuantityArray([-3u"s", -4u"s"]))
+
+            # Test for pop!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            val = pop!(arr)
+            @test val == 3u"m"
+            @test length(arr) == 2
+
+            # Test for popfirst!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            val = popfirst!(arr)
+            @test val == 1u"m"
+            @test length(arr) == 2
+
+            # Test for deleteat!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            deleteat!(arr, 2)
+            @test length(arr) == 2
+            @test arr[2] == 3u"m"
+
+            # Test for popat!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            val = popat!(arr, 2)
+            @test val == 2u"m"
+            @test length(arr) == 2
+            @test arr[1] == 1u"m"
+            @test arr[2] == 3u"m"
+
+            # Test for resize!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            resize!(arr, 5)
+            @test length(arr) == 5
+            @test dimension(arr[end]) == dimension(u"m")
+
+            # Test for empty!
+            arr = QuantityArray([1u"m", 2u"m", 3u"m"])
+            empty!(arr)
+            @test isempty(arr)
+            # Still stores the dimension:
+            @test dimension(arr) == dimension(u"m")
+
+            # Test for sizehint!
+            # There is no easy way to test whether it actually ran,
+            # so we create a fake array type that has a custom `sizehint!`
+            # which tells us it actually ran.
+            isdefined(Main, :MyCustomArray) || @eval begin
+                mutable struct MyCustomArray{T,N} <: AbstractArray{T,N}
+                    data::Array{T,N}
+                    sizehint_called::Bool
+                end
+                MyCustomArray(data::Array{T,N}) where {T,N} = MyCustomArray(data, false)
+                Base.sizehint!(arr::MyCustomArray, args...) = (arr.sizehint_called = true; arr)
+            end
+            arr = QuantityArray(MyCustomArray([1.0, 2, 3]), dimension(u"m"));
+            @test !ustrip(arr).sizehint_called
+            sizehint!(arr, 5)
+            @test ustrip(arr).sizehint_called
+        end
+
+        @testset "Reduce and vcat $Q" begin
+            arr1 = QuantityArray([Q(us"hr")])
+            arr2 = QuantityArray([Q(us"hr")])
+
+            arr3 = vcat(arr1, arr2)
+            @test typeof(arr3) <: QuantityArray{Float64,1,<:SymbolicDimensions,<:Q{Float64,<:SymbolicDimensions},<:Array}
+            @test arr3 == QuantityArray(Q.([us"hr", us"hr"]))
+            @test uexpand(arr3) == QuantityArray(Q.([u"hr", u"hr"]))
+
+            arr4 = reduce(vcat, [arr1, arr2])
+            @test typeof(arr4) <: QuantityArray{Float64,1,<:SymbolicDimensions,<:Q{Float64,<:SymbolicDimensions},<:Array}
+            @test arr3 == arr4
+            @test all(arr3 .== arr4)
+
+            # Should work for incompatible units as well
+            @test reduce(vcat, [[0.5us"hr"], [0.5us"m"]]) == [0.5u"hr", 0.5u"m"]
+            @test typeof(reduce(vcat, [[0.5us"hr"], [0.5us"m"]])) <: Vector{<:Quantity{Float64,<:SymbolicDimensions}}
+        end
+
+        Q in (Quantity, RealQuantity) && @testset "Broadcast different arrays $Q" begin
             f(x, y, z, w) = x * y + z * w
             g(x, y, z, w) = f.(x, y, z, w)
 
             x = randn(32)
             y = QuantityArray(randn(32), u"km/s")
             z = rand(1:10, 32)
-            w = Quantity{Float32}(u"m/s")
+            w = Q{Float32}(u"m/s")
             @test typeof(g(x, y, z, w)) <: QuantityArray{Float64}
 
             y32 = QuantityArray(ustrip(y), dimension(y))
@@ -987,7 +1445,7 @@ for Q in (Quantity, GenericQuantity)
             @test typeof(b .* y) <: QuantityArray{Float64}
         end
 
-        Q == Quantity && @testset "Broadcast scalars" begin
+        Q in (RealQuantity, Quantity) && @testset "Broadcast scalars $Q" begin
             for (x, qx) in ((0.5, 0.5u"s"), ([0.5, 0.2], GenericQuantity([0.5, 0.2], time=1)))
                 @test size(qx) == size(x)
                 @test length(qx) == length(x)
@@ -1000,7 +1458,7 @@ for Q in (Quantity, GenericQuantity)
             end
         end
 
-        @testset "Symbolic units" begin
+        @testset "Symbolic units $Q" begin
             z_ar = randn(32)
             z = QuantityArray(z_ar, Q(us"Constants.h * km/s"))
             z_expanded = QuantityArray(z_ar .* Q(u"Constants.h * km/s"))
@@ -1017,7 +1475,7 @@ for Q in (Quantity, GenericQuantity)
             @test msg2 == msg
         end
 
-        Q == Quantity && @testset "Extra test coverage" begin
+        Q == Quantity && @testset "Extra test coverage $Q" begin
             @test_throws ErrorException DynamicQuantities.materialize_first(())
             VERSION >= v"1.8" &&
                 @test_throws "Unexpected broadcast" DynamicQuantities.materialize_first(())
@@ -1029,6 +1487,17 @@ for Q in (Quantity, GenericQuantity)
             @test DynamicQuantities.materialize_first(ref) === x[1]
         end
     end
+
+    @testset "Unimplemented methods" begin
+        qa = QuantityArray(randn(3), u"km/s")
+        @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, Base.SizeUnknown(), nothing)
+        @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, Base.HasLength(), 1)
+        if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasShape})
+            @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, Base.HasLength())
+            @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, Base.SizeUnknown())
+            @test_throws ErrorException Base._similar_for(copy(qa), typeof(u"km/s"), qa, 1)
+        end
+    end
 end
 
 @testset "GenericQuantity" begin
@@ -1038,7 +1507,7 @@ end
         @test ustrip(x) == 1.5
         @test dimension(x) == Dimensions()
 
-        x = GenericQuantity(big(1.5)) 
+        x = GenericQuantity(big(1.5))
         @test typeof(x) <: GenericQuantity{BigFloat}
 
         x = GenericQuantity([1.5, 2.0], Dimensions{Rational{Int8}}; length=1)
@@ -1149,21 +1618,21 @@ end
         :log, :log2, :log10, :log1p, :exp, :exp2, :exp10, :expm1, :frexp, :exponent,
         :atan, :atand
     )
-    for Q in (Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
+    for Q in (RealQuantity, Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
         # Only test on valid domain
         valid_inputs = filter(
             x -> is_input_valid(eval(f), x),
             5rand(100) .- 2.5
         )
         for x in valid_inputs[1:3]
-            qx_dimensionless = Quantity(x, D)
-            qx_dimensions = Quantity(x, convert(D, dimension(u"m/s")))
+            qx_dimensionless = Q(x, D)
+            qx_dimensions = convert(with_type_parameters(Q, Float64, D), Q(x, dimension(u"m/s")))
             @eval @test $f($qx_dimensionless) == $f($x)
             @eval @test_throws DimensionError $f($qx_dimensions)
             if f in (:atan, :atand)
                 for y in valid_inputs[end-3:end]
-                    qy_dimensionless = Quantity(y, D)
-                    qy_dimensions = Quantity(y, convert(D, dimension(u"m/s")))
+                    qy_dimensionless = Q(y, D)
+                    qy_dimensions = convert(with_type_parameters(Q, Float64, D), Q(y, dimension(u"m/s")))
                     @eval @test $f($y, $qx_dimensionless) == $f($y, $x)
                     @eval @test $f($qy_dimensionless, $x) == $f($y, $x)
                     @eval @test $f($qy_dimensionless, $qx_dimensionless) == $f($y, $x)
@@ -1174,6 +1643,33 @@ end
             end
         end
     end
+    
+    # Tests factorial (single integer input).
+    for Q in (Quantity{Int64},), D in (Dimensions, SymbolicDimensions)
+        for x in rand(1:10, 3)
+            qx_dimensionless = Q(x, D)
+            qx_dimensions = convert(with_type_parameters(Q, Int64, D), Q(x*u"m/s"))
+            @eval @test $factorial($qx_dimensionless) == $factorial($x)
+            @eval @test_throws DimensionError $factorial($qx_dimensions)
+        end
+    end
+
+    # Tests binomial (two integer inputs).
+    for Q in (Quantity{Int64},), D in (Dimensions, SymbolicDimensions)
+        for x in rand(1:10, 3), y in rand(1:10, 3)
+            qx_dimensionless = Q(x, D)
+            qx_dimensions = convert(with_type_parameters(Q, Int64, D), Q(x*u"m/s"))
+            qy_dimensionless = Q(y, D)
+            qy_dimensions = convert(with_type_parameters(Q, Int64, D), Q(y*u"m/s"))
+            @eval @test $binomial($y, $qx_dimensionless) == $binomial($y, $x)
+            @eval @test $binomial($qy_dimensionless, $x) == $binomial($y, $x)
+            @eval @test $binomial($qy_dimensionless, $qx_dimensionless) == $binomial($y, $x)
+            @eval @test_throws DimensionError $binomial($qy_dimensions, $qx_dimensions) == $binomial($y, $x)
+            @eval @test_throws DimensionError $binomial($qy_dimensions, $x)
+            @eval @test_throws DimensionError $binomial($y, $qx_dimensions)
+        end
+    end
+
     s = record_show(DimensionError(u"km/s"), showerror)
     @test occursin("not dimensionless", s)
 end
@@ -1182,54 +1678,67 @@ end
     functions = (
         :float, :abs, :real, :imag, :conj, :adjoint, :unsigned,
         :nextfloat, :prevfloat, :identity, :transpose,
-        :copysign, :flipsign, :mod, :modf,
+        :copysign, :flipsign, :modf,
         :floor, :trunc, :ceil, :significand,
-        :ldexp, :round,
+        :ldexp, :round, :mod, :rem
     )
-    for Q in (Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
+    for Q in (RealQuantity, Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
         T = f in (:abs, :real, :imag, :conj) ? ComplexF64 : Float64
+        T <: Complex && Q == RealQuantity && continue
         if f == :modf  # Functions that return multiple outputs
             for x in 5rand(T, 3) .- 2.5
-                dim = convert(D, dimension(u"m/s"))
-                qx_dimensions = Q(x, dim)
+                qx_dimensions = convert(with_type_parameters(Q, T, D), Q(x, dimension(u"m/s")))
                 num_outputs = 2
                 for i=1:num_outputs
-                    @eval @test $f($qx_dimensions)[$i] == $Q($f($x)[$i], $dim)
+                    @eval @test $f($qx_dimensions)[$i] == $Q($f($x)[$i], $(dimension(u"m/s")))
                 end
             end
         elseif f in (:copysign, :flipsign, :rem, :mod)  # Functions that need multiple inputs
             for x in 5rand(T, 3) .- 2.5
                 for y in 5rand(T, 3) .- 2.5
-                    dim = convert(D, dimension(u"m/s"))
-                    qx_dimensions = Q(x, dim)
-                    qy_dimensions = Q(y, dim)
-                    @eval @test $f($qx_dimensions, $qy_dimensions) == $Q($f($x, $y), $dim)
-                    if f in (:copysign, :flipsign, :mod)
+                    # dim = convert(D, dimension(u"m/s"))
+                    # qx_dimensions = Q(x, dim)
+                    # qy_dimensions = Q(y, dim)
+                    qx_dimensions = convert(with_type_parameters(Q, T, D), Q(x, dimension(u"m/s")))
+                    qy_dimensions = convert(with_type_parameters(Q, T, D), Q(y, dimension(u"m/s")))
+                    @eval @test $f($qx_dimensions, $qy_dimensions) == $Q($f($x, $y), dimension(u"m/s"))
+                    if f in (:copysign, :flipsign)
                         # Also do test without dimensions
                         @eval @test $f($x, $qy_dimensions) == $f($x, $y)
-                        @eval @test $f($qx_dimensions, $y) == $Q($f($x, $y), $dim)
+                        @eval @test $f($qx_dimensions, $y) == $Q($f($x, $y), dimension(u"m/s"))
+                    elseif f in (:rem, :mod)
+                        # Also do test without dimensions (need dimensionless)
+                        qx_dimensionless = Q(x, D)
+                        qy_dimensionless = Q(y, D)
+                        @eval @test $f($x, $qy_dimensionless) ≈ $Q($f($x, $y), $D)
+                        @eval @test $f($qx_dimensionless, $y) ≈ $Q($f($x, $y), $D)
+                        @eval @test_throws DimensionError $f($qx_dimensions, $y)
+                        @eval @test_throws DimensionError $f($x, $qy_dimensions)
+                        if f == :rem && VERSION >= v"1.9"
+                            # Can also do other rounding modes
+                            for r in (:RoundFromZero, :RoundNearest, :RoundUp, :RoundDown)
+                                @eval @test $f($qx_dimensions, $qy_dimensions, $r) ≈ $Q($f($x, $y, $r), dimension(u"m/s"))
+                            end
+                        end
                     end
                 end
             end
         elseif f == :unsigned
-            for x in 5rand(-10:10, 3)
-                dim = convert(D, dimension(u"m/s"))
-                qx_dimensions = Q(x, dim)
-                @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
+            for x in 5rand(10:50, 3)
+                qx_dimensions = convert(with_type_parameters(Q, typeof(x), D), Q(x, dimension(u"m/s")))
+                @eval @test $f($qx_dimensions) == $Q($f($x), dimension(u"m/s"))
             end
         elseif f in (:round, :floor, :trunc, :ceil)
             for x in 5rand(T, 3) .- 2.5
-                dim = convert(D, dimension(u"m/s"))
-                qx_dimensions = Q(x, dim)
-                @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
-                @eval @test $f(Int32, $qx_dimensions) == $Q($f(Int32, $x), $dim)
+                qx_dimensions = convert(with_type_parameters(Q, T, D), Q(x, dimension(u"m/s")))
+                @eval @test $f($qx_dimensions) == $Q($f($x), dimension(u"m/s"))
+                @eval @test $f(Int32, $qx_dimensions) == $Q($f(Int32, $x), dimension(u"m/s"))
             end
         elseif f == :ldexp
             for x in 5rand(T, 3) .- 2.5
-                dim = convert(D, dimension(u"m/s"))
-                qx_dimensions = Q(x, dim)
+                qx_dimensions = convert(with_type_parameters(Q, T, D), Q(x, dimension(u"m/s")))
                 for i=1:3
-                    @eval @test $f($qx_dimensions, $i) == $Q($f($x, $i), $dim)
+                    @eval @test $f($qx_dimensions, $i) == $Q($f($x, $i), dimension(u"m/s"))
                 end
             end
         else
@@ -1239,16 +1748,159 @@ end
                 5rand(T, 100) .- 2.5
             )
             for x in valid_inputs[1:3]
-                dim = convert(D, dimension(u"m/s"))
-                qx_dimensions = Q(x, dim)
-                @eval @test $f($qx_dimensions) == $Q($f($x), $dim)
+                qx_dimensions = convert(with_type_parameters(Q, T, D), Q(x, dimension(u"m/s")))
+                @eval @test $f($qx_dimensions) == $Q($f($x), dimension(u"m/s"))
             end
         end
     end
 end
 
+@testset "Assorted comparison functions" begin
+    functions = (
+        :(<=), :(<), :(>=), :(>), :isless, :isequal, :(==),
+    )
+    x = 5randn(10) .- 2.5
+    y = 5randn(10) .- 2.5
+    for Q in (RealQuantity, Quantity, GenericQuantity), D in (Dimensions, SymbolicDimensions), f in functions
+        ground_truth = @eval $f.($x, $y)
+        qx_dimensions = [convert(with_type_parameters(Q, Float64, D), Q(xi, dimension(u"m/s"))) for xi in x]
+        qy_dimensions = [convert(with_type_parameters(Q, Float64, D), Q(yi, dimension(u"m/s"))) for yi in y]
+        @eval @test all($f.($qx_dimensions, $qy_dimensions) .== $ground_truth)
+        if f in (:isequal, :(==))
+            # These include a dimension check in the result, rather than
+            # throwing an error
+            @eval @test !any($f.($qx_dimensions, $y))
+            @eval @test !any($f.($x, $qy_dimensions))
+        else
+            @eval @test_throws DimensionError $f($qx_dimensions[1], $y[1])
+            @eval @test_throws DimensionError $f($x[1], $qy_dimensions[1])
+        end
+        qx_dimensionless = [Q(xi, D) for xi in x]
+        qy_dimensionless = [Q(yi, D) for yi in y]
+        @eval @test all($f.($qx_dimensionless, $y) .== $ground_truth)
+        @eval @test all($f.($x, $qy_dimensionless) .== $ground_truth)
+
+        qx_real_dimensions = [convert(RealQuantity{Float64,D}, Quantity(xi, dimension(u"m/s"))) for xi in x]
+        qy_real_dimensions = [convert(RealQuantity{Float64,D}, Quantity(yi, dimension(u"m/s"))) for yi in y]
+        # Mixed quantity input
+        @eval @test all($f.($qx_real_dimensions, $qy_dimensions) .== $ground_truth)
+        @eval @test all($f.($qx_dimensions, $qy_real_dimensions) .== $ground_truth)
+    end
+
+    # Should be able to compare against `NoDims`:
+    @test Quantity(1.0) >= 1.0
+    @test !(Quantity(1.0) > 1.0)
+end
+
+@testset "Tests of `NoDims`" begin
+    @test promote_type(NoDims{Int16}, NoDims{Int32}) === NoDims{Int32}
+
+    # Prefer other types, always:
+    @test promote_type(Dimensions{Int16}, NoDims{Int32}) === Dimensions{Int16}
+    @test promote_type(MyDimensions{Int16}, NoDims{Int32}) === MyDimensions{Int16}
+
+    # Always zero dimensions
+    @test iszero(dimension(1.0))
+    @test iszero(dimension([1.0, 2.0]))
+    @test dimension(1.0) * u"1" == u"1"
+    @test typeof(dimension(1.0) * u"1") === typeof(u"1")
+
+    # Even when accessed:
+    @test NoDims().km == 0
+    @test NoDims().m != 1
+
+    # Even weird user-defined dimensions:
+    @test NoDims().cookie == 0
+
+    # Always returns the same type:
+    @test NoDims{Int32}().cookie isa Int32
+    @test NoDims{Int32}().cookie == 0
+end
+
+@testset "Tests of SymbolicDimensionsSingleton" begin
+    km = SymbolicUnits.km
+    m = SymbolicUnits.m
+    @test km isa Quantity{T,SymbolicDimensionsSingleton{R}} where {T,R}
+    @test dimension(km) isa SymbolicDimensionsSingleton
+    @test dimension(km) isa AbstractSymbolicDimensions
+
+    @test dimension(km).km == 1
+    @test dimension(km).m == 0
+    VERSION >= v"1.9" &&
+        @test_throws "is not available as a symbol" dimension(km).γ
+    @test !iszero(dimension(km))
+    @test inv(km) == us"km^-1"
+    @test inv(km) == u"km^-1"
+
+    @test !iszero(dimension(SymbolicConstants.c))
+    @test SymbolicConstants.c isa Quantity{T,SymbolicDimensionsSingleton{R}} where {T,R}
+
+    # Constructors
+    @test SymbolicDimensionsSingleton(:cm) isa SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}
+    @test constructorof(SymbolicDimensionsSingleton) === SymbolicDimensionsSingleton
+
+    @test with_type_parameters(
+            SymbolicDimensionsSingleton{Int64},
+            Int32
+        ) === SymbolicDimensionsSingleton{Int32}
+
+    @test convert(
+            SymbolicDimensions,
+            SymbolicDimensionsSingleton{Int32}(:cm)
+        ) isa SymbolicDimensions{Int32}
+
+    @test copy(km) == km
+    # Any operation should immediately convert it:
+    @test km ^ -1 isa Quantity{T,DynamicQuantities.SymbolicDimensions{R}} where {T,R}
+
+    # Test promotion explicitly for coverage:
+    @test promote_type(
+            SymbolicDimensionsSingleton{Int16},
+            SymbolicDimensionsSingleton{Int32}
+        ) === SymbolicDimensions{Int32}
+    # ^ Note how we ALWAYS convert to SymbolicDimensions, even
+    # if the types are the same.
+    @test promote_type(
+            SymbolicDimensionsSingleton{Int16},
+            SymbolicDimensions{Int32}
+        ) === SymbolicDimensions{Int32}
+    @test promote_type(
+            SymbolicDimensionsSingleton{Int64},
+            Dimensions{Int16}
+        ) === Dimensions{Int64}
+
+    # Test map_dimensions explicitly for coverage:
+    @test map_dimensions(-, dimension(km)).km == -1
+    @test map_dimensions(-, dimension(km)) isa SymbolicDimensions
+    @test map_dimensions(+, dimension(km), dimension(m)).km == 1
+    @test map_dimensions(+, dimension(km), dimension(m)).m == 1
+    @test map_dimensions(+, dimension(km), dimension(m)).cm == 0
+    @test map_dimensions(+, dimension(km), SymbolicDimensions(dimension(m))).km == 1
+    @test map_dimensions(+, dimension(km), SymbolicDimensions(dimension(m))).m == 1
+    @test map_dimensions(+, dimension(km), SymbolicDimensions(dimension(m))).cm == 0
+    @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).km == 1
+    @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).m == 1
+    @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).cm == 0
+
+    # Note that we avoid converting to SymbolicDimensionsSingleton for uconvert:
+    @test km |> uconvert(us"m") == 1000m
+    @test km |> uconvert(us"m") isa Quantity{T,SymbolicDimensions{R}} where {T,R}
+    @test [km, km] isa Vector{Quantity{T,SymbolicDimensionsSingleton{R}}} where {T,R}
+    @test [km^2, km] isa Vector{Quantity{T,SymbolicDimensions{R}}} where {T,R}
+
+    @test km |> uconvert(us"m") == km |> us"m"
+    # No issue when converting to SymbolicDimensionsSingleton (gets
+    # converted)
+    @test uconvert(km, u"m") == 0.001km
+    @test uconvert(km, u"m") isa Quantity{T,SymbolicDimensions{R}} where {T,R}
+
+    # Symbolic dimensions retain symbols:
+    @test QuantityArray([km, km]) |> uconvert(us"m") == [1000m, 1000m]
+    @test QuantityArray([km, km]) |> uconvert(us"m") != [km, km]
+end
+
 @testset "Test div" begin
-    for Q in (Quantity, GenericQuantity)
+    for Q in (RealQuantity, Quantity, GenericQuantity)
         x = Q{Int}(10, length=1)
         y = Q{Int}(3, mass=-1)
         @test div(x, y) == Q{Int}(3, length=1, mass=1)
@@ -1260,4 +1912,108 @@ end
             @test div(10, y, RoundFromZero) == Q{Int}(4, mass=1)
         end
     end
+    # Also test mixed quantities:
+    x = RealQuantity{Int}(10, length=1)
+    y = Quantity{Int}(3, mass=-1)
+    @test div(x, y) == Quantity{Int}(3, length=1, mass=1)
+    @test typeof(div(x, y)) <: Quantity{Int}
+    if VERSION >= v"1.9"
+        @test div(x, y, RoundFromZero) == Quantity{Int}(4, length=1, mass=1)
+    end
 end
+
+@testset "Exponentiation" begin
+    for Q in (RealQuantity, Quantity, GenericQuantity)
+        x = Q(2.0, length=1)
+
+        # Quantity raised to dimensionless quantity
+        p = Q(3)
+        @test x^p == Q(8.0, length=3)
+
+        x = Q(2.0, length=1)
+        @test x^-2.0 == Q(0.25, length=-2)
+
+        x = Q(2.0, time=1)
+        @test x^0.0 ≈ Q(1.0, time=0)
+
+        x = Q(0.5, mass=2)
+        @test x^3.0 == Q(0.125, mass=6)
+
+        # Q raised to negative float
+        x = Q(4.0, current=2)
+        @test x^-2.5 ≈ Q(4.0^-2.5, current=-5.0)
+
+        # Q raised to positive float
+        x = Q(3.0, amount=1)
+        @test x^1.5 ≈ Q(5.196152422706632, amount=3//2)
+
+        # Zero quantity edge cases
+        x = Q(0.0, acceleration=1)
+        @test x^1 == x
+        @test x^0 == Q(1.0)
+
+        # Complex number exponent
+        if Q !== RealQuantity
+            x = Q(0.7 + 0.2im)
+            @test x^(1 - 3im) ≈ (0.7+0.2im)^(1 - 3im) * Q(1)
+        end
+    end
+
+    x = RealQuantity(2.0)
+    y = Quantity(2.0im)
+    @test typeof(x^y) <: Quantity
+
+    x = RealQuantity(2.0, length=1)
+    y = Quantity(2.0im)
+    @test_throws DimensionError x^y
+
+    x = RealQuantity(2.0)
+    y = Quantity(2.0im, mass=1)
+    @test_throws DimensionError x^y
+end
+
+# `@testset` rewrites the test block with a `let...end`, resulting in an invalid
+# local `const` (ref: src/units.jl:26). To avoid it, register units outside the
+# test block.
+map_count_before_registering = length(UNIT_MAPPING)
+all_map_count_before_registering = length(ALL_MAPPING)
+@register_unit MyV u"V"
+@register_unit MySV us"V"
+@register_unit MySV2 us"km/h"
+
+if VERSION >= v"1.9"
+    @test_throws "Unit `m` is already defined as `1.0 m`" esc(_register_unit(:m, u"s"))
+
+    # Constants as well:
+    @test_throws "Unit `Ryd` is already defined" esc(_register_unit(:Ryd, u"Constants.Ryd"))
+end
+
+@testset "Register Unit" begin
+    @test MyV === u"V"
+    @test MyV == us"V"
+    @test MySV == us"V"
+    @test MySV2 == us"km/h"
+
+    @test length(UNIT_MAPPING) == map_count_before_registering + 3
+    @test length(ALL_MAPPING) == all_map_count_before_registering + 3
+
+    for my_unit in (MySV, MyV)
+        @test my_unit in UNIT_VALUES
+        @test my_unit in ALL_VALUES
+        @test my_unit in SYMBOLIC_UNIT_VALUES
+    end
+    for my_unit in (:MySV, :MyV)
+        @test my_unit in UNIT_SYMBOLS
+        @test my_unit in ALL_SYMBOLS
+    end
+end
+
+push!(LOAD_PATH, joinpath(@__DIR__, "precompile_test"))
+
+using ExternalUnitRegistration: MyWb
+@testset "Type of External Unit" begin
+    @test MyWb isa DEFAULT_QUANTITY_TYPE
+    @test MyWb/u"m^2*kg*s^-2*A^-1" == 1.0
+end
+
+pop!(LOAD_PATH)

@@ -25,23 +25,61 @@ end
     return output
 end
 
-Base.convert(::Type{Number}, q::AbstractQuantity) = q
-function Base.convert(::Type{T}, q::UnionAbstractQuantity) where {T<:Number}
-    @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
-    return convert(T, ustrip(q))
-end
 function Base.promote_rule(::Type{Dimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
     return Dimensions{promote_type(R1,R2)}
 end
-function Base.promote_rule(::Type{<:GenericQuantity{T1,D1}}, ::Type{<:GenericQuantity{T2,D2}}) where {T1,T2,D1,D2}
-    return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
+function Base.promote_rule(::Type{NoDims{R1}}, ::Type{NoDims{R2}}) where {R1,R2}
+    return NoDims{promote_type(R1,R2)}
 end
-function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:GenericQuantity{T2,D2}}) where {T1,T2,D1,D2}
-    return GenericQuantity{promote_type(T1,T2),promote_type(D1,D2)}
+function Base.promote_rule(::Type{NoDims{R1}}, ::Type{D}) where {R1,R2,D<:AbstractDimensions{R2}}
+    # The `R1` type is "unused" so we ignore it
+    return D
 end
-function Base.promote_rule(::Type{<:Quantity{T1,D1}}, ::Type{<:Quantity{T2,D2}}) where {T1,T2,D1,D2}
-    return Quantity{promote_type(T1,T2),promote_type(D1,D2)}
+
+# Define all the quantity x quantity promotion rules
+"""
+    promote_quantity_on_value(Q::Type, T::Type)
+
+Find the next quantity type in the hierarchy that can accommodate the type `T`.
+If the current quantity type can already accommodate `T`, then the current type is returned.
+For example, `promote_quantity_on_value(Quantity, Float64)` would return `Quantity`, and
+`promote_quantity_on_value(RealQuantity, String)` would return `GenericQuantity`.
+The user should overload this function to define a custom type hierarchy.
+
+Also see `promote_quantity_on_quantity`.
+"""
+@inline promote_quantity_on_value(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Any}) = GenericQuantity
+@inline promote_quantity_on_value(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Number}) = Quantity
+@inline promote_quantity_on_value(::Type{<:RealQuantity}, ::Type{<:Real}) = RealQuantity
+@inline promote_quantity_on_value(T, _) = T
+
+"""
+    promote_quantity_on_quantity(Q1, Q2)
+
+Defines the type hierarchy for quantities, returning the most specific type
+that is compatible with both input quantity types. For example,
+`promote_quantity_on_quantity(Quantity, GenericQuantity)` would return `GenericQuantity`,
+as it can store both `Quantity` and `GenericQuantity` values.
+Similarly, `promote_quantity_on_quantity(RealQuantity, RealQuantity)` would return `RealQuantity`,
+as that is the most specific type.
+
+Also see `promote_quantity_on_value`.
+"""
+@inline promote_quantity_on_quantity(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}) = GenericQuantity
+@inline promote_quantity_on_quantity(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Union{Quantity,RealQuantity}}) = Quantity
+@inline promote_quantity_on_quantity(::Type{<:RealQuantity}, ::Type{<:RealQuantity}) = RealQuantity
+@inline promote_quantity_on_quantity(::Type{Q}, ::Type{Q}) where {Q<:UnionAbstractQuantity} = Q
+
+for (type1, _, _) in ABSTRACT_QUANTITY_TYPES, (type2, _, _) in ABSTRACT_QUANTITY_TYPES
+    @eval function Base.promote_rule(::Type{Q1}, ::Type{Q2}) where {T1,T2,D1,D2,Q1<:$type1{T1,D1},Q2<:$type2{T2,D2}}
+        return with_type_parameters(
+            promote_quantity_on_quantity(Q1, Q2),
+            promote_type(T1, T2),
+            promote_type(D1, D2),
+        )
+    end
 end
+
 
 # Define promotion rules for all basic numeric types, individually.
 # We don't want to define an opinionated promotion on <:Number,
@@ -57,16 +95,31 @@ const BASE_NUMERIC_TYPES = Union{
     Rational{Int64}, Rational{UInt64}, Rational{Int128}, Rational{UInt128},
     Rational{BigInt},
 }
-for (type, _, _) in ABSTRACT_QUANTITY_TYPES
-    @eval function Base.promote_rule(::Type{Q}, ::Type{T2}) where {T,D,Q<:$type{T,D},T2<:BASE_NUMERIC_TYPES}
-        return with_type_parameters(Q, promote_type(T, T2), D)
+
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+    !(base_type <: Number) && @eval begin
+        function Base.convert(::Type{Q}, x::BASE_NUMERIC_TYPES) where {T,D,Q<:$type{T,D}}
+            return new_quantity(Q, convert(T, x), D())
+        end
     end
-    @eval function Base.convert(::Type{Q}, x::BASE_NUMERIC_TYPES) where {T,D,Q<:$type{T,D}}
-        return new_quantity(Q, convert(T, x), D())
+    @eval begin
+        function Base.promote_rule(::Type{Q}, ::Type{T2}) where {T,D,Q<:$type{T,D},T2<:BASE_NUMERIC_TYPES}
+            return with_type_parameters(promote_quantity_on_value(Q, T2), promote_type(T, T2), D)
+        end
+        function Base.promote_rule(::Type{T2}, ::Type{Q}) where {T,D,Q<:$type{T,D},T2<:BASE_NUMERIC_TYPES}
+            return with_type_parameters(promote_quantity_on_value(Q, T2), promote_type(T, T2), D)
+        end
     end
 end
-function Base.promote_rule(::Type{<:AbstractQuantity}, ::Type{<:Number})
-    return Number
+
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        function (::Type{T})(q::$type) where {T<:Number}
+            q isa T && return q
+            @assert iszero(dimension(q)) "$(typeof(q)): $(q) has dimensions! Use `ustrip` instead."
+            return convert(T, ustrip(q))
+        end
+    end
 end
 
 """
@@ -116,49 +169,102 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
 end
 Base.keys(q::UnionAbstractQuantity) = keys(ustrip(q))
 
+# If atol specified in kwargs, validate its dimensions and then strip units
+@inline function _validate_isapprox(dimcheck, kws)
+    if haskey(kws, :atol)
+        dimension(dimcheck) == dimension(kws[:atol]) || throw(DimensionError(dimcheck, kws[:atol]))
+        return (; kws..., atol=ustrip(kws[:atol]))
+    else
+        return kws
+    end
+end
 
 # Numeric checks
-function Base.isapprox(l::UnionAbstractQuantity, r::UnionAbstractQuantity; kws...)
-    l, r = promote_except_value(l, r)
-    return isapprox(ustrip(l), ustrip(r); kws...) && dimension(l) == dimension(r)
+for op in (:(<=), :(<), :(>=), :(>), :isless), (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES
+    # Avoid creating overly generic operations on these:
+    base_type = true_base_type <: Number ? true_base_type : Number
+    @eval begin
+        function Base.$(op)(l::$type, r::$type)
+            l, r = promote_except_value(l, r)
+            dimension(l) == dimension(r) || throw(DimensionError(l, r))
+            return $(op)(ustrip(l), ustrip(r))
+        end
+        function Base.$(op)(l::$type, r::$base_type)
+            iszero(dimension(l)) || throw(DimensionError(l, r))
+            return $(op)(ustrip(l), r)
+        end
+        function Base.$(op)(l::$base_type, r::$type)
+            iszero(dimension(r)) || throw(DimensionError(l, r))
+            return $(op)(l, ustrip(r))
+        end
+    end
 end
-function Base.isapprox(l::Number, r::UnionAbstractQuantity; kws...)
-    iszero(dimension(r)) || throw(DimensionError(l, r))
-    return isapprox(l, ustrip(r); kws...)
+for op in (:isequal, :(==)), (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES
+    # Avoid creating overly generic operations on these:
+    base_type = true_base_type <: Number ? true_base_type : Number
+    @eval begin
+        function Base.$(op)(l::$type, r::$type)
+            l, r = promote_except_value(l, r)
+            return $(op)(ustrip(l), ustrip(r)) && dimension(l) == dimension(r)
+        end
+        function Base.$(op)(l::$type, r::$base_type)
+            return $(op)(ustrip(l), r) && iszero(dimension(l))
+        end
+        function Base.$(op)(l::$base_type, r::$type)
+            return $(op)(l, ustrip(r)) && iszero(dimension(r))
+        end
+    end
 end
-function Base.isapprox(l::UnionAbstractQuantity, r::Number; kws...)
-    iszero(dimension(l)) || throw(DimensionError(l, r))
-    return isapprox(ustrip(l), r; kws...)
+for op in (:(<=), :(<), :(>=), :(>), :isless, :isgreater, :isequal, :(==)),
+    (t1, _, _) in ABSTRACT_QUANTITY_TYPES,
+    (t2, _, _) in ABSTRACT_QUANTITY_TYPES
+
+    t1 == t2 && continue
+
+    @eval function Base.$(op)(l::$t1, r::$t2)
+        return $(op)(promote_except_value(l, r)...)
+    end
 end
-Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
-function Base.:(==)(l::UnionAbstractQuantity, r::UnionAbstractQuantity)
-    l, r = promote_except_value(l, r)
-    ustrip(l) == ustrip(r) && dimension(l) == dimension(r)
+# Define isapprox:
+for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES
+    # Avoid creating overly generic operations on these:
+    base_type = true_base_type <: Number ? true_base_type : Number
+    @eval begin
+        function Base.isapprox(l::$type, r::$type; kws...)
+            l, r = promote_except_value(l, r)
+            dimension(l) == dimension(r) || throw(DimensionError(l, r))
+            return isapprox(ustrip(l), ustrip(r); _validate_isapprox(l, kws)...)
+        end
+        function Base.isapprox(l::$base_type, r::$type; kws...)
+            iszero(dimension(r)) || throw(DimensionError(l, r))
+            return isapprox(l, ustrip(r); _validate_isapprox(r, kws)...)
+        end
+        function Base.isapprox(l::$type, r::$base_type; kws...)
+            iszero(dimension(l)) || throw(DimensionError(l, r))
+            return isapprox(ustrip(l), r; _validate_isapprox(l, kws)...)
+        end
+    end
+    for (type2, _, _) in ABSTRACT_QUANTITY_TYPES
+
+        type == type2 && continue
+
+        @eval function Base.isapprox(l::$type, r::$type2; kws...)
+            return isapprox(promote_except_value(l, r)...; kws...)
+        end
+    end
 end
-Base.:(==)(l::Number, r::UnionAbstractQuantity) = ustrip(l) == ustrip(r) && iszero(dimension(r))
-Base.:(==)(l::UnionAbstractQuantity, r::Number) = ustrip(l) == ustrip(r) && iszero(dimension(l))
-Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
-function Base.isless(l::UnionAbstractQuantity, r::UnionAbstractQuantity)
-    l, r = promote_except_value(l, r)
-    dimension(l) == dimension(r) || throw(DimensionError(l, r))
-    return isless(ustrip(l), ustrip(r))
-end
-function Base.isless(l::UnionAbstractQuantity, r::Number)
-    iszero(dimension(l)) || throw(DimensionError(l, r))
-    return isless(ustrip(l), r)
-end
-function Base.isless(l::Number, r::UnionAbstractQuantity)
-    iszero(dimension(r)) || throw(DimensionError(l, r))
-    return isless(l, ustrip(r))
-end
+
 
 # Simple flags:
 for f in (
-    :iszero, :isfinite, :isinf, :isnan, :isreal, :signbit,
+    :isone, :iszero, :isfinite, :isinf, :isnan, :isreal, :signbit,
     :isempty, :iseven, :isodd, :isinteger, :ispow2
 )
     @eval Base.$f(q::UnionAbstractQuantity) = $f(ustrip(q))
 end
+Base.iszero(d::AbstractDimensions) = all_dimensions(iszero, d)
+Base.iszero(::NoDims) = true
+Base.:(==)(l::AbstractDimensions, r::AbstractDimensions) = all_dimensions(==, l, r)
 
 
 # Base.one, typemin, typemax
@@ -177,7 +283,7 @@ end
 Base.one(::Type{D}) where {D<:AbstractDimensions} = D()
 Base.one(::D) where {D<:AbstractDimensions} = one(D)
 
-# Additive identities (zero)
+# Additive identities (zero). We have to invalidate these due to different behavior with conversion
 Base.zero(q::Q) where {Q<:UnionAbstractQuantity} = new_quantity(Q, zero(ustrip(q)), dimension(q))
 Base.zero(::AbstractDimensions) = error("There is no such thing as an additive identity for a `AbstractDimensions` object, as + is only defined for `UnionAbstractQuantity`.")
 Base.zero(::Type{<:UnionAbstractQuantity}) = error("Cannot create an additive identity for a `UnionAbstractQuantity` type, as the dimensions are unknown. Please use `zero(::UnionAbstractQuantity)` instead.")
@@ -188,6 +294,8 @@ Base.oneunit(q::Q) where {Q<:UnionAbstractQuantity} = new_quantity(Q, oneunit(us
 Base.oneunit(::AbstractDimensions) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` object, as + is only defined for `UnionAbstractQuantity`.")
 Base.oneunit(::Type{<:UnionAbstractQuantity}) = error("Cannot create a dimensionful 1 for a `UnionAbstractQuantity` type without knowing the dimensions. Please use `oneunit(::UnionAbstractQuantity)` instead.")
 Base.oneunit(::Type{<:AbstractDimensions}) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` type, as + is only defined for `UnionAbstractQuantity`.")
+
+Base.float(::Type{Q}) where {T,D,Q<:UnionAbstractQuantity{T,D}} = with_type_parameters(Q, Base.float(T), D)
 
 Base.show(io::IO, d::AbstractDimensions) =
     let tmp_io = IOBuffer()
@@ -219,11 +327,20 @@ tryrationalize(::Type{R}, x) where {R} = isinteger(x) ? convert(R, round(Int, x)
 Base.showerror(io::IO, e::DimensionError) = print(io, "DimensionError: ", e.q1, " and ", e.q2, " have incompatible dimensions")
 Base.showerror(io::IO, e::DimensionError{<:Any,Nothing}) = print(io, "DimensionError: ", e.q1, " is not dimensionless")
 
-Base.convert(::Type{Q}, q::UnionAbstractQuantity) where {Q<:UnionAbstractQuantity} = q
-Base.convert(::Type{Q}, q::UnionAbstractQuantity) where {T,Q<:UnionAbstractQuantity{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
-Base.convert(::Type{Q}, q::UnionAbstractQuantity) where {T,D,Q<:UnionAbstractQuantity{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))
+for (type, _, _) in ABSTRACT_QUANTITY_TYPES, (type2, _, _) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        Base.convert(::Type{Q}, q::$type) where {Q<:$type2} = q
+        Base.convert(::Type{Q}, q::$type) where {T,Q<:$type2{T}} = new_quantity(Q, convert(T, ustrip(q)), dimension(q))
+        Base.convert(::Type{Q}, q::$type) where {T,D,Q<:$type2{T,D}} = new_quantity(Q, convert(T, ustrip(q)), convert(D, dimension(q)))
+    end
+    # TODO: This invalidates some methods. But we have to, because
+    # the conversion in `number.jl` has a type assertion step, whereas
+    # we want to allow things like `convert(Quantity{Float64}, 1.0u"m")`,
+    # with the type for the dimensions being inferred.
+end
 
-Base.convert(::Type{D}, d::AbstractDimensions) where {D<:AbstractDimensions} = d
+Base.convert(::Type{D}, d::D) where {R,D<:AbstractDimensions{R}} = d
+Base.convert(::Type{D}, d::AbstractDimensions{R}) where {R,D<:AbstractDimensions} = with_type_parameters(D, R)(d)
 Base.convert(::Type{D}, d::AbstractDimensions) where {R,D<:AbstractDimensions{R}} = D(d)
 
 Base.copy(d::D) where {D<:AbstractDimensions} = map_dimensions(copy, d)
@@ -242,12 +359,14 @@ ustrip(::AbstractDimensions) = error("Cannot remove units from an `AbstractDimen
 """
     dimension(q::AbstractQuantity)
     dimension(q::AbstractGenericQuantity)
+    dimension(x)
 
 Get the dimensions of a quantity, returning an `AbstractDimensions` object.
 """
 dimension(q::UnionAbstractQuantity) = q.dimensions
 dimension(d::AbstractDimensions) = d
 dimension(aq::AbstractArray{<:UnionAbstractQuantity}) = allequal(dimension.(aq)) ? dimension(first(aq)) : throw(DimensionError(aq[begin], aq[begin+1:end]))
+dimension(_) = DEFAULT_DIMENSIONLESS_TYPE()
 
 """
     ulength(q::AbstractQuantity)

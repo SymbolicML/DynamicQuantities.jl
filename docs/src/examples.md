@@ -28,7 +28,7 @@ julia> p = sqrt(2 * m_e * (E - Φ)) # momentum of ejected electrons
 julia> λ = h / p # wavelength of ejected electrons
 3.029491247878056e-9 m
 
-julia> uconvert(us"nm", λ) # return answer in nanometers
+julia> λ |> us"nm" # return answer in nanometers (equivalent to `uconvert(us"nm", λ)`)
 3.0294912478780556 nm
 ```
 
@@ -47,10 +47,13 @@ using DynamicQuantities
 Set up initial conditions as quantities:
 
 ```julia
-y0 = 10u"km"
-v0 = 250u"m/s"
+# Can explicitly import units:
+using DynamicQuantities: km, m, s, min
+
+y0 = 10km
+v0 = 250m/s
 θ = deg2rad(60)
-g = 9.81u"m/s^2"
+g = 9.81m/s^2
 ```
 
 Next, we use trig functions to calculate x and y components of initial velocity.
@@ -67,7 +70,7 @@ Note that these are the same dimension (time), so it's fine to treat
 them as dimensionally equivalent!
 
 ```julia
-t = range(0u"s", 1.3u"min", length=100)
+t = range(0s, 1.3min, length=100)
 ```
 
 Next, use kinematic equations to calculate x and y as a function of time.
@@ -93,8 +96,8 @@ Next, let's plot the trajectory.
 First convert to km and strip units:
 
 ```julia
-x_km = ustrip.(uconvert(us"km").(x_si))
-y_km = ustrip.(uconvert(us"km").(y_si))
+x_km = ustrip.(x_si .|> us"km")
+y_km = ustrip.(y_si .|> us"km")
 ```
 
 Now, we plot:
@@ -103,7 +106,124 @@ Now, we plot:
 plot(x_km, y_km, label="Trajectory", xlabel="x [km]", ylabel="y [km]")
 ```
 
-## 3. Various Simple Examples
+## 3. Using dimensional angles
+
+Say that we wish to track angles as a unit, rather than assume
+the SI convention that `1 rad = 1`. We can do this by creating
+a new struct to track dimensions:
+
+```julia
+using DynamicQuantities
+
+struct AngleDimensions{R} <: AbstractDimensions{R}
+    length::R
+    mass::R
+    time::R
+    current::R
+    temperature::R
+    luminosity::R
+    amount::R
+    angle::R
+end
+```
+
+Simply by inheriting from `AbstractDimensions`, we get all the
+constructors and operations as defined on `Dimensions`:
+
+```julia
+julia> x = Quantity(1.0, AngleDimensions(length=1, angle=-1))
+1.0 m angle⁻¹
+```
+
+However, perhaps we want to set the default `angle` dimension as
+`rad`. We can do this by defining a method for `dimension_name`:
+
+```julia
+import DynamicQuantities: DynamicQuantities as DQ
+
+function DQ.dimension_name(::AngleDimensions, k::Symbol)
+    default_dimensions = (
+        length = "m",
+        mass = "kg",
+        time = "s",
+        current = "A",
+        temperature = "K",
+        luminosity = "cd",
+        amount = "mol",
+        angle = "rad",
+    )
+    return get(default_dimensions, k, string(k))
+end
+```
+
+This gives us the following behavior:
+
+```julia
+julia> x = Quantity(1.0, AngleDimensions(length=1, angle=-1))
+1.0 m rad⁻¹
+```
+
+Next, say that we are working with existing quantities defined using
+standard `Dimensions`. We want to promote these to our new `AngleDimensions` type.
+
+For this, we define two functions: `promote_rule` and a constructor for `AngleDimensions`
+from regular `Dimensions`:
+
+```julia
+function Base.promote_rule(::Type{AngleDimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
+    return AngleDimensions{promote_type(R1, R2)}
+end
+function Base.convert(::Type{Quantity{T,AngleDimensions{R}}}, q::Quantity{<:Any,<:Dimensions}) where {T,Din,R}
+    val = ustrip(q)
+    d = dimension(q)
+    return Quantity(
+        T(val),
+        AngleDimensions{R}(;
+            d.length, d.mass, d.time, d.current, d.temperature, d.luminosity, d.amount, angle=zero(R)
+        )
+    )
+end
+```
+
+This means that whenever a `Quantity{<:Any,<:Dimensions}`
+interacts with a `Quantity{<:Any,<:AngleDimensions}`, the result
+will be a `Quantity{<:Any,<:AngleDimensions}`, and we will initialize
+the angle dimension to 0. (Code not given for `SymbolicDimensions`; you will
+probably want to treat the angles in symbolic units explicitly, so that `us"rad"` is correctly
+tracked.)
+
+Let's define a constant for `rad`:
+
+```julia
+julia> const rad = Quantity(1.0, AngleDimensions(angle = 1))
+1.0 rad
+```
+
+and use it in a calculation:
+
+```julia
+julia> x = 2rad
+2.0 rad
+
+julia> y = 10u"min"
+600.0 s
+
+julia> angular_velocity = x / y
+0.0033333333333333335 s⁻¹ rad
+```
+
+which as we can see, automatically promotes to
+`AngleDimensions`.
+
+**However, note the following:**
+If existing code uses `rad` as a unit without tracking
+it with `AngleDimensions`, you will need to explicitly add
+the missing dimensions.
+For this reason, if you decide to take this approach to tracking units,
+you probably want to use `AngleDimensions` throughout your codebase,
+rather than mixing them.
+
+## 4. Assorted examples
 
 This section demonstrates miscellaneous examples of using `DynamicQuantities.jl`.
 
@@ -281,7 +401,7 @@ coord2 = GenericQuantity(Coords(0.2, -0.1), length=1)
 and perform operations on these:
 
 ```julia
-coord1 + coord2 |> uconvert(us"cm")
+coord1 + coord2 |> us"cm"
 # (Coords(50.0, 80.0)) cm
 ```
 
