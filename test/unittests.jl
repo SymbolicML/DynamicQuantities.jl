@@ -1975,8 +1975,11 @@ end
 map_count_before_registering = length(UNIT_MAPPING)
 all_map_count_before_registering = length(ALL_MAPPING)
 
+skipped_register_unit = false
 if :MyV ∉ UNIT_SYMBOLS  # (In case we run this script twice)
     @eval @register_unit MyV u"V"
+else
+    skipped_register_unit = true
 end
 if :MySV ∉ UNIT_SYMBOLS
     @eval @register_unit MySV us"V"
@@ -2002,8 +2005,10 @@ end
     @test MySV == us"V"
     @test MySV2 == us"km/h"
 
-    @test length(UNIT_MAPPING) == map_count_before_registering + 3
-    @test length(ALL_MAPPING) == all_map_count_before_registering + 3
+    if !skipped_register_unit
+        @test length(UNIT_MAPPING) == map_count_before_registering + 3
+        @test length(ALL_MAPPING) == all_map_count_before_registering + 3
+    end
 
     for my_unit in (MySV, MyV)
         @test my_unit in UNIT_VALUES
