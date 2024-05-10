@@ -1,6 +1,6 @@
 module DynamicQuantitiesLinearAlgebraExt
 
-using DynamicQuantities: UnionAbstractQuantity, QuantityArray, ustrip, dimension, new_quantity
+using DynamicQuantities: UnionAbstractQuantity, QuantityArray, ustrip, dimension, new_quantity, array_op
 
 import LinearAlgebra: svd, Diagonal, eigen, det, diagm
 
@@ -14,6 +14,42 @@ using TestItems: @testitem
 DQ.is_ext_loaded(::Val{:LinearAlgebra}) = true
 DQ.norm(u) = LA.norm(u)
 LA.norm(q::UnionAbstractQuantity, p::Real=2) = new_quantity(typeof(q), LA.norm(ustrip(q), p), dimension(q))
+
+# Deal with ambiguous array operations:
+for op in (:(Base.:*), :(Base.:/), :(Base.:\)),
+    Q_ARRAY_TYPE in (:(QuantityArray{<:Any,1}), :(QuantityArray{<:Any,2})),
+    ARRAY_TYPE in (
+        LA.Transpose{<:Any, <:AbstractVector},
+        LA.Transpose{<:Any, <:AbstractMatrix},
+        LA.Transpose{<:Any, <:LA.Bidiagonal},
+        LA.Adjoint{<:Any, <:AbstractVector},
+        LA.Adjoint{<:Any, <:AbstractMatrix},
+        LA.Adjoint{<:Any, <:LA.Bidiagonal},
+        LA.Adjoint{<:Number, <:AbstractVector},
+        Union{LA.Transpose{T,V}, LA.Adjoint{T,V}} where {T,V<:AbstractVector},
+        Union{LA.Transpose{T,V}, LA.Adjoint{T,V}} where {T,V<:LA.Bidiagonal},
+        LA.AbstractTriangular,
+        Union{LA.LowerTriangular,LA.UpperTriangular},
+        Union{LA.UnitLowerTriangular,LA.UnitUpperTriangular},
+        LA.Diagonal,
+        LA.Bidiagonal,
+        LA.SymTridiagonal,
+        Union{LA.Hermitian{T,S}, LA.Symmetric{T,S}} where {T,S},
+    ),
+    (L, R) in ((Q_ARRAY_TYPE, ARRAY_TYPE), (ARRAY_TYPE, Q_ARRAY_TYPE))
+
+    @eval $op(l::$L, r::$R) = array_op($op, l, r)
+end
+
+function Base.:*(
+    l::LA.Transpose{Q,<:AbstractVector},
+    r::DQ.QuantityArray{T2,1,D,Q,<:AbstractVector{T2}}
+) where {
+    T2,D<:DQ.AbstractDimensions,Q<:DQ.AbstractRealQuantity{T2,D}
+}
+    return array_op(Base.:*, l, r)
+end
+
 
 function svd(A::QuantityArray; full=false, alg::Algorithm=default_svd_alg(ustrip(A)))
     F = svd(ustrip(A), full=full, alg=alg)

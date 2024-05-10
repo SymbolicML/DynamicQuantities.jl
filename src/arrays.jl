@@ -406,28 +406,35 @@ uluminosity(q::QuantityArray) = uluminosity(dimension(q))
 uamount(q::QuantityArray) = uamount(dimension(q))
 
 
-# Loop over these to deal with ambiguities (rather than a union type)
-for op in (:(Base.:*), :(Base.:/), :(Base.:\))
-
-    @eval function $(op)(l::QuantityArray, r::QuantityArray)
-        l, r = promote_except_value(l, r)
+@inline function array_op(f::F, l, r) where {F}
+    let (l, r) = if l isa QuantityArray && r isa QuantityArray
+            promote_except_value(l, r)
+        else
+            l, r
+        end
         return QuantityArray(
-            $(op)(ustrip(l), ustrip(r)),
-            $(op)(dimension(l), dimension(r)),
-            quantity_type(l)
+            f(ustrip(l), ustrip(r)),
+            f(dimension(l), dimension(r)),
+            quantity_type(l isa QuantityArray ? l : r)
         )
     end
+end
 
-    for ARRAY_TYPE in (:AbstractVector, :AbstractMatrix),
-        (L, R) in ((:QuantityArray, ARRAY_TYPE), (ARRAY_TYPE, :QuantityArray))
+# Creates *, /, and \ for arrays
+for op in (:(Base.:*), :(Base.:/), :(Base.:\))
 
-        @eval function $(op)(l::$L, r::$R)
-            return QuantityArray(
-                $(op)(ustrip(l), ustrip(r)),
-                $(op)(dimension(l), dimension(r)),
-                quantity_type(l)
-            )
-        end
+    @eval $op(l::QuantityArray{<:Any,1}, r::QuantityArray{<:Any,1}) = array_op($op, l, r)
+    @eval $op(l::QuantityArray{<:Any,1}, r::QuantityArray{<:Any,2}) = array_op($op, l, r)
+    @eval $op(l::QuantityArray{<:Any,2}, r::QuantityArray{<:Any,1}) = array_op($op, l, r)
+    @eval $op(l::QuantityArray{<:Any,2}, r::QuantityArray{<:Any,2}) = array_op($op, l, r)
+
+    for Q_ARRAY_TYPE in (QuantityArray{<:Any,1}, QuantityArray{<:Any,2}),
+        ARRAY_TYPE in (AbstractVector, AbstractMatrix),
+        (L, R) in ((Q_ARRAY_TYPE, ARRAY_TYPE), (ARRAY_TYPE, Q_ARRAY_TYPE))
+
+        @eval $op(l::$L, r::$R) = array_op($op, l, r)
+        # TODO: Do we need to define `*` on NoDims, or is Julia
+        # smart enough to inline it and see it is a non-op?
     end
 end
 
@@ -436,7 +443,7 @@ end
     using LinearAlgebra
 
     for Q in (RealQuantity, Quantity, GenericQuantity), T in (Float16, Float32)
-        
+
         I = [1 0
              0 1]
         A = QuantityArray(rand(T, 2, 2) + I, Q{T}(u"m"))
@@ -448,7 +455,7 @@ end
         @test dimension(r) == dimension(q) / dimension(A)
         @test eltype(r) <: Q{T}
         @test typeof(r) <: QuantityArray{T}
-        
+
         q2 = A * r
         @test q2 ≈ q
         @test dimension(q2) == dimension(q)
@@ -489,6 +496,31 @@ end
         @test dimension(A \ B) == dimension(B) / dimension(A)
         @test eltype(A \ B) <: Q{T}
         @test typeof(A \ B) <: QuantityArray{T}
+    end
+end
+
+@testitem "Promotion rules" begin
+    using DynamicQuantities
+    using DynamicQuantities: value_type
+
+    I = [1 0
+         0 1]
+
+    for T1 in (Float16, Float32), T2 in (Float16, Float32)
+        A = QuantityArray(rand(T1, 2, 2) + I, Quantity{T1}(u"m"))
+        B = QuantityArray(rand(T2, 2, 2) + I, Quantity{T2}(u"A"))
+        q = QuantityArray(rand(T2, 2), Quantity{T2}(u"s^2"))
+
+        @test value_type(A \ q) == promote_type(T1, T2)
+        @test value_type(A * B) == promote_type(T1, T2)
+
+        @test value_type(A \ ustrip(q)) == promote_type(T1, T2)
+        @test value_type(A * ustrip(B)) == promote_type(T1, T2)
+
+        @test (ustrip(A) \ q) isa QuantityArray
+        @test value_type(ustrip(A) \ q) == promote_type(T1, T2)
+        @test ustrip(A) * B isa QuantityArray
+        @test value_type(ustrip(A) * B) == promote_type(T1, T2)
     end
 end
 
