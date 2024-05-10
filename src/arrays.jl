@@ -362,25 +362,32 @@ function rtoldefault(::Union{T1,Type{T1}}, ::Union{T2,Type{T2}}, atol, ::AutoTol
 end
 
 all_dimensions_equal(A::QuantityArray, B::QuantityArray) = dimension(A) == dimension(B)
-all_dimensions_equal(A::QuantityArray, B::AbstractArray{<:UnionAbstractQuantity}) = all(i -> dimension(A) == dimension(B[i]), eachindex(B))
-all_dimensions_equal(A::AbstractArray{<:UnionAbstractQuantity}, B::QuantityArray) = all(i -> dimension(B) == dimension(A[i]), eachindex(A))
-function all_dimensions_equal(A::AbstractArray{<:UnionAbstractQuantity}, B::AbstractArray{<:UnionAbstractQuantity})
+all_dimensions_equal(A::QuantityArray, B::AbstractArray) = all(i -> dimension(A) == dimension(B[i]), eachindex(B))
+all_dimensions_equal(A::AbstractArray, B::QuantityArray) = all(i -> dimension(B) == dimension(A[i]), eachindex(A))
+function all_dimensions_equal(A::AbstractArray, B::AbstractArray)
     d = dimension(first(A))
     return d == dimension(first(B)) && all(i -> d == dimension(A[i]), eachindex(A)) && all(i -> d == dimension(B[i]), eachindex(B))
 end
 
-function Base.isapprox(
-    u::Union{QuantityArray,AbstractArray{<:UnionAbstractQuantity}},
-    v::Union{QuantityArray,AbstractArray{<:UnionAbstractQuantity}};
-    atol=AutoTolerance(),
-    rtol=AutoTolerance(),
-    norm::F=_norm
-) where {F<:Function}
-    all_dimensions_equal(u, v) || throw(DimensionError(u, v))
-    d = norm(u .- v)
-    _atol = atoldefault(first(u), atol)
-    _rtol = rtoldefault(ustrip(first(u)), ustrip(first(v)), _atol, rtol)
-    return iszero(_rtol) ? d <= _atol : d <= max(_atol, _rtol*max(norm(u), norm(v)))
+for U in (:(QuantityArray), :(AbstractArray)), V in (:(QuantityArray), :(AbstractArray))
+
+    if U == :(AbstractArray) && V == :(AbstractArray)
+        continue
+    end
+
+    @eval function Base.isapprox(
+        u::$U,
+        v::$V;
+        atol=AutoTolerance(),
+        rtol=AutoTolerance(),
+        norm::F=_norm
+    ) where {F<:Function}
+        all_dimensions_equal(u, v) || throw(DimensionError(u, v))
+        d = norm(u .- v)
+        _atol = atoldefault(first(u), atol)
+        _rtol = rtoldefault(ustrip(first(u)), ustrip(first(v)), _atol, rtol)
+        return iszero(_rtol) ? d <= _atol : d <= max(_atol, _rtol*max(norm(u), norm(v)))
+    end
 end
 
 # Unit functions
