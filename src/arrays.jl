@@ -53,8 +53,6 @@ struct QuantityArray{T,N,D<:AbstractDimensions,Q<:UnionAbstractQuantity{T,D},V<:
     end
 end
 
-const QuantityArrayVecOrMat{T} = Union{QuantityArray{T,1}, QuantityArray{T,2}} where T
-
 QuantityArray(v::AbstractArray; kws...) = QuantityArray(v, DEFAULT_DIM_TYPE(; kws...))
 for (type, base_type, default_type) in ABSTRACT_QUANTITY_TYPES
     @eval QuantityArray(v::AbstractArray{<:$base_type}, q::$type) = QuantityArray(v .* ustrip(q), dimension(q), typeof(q))
