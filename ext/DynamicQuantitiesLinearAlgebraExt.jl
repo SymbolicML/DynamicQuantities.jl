@@ -2,18 +2,18 @@ module DynamicQuantitiesLinearAlgebraExt
 
 using DynamicQuantities: UnionAbstractQuantity, QuantityArray, ustrip, dimension, new_quantity
 
-import LinearAlgebra: norm, svd, Diagonal, eigen, det, diagm
-import DynamicQuantities: _norm
+import LinearAlgebra: svd, Diagonal, eigen, det, diagm
 
-using LinearAlgebra: Algorithm, default_svd_alg, SVD, Adjoint, eigsortby, Eigen
+using LinearAlgebra: LinearAlgebra as LA, Algorithm, default_svd_alg, SVD, Adjoint, eigsortby, Eigen
 using DynamicQuantities:
-    UnionAbstractQuantity, allequal, ustrip, dimension,
+    DynamicQuantities as DQ, UnionAbstractQuantity, allequal, ustrip, dimension,
     new_quantity, AbstractDimensions, QuantityArray,
     constructorof, quantity_type
 using TestItems: @testitem
 
-_norm(u::AbstractArray) = norm(u)
-norm(q::UnionAbstractQuantity, p::Real=2) = new_quantity(typeof(q), norm(ustrip(q), p), dimension(q))
+DQ.is_ext_loaded(::Val{:LinearAlgebra}) = true
+DQ.norm(u::AbstractArray) = LA.norm(u)
+LA.norm(q::UnionAbstractQuantity, p::Real=2) = new_quantity(typeof(q), LA.norm(ustrip(q), p), dimension(q))
 
 function svd(A::QuantityArray; full=false, alg::Algorithm=default_svd_alg(ustrip(A)))
     F = svd(ustrip(A), full=full, alg=alg)
