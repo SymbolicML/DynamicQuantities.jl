@@ -417,7 +417,7 @@ for op in (:(Base.:*), :(Base.:/), :(Base.:\))
             quantity_type(l)
         )
     end
-    
+
     for ARRAY_TYPE in (:AbstractVector, :AbstractMatrix),
         (L, R) in ((:QuantityArray, ARRAY_TYPE), (ARRAY_TYPE, :QuantityArray))
 

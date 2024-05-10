@@ -12,7 +12,7 @@ using DynamicQuantities:
 using TestItems: @testitem
 
 DQ.is_ext_loaded(::Val{:LinearAlgebra}) = true
-DQ.norm(u::AbstractArray) = LA.norm(u)
+DQ.norm(u) = LA.norm(u)
 LA.norm(q::UnionAbstractQuantity, p::Real=2) = new_quantity(typeof(q), LA.norm(ustrip(q), p), dimension(q))
 
 function svd(A::QuantityArray; full=false, alg::Algorithm=default_svd_alg(ustrip(A)))
