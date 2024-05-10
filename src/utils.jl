@@ -286,14 +286,14 @@ Base.one(::D) where {D<:AbstractDimensions} = one(D)
 # Additive identities (zero). We have to invalidate these due to different behavior with conversion
 Base.zero(q::Q) where {Q<:UnionAbstractQuantity} = new_quantity(Q, zero(ustrip(q)), dimension(q))
 Base.zero(::AbstractDimensions) = error("There is no such thing as an additive identity for a `AbstractDimensions` object, as + is only defined for `UnionAbstractQuantity`.")
-Base.zero(::Type{<:UnionAbstractQuantity}) = error("Cannot create an additive identity for a `UnionAbstractQuantity` type, as the dimensions are unknown. Please use `zero(::UnionAbstractQuantity)` instead.")
-Base.zero(::Type{<:AbstractDimensions}) = error("There is no such thing as an additive identity for a `AbstractDimensions` type, as + is only defined for `UnionAbstractQuantity`.")
+Base.zero(::Type{T}) where {T<:UnionAbstractQuantity} = error("Cannot create an additive identity from `Type{<:$(Base.typename(T).wrapper)}`, as the dimensions are unknown. Please use `zero(::$(Base.typename(T).wrapper))` instead.")
+Base.zero(::Type{D}) where {D<:AbstractDimensions} = error("There is no such thing as an additive identity for `$(Base.typename(D).wrapper)`, as + is only defined for quantities.")
 
 # Dimensionful 1 (oneunit)
 Base.oneunit(q::Q) where {Q<:UnionAbstractQuantity} = new_quantity(Q, oneunit(ustrip(q)), dimension(q))
-Base.oneunit(::AbstractDimensions) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` object, as + is only defined for `UnionAbstractQuantity`.")
-Base.oneunit(::Type{<:UnionAbstractQuantity}) = error("Cannot create a dimensionful 1 for a `UnionAbstractQuantity` type without knowing the dimensions. Please use `oneunit(::UnionAbstractQuantity)` instead.")
-Base.oneunit(::Type{<:AbstractDimensions}) = error("There is no such thing as a dimensionful 1 for a `AbstractDimensions` type, as + is only defined for `UnionAbstractQuantity`.")
+Base.oneunit(::D) where {D<:AbstractDimensions} = error("There is no such thing as a dimensionful 1 for a `$(Base.typename(D).wrapper)` object, as + is only defined for quantities.")
+Base.oneunit(::Type{T}) where {T<:UnionAbstractQuantity} = error("Cannot create a dimensionful 1 from `Type{$(Base.typename(T).wrapper)}` without knowing the dimensions. Please use `oneunit(::$(Base.typename(T).wrapper))` instead.")
+Base.oneunit(::Type{D}) where {D<:AbstractDimensions} = error("There is no such thing as a dimensionful 1 for a `$(Base.typename(D).wrapper)` type, as + is only defined for quantities.")
 
 Base.float(::Type{Q}) where {T,D,Q<:UnionAbstractQuantity{T,D}} = with_type_parameters(Q, Base.float(T), D)
 
