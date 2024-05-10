@@ -346,7 +346,8 @@ Base.fill(x::UnionAbstractQuantity, dims::Dims...) = QuantityArray(fill(ustrip(x
 Base.fill(x::UnionAbstractQuantity, t::Tuple{}) = QuantityArray(fill(ustrip(x), t), dimension(x), typeof(x))
 
 # Will be overloaded by `DynamicQuantitiesLinearAlgebraExt`:
-_norm(_) = error("Please load the `LinearAlgebra.jl` package.")
+function norm end
+is_ext_loaded(::Val) = false
 
 # Define isapprox for vectors of Quantity's
 struct AutoTolerance end
@@ -382,8 +383,11 @@ for U in (:(QuantityArray), :(AbstractArray), :(AbstractArray{<:AbstractQuantity
         v::$V;
         atol=AutoTolerance(),
         rtol=AutoTolerance(),
-        norm::F=_norm
+        norm::F=norm
     ) where {F<:Function}
+        if !is_ext_loaded(Val(:LinearAlgebra))
+            error("Please load the `LinearAlgebra.jl` package.")
+        end
         all_dimensions_equal(u, v) || throw(DimensionError(u, v))
         d = norm(u .- v)
         _atol = atoldefault(first(u), atol)
@@ -415,31 +419,23 @@ function Base.:\(l::QuantityArray, r::QuantityArray)
 end
 
 # Loop over these to deal with ambiguities (rather than a union type)
-for ARRAY_TYPE in (:AbstractVector, :AbstractMatrix)
+for op in (:(Base.:*), :(Base.:/), :(Base.:\)),
+    ARRAY_TYPE in (:AbstractVector, :AbstractMatrix),
+    (L, R) in ((:QuantityArray, ARRAY_TYPE), (ARRAY_TYPE, :QuantityArray))
     @eval begin
-        function Base.:*(l::QuantityArray, r::$ARRAY_TYPE)
-            return QuantityArray(ustrip(l) * r, dimension(l), quantity_type(l))
-        end
-        function Base.:/(l::QuantityArray, r::$ARRAY_TYPE)
-            return QuantityArray(ustrip(l) / r, dimension(l), quantity_type(l))
-        end
-        function Base.:\(l::QuantityArray, r::$ARRAY_TYPE)
-            return QuantityArray(ustrip(l) \ r, inv(dimension(l)), quantity_type(l))
-        end
-        function Base.:*(l::$ARRAY_TYPE, r::QuantityArray)
-            return QuantityArray(l * ustrip(r), dimension(r), quantity_type(r))
-        end
-        function Base.:/(l::$ARRAY_TYPE, r::QuantityArray)
-            return QuantityArray(l / ustrip(r), inv(dimension(r)), quantity_type(r))
-        end
-        function Base.:\(l::$ARRAY_TYPE, r::QuantityArray)
-            return QuantityArray(l \ ustrip(r), dimension(r), quantity_type(r))
+        function $(op)(l::$L, r::$R)
+            return QuantityArray(
+                $(op)(ustrip(l), ustrip(r)),
+                $(op)(dimension(l), dimension(r)),
+                quantity_type(l)
+            )
         end
     end
 end
 
 @testitem "Basic linear algebra operations" begin
     using DynamicQuantities
+    using LinearAlgebra
 
     for Q in (RealQuantity, Quantity, GenericQuantity), T in (Float16, Float32)
         
