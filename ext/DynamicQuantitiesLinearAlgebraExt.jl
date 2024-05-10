@@ -172,10 +172,10 @@ end
     @test QA1 == QA5
 end
 
-function LA.eigen(A::QuantityArray; permute::Bool=true, scale::Bool=true, sortby::Union{Function,Nothing}=LA.eigsortby)
-    F = LA.eigen(ustrip(A), permute=permute, scale=scale, sortby=sortby)
-    return LA.Eigen(QuantityArray(F.values, dimension(A), quantity_type(A)), F.vectors)
-end
+# function LA.eigen(A::QuantityArray; permute::Bool=true, scale::Bool=true, sortby::Union{Function,Nothing}=LA.eigsortby)
+#     F = LA.eigen(ustrip(A), permute=permute, scale=scale, sortby=sortby)
+#     return LA.Eigen(QuantityArray(F.values, dimension(A), quantity_type(A)), F.vectors)
+# end
 # functions available for Eigen objects: eigvals, det. Not implemented: inv, isposdef.
 
 function LA.det(A::QuantityArray)
