@@ -1,6 +1,7 @@
 module DynamicQuantitiesLinearAlgebraExt
 
 using LinearAlgebra: LinearAlgebra as LA
+using Compat: allequal
 using DynamicQuantities
 using DynamicQuantities: DynamicQuantities as DQ, quantity_type, new_quantity, DimensionError
 using TestItems: @testitem
@@ -45,35 +46,39 @@ function Base.:*(
 end
 
 
-function LA.svd(A::QuantityArray; full=false, alg::LA.Algorithm=LA.default_svd_alg(ustrip(A)))
-    F = LA.svd(ustrip(A), full=full, alg=alg)
-    S = QuantityArray(F.S, dimension(A), quantity_type(A))
-    return LA.SVD(F.U, S, F.Vt)
+@static if VERSION >= v"1.8.0"
+    @eval function LA.svd(A::QuantityArray; full=false, alg::LA.Algorithm=LA.default_svd_alg(ustrip(A)))
+        F = LA.svd(ustrip(A), full=full, alg=alg)
+        S = QuantityArray(F.S, dimension(A), quantity_type(A))
+        return LA.SVD(F.U, S, F.Vt)
+    end
+    # TODO: functions on SVD type that are working: `size`, `adjoint`, partially working: `inv`, not working: `svdvals`, `ldiv!`.
 end
-# TODO: functions on SVD type that are working: `size`, `adjoint`, partially working: `inv`, not working: `svdvals`, `ldiv!`.
 
 
 @testitem "svd" begin
     using DynamicQuantities, LinearAlgebra
 
-    A = [1. 0. 0. 0. 2.; 0. 0. 3. 0. 0.; 0. 0. 0. 0. 0.; 0. 2. 0. 0. 0.]
-    QA = QuantityArray(A, u"m/s")
+    if VERSION >= v"1.8.0"
+        A = [1. 0. 0. 0. 2.; 0. 0. 3. 0. 0.; 0. 0. 0. 0. 0.; 0. 2. 0. 0. 0.]
+        QA = QuantityArray(A, u"m/s")
 
-    F = svd(A)
-    FQ = svd(QA)
+        F = svd(A)
+        FQ = svd(QA)
 
-    @test F.U ≈ FQ.U
-    @test F.S * u"m/s" ≈ FQ.S
-    @test F.Vt ≈ FQ.Vt
-    @test size(FQ) == size(F)
+        @test F.U ≈ FQ.U
+        @test F.S * u"m/s" ≈ FQ.S
+        @test F.Vt ≈ FQ.Vt
+        @test size(FQ) == size(F)
 
-    @test FQ.S ≈ [3.0u"m/s", 2.23606797749979u"m/s", 2.0u"m/s", 0.0u"m/s"]
+        @test FQ.S ≈ [3.0u"m/s", 2.23606797749979u"m/s", 2.0u"m/s", 0.0u"m/s"]
 
-    @test adjoint(FQ).U ≈ adjoint(F).U
-    @test adjoint(FQ).S ≈ adjoint(F).S * u"m/s"
-    @test adjoint(FQ).Vt ≈ adjoint(F).Vt
+        @test adjoint(FQ).U ≈ adjoint(F).U
+        @test adjoint(FQ).S ≈ adjoint(F).S * u"m/s"
+        @test adjoint(FQ).Vt ≈ adjoint(F).Vt
 
-    @test QA ≈ FQ.U * Diagonal(FQ.S) * FQ.Vt
+        @test QA ≈ FQ.U * Diagonal(FQ.S) * FQ.Vt
+    end
 end
 
 @static if VERSION >= v"1.8.0"
