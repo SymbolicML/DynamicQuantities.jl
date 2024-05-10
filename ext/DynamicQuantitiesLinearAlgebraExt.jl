@@ -1,14 +1,8 @@
 module DynamicQuantitiesLinearAlgebraExt
 
-using DynamicQuantities: UnionAbstractQuantity, QuantityArray, ustrip, dimension, new_quantity, array_op
-
-import LinearAlgebra: svd, Diagonal, eigen, det, diagm
-
-using LinearAlgebra: LinearAlgebra as LA, Algorithm, default_svd_alg, SVD, Adjoint, eigsortby, Eigen
-using DynamicQuantities:
-    DynamicQuantities as DQ, UnionAbstractQuantity, allequal, ustrip, dimension,
-    new_quantity, AbstractDimensions, QuantityArray,
-    constructorof, quantity_type
+using LinearAlgebra: LinearAlgebra as LA
+using DynamicQuantities
+using DynamicQuantities: DynamicQuantities as DQ, quantity_type, new_quantity, DimensionError
 using TestItems: @testitem
 
 DQ.is_ext_loaded(::Val{:LinearAlgebra}) = true
@@ -51,44 +45,127 @@ function Base.:*(
 end
 
 
-function svd(A::QuantityArray; full=false, alg::Algorithm=default_svd_alg(ustrip(A)))
-    F = svd(ustrip(A), full=full, alg=alg)
-    Q = quantity_type(A)
-    S = [
-        constructorof(Q)(F.S[i], dimension(A))
-        for i in eachindex(F.S)
+function LA.svd(A::QuantityArray; full=false, alg::LA.Algorithm=LA.default_svd_alg(ustrip(A)))
+    F = LA.svd(ustrip(A), full=full, alg=alg)
+    S = QuantityArray(F.S, dimension(A), quantity_type(A))
+    return LA.SVD(F.U, S, F.Vt)
+end
+# TODO: functions on SVD type that are working: `size`, `adjoint`, partially working: `inv`, not working: `svdvals`, `ldiv!`.
+
+
+@testitem "svd" begin
+    using DynamicQuantities, LinearAlgebra
+
+    A = [1. 0. 0. 0. 2.; 0. 0. 3. 0. 0.; 0. 0. 0. 0. 0.; 0. 2. 0. 0. 0.]
+    QA = QuantityArray(A, u"m/s")
+
+    F = svd(A)
+    FQ = svd(QA)
+
+    @test F.U ≈ FQ.U
+    @test F.S * u"m/s" ≈ FQ.S
+    @test F.Vt ≈ FQ.Vt
+    @test size(FQ) == size(F)
+
+    @test FQ.S ≈ [3.0u"m/s", 2.23606797749979u"m/s", 2.0u"m/s", 0.0u"m/s"]
+
+    @test adjoint(FQ).U ≈ adjoint(F).U
+    @test adjoint(FQ).S ≈ adjoint(F).S * u"m/s"
+    @test adjoint(FQ).Vt ≈ adjoint(F).Vt
+
+    @test QA ≈ FQ.U * Diagonal(FQ.S) * FQ.Vt
+end
+
+function LA.inv(F::LA.SVD{T,Q,TU,TS}) where {T,Q<:UnionAbstractQuantity,TU,TS<:QuantityArray}
+    stripped_svd = LA.SVD(F.U, ustrip(F.S), F.Vt)
+    return QuantityArray(inv(stripped_svd), inv(dimension(F.S)), quantity_type(F.S))
+end
+
+@testitem "inv of svd" begin
+    using DynamicQuantities, LinearAlgebra
+
+    A = [
+        1.0 0.0 0.0
+        0.0 2.0 0.0
+        0.0 0.0 3.0
     ]
-    return SVD(F.U, S, F.Vt)
-    #Functions on SVD type that are working: `size`, `adjoint`, partially working: `inv`, not working: `svdvals`, `ldiv!`.
+    QA = QuantityArray(A, u"m/s")
+
+    F = svd(A)
+    FQ = svd(QA)
+
+    @test inv(FQ) ≈ inv(F) * inv(u"m/s")
+    
+    # Should be a quantity array for speed:
+    @test inv(FQ) isa QuantityArray
 end
 
-Diagonal(q::QuantityArray) = QuantityArray(Diagonal(ustrip(q)), dimension(q), quantity_type(q))
-function Diagonal(q::Vector{Q}) where {Q<:UnionAbstractQuantity}
-    allequal(dimension.(q)) || throw(DimensionError(first(q), q))
-    return QuantityArray(Diagonal(ustrip.(q)), dimension(first(q)), Q)
+LA.Diagonal(d::Vector{<:UnionAbstractQuantity}) = LA.Diagonal(QuantityArray(d))
+
+# TODO: See https://github.com/JuliaLang/julia/pull/54440
+LA.diagzero(D::LA.Diagonal{T}, _, _) where {T<:Quantity} = zero(first(D.diag))
+LA.fzero(S::LA.Diagonal{T}) where {T<:Quantity} = zero(first(S.diag))
+
+@testitem "Diagonal" begin
+    using DynamicQuantities, LinearAlgebra
+
+    d = [1.0, 2.0, 3.0]
+    QA = Diagonal(QuantityArray(d, u"m"))
+
+    @test QA isa Diagonal{<:UnionAbstractQuantity}
+    @test QA.diag isa QuantityArray
+
+    @test QA == Diagonal(d .* u"m")
+
+    QA_true = [
+        1.0u"m" 0.0u"m" 0.0u"m"
+        0.0u"m" 2.0u"m" 0.0u"m"
+        0.0u"m" 0.0u"m" 3.0u"m"
+    ]
+    
+    # This required the `diagzero` call:
+    @test QA == QA_true
+
+    # Need fzero for this to work
+    @test QA .* ones(3, 3) == QA_true .* ones(3, 3)
+
+    QA2 = Diagonal(d .* u"m")
+    @test QA2 isa Diagonal
+    @test QA2 == QA_true
+
+    # Throws an error if we pass mismatched elements
+    @test_throws DimensionError Diagonal([1.0u"m", 2.0u"s"])
 end
 
-function diagm(q::QuantityArray)
-    return QuantityArray(diagm(ustrip(q)), dimension(q), quantity_type(q))
+function LA.diagm(q::QuantityArray)
+    return QuantityArray(LA.diagm(ustrip(q)), dimension(q), quantity_type(q))
 end
-function diagm(m::Integer, n::Integer, q::QuantityArray)
-    return QuantityArray(diagm(m, n, ustrip(q)), dimension(q), quantity_type(q))
+function LA.diagm(m::Integer, n::Integer, q::QuantityArray)
+    return QuantityArray(LA.diagm(m, n, ustrip(q)), dimension(q), quantity_type(q))
 end
-function diagm(q::Vector{Q}) where {Q<:UnionAbstractQuantity}
+function LA.diagm(q::Vector{Q}) where {Q<:UnionAbstractQuantity}
     allequal(dimension.(q)) || throw(DimensionError(first(q), q))
-    return QuantityArray(diagm(ustrip.(q)), dimension(first(q)), Q)
+    return QuantityArray(LA.diagm(ustrip.(q)), dimension(first(q)), Q)
 end
-function diagm(m::Integer, n::Integer, q::Vector{Q}) where {Q<:UnionAbstractQuantity}
+function LA.diagm(m::Integer, n::Integer, q::Vector{Q}) where {Q<:UnionAbstractQuantity}
     allequal(dimension.(q)) || throw(DimensionError(first(q), q))
-    return QuantityArray(diagm(m,n,ustrip.(q)), dimension(first(q)), Q)
+    return QuantityArray(LA.diagm(m,n,ustrip.(q)), dimension(first(q)), Q)
+end
+@testitem "diagm" begin
+    using DynamicQuantities, LinearAlgebra
+
+    d = [1.0, 2.0, 3.0]
+    @show diagm(d)
 end
 
-function eigen(A::QuantityArray; permute::Bool=true, scale::Bool=true, sortby::Union{Function,Nothing}=eigsortby)
-    F = eigen(ustrip(A), permute=permute, scale=scale, sortby=sortby)
-    return Eigen(QuantityArray(F.values, dimension(A), quantity_type(A)), F.vectors)
+function LA.eigen(A::QuantityArray; permute::Bool=true, scale::Bool=true, sortby::Union{Function,Nothing}=LA.eigsortby)
+    F = LA.eigen(ustrip(A), permute=permute, scale=scale, sortby=sortby)
+    return LA.Eigen(QuantityArray(F.values, dimension(A), quantity_type(A)), F.vectors)
 end
 # functions available for Eigen objects: eigvals, det. Not implemented: inv, isposdef.
 
-det(A::QuantityArray) = constructorof(quantity_type(A))(det(ustrip(A)), dimension(A)^(size(A,1)))
+function LA.det(A::QuantityArray)
+    return constructorof(quantity_type(A))(LA.det(ustrip(A)), dimension(A)^(size(A,1)))
+end
 
 end
