@@ -1,4 +1,5 @@
 using SafeTestsets
+using TestItemRunner
 import Ratios: SimpleRatio
 
 if !hasmethod(round, Tuple{Int, SimpleRatio{Int}})
@@ -32,4 +33,5 @@ else
     @safetestset "Aqua tests" begin
         include("test_aqua.jl")
     end
+    @eval @run_test_items
 end

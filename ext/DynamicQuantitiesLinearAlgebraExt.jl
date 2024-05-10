@@ -10,6 +10,7 @@ using DynamicQuantities:
     UnionAbstractQuantity, allequal, ustrip, dimension,
     new_quantity, AbstractDimensions, QuantityArray,
     constructorof, quantity_type
+using TestItems: @testitem
 
 _norm(u::AbstractArray) = norm(u)
 norm(q::UnionAbstractQuantity, p::Real=2) = new_quantity(typeof(q), norm(ustrip(q), p), dimension(q))
