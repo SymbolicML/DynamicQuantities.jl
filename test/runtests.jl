@@ -23,7 +23,9 @@ end
 # @testitem "Meshes.jl integration tests" begin
 #     include("test_meshes.jl")
 # end
-include("unittests.jl")
+@testitem "Assorted unittests" begin
+    include("unittests.jl")
+end
 
 @testitem "LinearAlgebra.jl integration tests" begin
     include("test_linearalgebra.jl")
