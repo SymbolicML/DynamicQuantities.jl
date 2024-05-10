@@ -1,4 +1,5 @@
 import Compat: allequal
+using TestItems: @testitem
 
 """
     QuantityArray{T,N,D<:AbstractDimensions,Q<:UnionAbstractQuantity,V<:AbstractArray}
@@ -421,32 +422,96 @@ for ARRAY_TYPE in (:AbstractVector, :AbstractMatrix)
         function Base.:/(l::QuantityArray, r::$ARRAY_TYPE)
             return QuantityArray(ustrip(l) / r, dimension(l), quantity_type(l))
         end
-        function Base.:/(l::$ARRAY_TYPE, r::QuantityArray)
-            return QuantityArray(l / ustrip(r), inv(dimension(r)), quantity_type(r))
-        end
         function Base.:\(l::QuantityArray, r::$ARRAY_TYPE)
             return QuantityArray(ustrip(l) \ r, inv(dimension(l)), quantity_type(l))
         end
-        function Base.:\(l::$ARRAY_TYPE, r::QuantityArray)
-            return QuantityArray(l \ ustrip(r), dimension(r), quantity_type(r))
+        function Base.:*(l::$ARRAY_TYPE, r::QuantityArray)
+            return QuantityArray(l * ustrip(r), dimension(r), quantity_type(r))
         end
-
-        function Base.:*(l::QuantityArray{T}, r::$ARRAY_TYPE{T}) where {T}
-            return QuantityArray(ustrip(l) * r, dimension(l), quantity_type(l))
-        end
-        function Base.:/(l::QuantityArray{T}, r::$ARRAY_TYPE{T}) where {T}
-            return QuantityArray(ustrip(l) / r, dimension(l), quantity_type(l))
-        end
-        function Base.:/(l::$ARRAY_TYPE{T}, r::QuantityArray{T}) where {T}
+        function Base.:/(l::$ARRAY_TYPE, r::QuantityArray)
             return QuantityArray(l / ustrip(r), inv(dimension(r)), quantity_type(r))
         end
-        function Base.:\(l::QuantityArray{T}, r::$ARRAY_TYPE{T}) where {T}
-            return QuantityArray(ustrip(l) \ r, inv(dimension(l)), quantity_type(l))
-        end
-        function Base.:\(l::$ARRAY_TYPE{T}, r::QuantityArray{T}) where {T}
+        function Base.:\(l::$ARRAY_TYPE, r::QuantityArray)
             return QuantityArray(l \ ustrip(r), dimension(r), quantity_type(r))
         end
     end
 end
 
+@testitem "Basic linear algebra operations" begin
+    using DynamicQuantities
+
+    for Q in (RealQuantity, Quantity, GenericQuantity), T in (Float16, Float32)
+        
+        I = [1 0
+             0 1]
+        A = QuantityArray(rand(T, 2, 2) + I, Q{T}(u"m"))
+        q = QuantityArray(randn(T, 2), Q{T}(u"m"))
+
+        # Vector multiplication and division
+        r = A \ q
+        @test ustrip(r) ≈ ustrip(A) \ ustrip(q)
+        @test dimension(r) == dimension(q) / dimension(A)
+        @test eltype(r) <: Q{T}
+        @test typeof(r) <: QuantityArray{T}
+        
+        q2 = A * r
+        @test q2 ≈ q
+        @test dimension(q2) == dimension(q)
+        @test eltype(q2) <: Q{T}
+        @test typeof(q2) <: QuantityArray{T}
+
+        # Now, with q being a regular array
+        q = ustrip(q)
+        r = A \ q
+        @test ustrip(r) ≈ ustrip(A) \ ustrip(q)
+        @test dimension(r) == dimension(q) / dimension(A)
+        @test dimension(A * r) == dimension(q)
+        @test (A * r) ≈ q
+        @test eltype(r) <: Q{T}
+        @test typeof(r) <: QuantityArray{T}
+    end
+end
+
+@testitem "Matrix operations" begin
+    using DynamicQuantities
+    using DynamicQuantities: dim_type
+
+    for Q in (RealQuantity, Quantity, GenericQuantity), T in (Float16, Float32)
+
+        I = [1 0
+             0 1]
+        A = QuantityArray(rand(T, 2, 2) + I, Q{T}(u"m"))
+        B = QuantityArray(rand(T, 2, 2) + I, Q{T}(u"s^2"))
+        @test ustrip(A * B) ≈ ustrip(A) * ustrip(B)
+        @test dimension(A * B) == dimension(A) * dimension(B)
+        @test dimension(B * A) == dimension(B) * dimension(A)
+        @test eltype(A * B) <: Q{T}
+        @test typeof(A * B) <: QuantityArray{T}
+
+        # ldiv
+        @test ustrip(A \ B) ≈ ustrip(A) \ ustrip(B)
+        @test ustrip(A \ B) ≈ inv(ustrip(A)) * ustrip(B)
+        @test dimension(A \ B) == dimension(B) / dimension(A)
+        @test eltype(A \ B) <: Q{T}
+        @test typeof(A \ B) <: QuantityArray{T}
+    end
+end
+
 Base.inv(q::QuantityArray) = QuantityArray(inv(ustrip(q)), inv(dimension(q)), quantity_type(q))
+
+@testitem "Inverse" begin
+    using DynamicQuantities
+
+    for Q in (RealQuantity, Quantity, GenericQuantity), T in (Float16, Float32)
+
+        I = [1 0
+             0 1]
+        A = QuantityArray(rand(T, 2, 2) + I, Q{T}(u"m"))
+        @test ustrip(inv(A)) ≈ inv(ustrip(A))
+        @test dimension(inv(A)) == inv(dimension(A))
+        @test eltype(inv(A)) <: Q{T}
+        @test typeof(inv(A)) <: QuantityArray{T}
+
+        @test inv(A) * A ≈ I
+    end
+end
