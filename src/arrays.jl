@@ -370,9 +370,10 @@ function all_dimensions_equal(A::AbstractArray, B::AbstractArray)
     return d == dimension(first(B)) && all(i -> d == dimension(A[i]), eachindex(A)) && all(i -> d == dimension(B[i]), eachindex(B))
 end
 
-for U in (:(QuantityArray), :(AbstractArray)), V in (:(QuantityArray), :(AbstractArray))
+for U in (:(QuantityArray), :(AbstractArray), :(AbstractArray{<:AbstractQuantity})),
+    V in (:(QuantityArray), :(AbstractArray), :(AbstractArray{<:AbstractQuantity}))
 
-    if U == :(AbstractArray) && V == :(AbstractArray)
+    if (U == :(AbstractArray) && V == :(AbstractArray))
         continue
     end
 
