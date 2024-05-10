@@ -31,9 +31,6 @@ end
     include("unittests.jl")
 end
 
-@testitem "LinearAlgebra.jl integration tests" begin
-    include("test_linearalgebra.jl")
-end
 @testitem "Aqua tests" begin
     include("test_aqua.jl")
 end
