@@ -6,7 +6,7 @@ if !hasmethod(round, Tuple{Int, SimpleRatio{Int}})
     Base.round(::Type{T}, x::SimpleRatio) where {T} = round(T, x.num // x.den)
 end
 
-@testset "Test upreferred disallowed" tags=[:upreferred] begin
+@testitem "Test upreferred disallowed" tags=[:upreferred] begin
     include("test_ban_upreferred.jl")
 end
 
