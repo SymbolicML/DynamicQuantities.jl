@@ -1974,9 +1974,16 @@ end
 # test block.
 map_count_before_registering = length(UNIT_MAPPING)
 all_map_count_before_registering = length(ALL_MAPPING)
-@register_unit MyV u"V"
-@register_unit MySV us"V"
-@register_unit MySV2 us"km/h"
+
+if :MyV ∉ UNIT_SYMBOLS  # (In case we run this script twice)
+    @eval @register_unit MyV u"V"
+end
+if :MySV ∉ UNIT_SYMBOLS
+    @eval @register_unit MySV us"V"
+end
+if :MySV2 ∉ UNIT_SYMBOLS
+    @eval @register_unit MySV2 us"km/h"
+end
 
 if VERSION >= v"1.9"
     @test_throws "Unit `m` is already defined as `1.0 m`" esc(_register_unit(:m, u"s"))
@@ -1986,6 +1993,10 @@ if VERSION >= v"1.9"
 end
 
 @testset "Register Unit" begin
+    MyV = u"MyV"
+    MySV = u"MySV"
+    MySV2 = u"MySV2"
+
     @test MyV === u"V"
     @test MyV == us"V"
     @test MySV == us"V"
