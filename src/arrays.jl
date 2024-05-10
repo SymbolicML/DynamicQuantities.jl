@@ -405,25 +405,23 @@ utemperature(q::QuantityArray) = utemperature(dimension(q))
 uluminosity(q::QuantityArray) = uluminosity(dimension(q))
 uamount(q::QuantityArray) = uamount(dimension(q))
 
-function Base.:*(l::QuantityArray, r::QuantityArray)
-    l, r = promote_except_value(l, r)
-    return QuantityArray(ustrip(l) * ustrip(r), dimension(l) * dimension(r), quantity_type(l))
-end
-function Base.:/(l::QuantityArray, r::QuantityArray)
-    l, r = promote_except_value(l, r)
-    return QuantityArray(ustrip(l) / ustrip(r), dimension(l) / dimension(r), quantity_type(l))
-end
-function Base.:\(l::QuantityArray, r::QuantityArray)
-    l, r = promote_except_value(l, r)
-    return QuantityArray(ustrip(l) \ ustrip(r), dimension(r) / dimension(l), quantity_type(l))
-end
 
 # Loop over these to deal with ambiguities (rather than a union type)
-for op in (:(Base.:*), :(Base.:/), :(Base.:\)),
-    ARRAY_TYPE in (:AbstractVector, :AbstractMatrix),
-    (L, R) in ((:QuantityArray, ARRAY_TYPE), (ARRAY_TYPE, :QuantityArray))
-    @eval begin
-        function $(op)(l::$L, r::$R)
+for op in (:(Base.:*), :(Base.:/), :(Base.:\))
+
+    @eval function $(op)(l::QuantityArray, r::QuantityArray)
+        l, r = promote_except_value(l, r)
+        return QuantityArray(
+            $(op)(ustrip(l), ustrip(r)),
+            $(op)(dimension(l), dimension(r)),
+            quantity_type(l)
+        )
+    end
+    
+    for ARRAY_TYPE in (:AbstractVector, :AbstractMatrix),
+        (L, R) in ((:QuantityArray, ARRAY_TYPE), (ARRAY_TYPE, :QuantityArray))
+
+        @eval function $(op)(l::$L, r::$R)
             return QuantityArray(
                 $(op)(ustrip(l), ustrip(r)),
                 $(op)(dimension(l), dimension(r)),
