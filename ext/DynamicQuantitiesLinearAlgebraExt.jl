@@ -76,28 +76,32 @@ end
     @test QA ≈ FQ.U * Diagonal(FQ.S) * FQ.Vt
 end
 
-function LA.inv(F::LA.SVD{T,Q,TU,TS}) where {T,Q<:UnionAbstractQuantity,TU,TS<:QuantityArray}
-    stripped_svd = LA.SVD(F.U, ustrip(F.S), F.Vt)
-    return QuantityArray(inv(stripped_svd), inv(dimension(F.S)), quantity_type(F.S))
+@static if VERSION >= v"1.8.0"
+    @eval function LA.inv(F::LA.SVD{T,Q,TU,TS}) where {T,Q<:UnionAbstractQuantity,TU,TS<:QuantityArray}
+        stripped_svd = LA.SVD(F.U, ustrip(F.S), F.Vt)
+        return QuantityArray(inv(stripped_svd), inv(dimension(F.S)), quantity_type(F.S))
+    end
 end
 
 @testitem "inv of svd" begin
     using DynamicQuantities, LinearAlgebra
 
-    A = [
-        1.0 0.0 0.0
-        0.0 2.0 0.0
-        0.0 0.0 3.0
-    ]
-    QA = QuantityArray(A, u"m/s")
+    if VERSION >= v"1.8.0"
+        A = [
+            1.0 0.0 0.0
+            0.0 2.0 0.0
+            0.0 0.0 3.0
+        ]
+        QA = QuantityArray(A, u"m/s")
 
-    F = svd(A)
-    FQ = svd(QA)
+        F = svd(A)
+        FQ = svd(QA)
 
-    @test inv(FQ) ≈ inv(F) * inv(u"m/s")
-    
-    # Should be a quantity array for speed:
-    @test inv(FQ) isa QuantityArray
+        @test inv(FQ) ≈ inv(F) * inv(u"m/s")
+        
+        # Should be a quantity array for speed:
+        @test inv(FQ) isa QuantityArray
+    end
 end
 
 LA.Diagonal(d::Vector{<:UnionAbstractQuantity}) = LA.Diagonal(QuantityArray(d))
