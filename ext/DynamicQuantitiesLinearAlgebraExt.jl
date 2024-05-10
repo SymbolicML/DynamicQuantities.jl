@@ -149,13 +149,27 @@ function LA.diagm(q::Vector{Q}) where {Q<:UnionAbstractQuantity}
 end
 function LA.diagm(m::Integer, n::Integer, q::Vector{Q}) where {Q<:UnionAbstractQuantity}
     allequal(dimension.(q)) || throw(DimensionError(first(q), q))
-    return QuantityArray(LA.diagm(m,n,ustrip.(q)), dimension(first(q)), Q)
+    return QuantityArray(LA.diagm(m, n, ustrip.(q)), dimension(first(q)), Q)
 end
 @testitem "diagm" begin
     using DynamicQuantities, LinearAlgebra
 
-    d = [1.0, 2.0, 3.0]
-    @show diagm(d)
+    A = diagm([1.0, 2.0, 3.0])
+    QA1 = diagm([1.0, 2.0, 3.0] .* u"m")
+    QA2 = diagm([1.0, 2.0, 3.0]) .* u"m"
+    QA3 = [
+        1.0u"m" 0.0u"m" 0.0u"m"
+        0.0u"m" 2.0u"m" 0.0u"m"
+        0.0u"m" 0.0u"m" 3.0u"m"
+    ]
+    QA4 = diagm(QuantityArray([1.0, 2.0, 3.0], u"m"))
+    QA5 = diagm(3, 3, [1.0, 2.0, 3.0] .* u"m")
+
+    @test A == ustrip(QA1)
+    @test QA1 == QA2
+    @test QA1 == QA3
+    @test QA1 == QA4
+    @test QA1 == QA5
 end
 
 function LA.eigen(A::QuantityArray; permute::Bool=true, scale::Bool=true, sortby::Union{Function,Nothing}=LA.eigsortby)
