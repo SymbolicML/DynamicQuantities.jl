@@ -125,6 +125,7 @@ function Base.convert(::Type{QA1}, A::QA2) where {QA1<:QuantityArray,QA2<:Quanti
 end
 
 @inline ustrip(A::QuantityArray) = A.value
+@inline ustrip(A::AbstractArray{<:UnionAbstractQuantity}) = ustrip.(A)
 @inline dimension(A::QuantityArray) = A.dimensions
 
 array_type(::Type{<:QuantityArray{T,N,D,Q,V}}) where {T,N,D,Q,V} = V

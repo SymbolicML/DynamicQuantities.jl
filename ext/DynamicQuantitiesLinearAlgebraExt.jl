@@ -33,7 +33,7 @@ for op in (:(Base.:*), :(Base.:/), :(Base.:\)),
     ),
     (L, R) in ((Q_ARRAY_TYPE, ARRAY_TYPE), (ARRAY_TYPE, Q_ARRAY_TYPE))
 
-    @eval $op(l::$L, r::$R) = array_op($op, l, r)
+    @eval $op(l::$L, r::$R) = DQ.array_op($op, l, r)
 end
 
 function Base.:*(
@@ -144,6 +144,11 @@ LA.fzero(S::LA.Diagonal{T}) where {T<:Quantity} = zero(first(S))
 
     # Throws an error if we pass mismatched elements
     @test_throws DimensionError Diagonal([1.0u"m", 2.0u"s"])
+
+    # With *
+    QA3 = Diagonal([1.0u"m/s", 1.0u"m/s", 1.0u"m/s"])
+    v = QuantityArray([2.0u"s", 3.0u"s", 4.0u"s"])
+    @test QA3 * v == [2.0u"m", 3.0u"m", 4.0u"m"]
 end
 
 
@@ -176,12 +181,14 @@ end
     ]
     QA4 = diagm(QuantityArray([1.0, 2.0, 3.0], u"m"))
     QA5 = diagm(3, 3, [1.0, 2.0, 3.0] .* u"m")
+    QA6 = diagm(3, 3, QuantityArray([1.0, 2.0, 3.0], u"m"))
 
     @test A == ustrip(QA1)
     @test QA1 == QA2
     @test QA1 == QA3
     @test QA1 == QA4
     @test QA1 == QA5
+    @test QA1 == QA6
 end
 
 # function LA.eigen(A::QuantityArray; permute::Bool=true, scale::Bool=true, sortby::Union{Function,Nothing}=LA.eigsortby)
