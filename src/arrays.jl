@@ -470,6 +470,30 @@ end
         @test eltype(r) <: Q{T}
         @test typeof(r) <: QuantityArray{T}
     end
+
+    let T = Float64, Q = Quantity
+        for dim1 in ((3,), (3, 3)), dim2 in ((3,), (3, 3))
+            A = QuantityArray(rand(T, dim1...), Q{T}(u"m"))
+            B = QuantityArray(rand(T, dim2...), Q{T}(u"s^2"))
+            
+            if dim1 == (3,) && dim2 == (3,)
+                @test ustrip(A / B) ≈ ustrip(A) / ustrip(B)
+                @test dimension(A / B) == dimension(A) / dimension(B)
+                @test eltype(A / B) <: Q{T}
+                @test typeof(A / B) <: QuantityArray{T}
+            elseif length(dim1) >= length(dim2)
+                @test ustrip(A * B) ≈ ustrip(A) * ustrip(B)
+                @test dimension(A * B) == dimension(A) * dimension(B)
+                @test eltype(A * B) <: Q{T}
+                @test typeof(A * B) <: QuantityArray{T}
+            else
+                @test ustrip(A \ B) ≈ ustrip(A) \ ustrip(B)
+                @test dimension(A \ B) == dimension(B) / dimension(A)
+                @test eltype(A \ B) <: Q{T}
+                @test typeof(A \ B) <: QuantityArray{T}
+            end
+        end
+    end
 end
 
 @testitem "Matrix operations" begin
