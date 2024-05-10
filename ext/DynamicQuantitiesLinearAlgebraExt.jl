@@ -103,8 +103,8 @@ end
 LA.Diagonal(d::Vector{<:UnionAbstractQuantity}) = LA.Diagonal(QuantityArray(d))
 
 # TODO: See https://github.com/JuliaLang/julia/pull/54440
-LA.diagzero(D::LA.Diagonal{T}, _, _) where {T<:Quantity} = zero(first(D.diag))
-LA.fzero(S::LA.Diagonal{T}) where {T<:Quantity} = zero(first(S.diag))
+LA.diagzero(D::LA.Diagonal{T}, _, _) where {T<:Quantity} = zero(first(D))
+LA.fzero(S::LA.Diagonal{T}) where {T<:Quantity} = zero(first(S))
 
 @testitem "Diagonal" begin
     using DynamicQuantities, LinearAlgebra
