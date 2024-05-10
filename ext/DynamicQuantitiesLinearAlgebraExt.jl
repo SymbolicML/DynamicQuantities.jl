@@ -202,4 +202,6 @@ end
     @test det(QA2) == 6.0u"m^3/s^3"
 end
 
+# TODO: Tests from missing parts of LinearAlgebra interface
+
 end
