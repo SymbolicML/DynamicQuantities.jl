@@ -290,9 +290,6 @@ end
 
         @test isapprox(uX, uX, atol=Quantity{T,D}(1e-6, length=2.5, luminosity=0.5))
         @test_throws DimensionError isapprox(uX, uX, atol=1e-6)
-        @test_throws ErrorException DynamicQuantities._norm(1.0)
-        VERSION >= v"1.9" &&
-            @test_throws "Please load the `LinearAlgebra.jl` package." DynamicQuantities._norm(1.0)
 
         x = GenericQuantity(ones(T, 32))
         @test ustrip(x + ones(T, 32))[32] == 2
@@ -1977,9 +1974,19 @@ end
 # test block.
 map_count_before_registering = length(UNIT_MAPPING)
 all_map_count_before_registering = length(ALL_MAPPING)
-@register_unit MyV u"V"
-@register_unit MySV us"V"
-@register_unit MySV2 us"km/h"
+
+skipped_register_unit = false
+if :MyV ∉ UNIT_SYMBOLS  # (In case we run this script twice)
+    @eval @register_unit MyV u"V"
+else
+    skipped_register_unit = true
+end
+if :MySV ∉ UNIT_SYMBOLS
+    @eval @register_unit MySV us"V"
+end
+if :MySV2 ∉ UNIT_SYMBOLS
+    @eval @register_unit MySV2 us"km/h"
+end
 
 if VERSION >= v"1.9"
     @test_throws "Unit `m` is already defined as `1.0 m`" esc(_register_unit(:m, u"s"))
@@ -1989,13 +1996,19 @@ if VERSION >= v"1.9"
 end
 
 @testset "Register Unit" begin
+    MyV = u"MyV"
+    MySV = u"MySV"
+    MySV2 = u"MySV2"
+
     @test MyV === u"V"
     @test MyV == us"V"
     @test MySV == us"V"
     @test MySV2 == us"km/h"
 
-    @test length(UNIT_MAPPING) == map_count_before_registering + 3
-    @test length(ALL_MAPPING) == all_map_count_before_registering + 3
+    if !skipped_register_unit
+        @test length(UNIT_MAPPING) == map_count_before_registering + 3
+        @test length(ALL_MAPPING) == all_map_count_before_registering + 3
+    end
 
     for my_unit in (MySV, MyV)
         @test my_unit in UNIT_VALUES

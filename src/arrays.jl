@@ -1,4 +1,5 @@
 import Compat: allequal
+using TestItems: @testitem
 
 """
     QuantityArray{T,N,D<:AbstractDimensions,Q<:UnionAbstractQuantity,V<:AbstractArray}
@@ -85,6 +86,28 @@ function Base.promote_rule(::Type{QA1}, ::Type{QA2}) where {QA1<:QuantityArray,Q
 
     return QuantityArray{T,N,D,Q,V}
 end
+@inline function promote_except_value(q1::QA1, q2::QA2) where {
+    T1,T2,D1,D2,Q1,Q2,
+    QA1<:QuantityArray{T1,N1,D1,Q1} where N1,
+    QA2<:QuantityArray{T2,N2,D2,Q2} where N2,
+}
+    if D1 == D2 && constructorof(Q1) == constructorof(Q2)
+        return (q1, q2)
+    end
+    Q = promote_type(Q1, Q2)
+    D = promote_type(D1, D2)
+
+    # We create quantities here to account for numerical
+    # values accumulated when converting dimension types,
+    # like SymbolicDimensions to Dimensions
+    d1 = convert(with_type_parameters(Q, T1, D), new_quantity(Q, one(T1), dimension(q1)))
+    d2 = convert(with_type_parameters(Q, T2, D), new_quantity(Q, one(T2), dimension(q2)))
+
+    return (
+        QuantityArray(ustrip(q1), d1),
+        QuantityArray(ustrip(q2), d2),
+    )
+end
 
 function Base.convert(::Type{QA}, A::QA) where {QA<:QuantityArray}
     return A
@@ -102,6 +125,7 @@ function Base.convert(::Type{QA1}, A::QA2) where {QA1<:QuantityArray,QA2<:Quanti
 end
 
 @inline ustrip(A::QuantityArray) = A.value
+@inline ustrip(A::AbstractArray{<:UnionAbstractQuantity}) = ustrip.(A)
 @inline dimension(A::QuantityArray) = A.dimensions
 
 array_type(::Type{<:QuantityArray{T,N,D,Q,V}}) where {T,N,D,Q,V} = V
@@ -321,7 +345,8 @@ Base.fill(x::UnionAbstractQuantity, dims::Dims...) = QuantityArray(fill(ustrip(x
 Base.fill(x::UnionAbstractQuantity, t::Tuple{}) = QuantityArray(fill(ustrip(x), t), dimension(x), typeof(x))
 
 # Will be overloaded by `DynamicQuantitiesLinearAlgebraExt`:
-_norm(_) = error("Please load the `LinearAlgebra.jl` package.")
+function norm end
+is_ext_loaded(::Val) = false
 
 # Define isapprox for vectors of Quantity's
 struct AutoTolerance end
@@ -338,25 +363,36 @@ function rtoldefault(::Union{T1,Type{T1}}, ::Union{T2,Type{T2}}, atol, ::AutoTol
 end
 
 all_dimensions_equal(A::QuantityArray, B::QuantityArray) = dimension(A) == dimension(B)
-all_dimensions_equal(A::QuantityArray, B::AbstractArray{<:UnionAbstractQuantity}) = all(i -> dimension(A) == dimension(B[i]), eachindex(B))
-all_dimensions_equal(A::AbstractArray{<:UnionAbstractQuantity}, B::QuantityArray) = all(i -> dimension(B) == dimension(A[i]), eachindex(A))
-function all_dimensions_equal(A::AbstractArray{<:UnionAbstractQuantity}, B::AbstractArray{<:UnionAbstractQuantity})
+all_dimensions_equal(A::QuantityArray, B::AbstractArray) = all(i -> dimension(A) == dimension(B[i]), eachindex(B))
+all_dimensions_equal(A::AbstractArray, B::QuantityArray) = all(i -> dimension(B) == dimension(A[i]), eachindex(A))
+function all_dimensions_equal(A::AbstractArray, B::AbstractArray)
     d = dimension(first(A))
     return d == dimension(first(B)) && all(i -> d == dimension(A[i]), eachindex(A)) && all(i -> d == dimension(B[i]), eachindex(B))
 end
 
-function Base.isapprox(
-    u::Union{QuantityArray,AbstractArray{<:UnionAbstractQuantity}},
-    v::Union{QuantityArray,AbstractArray{<:UnionAbstractQuantity}};
-    atol=AutoTolerance(),
-    rtol=AutoTolerance(),
-    norm::F=_norm
-) where {F<:Function}
-    all_dimensions_equal(u, v) || throw(DimensionError(u, v))
-    d = norm(u .- v)
-    _atol = atoldefault(first(u), atol)
-    _rtol = rtoldefault(ustrip(first(u)), ustrip(first(v)), _atol, rtol)
-    return iszero(_rtol) ? d <= _atol : d <= max(_atol, _rtol*max(norm(u), norm(v)))
+for U in (:(QuantityArray), :(AbstractArray), :(AbstractArray{<:AbstractQuantity})),
+    V in (:(QuantityArray), :(AbstractArray), :(AbstractArray{<:AbstractQuantity}))
+
+    if (U == :(AbstractArray) && V == :(AbstractArray))
+        continue
+    end
+
+    @eval function Base.isapprox(
+        u::$U,
+        v::$V;
+        atol=AutoTolerance(),
+        rtol=AutoTolerance(),
+        norm::F=norm
+    ) where {F<:Function}
+        if !is_ext_loaded(Val(:LinearAlgebra))
+            error("Please load the `LinearAlgebra.jl` package.")
+        end
+        all_dimensions_equal(u, v) || throw(DimensionError(u, v))
+        d = norm(u .- v)
+        _atol = atoldefault(first(u), atol)
+        _rtol = rtoldefault(ustrip(first(u)), ustrip(first(v)), _atol, rtol)
+        return iszero(_rtol) ? d <= _atol : d <= max(_atol, _rtol*max(norm(u), norm(v)))
+    end
 end
 
 # Unit functions
@@ -367,3 +403,165 @@ ucurrent(q::QuantityArray) = ucurrent(dimension(q))
 utemperature(q::QuantityArray) = utemperature(dimension(q))
 uluminosity(q::QuantityArray) = uluminosity(dimension(q))
 uamount(q::QuantityArray) = uamount(dimension(q))
+
+
+@inline function array_op(f::F, l, r) where {F}
+    let (l, r) = if l isa QuantityArray && r isa QuantityArray
+            promote_except_value(l, r)
+        else
+            l, r
+        end
+        return QuantityArray(
+            f(ustrip(l), ustrip(r)),
+            f(dimension(l), dimension(r)),
+            quantity_type(l isa QuantityArray ? l : r)
+        )
+    end
+end
+
+# Creates *, /, and \ for arrays
+for op in (:(Base.:*), :(Base.:/), :(Base.:\))
+
+    @eval $op(l::QuantityArray{<:Any,1}, r::QuantityArray{<:Any,1}) = array_op($op, l, r)
+    @eval $op(l::QuantityArray{<:Any,1}, r::QuantityArray{<:Any,2}) = array_op($op, l, r)
+    @eval $op(l::QuantityArray{<:Any,2}, r::QuantityArray{<:Any,1}) = array_op($op, l, r)
+    @eval $op(l::QuantityArray{<:Any,2}, r::QuantityArray{<:Any,2}) = array_op($op, l, r)
+
+    for Q_ARRAY_TYPE in (QuantityArray{<:Any,1}, QuantityArray{<:Any,2}),
+        ARRAY_TYPE in (AbstractVector, AbstractMatrix),
+        (L, R) in ((Q_ARRAY_TYPE, ARRAY_TYPE), (ARRAY_TYPE, Q_ARRAY_TYPE))
+
+        @eval $op(l::$L, r::$R) = array_op($op, l, r)
+        # TODO: Do we need to define `*` on NoDims, or is Julia
+        # smart enough to inline it and see it is a non-op?
+    end
+end
+
+@testitem "Basic linear algebra operations" begin
+    using DynamicQuantities
+    using LinearAlgebra
+
+    for Q in (RealQuantity, Quantity, GenericQuantity), T in (Float16, Float32)
+
+        I = [1 0
+             0 1]
+        A = QuantityArray(rand(T, 2, 2) + I, Q{T}(u"m"))
+        q = QuantityArray(randn(T, 2), Q{T}(u"m"))
+
+        # Vector multiplication and division
+        r = A \ q
+        @test ustrip(r) ≈ ustrip(A) \ ustrip(q)
+        @test dimension(r) == dimension(q) / dimension(A)
+        @test eltype(r) <: Q{T}
+        @test typeof(r) <: QuantityArray{T}
+
+        q2 = A * r
+        @test q2 ≈ q
+        @test dimension(q2) == dimension(q)
+        @test eltype(q2) <: Q{T}
+        @test typeof(q2) <: QuantityArray{T}
+
+        # Now, with q being a regular array
+        q = ustrip(q)
+        r = A \ q
+        @test ustrip(r) ≈ ustrip(A) \ ustrip(q)
+        @test dimension(r) == dimension(q) / dimension(A)
+        @test dimension(A * r) == dimension(q)
+        @test (A * r) ≈ q
+        @test eltype(r) <: Q{T}
+        @test typeof(r) <: QuantityArray{T}
+    end
+
+    let T = Float64, Q = Quantity
+        for dim1 in ((3,), (3, 3)), dim2 in ((3,), (3, 3))
+            A = QuantityArray(rand(T, dim1...), Q{T}(u"m"))
+            B = QuantityArray(rand(T, dim2...), Q{T}(u"s^2"))
+            
+            if dim1 == (3,) && dim2 == (3,)
+                @test ustrip(A / B) ≈ ustrip(A) / ustrip(B)
+                @test dimension(A / B) == dimension(A) / dimension(B)
+                @test eltype(A / B) <: Q{T}
+                @test typeof(A / B) <: QuantityArray{T}
+            elseif length(dim1) >= length(dim2)
+                @test ustrip(A * B) ≈ ustrip(A) * ustrip(B)
+                @test dimension(A * B) == dimension(A) * dimension(B)
+                @test eltype(A * B) <: Q{T}
+                @test typeof(A * B) <: QuantityArray{T}
+            else
+                @test ustrip(A \ B) ≈ ustrip(A) \ ustrip(B)
+                @test dimension(A \ B) == dimension(B) / dimension(A)
+                @test eltype(A \ B) <: Q{T}
+                @test typeof(A \ B) <: QuantityArray{T}
+            end
+        end
+    end
+end
+
+@testitem "Matrix operations" begin
+    using DynamicQuantities
+    using DynamicQuantities: dim_type
+
+    for Q in (RealQuantity, Quantity, GenericQuantity), T in (Float16, Float32)
+
+        I = [1 0
+             0 1]
+        A = QuantityArray(rand(T, 2, 2) + I, Q{T}(u"m"))
+        B = QuantityArray(rand(T, 2, 2) + I, Q{T}(u"s^2"))
+        @test ustrip(A * B) ≈ ustrip(A) * ustrip(B)
+        @test dimension(A * B) == dimension(A) * dimension(B)
+        @test dimension(B * A) == dimension(B) * dimension(A)
+        @test eltype(A * B) <: Q{T}
+        @test typeof(A * B) <: QuantityArray{T}
+
+        # ldiv
+        @test ustrip(A \ B) ≈ ustrip(A) \ ustrip(B)
+        @test ustrip(A \ B) ≈ inv(ustrip(A)) * ustrip(B)
+        @test dimension(A \ B) == dimension(B) / dimension(A)
+        @test eltype(A \ B) <: Q{T}
+        @test typeof(A \ B) <: QuantityArray{T}
+    end
+end
+
+@testitem "Promotion rules" begin
+    using DynamicQuantities
+    using DynamicQuantities: value_type
+
+    I = [1 0
+         0 1]
+
+    for T1 in (Float16, Float32), T2 in (Float16, Float32)
+        A = QuantityArray(rand(T1, 2, 2) + I, Quantity{T1}(u"m"))
+        B = QuantityArray(rand(T2, 2, 2) + I, Quantity{T2}(u"A"))
+        q = QuantityArray(rand(T2, 2), Quantity{T2}(u"s^2"))
+
+        @test value_type(A \ q) == promote_type(T1, T2)
+        @test value_type(A * B) == promote_type(T1, T2)
+
+        @test value_type(A \ ustrip(q)) == promote_type(T1, T2)
+        @test value_type(A * ustrip(B)) == promote_type(T1, T2)
+
+        @test (ustrip(A) \ q) isa QuantityArray
+        @test value_type(ustrip(A) \ q) == promote_type(T1, T2)
+        @test ustrip(A) * B isa QuantityArray
+        @test value_type(ustrip(A) * B) == promote_type(T1, T2)
+    end
+end
+
+Base.inv(q::QuantityArray) = QuantityArray(inv(ustrip(q)), inv(dimension(q)), quantity_type(q))
+
+@testitem "Inverse" begin
+    using DynamicQuantities
+
+    for Q in (RealQuantity, Quantity, GenericQuantity), T in (Float16, Float32)
+
+        I = [1 0
+             0 1]
+        A = QuantityArray(rand(T, 2, 2) + I, Q{T}(u"m"))
+        @test ustrip(inv(A)) ≈ inv(ustrip(A))
+        @test dimension(inv(A)) == inv(dimension(A))
+        @test eltype(inv(A)) <: Q{T}
+        @test typeof(inv(A)) <: QuantityArray{T}
+
+        @test inv(A) * A ≈ I
+    end
+end

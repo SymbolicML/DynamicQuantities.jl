@@ -210,6 +210,7 @@ for f in (
         return new_quantity(typeof(q), $f(ustrip(q)), dimension(q))
     end
 end
+Base.adjoint(d::AbstractDimensions) = d
 for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES, f in (:copysign, :flipsign,)
     # These treat the x as the magnitude, so we take the dimensions from there,
     # and ignore any dimensions on y, since those will cancel out.
