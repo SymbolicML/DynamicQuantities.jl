@@ -137,6 +137,7 @@ LA.fzero(S::LA.Diagonal{T}) where {T<:Quantity} = zero(first(S))
     @test_throws DimensionError Diagonal([1.0u"m", 2.0u"s"])
 end
 
+
 function LA.diagm(q::QuantityArray)
     return QuantityArray(LA.diagm(ustrip(q)), dimension(q), quantity_type(q))
 end
@@ -151,6 +152,8 @@ function LA.diagm(m::Integer, n::Integer, q::Vector{Q}) where {Q<:UnionAbstractQ
     allequal(dimension.(q)) || throw(DimensionError(first(q), q))
     return QuantityArray(LA.diagm(m, n, ustrip.(q)), dimension(first(q)), Q)
 end
+
+
 @testitem "diagm" begin
     using DynamicQuantities, LinearAlgebra
 
@@ -176,10 +179,27 @@ end
 #     F = LA.eigen(ustrip(A), permute=permute, scale=scale, sortby=sortby)
 #     return LA.Eigen(QuantityArray(F.values, dimension(A), quantity_type(A)), F.vectors)
 # end
-# functions available for Eigen objects: eigvals, det. Not implemented: inv, isposdef.
+## functions available for Eigen objects: eigvals, det. Not implemented: inv, isposdef.
 
 function LA.det(A::QuantityArray)
-    return constructorof(quantity_type(A))(LA.det(ustrip(A)), dimension(A)^(size(A,1)))
+    return new_quantity(quantity_type(A), LA.det(ustrip(A)), dimension(A)^(size(A,1)))
+end
+
+
+@testitem "det" begin
+    using DynamicQuantities, LinearAlgebra
+
+    A = [
+        1.0 0.0 0.0
+        0.0 2.0 0.0
+        0.0 0.0 3.0
+    ]
+    QA = QuantityArray(A, u"m/s")
+
+    @test det(QA) == 6.0u"m^3/s^3"
+
+    QA2 = diagm([1.0u"m/s", 2.0u"m/s", 3.0u"m/s"])
+    @test det(QA2) == 6.0u"m^3/s^3"
 end
 
 end
