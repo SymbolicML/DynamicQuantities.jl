@@ -6,6 +6,7 @@ export Quantity, GenericQuantity, RealQuantity
 export FixedRational
 export AbstractDimensions, Dimensions, NoDims
 export AbstractSymbolicDimensions, SymbolicDimensions, SymbolicDimensionsSingleton
+export StaticDimensions
 export QuantityArray
 export DimensionError
 export ustrip, dimension
@@ -24,6 +25,7 @@ include("units.jl")
 include("constants.jl")
 include("uparse.jl")
 include("symbolic_dimensions.jl")
+include("static_dimensions.jl")
 include("complex.jl")
 include("register_units.jl")
 include("disambiguities.jl")
