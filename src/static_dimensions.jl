@@ -176,6 +176,10 @@ end
     f(x, y) = x .* y
     @inferred f(x, x)
     @test f(x, x) isa Vector{<:Quantity{Float64,<:StaticDimensions}}
+
+    # Should automatically promote to regular Dimensions
+    z = [1.0u"m", Quantity{Float64,StaticDimensions}(1.0u"m")]
+    @test z isa Vector{<:Quantity{Float64,<:Dimensions}}
 end
 
 @testitem "Using zero and oneunit now work" begin
