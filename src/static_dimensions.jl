@@ -11,10 +11,13 @@ This is not yet stable, so this type is not exported.
 struct StaticDimensions{R,D<:AbstractDimensions{R},dim} <: AbstractStaticDimensions{R,D,dim}
 
     StaticDimensions(d::AbstractDimensions) = new{eltype(d),typeof(d),d}()
+    StaticDimensions(; kws...) = StaticDimensions(Dimensions(; kws...))
+    StaticDimensions(::Type{_R}; kws...) where {_R} = StaticDimensions(Dimensions(_R; kws...))
     StaticDimensions{_R}(d::AbstractDimensions) where {_R} = (d = convert(with_type_parameters(typeof(d), _R), d); StaticDimensions(d))
+    StaticDimensions{_Rold}(::Type{_R}; kws...) where {_Rold,_R} = StaticDimensions(Dimensions(_R; kws...))
     StaticDimensions{_R,_D}(d::AbstractDimensions) where {_R,_D} = (d = convert(_D, d); StaticDimensions(d))
     StaticDimensions{_R,_D}(dims...) where {_R,_D} = StaticDimensions(constructorof(_D)(dims...))
-    StaticDimensions(; kws...) = StaticDimensions(Dimensions(; kws...))
+    StaticDimensions{_Rold,_D}(::Type{_R}; kws...) where {_Rold,_D,_R} = StaticDimensions(constructorof(_D)(_R; kws...))
 end
 
 Base.propertynames(::AbstractStaticDimensions{R,D,dim}) where {R,D,dim} = propertynames(dim)
