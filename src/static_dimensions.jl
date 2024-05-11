@@ -35,11 +35,15 @@ function Base.promote_rule(::Type{StaticDimensions{R1,D1,dim1}}, ::Type{StaticDi
     R = eltype(D)
     dim1 == dim2 ? StaticDimensions{R,D,convert(D, dim1)} : StaticDimensions{R,D}
 end
-function Base.promote_rule(::Type{StaticDimensions{R1,D1,dim1}}, ::Type{D2}) where {R1,D1,dim1,D2<:Dimensions}
-    return promote_type(D1, D2)
-end
-function Base.promote_rule(::Type{D1}, ::Type{StaticDimensions{R2,D2,dim2}}) where {D1<:AbstractDimensions,R2,D2,dim2}
-    return promote_type(D1, D2)
+for D_type in (:SymbolicDimensions, :SymbolicDimensionsSingleton, :Dimensions)
+    @eval begin
+        function Base.promote_rule(::Type{StaticDimensions{R1,D1,dim1}}, ::Type{$D_type{R2}}) where {R1,D1,dim1,R2}
+            return promote_type(D1, $D_type{R2})
+        end
+        function Base.promote_rule(::Type{$D_type{R1}}, ::Type{StaticDimensions{R2,D2,dim2}}) where {R1,R2,D2,dim2}
+            return promote_type($D_type{R1}, D2)
+        end
+    end
 end
 
 function Base.convert(::Type{Q1}, q::Q2) where {
@@ -53,8 +57,6 @@ function Base.convert(::Type{Q1}, q::Q2) where {
     # Then, convert that
     return convert(Q1, q_dynamic)
 end
-
-map_dimensions(::F, args::AbstractStaticDimensions...) where {F<:Function} = error("not implemented.")
 
 Base.:(==)(::AbstractStaticDimensions{<:Any,<:Any,dim1}, ::AbstractStaticDimensions{<:Any,<:Any,dim2}) where {dim1,dim2} = dim1 == dim2
 @generated function map_dimensions(f::F, args::AbstractStaticDimensions...) where {F<:Function}
