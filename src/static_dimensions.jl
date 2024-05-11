@@ -72,7 +72,13 @@ end
 
 
 
-
+# Utilities
+function Base.zero(::Type{Q}) where {dim,D<:AbstractStaticDimensions{<:Any,<:Any,dim},T,Q<:AbstractQuantity{T,D}}
+    return new_quantity(Q, zero(T), dim)
+end
+function Base.oneunit(::Type{Q}) where {dim,D<:AbstractStaticDimensions{<:Any,<:Any,dim},T,Q<:AbstractQuantity{T,D}}
+    return new_quantity(Q, one(T), dim)
+end
 
 ################################################################################
 # Tests ########################################################################
@@ -154,6 +160,19 @@ end
     x2 = x .^ 2
     d2 = dimension(1.0u"m^2")
     @test eltype(x2) == Quantity{Float64,StaticDimensions{eltype(d2),typeof(d2),d2}}
+end
+
+@testitem "Using zero and oneunit now work" begin
+    using DynamicQuantities
+    using DynamicQuantities: StaticDimensions
+
+    x = Quantity{Float64,StaticDimensions}(u"km")
+    @test zero(typeof(x)) == 0 * x
+    @test dimension(zero(typeof(x))) == dimension(x)
+    @test dimension(zero(x)) == dimension(x)
+
+    @test oneunit(typeof(x)) == Quantity{Float64,StaticDimensions}(u"m")
+    @test dimension(oneunit(typeof(x))) == dimension(x)
 end
 ################################################################################
 
