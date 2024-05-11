@@ -50,6 +50,9 @@ function Base.convert(::Type{Q1}, q::Q2) where {
     dims,
     Q2<:AbstractQuantity{<:Any,<:AbstractStaticDimensions{<:Any,<:Any,dims}}
 }
+    if q isa Q1
+        return q
+    end
     val = ustrip(q)
     # First, construct dynamic version in the input types
     q_dynamic = new_quantity(Q2, val, dims)
@@ -72,12 +75,17 @@ end
 
 
 
-# Utilities
+################################################################################
+# Utilities ####################################################################
+################################################################################
 function Base.zero(::Type{Q}) where {dim,D<:AbstractStaticDimensions{<:Any,<:Any,dim},T,Q<:AbstractQuantity{T,D}}
     return new_quantity(Q, zero(T), dim)
 end
 function Base.oneunit(::Type{Q}) where {dim,D<:AbstractStaticDimensions{<:Any,<:Any,dim},T,Q<:AbstractQuantity{T,D}}
     return new_quantity(Q, one(T), dim)
+end
+function Base.show(io::IO, ::Type{StaticDimensions{R,D,dim}}) where {R,D,dim}
+    print(io, "StaticDimensions($dim::$D)")
 end
 
 ################################################################################
@@ -173,6 +181,14 @@ end
 
     @test oneunit(typeof(x)) == Quantity{Float64,StaticDimensions}(u"m")
     @test dimension(oneunit(typeof(x))) == dimension(x)
+end
+
+@testitem "Pretty printing of type" begin
+    using DynamicQuantities
+    using DynamicQuantities: StaticDimensions
+
+    x = Quantity{Float64,StaticDimensions}(u"m/s")
+    @test sprint(show, typeof(x)) == "DynamicQuantities.Quantity{Float64, StaticDimensions(m s⁻¹::DynamicQuantities.Dimensions{DynamicQuantities.FixedRational{Int32, 25200}})}"
 end
 ################################################################################
 
