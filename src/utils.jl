@@ -15,7 +15,7 @@ end
     # Test a function over all dimensions
     output = Expr(:&&)
     dimension_type = promote_type(args...)
-    for dim in Base.fieldnames(dimension_type)
+    for dim in dimension_names(dimension_type)
         f_expr = :(f())
         for i=1:length(args)
             push!(f_expr.args, :(args[$i].$dim))
