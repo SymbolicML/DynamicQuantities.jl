@@ -5,6 +5,8 @@ abstract type AbstractStaticDimensions{R,D,dim} <: AbstractDimensions{R} end
 
 Experiment to store the dimensions as a type parameter, so that one
 can have Unitful-like behavior within DynamicQuantities.
+
+This is not yet stable, so this type is not exported.
 """
 struct StaticDimensions{R,D<:AbstractDimensions{R},dim} <: AbstractStaticDimensions{R,D,dim}
 
@@ -75,6 +77,7 @@ end
 ################################################################################
 @testitem "Static dimensions basics" begin
     using DynamicQuantities
+    using DynamicQuantities: StaticDimensions
 
     x = Quantity(1.0, StaticDimensions(length=1))
     d = Dimensions(length=1)
@@ -93,6 +96,7 @@ end
 
 @testitem "Static dimensions math" begin
     using DynamicQuantities
+    using DynamicQuantities: StaticDimensions
 
     x = Quantity(1.0, StaticDimensions(length=1))
     y = Quantity(2.0, StaticDimensions(time=-1))
@@ -114,6 +118,7 @@ end
 
 @testitem "Conversion" begin
     using DynamicQuantities
+    using DynamicQuantities: StaticDimensions
 
     x = 1.0u"m"
     y = convert(Quantity{Float64,StaticDimensions}, x)
@@ -134,6 +139,7 @@ end
 
 @testitem "Static dimensions arrays" begin
     using DynamicQuantities
+    using DynamicQuantities: StaticDimensions
 
     x = [1.0u"m", 1.0u"km", 10u"Constants.Mpc"]
     x = Quantity{Float64,StaticDimensions}.(x)

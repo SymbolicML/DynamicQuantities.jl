@@ -6,7 +6,6 @@ export Quantity, GenericQuantity, RealQuantity
 export FixedRational
 export AbstractDimensions, Dimensions, NoDims
 export AbstractSymbolicDimensions, SymbolicDimensions, SymbolicDimensionsSingleton
-export StaticDimensions
 export QuantityArray
 export DimensionError
 export ustrip, dimension
