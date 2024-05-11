@@ -168,6 +168,14 @@ end
     x2 = x .^ 2
     d2 = dimension(1.0u"m^2")
     @test eltype(x2) == Quantity{Float64,StaticDimensions{eltype(d2),typeof(d2),d2}}
+
+    # Inference of broadcasting
+    g(x) = x .^ 2
+    @inferred g(x)
+
+    f(x, y) = x .* y
+    @inferred f(x, x)
+    @test f(x, x) isa Vector{<:Quantity{Float64,<:StaticDimensions}}
 end
 
 @testitem "Using zero and oneunit now work" begin
