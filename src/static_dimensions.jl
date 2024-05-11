@@ -26,11 +26,11 @@ dimension_names(::Type{<:AbstractStaticDimensions{R,D}}) where {R,D} = dimension
 constructorof(::Type{<:StaticDimensions}) = StaticDimensions
 with_type_parameters(::Type{StaticDimensions{Rold,D}}, ::Type{R}) where {Rold,D,R}  = StaticDimensions{R,D}
 
-function Base.promote_rule(::Type{<:StaticDimensions{R1,D1}}, ::Type{<:StaticDimensions{R2,D2}}) where {R1,D1,R2,D2}
+function Base.promote_rule(::Type{StaticDimensions{R1,D1}}, ::Type{StaticDimensions{R2,D2}}) where {R1,D1,R2,D2}
     D = promote_type(D1, D2)
     return StaticDimensions{eltype(D),D}
 end
-function Base.promote_rule(::Type{<:StaticDimensions{R1,D1,dim1}}, ::Type{<:StaticDimensions{R2,D2,dim2}}) where {R1,D1,dim1,R2,D2,dim2}
+function Base.promote_rule(::Type{StaticDimensions{R1,D1,dim1}}, ::Type{StaticDimensions{R2,D2,dim2}}) where {R1,D1,dim1,R2,D2,dim2}
     D = promote_type(D1, D2)
     R = eltype(D)
     dim1 == dim2 ? StaticDimensions{R,D,convert(D, dim1)} : StaticDimensions{R,D}
@@ -38,7 +38,7 @@ end
 function Base.promote_rule(::Type{StaticDimensions{R1,D1,dim1}}, ::Type{D2}) where {R1,D1,dim1,D2<:Dimensions}
     return promote_type(D1, D2)
 end
-function Base.promote_rule(::Type{D1}, ::Type{<:StaticDimensions{R2,D2,dim2}}) where {D1<:AbstractDimensions,R2,D2,dim2}
+function Base.promote_rule(::Type{D1}, ::Type{StaticDimensions{R2,D2,dim2}}) where {D1<:AbstractDimensions,R2,D2,dim2}
     return promote_type(D1, D2)
 end
 
