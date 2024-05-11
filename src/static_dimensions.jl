@@ -13,6 +13,7 @@ struct StaticDimensions{R,D<:AbstractDimensions{R},dim} <: AbstractStaticDimensi
     StaticDimensions(d::AbstractDimensions) = new{eltype(d),typeof(d),d}()
     StaticDimensions{_R}(d::AbstractDimensions) where {_R} = (d = convert(with_type_parameters(typeof(d), _R), d); StaticDimensions(d))
     StaticDimensions{_R,_D}(d::AbstractDimensions) where {_R,_D} = (d = convert(_D, d); StaticDimensions(d))
+    StaticDimensions{_R,_D}(dims...) where {_R,_D} = StaticDimensions(constructorof(_D)(dims...))
     StaticDimensions(; kws...) = StaticDimensions(Dimensions(; kws...))
 end
 
@@ -69,6 +70,7 @@ end
     dims = map(raw_dimension, args)
     return :($(cons)(map_dimensions(f, $(dims...))))
 end
+# TODO: Should these have Base.@constprop :aggressive?
 
 
 
