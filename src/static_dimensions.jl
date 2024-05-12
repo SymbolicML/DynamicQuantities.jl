@@ -79,10 +79,10 @@ end
 # Utilities ####################################################################
 ################################################################################
 function Base.zero(::Type{Q}) where {dim,D<:AbstractStaticDimensions{<:Any,<:Any,dim},T,Q<:AbstractQuantity{T,D}}
-    return new_quantity(Q, zero(T), dim)
+    return new_quantity(Q, zero(T), StaticDimensions(dim))
 end
 function Base.oneunit(::Type{Q}) where {dim,D<:AbstractStaticDimensions{<:Any,<:Any,dim},T,Q<:AbstractQuantity{T,D}}
-    return new_quantity(Q, one(T), dim)
+    return new_quantity(Q, one(T), StaticDimensions(dim))
 end
 function Base.show(io::IO, ::Type{StaticDimensions{R,D,dim}}) where {R,D,dim}
     print(io, "StaticDimensions($dim::$D)")
@@ -187,6 +187,8 @@ end
     using DynamicQuantities: StaticDimensions
 
     x = Quantity{Float64,StaticDimensions}(u"km")
+    @test zero(x) isa Quantity{Float64,<:StaticDimensions}
+    @test zero(typeof(x)) isa Quantity{Float64,<:StaticDimensions}
     @test zero(typeof(x)) == 0 * x
     @test dimension(zero(typeof(x))) == dimension(x)
     @test dimension(zero(x)) == dimension(x)
