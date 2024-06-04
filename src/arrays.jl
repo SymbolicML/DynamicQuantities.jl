@@ -291,7 +291,7 @@ end
 
 # Basically, we want to solve a single element to find the output dimension.
 # Then we can put results in the output `QuantityArray`.
-materialize_first(bc::Base.Broadcast.Broadcasted) = bc.f(materialize_first.(bc.args)...)
+materialize_first(bc::Base.Broadcast.Broadcasted) = bc.f(map(materialize_first, bc.args)...)
 
 # Base cases
 materialize_first(q::AbstractGenericQuantity{<:AbstractArray}) = new_quantity(typeof(q), first(ustrip(q)), dimension(q))

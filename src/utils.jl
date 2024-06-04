@@ -1,3 +1,4 @@
+using DispatchDoctor: @unstable
 import Compat: allequal
 
 function map_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
@@ -48,10 +49,10 @@ The user should overload this function to define a custom type hierarchy.
 
 Also see `promote_quantity_on_quantity`.
 """
-@inline promote_quantity_on_value(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Any}) = GenericQuantity
-@inline promote_quantity_on_value(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Number}) = Quantity
-@inline promote_quantity_on_value(::Type{<:RealQuantity}, ::Type{<:Real}) = RealQuantity
-@inline promote_quantity_on_value(T, _) = T
+@unstable @inline promote_quantity_on_value(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Any}) = GenericQuantity
+@unstable @inline promote_quantity_on_value(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Number}) = Quantity
+@unstable @inline promote_quantity_on_value(::Type{<:RealQuantity}, ::Type{<:Real}) = RealQuantity
+@unstable @inline promote_quantity_on_value(T, _) = T
 
 """
     promote_quantity_on_quantity(Q1, Q2)
@@ -65,10 +66,10 @@ as that is the most specific type.
 
 Also see `promote_quantity_on_value`.
 """
-@inline promote_quantity_on_quantity(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}) = GenericQuantity
-@inline promote_quantity_on_quantity(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Union{Quantity,RealQuantity}}) = Quantity
-@inline promote_quantity_on_quantity(::Type{<:RealQuantity}, ::Type{<:RealQuantity}) = RealQuantity
-@inline promote_quantity_on_quantity(::Type{Q}, ::Type{Q}) where {Q<:UnionAbstractQuantity} = Q
+@unstable @inline promote_quantity_on_quantity(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}) = GenericQuantity
+@unstable @inline promote_quantity_on_quantity(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Union{Quantity,RealQuantity}}) = Quantity
+@unstable @inline promote_quantity_on_quantity(::Type{<:RealQuantity}, ::Type{<:RealQuantity}) = RealQuantity
+@unstable @inline promote_quantity_on_quantity(::Type{Q}, ::Type{Q}) where {Q<:UnionAbstractQuantity} = Q
 
 for (type1, _, _) in ABSTRACT_QUANTITY_TYPES, (type2, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval function Base.promote_rule(::Type{Q1}, ::Type{Q2}) where {T1,T2,D1,D2,Q1<:$type1{T1,D1},Q2<:$type2{T2,D2}}
@@ -170,7 +171,7 @@ end
 Base.keys(q::UnionAbstractQuantity) = keys(ustrip(q))
 
 # If atol specified in kwargs, validate its dimensions and then strip units
-@inline function _validate_isapprox(dimcheck, kws)
+@inline @unstable function _validate_isapprox(dimcheck, kws)
     if haskey(kws, :atol)
         dimension(dimcheck) == dimension(kws[:atol]) || throw(DimensionError(dimcheck, kws[:atol]))
         return (; kws..., atol=ustrip(kws[:atol]))

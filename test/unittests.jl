@@ -1383,7 +1383,7 @@ end
             # There is no easy way to test whether it actually ran,
             # so we create a fake array type that has a custom `sizehint!`
             # which tells us it actually ran.
-            isdefined(Main, :MyCustomArray) || @eval begin
+            isdefined(@__MODULE__, :MyCustomArray) || @eval begin
                 mutable struct MyCustomArray{T,N} <: AbstractArray{T,N}
                     data::Array{T,N}
                     sizehint_called::Bool

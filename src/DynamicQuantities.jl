@@ -17,7 +17,7 @@ export expand_units
 
 using DispatchDoctor: @stable
 
-@stable default_mode = "disable" begin
+@stable default_mode="disable" begin
     include("internal_utils.jl")
     include("fixed_rational.jl")
     include("write_once_read_many.jl")
