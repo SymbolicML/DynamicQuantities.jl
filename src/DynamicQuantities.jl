@@ -12,24 +12,30 @@ export ustrip, dimension
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 export uparse, @u_str, sym_uparse, @us_str, uexpand, uconvert, @register_unit
 
-
-include("internal_utils.jl")
-include("fixed_rational.jl")
-include("write_once_read_many.jl")
-include("types.jl")
-include("utils.jl")
-include("math.jl")
-include("arrays.jl")
-include("units.jl")
-include("constants.jl")
-include("uparse.jl")
-include("symbolic_dimensions.jl")
-include("complex.jl")
-include("register_units.jl")
-include("disambiguities.jl")
-
-include("deprecated.jl")
+# Deprecated:
 export expand_units
+
+using DispatchDoctor: @stable
+
+@stable default_mode = "disable" begin
+    include("internal_utils.jl")
+    include("fixed_rational.jl")
+    include("write_once_read_many.jl")
+    include("types.jl")
+    include("utils.jl")
+    include("math.jl")
+    include("arrays.jl")
+    include("units.jl")
+    include("constants.jl")
+    include("uparse.jl")
+    include("symbolic_dimensions.jl")
+    include("complex.jl")
+    include("register_units.jl")
+    include("disambiguities.jl")
+
+    include("deprecated.jl")
+end
+
 
 import PackageExtensionCompat: @require_extensions
 import .Units
