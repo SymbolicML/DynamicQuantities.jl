@@ -28,24 +28,32 @@ for (_, _, Q) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         function Base.convert(::Type{Unitful.Quantity}, x::$Q)
             validate_upreferred()
+            cumulator = DynamicQuantities.ustrip(x)
             dims = DynamicQuantities.dimension(x)
             if dims isa DynamicQuantities.AbstractSymbolicDimensions
                 throw(ArgumentError("Conversion of a `DynamicQuantities." * string($Q) * "` to a `Unitful.Quantity` is not defined with dimensions of type `SymbolicDimensions`. Instead, you can first use the `uexpand` function to convert the dimensions to their base SI form of type `Dimensions`, then convert this quantity to a `Unitful.Quantity`."))
             end
-            return prod(Base.Fix1(_unitful_dimension, dims), keys(dims))
+            equiv = unitful_equivalences()
+            for dim in keys(dims)
+                value = dims[dim]
+                iszero(value) && continue
+                cumulator *= equiv[dim]^value
+            end
+            cumulator
         end
         function Base.convert(::Type{$Q}, x::Unitful.Quantity{T}) where {T}
             return convert($Q{T,DynamicQuantities.DEFAULT_DIM_TYPE}, x)
         end
         function Base.convert(::Type{$Q{T,D}}, x::Unitful.Quantity) where {T,R,D<:DynamicQuantities.AbstractDimensions{R}}
-            scale = convert(T, Unitful.ustrip(Unitful.upreferred(x)))
-            dims  = convert(D, Unitful.dimension(x))
-            return $Q(scale, dims)
+            value = Unitful.ustrip(Unitful.upreferred(x))
+            dimension = convert(D, Unitful.dimension(x))
+            return $Q(convert(T, value), dimension)
         end
     end
 end
 
 Base.convert(::Type{DynamicQuantities.Dimensions}, d::Unitful.Dimensions) = convert(DynamicQuantities.DEFAULT_DIM_TYPE, d)
+
 function Base.convert(::Type{DynamicQuantities.Dimensions{R}}, d::Unitful.Dimensions{D}) where {R,D}
     validate_upreferred()
     return prod(Base.Fix1(_dynamic_dimension, R), D)
@@ -61,16 +69,6 @@ function _dynamic_dimension(::Type{R}, dims::Unitful.Dimension{D}) where {R,D}
     D == :Luminosity    && return DimType(luminosity  = dims.power)
     D == :Amount        && return DimType(amount = dims.power)
     error("Unknown dimension: $D")
-end
-
-function _unitful_dimension(dims::DynamicQuantities.Dimensions, D::Symbol)
-    si_units  = get_si_units()
-    dim_power = dims[D]
-    if iszero(dim_power)
-        return 1
-    else
-        return si_units[D]^dim_power
-    end
 end
 
 end
