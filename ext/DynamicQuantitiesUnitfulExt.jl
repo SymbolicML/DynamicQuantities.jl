@@ -61,13 +61,13 @@ end
 
 function _dynamic_dimension(::Type{R}, dims::Unitful.Dimension{D}) where {R,D}
     DimType = DynamicQuantities.Dimensions{R}
-    D == :Length        && return DimType(length = dims.power)
-    D == :Mass          && return DimType(mass = dims.power)
-    D == :Time          && return DimType(time = dims.power)
-    D == :Current       && return DimType(current = dims.power)
-    D == :Temperature   && return DimType(temperature  = dims.power)
-    D == :Luminosity    && return DimType(luminosity  = dims.power)
-    D == :Amount        && return DimType(amount = dims.power)
+    D == :Length && return DimType(length=dims.power)
+    D == :Mass && return DimType(mass=dims.power)
+    D == :Time && return DimType(time=dims.power)
+    D == :Current && return DimType(current=dims.power)
+    D == :Temperature && return DimType(temperature=dims.power)
+    D == :Luminosity && return DimType(luminosity=dims.power)
+    D == :Amount && return DimType(amount=dims.power)
     error("Unknown dimension: $D")
 end
 
