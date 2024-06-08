@@ -15,7 +15,10 @@ end
 end
 
 @testitem "Unitful.jl integration tests" begin
-    include("test_unitful.jl")
+    using DispatchDoctor
+    allow_unstable() do
+        include("test_unitful.jl")
+    end
 end
 @testitem "ScientificTypes.jl integration tests" begin
     include("test_scitypes.jl")

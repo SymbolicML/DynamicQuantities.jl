@@ -94,8 +94,8 @@ end
 dimension_names(::Type{<:AbstractSymbolicDimensions}) = ALL_SYMBOLS
 Base.propertynames(::AbstractSymbolicDimensions) = ALL_SYMBOLS
 Base.getindex(d::AbstractSymbolicDimensions, k::Symbol) = getproperty(d, k)
-constructorof(::Type{<:SymbolicDimensions}) = SymbolicDimensions
-constructorof(::Type{<:SymbolicDimensionsSingleton}) = SymbolicDimensionsSingleton
+@unstable constructorof(::Type{<:SymbolicDimensions}) = SymbolicDimensions
+@unstable constructorof(::Type{<:SymbolicDimensionsSingleton}) = SymbolicDimensionsSingleton
 with_type_parameters(::Type{<:SymbolicDimensions}, ::Type{R}) where {R} = SymbolicDimensions{R}
 with_type_parameters(::Type{<:SymbolicDimensionsSingleton}, ::Type{R}) where {R} = SymbolicDimensionsSingleton{R}
 nzdims(d::SymbolicDimensions) = getfield(d, :nzdims)
@@ -391,6 +391,8 @@ to enable pretty-printing of units.
 """
 module SymbolicUnits
 
+    using DispatchDoctor: @unstable
+
     import ..UNIT_SYMBOLS
     import ..CONSTANT_SYMBOLS
     import ..SymbolicDimensionsSingleton
@@ -479,25 +481,27 @@ module SymbolicUnits
     as_quantity(x::Number) = convert(DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE, x)
     as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 
-    function map_to_scope(ex::Expr)
+    @unstable function map_to_scope(ex::Expr)
+        if !(ex.head == :call) && !(ex.head == :. && ex.args[1] == :Constants)
+            throw(ArgumentError("Unexpected expression: $ex. Only `:call` and `:.` (for `SymbolicConstants`) are expected."))
+        end
         if ex.head == :call
             ex.args[2:end] = map(map_to_scope, ex.args[2:end])
             return ex
-        elseif ex.head == :. && ex.args[1] == :Constants
+        else # if ex.head == :. && ex.args[1] == :Constants
             @assert ex.args[2] isa QuoteNode
             return lookup_constant(ex.args[2].value)
-        else
-            throw(ArgumentError("Unexpected expression: $ex. Only `:call` and `:.` (for `SymbolicConstants`) are expected."))
         end
     end
     function map_to_scope(sym::Symbol)
         if sym in UNIT_SYMBOLS
-            return lookup_unit(sym)
+            # return at end
         elseif sym in CONSTANT_SYMBOLS
             throw(ArgumentError("Symbol $sym found in `Constants` but not `Units`. Please use `us\"Constants.$sym\"` instead."))
         else
             throw(ArgumentError("Symbol $sym not found in `Units` or `Constants`."))
         end
+        return lookup_unit(sym)
     end
     function map_to_scope(ex)
         return ex
