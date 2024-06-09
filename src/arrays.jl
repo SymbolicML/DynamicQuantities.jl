@@ -218,6 +218,7 @@ for f in (:append!, :prepend!)
     end
 end
 
+Base.zero(A::QuantityArray) = QuantityArray(zero(ustrip(A)), dimension(A), quantity_type(A))
 Base.similar(A::QuantityArray) = QuantityArray(similar(ustrip(A)), dimension(A), quantity_type(A))
 Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustrip(A), S), dimension(A), quantity_type(A))
 for (type, _, _) in ABSTRACT_QUANTITY_TYPES

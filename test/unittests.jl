@@ -1153,6 +1153,11 @@ end
             @test eltype(new_qa) <: Q{Float64}
         end
 
+        @testset "Zero $Q" begin
+            qa = QuantityArray(rand(3, 4), Q(u"m"))
+            @test zero(qa) == QuantityArray(zeros(3, 4), Q(u"m"))
+        end
+
         @testset "Promotion $Q" begin
             qarr1 = QuantityArray(randn(32), convert(Dimensions{Rational{Int32}}, dimension(u"km/s")), Q)
             qarr2 = QuantityArray(randn(Float16, 32), convert(Dimensions{Rational{Int64}}, dimension(u"km/s")), Q)
