@@ -56,7 +56,7 @@ Base.convert(::Type{DynamicQuantities.Dimensions}, d::Unitful.Dimensions) = conv
 
 function Base.convert(::Type{DynamicQuantities.Dimensions{R}}, d::Unitful.Dimensions{D}) where {R,D}
     validate_upreferred()
-    return prod(Base.Fix1(_dynamic_dimension, R), D)
+    return prod(Base.Fix1(_dynamic_dimension, R), D; init=DynamicQuantities.Dimensions{R}())
 end
 
 function _dynamic_dimension(::Type{R}, dims::Unitful.Dimension{D}) where {R,D}
