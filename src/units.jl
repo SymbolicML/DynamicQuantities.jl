@@ -246,6 +246,14 @@ end
 @add_prefixes arcmin ()
 @add_prefixes arcsec (μ, u, m)
 
+## Magnetic flux densities
+@_lazy_register_unit Gauss 1e-4 * T
+
+@doc(
+    "Magnetic flux density in Gauss. Note that this is the SI- and not the cgs-derived version.",
+    Gauss,
+)
+
 # Do not wish to define Gaussian units, as it changes
 # some formulas. Safer to force user to work exclusively in one unit system.
 
