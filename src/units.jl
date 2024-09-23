@@ -167,7 +167,7 @@ end
     H,
 )
 @doc(
-    "Magnetic flux density in Teslas.",
+    "Magnetic flux density in Teslas. Available variants: `Gauss`",
     T,
 )
 @doc(
@@ -248,11 +248,6 @@ end
 
 ## Magnetic flux densities
 @_lazy_register_unit Gauss 1e-4 * T
-
-@doc(
-    "Magnetic flux density in Gauss. Note that this is the SI- and not the cgs-derived version.",
-    Gauss,
-)
 
 # Do not wish to define Gaussian units, as it changes
 # some formulas. Safer to force user to work exclusively in one unit system.
