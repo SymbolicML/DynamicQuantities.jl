@@ -23,10 +23,8 @@ function unsafe_isapprox(x, y; kwargs...)
     return isapprox(ustrip(x), ustrip(y); kwargs...) && dimension(x) == dimension(y)
 end
 
-# Just in case `runtests.jl` hasn't been run yet:
-@static if !hasmethod(round, Tuple{Int, SimpleRatio{Int}})
-    @eval Base.round(T, x::SimpleRatio) = round(T, x.num // x.den)
-end
+# TODO: This is a bit hacky but is required to avoid ambiguities
+Base.round(::Type{T}, x::SimpleRatio) where {T} = round(T, x.num // x.den)
 
 @testset "Basic utilities" begin
 
@@ -538,15 +536,15 @@ end
 
     @test_throws ErrorException eval(:(u":x"))
 
-    VERSION >= v"1.9" && @test_throws "Symbol x not found" uparse("x")
-    VERSION >= v"1.9" && @test_throws "Symbol c found in `Constants` but not `Units`" uparse("c")
-    VERSION >= v"1.9" && @test_throws "Unexpected expression" uparse("import ..Units")
-    VERSION >= v"1.9" && @test_throws "Unexpected expression" uparse("(m, m)")
+    @test_throws "Symbol x not found" uparse("x")
+    @test_throws "Symbol c found in `Constants` but not `Units`" uparse("c")
+    @test_throws "Unexpected expression" uparse("import ..Units")
+    @test_throws "Unexpected expression" uparse("(m, m)")
     @test_throws LoadError eval(:(us"x"))
-    VERSION >= v"1.9" && @test_throws "Symbol x not found" sym_uparse("x")
-    VERSION >= v"1.9" && @test_throws "Symbol c found in `Constants` but not `Units`" sym_uparse("c")
-    VERSION >= v"1.9" && @test_throws "Unexpected expression" sym_uparse("import ..Units")
-    VERSION >= v"1.9" && @test_throws "Unexpected expression" sym_uparse("(m, m)")
+    @test_throws "Symbol x not found" sym_uparse("x")
+    @test_throws "Symbol c found in `Constants` but not `Units`" sym_uparse("c")
+    @test_throws "Unexpected expression" sym_uparse("import ..Units")
+    @test_throws "Unexpected expression" sym_uparse("(m, m)")
 end
 
 @testset "Constants" begin
@@ -566,7 +564,7 @@ end
     @test_throws InexactError convert(Int32, FixedRational{Int8,6}(2//3))
     @test_throws InexactError convert(Bool, FixedRational{Int8,6}(2//1))
 
-    VERSION >= v"1.8" && @test_throws "Refusing to" promote(FixedRational{Int,10}(2), FixedRational{Int,4}(2))
+    @test_throws "Refusing to" promote(FixedRational{Int,10}(2), FixedRational{Int,4}(2))
 
     f64 = FixedRational{Int,10}(2)
     f8 = FixedRational{Int8,10}(2)
@@ -792,8 +790,7 @@ end
 
     # Helpful error if symbol not found:
     sym5 = dimension(us"km/s")
-    VERSION >= v"1.8" &&
-        @test_throws "my_special_symbol is not available as a symbol" sym5.my_special_symbol
+    @test_throws "my_special_symbol is not available as a symbol" sym5.my_special_symbol
 
     # Test deprecated method
     q = 1.5us"km/s"
@@ -862,13 +859,11 @@ end
 
     # Refuses to convert to non-unit quantities:
     @test_throws AssertionError uconvert(1.2us"m", 1.0u"m")
-    VERSION >= v"1.8" &&
-        @test_throws "You passed a quantity" uconvert(1.2us"m", 1.0u"m")
+    @test_throws "You passed a quantity" uconvert(1.2us"m", 1.0u"m")
 
     # Refuses to convert to `Dimensions`:
     @test_throws ErrorException uconvert(1u"m", 5.0us"m")
-    VERSION >= v"1.8" &&
-        @test_throws "You can only `uconvert`" uconvert(1u"m", 5.0us"m")
+    @test_throws "You can only `uconvert`" uconvert(1u"m", 5.0us"m")
 
     for Q in (RealQuantity, Quantity, GenericQuantity)
         # Different types require converting both arguments:
@@ -1479,8 +1474,7 @@ end
 
         Q == Quantity && @testset "Extra test coverage $Q" begin
             @test_throws ErrorException DynamicQuantities.materialize_first(())
-            VERSION >= v"1.8" &&
-                @test_throws "Unexpected broadcast" DynamicQuantities.materialize_first(())
+            @test_throws "Unexpected broadcast" DynamicQuantities.materialize_first(())
 
             # Not sure how to test this otherwise, but method is supposed to be
             # required for the broadcasting interface
@@ -1716,7 +1710,7 @@ end
                         @eval @test $f($qx_dimensionless, $y) ≈ $Q($f($x, $y), $D)
                         @eval @test_throws DimensionError $f($qx_dimensions, $y)
                         @eval @test_throws DimensionError $f($x, $qy_dimensions)
-                        if f == :rem && VERSION >= v"1.9"
+                        if f == :rem
                             # Can also do other rounding modes
                             for r in (:RoundFromZero, :RoundNearest, :RoundUp, :RoundDown)
                                 @eval @test $f($qx_dimensions, $qy_dimensions, $r) ≈ $Q($f($x, $y, $r), dimension(u"m/s"))
@@ -1828,8 +1822,7 @@ end
 
     @test dimension(km).km == 1
     @test dimension(km).m == 0
-    VERSION >= v"1.9" &&
-        @test_throws "is not available as a symbol" dimension(km).γ
+    @test_throws "is not available as a symbol" dimension(km).γ
     @test !iszero(dimension(km))
     @test inv(km) == us"km^-1"
     @test inv(km) == u"km^-1"
@@ -1908,20 +1901,16 @@ end
         @test div(x, y) == Q{Int}(3, length=1, mass=1)
         @test div(x, 3) == Q{Int}(3, length=1)
         @test div(10, y) == Q{Int}(3, mass=1)
-        if VERSION >= v"1.9"
-            @test div(x, y, RoundFromZero) == Q{Int}(4, length=1, mass=1)
-            @test div(x, 3, RoundFromZero) == Q{Int}(4, length=1)
-            @test div(10, y, RoundFromZero) == Q{Int}(4, mass=1)
-        end
+        @test div(x, y, RoundFromZero) == Q{Int}(4, length=1, mass=1)
+        @test div(x, 3, RoundFromZero) == Q{Int}(4, length=1)
+        @test div(10, y, RoundFromZero) == Q{Int}(4, mass=1)
     end
     # Also test mixed quantities:
     x = RealQuantity{Int}(10, length=1)
     y = Quantity{Int}(3, mass=-1)
     @test div(x, y) == Quantity{Int}(3, length=1, mass=1)
     @test typeof(div(x, y)) <: Quantity{Int}
-    if VERSION >= v"1.9"
-        @test div(x, y, RoundFromZero) == Quantity{Int}(4, length=1, mass=1)
-    end
+    @test div(x, y, RoundFromZero) == Quantity{Int}(4, length=1, mass=1)
 end
 
 @testset "Exponentiation" begin
@@ -1993,12 +1982,10 @@ if :MySV2 ∉ UNIT_SYMBOLS
     @eval @register_unit MySV2 us"km/h"
 end
 
-if VERSION >= v"1.9"
-    @test_throws "Unit `m` is already defined as `1.0 m`" esc(_register_unit(:m, u"s"))
+@test_throws "Unit `m` is already defined as `1.0 m`" esc(_register_unit(:m, u"s"))
 
-    # Constants as well:
-    @test_throws "Unit `Ryd` is already defined" esc(_register_unit(:Ryd, u"Constants.Ryd"))
-end
+# Constants as well:
+@test_throws "Unit `Ryd` is already defined" esc(_register_unit(:Ryd, u"Constants.Ryd"))
 
 @testset "Register Unit" begin
     MyV = u"MyV"
