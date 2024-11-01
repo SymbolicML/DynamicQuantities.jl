@@ -2,9 +2,7 @@ using TestItems: @testitem
 using TestItemRunner
 import Ratios: SimpleRatio
 
-if !hasmethod(round, Tuple{Int, SimpleRatio{Int}})
-    Base.round(::Type{T}, x::SimpleRatio) where {T} = round(T, x.num // x.den)
-end
+Base.round(::Type{T}, x::SimpleRatio) where {T} = round(T, x.num // x.den)
 
 @eval @testitem "Test initial imports" begin
     include("test_initial_imports.jl")

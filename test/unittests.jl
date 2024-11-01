@@ -23,10 +23,8 @@ function unsafe_isapprox(x, y; kwargs...)
     return isapprox(ustrip(x), ustrip(y); kwargs...) && dimension(x) == dimension(y)
 end
 
-# Just in case `runtests.jl` hasn't been run yet:
-@static if !hasmethod(round, Tuple{Int, SimpleRatio{Int}})
-    @eval Base.round(T, x::SimpleRatio) = round(T, x.num // x.den)
-end
+# TODO: This is a bit hacky but is required to avoid ambiguities
+Base.round(::Type{T}, x::SimpleRatio) where {T} = round(T, x.num // x.den)
 
 @testset "Basic utilities" begin
 
