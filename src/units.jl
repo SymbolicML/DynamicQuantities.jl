@@ -214,12 +214,20 @@ end
 
 ## Pressure
 @_lazy_register_unit bar 100 * kPa
+@_lazy_register_unit atm 101325 * Pa
+@_lazy_register_unit Torr 101325//760 * Pa
 
 @add_prefixes bar (m,)
+@add_prefixes atm ()
+@add_prefixes Torr (m,)
 
 @doc(
     "Pressure in bars. Available variants: `mbar`.",
     bar,
+    "Pressure in atmospheres.",
+    atm,
+    "Pressure in Torr. Available variants: `mTorr`.",
+    Torr,
 )
 
 ## Angles
@@ -251,6 +259,16 @@ end
 
 # Do not wish to define Gaussian units, as it changes
 # some formulas. Safer to force user to work exclusively in one unit system.
+
+## Energy
+@_lazy_register_unit cal 4.184 * J
+
+@add_prefixes cal (k)
+
+@doc(
+    "Energy in calories. Available variants: `kcal`.",
+    cal,
+)
 
 # Do not wish to define physical constants, as the number of symbols might lead to ambiguity.
 # The user should define these instead.
