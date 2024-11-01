@@ -106,7 +106,7 @@ end
 @_lazy_register_unit M mol / dm^3
 
 @add_prefixes Hz (n, μ, u, m, k, M, G)
-@add_prefixes N (μ, m, k)
+@add_prefixes N (μ, u, m, k)
 @add_prefixes Pa (k,)
 @add_prefixes J (k,)
 @add_prefixes W (m, k, M, G)
@@ -127,7 +127,7 @@ end
     Hz,
 )
 @doc(
-    "Force in Newtons.",
+    "Force in Newtons. Available variants: `μN` (/`uN`), `mN`, `kN`.",
     N,
 )
 @doc(
