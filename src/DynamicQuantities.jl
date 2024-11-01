@@ -37,7 +37,6 @@ using DispatchDoctor: @stable
 end
 
 
-import PackageExtensionCompat: @require_extensions
 import .Units
 import .Constants
 import .UnitsParse: uparse, @u_str
@@ -51,10 +50,6 @@ let _units_import_expr = :(using .Units: m, g)
         Expr(:(.), s) for s in UNIT_SYMBOLS if s ∉ (:m, :g)
     )
     eval(_units_import_expr)
-end
-
-function __init__()
-    @require_extensions
 end
 
 end

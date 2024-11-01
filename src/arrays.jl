@@ -1,4 +1,3 @@
-import Compat: allequal
 using TestItems: @testitem
 
 """
@@ -250,26 +249,6 @@ Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.SizeUnknown, ::Nothing) 
     error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
 Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.HasLength, ::Integer) where {T} =
     error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
-
-# In earlier Julia, `Base._similar_for` has different signatures.
-@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasShape})
-    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape) where {T<:UnionAbstractQuantity} =
-        QuantityArray(similar(ustrip(c), value_type(T), axes(itr)), dimension(materialize_first(itr))::dim_type(T), T)
-    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape) where {T} =
-        similar(ustrip(c), T, axes(itr))
-end
-@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasLength})
-    @eval Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.HasLength) where {T} =
-        error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
-end
-@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.SizeUnknown})
-    @eval Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.SizeUnknown) where {T} =
-        error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
-end
-@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Any})
-    @eval Base._similar_for(::QuantityArray, ::Type{T}, _, _) where {T} =
-        error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
-end
 
 Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray} = Broadcast.ArrayStyle{QA}()
 
