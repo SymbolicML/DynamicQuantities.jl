@@ -1,5 +1,3 @@
-using Tricks: static_fieldnames
-
 const DEFAULT_DIM_BASE_TYPE = FixedRational{DEFAULT_NUMERATOR_TYPE,DEFAULT_DENOM}
 const DEFAULT_VALUE_TYPE = Float64
 
@@ -294,7 +292,7 @@ This should be static so that it can be hardcoded during compilation.
 The default is to use `fieldnames`, but you can overload this for custom behavior.
 """
 @inline function dimension_names(::Type{D}) where {D<:AbstractDimensions}
-    return static_fieldnames(D)
+    return fieldnames(D)
 end
 
 struct DimensionError{Q1,Q2} <: Exception
