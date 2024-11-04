@@ -263,7 +263,7 @@ end
 ## Energy
 @_lazy_register_unit cal 4.184 * J
 
-@add_prefixes cal (k)
+@add_prefixes cal (k,)
 
 @doc(
     "Energy in calories. Available variants: `kcal`.",
