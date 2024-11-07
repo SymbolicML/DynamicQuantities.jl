@@ -214,12 +214,24 @@ end
 
 ## Pressure
 @_lazy_register_unit bar 100 * kPa
+@_lazy_register_unit Torr 101325//760 * Pa
+@_lazy_register_unit mmHg Torr
 
 @add_prefixes bar (m,)
+@add_prefixes Torr (m,)
+@add_prefixes mmHg ()
 
 @doc(
     "Pressure in bars. Available variants: `mbar`.",
     bar,
+)
+@doc(
+    "Pressure in Torr. Available variants: `mTorr`.",
+    Torr,
+)
+@doc(
+    "Pressure in mmHg.",
+    mmHg,
 )
 
 ## Angles
