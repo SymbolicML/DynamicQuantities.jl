@@ -66,20 +66,10 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
-      - name: Configure doc environment
-        run: |
-          julia --project=docs/ -e '
-            using Pkg
-            Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()'
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-docdeploy@v1
+      - name: Install dependencies
+        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+      - name: Build and deploy
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
           DOCUMENTER_KEY_CAM: ${{ secrets.DAMTP_DEPLOY_KEY }}
-      - run: |
-          julia --project=docs -e '
-            using Documenter: DocMeta, doctest
-            using DynamicQuantities
-            DocMeta.setdocmeta!(DynamicQuantities, :DocTestSetup, :(using DynamicQuantities); recursive=true)
-            doctest(DynamicQuantities)'
+        run: julia --project=docs/ make.jl
