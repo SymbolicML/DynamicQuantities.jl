@@ -58,10 +58,9 @@ Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 # Multiplying ranges with units
 for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
-        Base.:*(r::UnitRange, q::$type) = (first(r) * q):(last(r) * q)
         Base.:*(r::StepRange, q::$type) = (first(r) * q):(Base.step(r) * q):(last(r) * q)
         Base.:*(r::StepRangeLen, q::$type) = range(first(r) * q; step=Base.step(r) * q, length=length(r))
-        Base.:*(q::$type, r::Union{UnitRange,StepRange,StepRangeLen}) = r * q
+        Base.:*(q::$type, r::Union{StepRange,StepRangeLen}) = r * q
     end
 end
 
