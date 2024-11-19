@@ -412,8 +412,7 @@ end
     @test length(x) == 4
 
     # With RealQuantity:
-    x = (1.0:4.0) * RealQuantity(u"inch")
-    @test_skip x isa StepRangeLen{<:RealQuantity{Float64,<:SymbolicDimensions}}
+    @test_skip (1.0:4.0) * RealQuantity(u"inch") isa StepRangeLen{<:RealQuantity{Float64,<:SymbolicDimensions}}
     # TODO: This is not available as TwicePrecision interacts with Real in a way
     #       that demands many other functions to be defined.
 end
