@@ -198,12 +198,6 @@ Base.round(::Type{T}, x::SimpleRatio) where {T} = round(T, x.num // x.den)
 
 end
 
-@testset "Ranges" begin
-    x = [xi for xi in 0.0u"km/s":0.1u"km/s":1.0u"km/s"]
-    @test x[2] == 0.1u"km/s"
-    @test x[end] == 1.0u"km/s"
-end
-
 @testset "Complex numbers" begin
     x = (0.5 + 0.6im) * u"km/s"
     @test string(x) == "(500.0 + 600.0im) m s⁻¹"
@@ -356,6 +350,63 @@ end
     @test norm(GenericQuantity(ustrip.(x), length=1, time=-1), 2) ≈ norm(ustrip.(x), 2) * u"m/s"
 
     @test ustrip(x') == ustrip(x)'
+end
+
+@testset "Ranges" begin
+    x = [xi for xi in 0.0u"km/s":0.1u"km/s":1.0u"km/s"]
+    @test x[2] == 0.1u"km/s"
+    @test x[end] == 1.0u"km/s"
+
+    # Test multiplying ranges with units
+    x = (1:0.25:4)u"inch"
+    @test x isa StepRangeLen
+    @test first(x) == 1u"inch"
+    @test x[2] == 1.25u"inch"
+    @test last(x) == 4u"inch"
+    @test length(x) == 13
+
+    # Integer range (but real-valued unit)
+    x = (1:4)u"inch"
+    @test x isa StepRangeLen
+    @test first(x) == 1u"inch"
+    @test x[2] == 2u"inch"
+    @test last(x) == 4u"inch"
+    @test length(x) == 4
+
+    # Test with floating point range
+    x = (1.0:0.5:3.0)u"m"
+    @test x isa StepRangeLen
+    @test first(x) == 1.0u"m"
+    @test x[2] == 1.5u"m"
+    @test last(x) == 3.0u"m"
+    @test length(x) == 5
+
+    x = (0:0.1:1)u"m"
+    @test length(x) == 11
+
+    # Test with symbolic units
+    x = (1:0.25:4)us"inch"
+    @test x isa StepRangeLen{<:Quantity{Float64,<:SymbolicDimensions}}
+    @test first(x) == us"inch"
+    @test x[2] == 1.25us"inch"
+    @test last(x) == 4us"inch"
+    @test length(x) == 13
+
+    # Test that symbolic units preserve their symbolic nature
+    x = (0:0.1:1)us"km/h"
+    @test x isa AbstractRange
+    @test first(x) == 0us"km/h"
+    @test x[2] == 0.1us"km/h"
+    @test last(x) == 1us"km/h"
+    @test length(x) == 11
+
+    # Similarly, integers should stay integers:
+    x = (1:4)us"inch"
+    @test x isa StepRangeLen{<:Quantity{Int64,<:SymbolicDimensions}}
+    @test first(x) == us"inch"
+    @test x[2] == 2us"inch"
+    @test last(x) == 4us"inch"
+    @test length(x) == 4
 end
 
 @testset "Alternate dimension construction" begin

@@ -55,6 +55,16 @@ end
 Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
 Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 
+# Multiplying ranges with units
+for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
+    @eval begin
+        Base.:*(r::UnitRange, q::$type) = (first(r) * q):(last(r) * q)
+        Base.:*(r::StepRange, q::$type) = (first(r) * q):(Base.step(r) * q):(last(r) * q)
+        Base.:*(r::StepRangeLen, q::$type) = range(first(r) * q; step=Base.step(r) * q, length=length(r))
+        Base.:*(q::$type, r::Union{UnitRange,StepRange,StepRangeLen}) = r * q
+    end
+end
+
 # Defines +, -, and mod
 for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-, :mod)
     # Only define `mod` on `Number` types:
