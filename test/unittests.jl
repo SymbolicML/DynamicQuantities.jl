@@ -372,6 +372,7 @@ end
     @test x[2] == 2u"inch"
     @test last(x) == 4u"inch"
     @test length(x) == 4
+    @test collect(x)[3] == 3u"inch"
 
     # Test with floating point range
     x = (1.0:0.5:3.0)u"m"
@@ -380,9 +381,11 @@ end
     @test x[2] == 1.5u"m"
     @test last(x) == 3.0u"m"
     @test length(x) == 5
+    @test collect(x)[3] == 2.0u"m"
 
     x = (0:0.1:1)u"m"
     @test length(x) == 11
+    @test collect(x)[3] == 0.2u"m"
 
     # Test with symbolic units
     x = (1:0.25:4)us"inch"
@@ -407,6 +410,12 @@ end
     @test x[2] == 2us"inch"
     @test last(x) == 4us"inch"
     @test length(x) == 4
+
+    # With RealQuantity:
+    x = (1.0:4.0) * RealQuantity(u"inch")
+    @test_skip x isa StepRangeLen{<:RealQuantity{Float64,<:SymbolicDimensions}}
+    # TODO: This is not available as TwicePrecision interacts with Real in a way
+    #       that demands many other functions to be defined.
 end
 
 @testset "Alternate dimension construction" begin

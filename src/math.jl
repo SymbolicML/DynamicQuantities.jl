@@ -56,12 +56,9 @@ Base.:*(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(+, l, r)
 Base.:/(l::AbstractDimensions, r::AbstractDimensions) = map_dimensions(-, l, r)
 
 # Multiplying ranges with units
-for (type, _, _) in ABSTRACT_QUANTITY_TYPES
-    @eval begin
-        Base.:*(r::Union{StepRange,StepRangeLen}, q::$type) = range(first(r) * q; step=Base.step(r) * q, length=length(r))
-        Base.:*(q::$type, r::Union{StepRange,StepRangeLen}) = r * q
-    end
-end
+Base.TwicePrecision{T}(x::T) where {T<:AbstractQuantity} = Base.TwicePrecision{typeof(x)}(x, zero(x))
+# TODO: Note that to get RealQuantity working, we have to overload many other functions,
+#       which is why we skip it.
 
 # Defines +, -, and mod
 for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-, :mod)
