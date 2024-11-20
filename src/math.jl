@@ -74,8 +74,11 @@ for T1 in (AbstractQuantity{<:Real}, Real),
     end
 
     if T3 === Real && !(T1 === T2 === Real)
-        @eval function Base.:(:)(::$T1, ::$T2)
-            error("When creating a range over quantities, you must specify a step.")
+        @eval function Base.:(:)(start::$T1, stop::$T2)
+            if !iszero(dimension(start)) || !iszero(dimension(stop))
+                error("When creating a range over dimensionful quantities, you must specify a step.")
+            end
+            return start:1:stop
         end
     end
 end

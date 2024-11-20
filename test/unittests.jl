@@ -371,8 +371,11 @@ end
         # Test error for missing step
         @test_throws "must specify a step" 1u"km":2u"km"
         @test_throws "must specify a step" 1us"km":2us"km"
-        # Even for dimensionless, be explicit:
-        @test_throws "must specify a step" 1u"1":5u"1"
+
+        # However, for backwards compatibility, dimensionless ranges are allowed:
+        x = collect(1u"1":5u"1")
+        @test x == [1, 2, 3, 4, 5]
+        @test eltype(x) <: Quantity{Float64}
 
         # Test errors for incompatible units
         @test_throws DimensionError 1u"km":1u"s":5u"km"
