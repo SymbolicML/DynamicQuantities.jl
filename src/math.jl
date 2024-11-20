@@ -60,6 +60,27 @@ Base.TwicePrecision{T}(x::T) where {T<:AbstractQuantity} = Base.TwicePrecision{t
 # TODO: Note that to get RealQuantity working, we have to overload many other functions,
 #       which is why we skip it.
 
+# Avoid https://github.com/JuliaLang/julia/issues/56610
+for T1 in (AbstractQuantity{<:Real}, Real),
+    T2 in (AbstractQuantity{<:Real}, Real),
+    T3 in (AbstractQuantity{<:Real}, Real)
+
+    T1 === T2 === T3 === Real && continue
+
+    @eval function Base.:(:)(start::$T1, step::$T2, stop::$T3)
+        dimension(start) == dimension(step) || throw(DimensionError(start, step))
+        dimension(start) == dimension(stop) || throw(DimensionError(start, stop))
+        return range(start, stop, length=length(ustrip(start):ustrip(step):ustrip(stop)))
+    end
+
+    if T3 === Real && !(T1 === T2 === Real)
+        @eval function Base.:(:)(::$T1, ::$T2)
+            error("When creating a range over quantities, you must specify a step.")
+        end
+    end
+end
+
+
 # Defines +, -, and mod
 for (type, true_base_type, _) in ABSTRACT_QUANTITY_TYPES, op in (:+, :-, :mod)
     # Only define `mod` on `Number` types:
