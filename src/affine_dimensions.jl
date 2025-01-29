@@ -1,11 +1,11 @@
 #=
 ToDo:
-    (1) Promotion rules were successful for AffineDimensions mixed with other dimenions
-         -  Now we need to handle *(AffineDimenions, AffineDimenions)
-         -  This means we need to define map_dimensions in a way that preserves scale
-         -  This is neccessary for compound AffineDimensions with zero offset
+    (1) Dimensional parsing
 
-    (2) Create a special case for subtraction of identical Affine Quantities (where 4C - 2C = -2K)
+    (2) Unit registration
+
+
+
 
 using DynamicQuantities
 
@@ -29,6 +29,10 @@ const AffineOrSymbolicDimensions{R} = Union{AbstractAffineDimensions{R}, Abstrac
     scale::Float64
     offset::Float64
     basedim::Dimensions{R}
+end
+
+function AffineDimensions(scale::Real, offset::Real, d::Dimensions{R}) where {R}
+    return AffineDimensions{R}(scale, offset, d)
 end
 
 function AffineDimensions(scale::Real, offset::Real, q::UnionAbstractQuantity{T,<:AbstractDimensions{R}}) where {T,R}
@@ -57,8 +61,6 @@ function Base.show(io::IO, d::AbstractAffineDimensions)
 end
 
 assert_no_offset(d::AffineDimensions) = iszero(offset(d)) || throw(AssertionError("AffineDimensions $(d) has a non-zero offset, implicit conversion is not allowed due to ambiguity. Use uexpand(x) to explicitly convert"))
-
-
 
 """
 affine(q::Q) where {T, R, D<:AbstractDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
@@ -211,33 +213,9 @@ function Base.:-(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionA
     else
         return _scale_expand(q1) - _scale_expand(q2)
     end
-end 
+end
 
-
-
-#=
-
-Base.:/(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity) = error(_affine_math_error("/"))
-Base.:/(q1::UnionAbstractQuantity, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = error(_affine_math_error("/"))
- = error(_affine_math_error("/"))
-
-Base.:+(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity) = error(_affine_math_error("*"))
-Base.:+(q1::UnionAbstractQuantity, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = error(_affine_math_error("*"))
-Base.:+(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = error(_affine_math_error("*"))
-
-Base.:-(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity) = error(_affine_math_error("-"))
-Base.:-(q1::UnionAbstractQuantity, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = error(_affine_math_error("-"))
-#Special case where subtracting identical affine units is allowed
-
-
-Base.:(==)(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity) = (uexpand(q1) == q2)
-Base.:(==)(q1::UnionAbstractQuantity, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = (q1 == uexpand(q2))
-Base.:(==)(l::AbstractAffineDimensions, r::AbstractAffineDimensions) = (uexpand(l) == uexpand(r))
-
-Base.:^(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::Number) = error(_affine_math_error("^"))
-Base.:inv(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = error(_affine_math_error("1/"))
-
-Base.iszero(d::AbstractAffineDimensions) = iszero(uexpand(d))
+Base.:(==)(q1::UnionAbstractQuantity{<:Any, <:AffineDimensions}, q2::UnionAbstractQuantity{<:Any, <:AffineDimensions}) = uexpand(q1) == uexpand(q2)
 
 
 # Units are stored using SymbolicDimensionsSingleton
@@ -245,6 +223,8 @@ const DEFAULT_AFFINE_QUANTITY_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE,
 # However, we output units from `us_str` using SymbolicDimensions, for type stability
 const DEFAULT_AFFINE_QUANTITY_OUTPUT_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE, DEFAULT_VALUE_TYPE, AffineDimensions{DEFAULT_DIM_BASE_TYPE})
 
+
+#=
 """
     SymbolicUnits
 
