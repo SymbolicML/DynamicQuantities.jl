@@ -4,7 +4,9 @@ ToDo:
 
     (2) Unit registration
 
+    (3) Tests
 
+    (4) Documentation
 
 
 using DynamicQuantities
@@ -57,7 +59,7 @@ constructorof(::Type{AffineDimensions{R}}) where R = AffineDimensions{R}
 
 function Base.show(io::IO, d::AbstractAffineDimensions)
     addsign = ifelse(offset(d)<0, " - " , " + ")
-    print(io, " ", scale(d), "(",basedim(d),")", addsign, offset(d))
+    print(io, "(", scale(d), " ", basedim(d), addsign, offset(d), ")")
 end
 
 assert_no_offset(d::AffineDimensions) = iszero(offset(d)) || throw(AssertionError("AffineDimensions $(d) has a non-zero offset, implicit conversion is not allowed due to ambiguity. Use uexpand(x) to explicitly convert"))
@@ -220,30 +222,21 @@ Base.:(==)(q1::UnionAbstractQuantity{<:Any, <:AffineDimensions}, q2::UnionAbstra
 
 # Units are stored using SymbolicDimensionsSingleton
 const DEFAULT_AFFINE_QUANTITY_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE, DEFAULT_VALUE_TYPE, AffineDimensions{DEFAULT_DIM_BASE_TYPE})
-# However, we output units from `us_str` using SymbolicDimensions, for type stability
-const DEFAULT_AFFINE_QUANTITY_OUTPUT_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE, DEFAULT_VALUE_TYPE, AffineDimensions{DEFAULT_DIM_BASE_TYPE})
 
-
-#=
-"""
-    SymbolicUnits
-
-A separate module where each unit is treated as a separate dimension,
-to enable pretty-printing of units.
-"""
-module AffineUnits
+module AffineUnitsParse
 
     using DispatchDoctor: @unstable
 
     import ..affine
-    import ..UNIT_SYMBOLS
-    import ..UNIT_VALUES
-    import ..CONSTANT_SYMBOLS
-    import ..AffineDimensions
     import ..constructorof
     import ..DEFAULT_AFFINE_QUANTITY_TYPE
-    import ..DEFAULT_AFFINE_QUANTITY_OUTPUT_TYPE
+    import ..DEFAULT_DIM_TYPE
     import ..DEFAULT_VALUE_TYPE
+    import ..Units: UNIT_SYMBOLS, UNIT_VALUES
+    import ..Constants: CONSTANT_SYMBOLS, CONSTANT_VALUES
+    import ..Constants
+    import ..Quantity
+
     import ..DEFAULT_DIM_BASE_TYPE
     import ..WriteOnceReadMany
 
@@ -265,66 +258,77 @@ module AffineUnits
     end
 
 
+
     """
-        sym_uparse(raw_string::AbstractString)
+        aff_uparse(s::AbstractString)
 
     Parse a string containing an expression of units and return the
-    corresponding `Quantity` object with `Float64` value.
-    However, that unlike the regular `u"..."` macro, this macro uses
-    `SymbolicDimensions` for the dimension type, which means that all units and
-    constants are stored symbolically and will not automatically expand to SI
-    units. For example, `sym_uparse("km/s^2")` would be parsed to
-    `Quantity(1.0, SymbolicDimensions, km=1, s=-2)`.
-
-    Note that inside this expression, you also have access to the `Constants`
-    module. So, for example, `sym_uparse("Constants.c^2 * Hz^2")` would evaluate to
-    `Quantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
-    namespace collisions, a few physical constants are automatically converted.
+    corresponding `Quantity` object with `Float64` value. 
+    However, unlike the regular `u"..."` macro, this macro uses
+    `AffineDimensions` for the dimension type, which can represent a greater
+    number of units, but much more limited functionality with calculations. 
+    For example, `aff_uparse("km/s^2")` would be parsed to
+    `Quantity(1.0, AffineDimensions, km=1, s=-2)`.
     """
-    function sym_uparse(s::AbstractString)
+    function aff_uparse(s::AbstractString)
         ex = map_to_scope(Meta.parse(s))
         ex = :($as_quantity($ex))
-        return copy(eval(ex))::DEFAULT_AFFINE_QUANTITY_OUTPUT_TYPE
+        return eval(ex)::DEFAULT_AFFINE_QUANTITY_TYPE
     end
 
-    as_quantity(q::DEFAULT_AFFINE_QUANTITY_OUTPUT_TYPE) = q
-    as_quantity(x::Number) = convert(DEFAULT_AFFINE_QUANTITY_OUTPUT_TYPE, x)
+    as_quantity(q::DEFAULT_AFFINE_QUANTITY_TYPE) = q
+    as_quantity(x::Number) = convert(DEFAULT_AFFINE_QUANTITY_TYPE, x)
     as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 
+    """
+        ua"[unit expression]"
+
+    Parse a string containing an expression of units and return the
+    corresponding `Quantity` object with `Float64` value. 
+    However, unlike the regular `u"..."` macro, this macro uses
+    `AffineDimensions` for the dimension type, which can represent a greater
+    number of units, but much more limited functionality with calculations. 
+    For example, `aff_uparse("km/s^2")` would be parsed to
+    `Quantity(1.0, AffineDimensions, km=1, s=-2)`.
+    """
+    macro ua_str(s)
+        ex = map_to_scope(Meta.parse(s))
+        ex = :($as_quantity($ex))
+        return esc(ex)
+    end
+
     @unstable function map_to_scope(ex::Expr)
-        if !(ex.head == :call) && !(ex.head == :. && ex.args[1] == :Constants)
-            throw(ArgumentError("Unexpected expression: $ex. Only `:call` and `:.` (for `SymbolicConstants`) are expected."))
+        if !(ex.head == :call)
+            throw(ArgumentError("Unexpected expression: $ex. Only `:call` is expected."))
         end
         if ex.head == :call
             ex.args[2:end] = map(map_to_scope, ex.args[2:end])
             return ex
-        else # if ex.head == :. && ex.args[1] == :Constants
-            @assert ex.args[2] isa QuoteNode
-            return lookup_constant(ex.args[2].value)
         end
     end
+
     function map_to_scope(sym::Symbol)
-        if sym in UNIT_SYMBOLS
-            # return at end
-        elseif sym in CONSTANT_SYMBOLS
-            throw(ArgumentError("Symbol $sym found in `Constants` but not `Units`. Please use `us\"Constants.$sym\"` instead."))
+        if sym in AFFINE_UNIT_SYMBOLS
+            return lookup_unit(sym)
         else
-            throw(ArgumentError("Symbol $sym not found in `Units` or `Constants`."))
+            throw(ArgumentError("Symbol $sym not found in `AffineUnits`."))
         end
-        return lookup_unit(sym)
     end
+
     function map_to_scope(ex)
         return ex
     end
+
     function lookup_unit(ex::Symbol)
-        i = findfirst(==(ex), UNIT_SYMBOLS)::Int
-        return as_quantity(AFFINE_UNIT_VALUES[i])
+        i = findfirst(==(ex), AFFINE_UNIT_SYMBOLS)::Int
+        return AFFINE_UNIT_VALUES[i]
     end
 
 end
 
 
-import .SymbolicUnits: as_quantity, sym_uparse, SymbolicConstants, map_to_scope
+
+import .AffineUnitsParse: aff_uparse
 
 """
     us"[unit expression]"
@@ -341,13 +345,13 @@ module. So, for example, `us"Constants.c^2 * Hz^2"` would evaluate to
 `Quantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
 namespace collisions, a few physical constants are automatically converted.
 """
-macro us_str(s)
-    ex = map_to_scope(Meta.parse(s))
-    ex = :($as_quantity($ex))
+macro ua_str(s)
+    ex = AffineUnitsParse.map_to_scope(Meta.parse(s))
+    ex = :($AffineUnitsParse.as_quantity($ex))
     return esc(ex)
 end
 
-=#
+
 
 
 
