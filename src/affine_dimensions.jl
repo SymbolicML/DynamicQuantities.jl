@@ -186,16 +186,40 @@ function Base.:/(l::AffineDimensions, r::AffineDimensions)
     )
 end
 
+# Exponentiation ===============================================================
+function Base.:^(l::AffineDimensions{R}, r::Number) where {R}
+    assert_no_offset(l)
+    return AffineDimensions(
+        scale = scale(l)^r,
+        offset = offset(l),
+        basedim = map_dimensions(Base.Fix1(*, tryrationalize(R, r)), basedim(l))
+    )
+end
+
+# Operations on self-values ======================================================================================
+function _scale_expand(q::Q) where {T, R, D<:AbstractAffineDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
+    return convert(with_type_parameters(Q, T, Dimensions{R}), q)
+end
+
+#Addition will return Quantity{T, Dimensions}
+Base.:+(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = _scale_expand(q1) + _scale_expand(q2)
+
+#Subtraction will return Quantity{T, Dimensions}, in special cases, differences between offsetted AffineDimensions is allowed as offsets cancel out
+function Base.:-(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions})
+    if dimension(q1) == dimension(q2)
+        return uexpand(q1) - uexpand(q2)
+    else
+        return _scale_expand(q1) - _scale_expand(q2)
+    end
+end 
+
 
 
 #=
-Base.:*(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity) = _no_offset(q1)*_no_offset(q2)
-Base.:*(q1::UnionAbstractQuantity, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = _no_offset(q1)*_no_offset(q2)
-Base.:*(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = _no_offset(q1)*_no_offset(q2)
 
 Base.:/(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity) = error(_affine_math_error("/"))
 Base.:/(q1::UnionAbstractQuantity, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = error(_affine_math_error("/"))
-Base.:/(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = error(_affine_math_error("/"))
+ = error(_affine_math_error("/"))
 
 Base.:+(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity) = error(_affine_math_error("*"))
 Base.:+(q1::UnionAbstractQuantity, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = error(_affine_math_error("*"))
@@ -204,13 +228,7 @@ Base.:+(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQu
 Base.:-(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity) = error(_affine_math_error("-"))
 Base.:-(q1::UnionAbstractQuantity, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = error(_affine_math_error("-"))
 #Special case where subtracting identical affine units is allowed
-function Base.:-(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions})
-    if dimension(q1) == dimension(q2)
-        return uexpand(q1) - uexpand(q2)
-    else
-        return _no_offset(q1) - _no_offset(q2)
-    end
-end 
+
 
 Base.:(==)(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity) = (uexpand(q1) == q2)
 Base.:(==)(q1::UnionAbstractQuantity, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = (q1 == uexpand(q2))
