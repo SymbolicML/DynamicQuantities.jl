@@ -1,8 +1,13 @@
 #=
 ToDo:
-    (1) Dimensional parsing
+    (1) Unit registration
 
-    (2) Unit registration
+    (2) Symbol ids (add id field)
+         -  Add an id::Symbol field
+         -  Default field is :nothing (displaying AffineDimensions with his id reverts to current behaviour)
+         -  Registered units will have a symbol (such as :°C), in such cases a symbol will be displayed
+         -  Operations will result in a :nothing field (we shouldn't do many operations on AffineDimensions)
+         -  uconvert(u::AffineDimensions) as currently programmed, will populate the id field with the targeted unit of u
 
     (3) Tests
 
@@ -58,8 +63,8 @@ constructorof(::Type{AffineDimensions}) = AffineDimensions{DEFAULT_DIM_BASE_TYPE
 constructorof(::Type{AffineDimensions{R}}) where R = AffineDimensions{R}
 
 function Base.show(io::IO, d::AbstractAffineDimensions)
-    addsign = ifelse(offset(d)<0, " - " , " + ")
-    print(io, "(", scale(d), " ", basedim(d), addsign, offset(d), ")")
+    addsign = ifelse(offset(d)<0, "-" , "+")
+    print(io, "(", scale(d), " ", basedim(d),")", addsign, offset(d))
 end
 
 assert_no_offset(d::AffineDimensions) = iszero(offset(d)) || throw(AssertionError("AffineDimensions $(d) has a non-zero offset, implicit conversion is not allowed due to ambiguity. Use uexpand(x) to explicitly convert"))
