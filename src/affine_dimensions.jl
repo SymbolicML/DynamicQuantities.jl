@@ -278,7 +278,7 @@ module AffineUnitsParse
 
         push!(AFFINE_UNIT_SYMBOLS, name)
         push!(AFFINE_UNIT_VALUES, q)
-        AFFINE_UNIT_MAPPING[name] = length(AFFINE_UNIT_SYMBOLS)
+        AFFINE_UNIT_MAPPING[name] = lastindex(AFFINE_UNIT_SYMBOLS)
         return nothing
     end
     update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity) = update_external_affine_unit(name, affine_unit(q))
@@ -294,7 +294,7 @@ module AffineUnitsParse
     `AffineDimensions` for the dimension type, which can represent a greater
     number of units, but much more limited functionality with calculations. 
     For example, `aff_uparse("km/s^2")` would be parsed to
-    `Quantity(1.0, AffineDimensions, km=1, s=-2)`.
+    `Quantity(1.0, AffineDimensions(scale=1000.0, offset=0.0, basedim=Dimensions(length=1, time=-2)))`.
     """
     function aff_uparse(s::AbstractString)
         ex = map_to_scope(Meta.parse(s))
@@ -314,8 +314,8 @@ module AffineUnitsParse
     However, unlike the regular `u"..."` macro, this macro uses
     `AffineDimensions` for the dimension type, which can represent a greater
     number of units, but much more limited functionality with calculations. 
-    For example, `aff_uparse("km/s^2")` would be parsed to
-    `Quantity(1.0, AffineDimensions, km=1, s=-2)`.
+    For example, `ua"km/s^2"` would be parsed to
+    `Quantity(1.0, AffineDimensions(scale=1000.0, offset=0.0, basedim=Dimensions(length=1, time=-2)))`.
     """
     macro ua_str(s)
         ex = map_to_scope(Meta.parse(s))
@@ -357,19 +357,17 @@ end
 import .AffineUnitsParse: aff_uparse, update_external_affine_unit
 
 """
-    us"[unit expression]"
+    ua"[unit expression]"
 
-Parse a string containing an expression of units and return the
-corresponding `Quantity` object with `Float64` value. However,
-unlike the regular `u"..."` macro, this macro uses `SymbolicDimensions`
-for the dimension type, which means that all units and constants
-are stored symbolically and will not automatically expand to SI units.
-For example, `us"km/s^2"` would be parsed to `Quantity(1.0, SymbolicDimensions, km=1, s=-2)`.
-
-Note that inside this expression, you also have access to the `Constants`
-module. So, for example, `us"Constants.c^2 * Hz^2"` would evaluate to
-`Quantity(1.0, SymbolicDimensions, c=2, Hz=2)`. However, note that due to
-namespace collisions, a few physical constants are automatically converted.
+    Parse a string containing an expression of units and return the
+    corresponding `Quantity` object with `Float64` value. 
+    However, unlike the regular `u"..."` macro, this macro uses
+    `AffineDimensions` for the dimension type, which can represent a greater
+    number of units, but supports a much smaller set of operations. It is
+    adviced to convert AffineDimensions to regular are symbolic dimensions
+    as soon as possible. 
+    For example, `ua"km/s^2"` would be parsed to
+    `Quantity(1.0, AffineDimensions(scale=1000.0, offset=0.0, basedim=Dimensions(length=1, time=-2)))`.
 """
 macro ua_str(s)
     ex = AffineUnitsParse.map_to_scope(Meta.parse(s))
