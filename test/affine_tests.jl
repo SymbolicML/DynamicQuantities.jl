@@ -13,3 +13,8 @@ uconvert(us"K", Quantity(-40.0, celsius))
 Quantity(-40.0, celsius) isa DynamicQuantities.AbstractQuantityOrArray{<:Any, <:AbstractAffineDimensions}
 
 Quantity(1.0, kelvin)*Quantity(1.0, kelvin)
+
+velocity = ua"mm/s"
+
+@register_unit lb 0.453592u"kg"
+mass_flow = ua"lb/min"

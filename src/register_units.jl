@@ -12,6 +12,7 @@ function update_all_values(name_symbol, unit)
         ALL_MAPPING[name_symbol] = i
         UNIT_MAPPING[name_symbol] = i
         update_external_symbolic_unit_value(name_symbol)
+        update_external_affine_unit(name_symbol, unit)
     end
 end
 

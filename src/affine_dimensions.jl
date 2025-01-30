@@ -70,12 +70,26 @@ end
 assert_no_offset(d::AffineDimensions) = iszero(offset(d)) || throw(AssertionError("AffineDimensions $(d) has a non-zero offset, implicit conversion is not allowed due to ambiguity. Use uexpand(x) to explicitly convert"))
 
 """
-affine(q::Q) where {T, R, D<:AbstractDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
+affine_quantity(q::UnionAbstractQuantity)
 
-Converts a quantity to its nearest affine representation (with scale=1.0 and offset=0.0)
+Converts a quantity to its nearest affine quantity representation (with scale=1.0 and offset=0.0)
 """
-function affine(q::Q) where {T, R, D<:AbstractDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
-    return convert(with_type_parameters(Q, T, AffineDimensions{R}), q)
+function affine_quantity(q::Q) where {T, R, D<:AbstractDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
+    q_si  = convert(with_type_parameters(Q, T, Dimensions{R}), q)
+    dims  = AffineDimensions{R}(scale=1.0, offset=0.0, basedim=dimension(q))
+    q_val = convert(T, ustrip(q_si))
+    return constructorof(Q)(q_val, dims)
+end
+
+"""
+affine_unit(q::UnionAbstractQuantity)
+
+Converts a quantity to its nearest affine unit (with scale=ustrip(q) and offset=0.0)
+"""
+function affine_unit(q::Q) where {T, R, D<:AbstractDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
+    q_si  = convert(with_type_parameters(Q, T, Dimensions{R}), q)
+    dims  = AffineDimensions{R}(scale=ustrip(q_si), offset=0.0, basedim=dimension(q))
+    return constructorof(Q)(one(T), dims)
 end
 
 #Conversions
@@ -120,10 +134,7 @@ function Base.promote_rule(::Type{AffineDimensions{R1}}, ::Type{SymbolicDimensio
     return Dimensions{promote_type(R1,R2)}
 end
 
-#Constants are not imported
-const AFFINE_SYMBOLS = WriteOnceReadMany([UNIT_SYMBOLS...])
-const AFFINE_VALUES  = WriteOnceReadMany(affine.([UNIT_VALUES...]))
-const AFFINE_MAPPING = WriteOnceReadMany(Dict(s => INDEX_TYPE(i) for (i, s) in enumerate(AFFINE_SYMBOLS)))
+
 
 
 """
@@ -232,7 +243,8 @@ module AffineUnitsParse
 
     using DispatchDoctor: @unstable
 
-    import ..affine
+    import ..affine_unit
+    import ..uexpand
     import ..constructorof
     import ..DEFAULT_AFFINE_QUANTITY_TYPE
     import ..DEFAULT_DIM_TYPE
@@ -241,27 +253,32 @@ module AffineUnitsParse
     import ..Constants: CONSTANT_SYMBOLS, CONSTANT_VALUES
     import ..Constants
     import ..Quantity
+    import ..INDEX_TYPE
+    import ..AffineDimensions
+    import ..UnionAbstractQuantity
 
     import ..DEFAULT_DIM_BASE_TYPE
     import ..WriteOnceReadMany
 
-    const AFFINE_UNIT_SYMBOLS = deepcopy(UNIT_SYMBOLS)
-    const AFFINE_UNIT_VALUES  = WriteOnceReadMany{Vector{DEFAULT_AFFINE_QUANTITY_TYPE}}()
+    #Constants are not imported
+    const AFFINE_UNIT_SYMBOLS = WriteOnceReadMany([UNIT_SYMBOLS...])
+    const AFFINE_UNIT_VALUES  = WriteOnceReadMany(affine_unit.([UNIT_VALUES...]))
+    const AFFINE_UNIT_MAPPING = WriteOnceReadMany(Dict(s => INDEX_TYPE(i) for (i, s) in enumerate(AFFINE_UNIT_SYMBOLS)))
 
     # Used for registering units in current module
-    function update_affine_unit_values!(q, symbolic_unit_values = AFFINE_UNIT_VALUES)
-        push!(symbolic_unit_values, q)
-    end
-    update_affine_unit_values!(w::WriteOnceReadMany) = update_affine_unit_values!.(w._raw_data)
-    update_affine_unit_values!(UNIT_VALUES)
+    function update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity{<:Any,<:AffineDimensions})
+        ind = get(AFFINE_UNIT_MAPPING, name, INDEX_TYPE(0))
+        if !iszero(ind)
+            @warn "unit $(name) already exists, skipping"
+            return nothing
+        end
 
-    
-    # Used for registering units in an external module
-    function update_external_affine_unit_value(name::Symbol, unit::Quantity)
         push!(AFFINE_UNIT_SYMBOLS, name)
-        push!(AFFINE_UNIT_VALUES, affine(unit))
+        push!(AFFINE_UNIT_VALUES, q)
+        AFFINE_UNIT_MAPPING[name] = length(AFFINE_UNIT_SYMBOLS)
+        return nothing
     end
-
+    update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity) = update_external_affine_unit(name, affine_unit(q))
 
 
     """
@@ -333,7 +350,7 @@ end
 
 
 
-import .AffineUnitsParse: aff_uparse
+import .AffineUnitsParse: aff_uparse, update_external_affine_unit
 
 """
     us"[unit expression]"
