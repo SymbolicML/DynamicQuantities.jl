@@ -1,6 +1,7 @@
 #=
 ToDo:
     (1) Unit registration
+         -  @register_affine_unit
 
     (2) Symbol ids (add id field)
          -  Add an id::Symbol field
@@ -46,12 +47,13 @@ function AffineDimensions(scale::Real, offset::Real, q::UnionAbstractQuantity{T,
     return AffineDimensions{R}(scale, offset, dimension(q))
 end
 
-function AffineDimensions(s::Real, o::Real, dims::AffineDimensions{R}) where {R}
+function AffineDimensions{R}(s::Real, o::Real, dims::AbstractAffineDimensions) where {R}
     new_s = s*scale(dims)
     new_o = offset(dims) + o
     return AffineDimensions{R}(new_s, new_o, basedim(dims))
 end
 
+AffineDimensions(s::Real, o::Real, dims::AbstractAffineDimensions{R}) where {R} = AffineDimensions{R}(s, o, dims)
 AffineDimensions(d::Dimensions{R}) where R = AffineDimenions{R}(scale=0.0, offset=0.0, basedim=d)
 
 scale(d::AffineDimensions)  = d.scale
@@ -76,7 +78,7 @@ Converts a quantity to its nearest affine quantity representation (with scale=1.
 """
 function affine_quantity(q::Q) where {T, R, D<:AbstractDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
     q_si  = convert(with_type_parameters(Q, T, Dimensions{R}), q)
-    dims  = AffineDimensions{R}(scale=1.0, offset=0.0, basedim=dimension(q))
+    dims  = AffineDimensions{R}(scale=1.0, offset=0.0, basedim=dimension(q_si))
     q_val = convert(T, ustrip(q_si))
     return constructorof(Q)(q_val, dims)
 end
@@ -88,7 +90,7 @@ Converts a quantity to its nearest affine unit (with scale=ustrip(q) and offset=
 """
 function affine_unit(q::Q) where {T, R, D<:AbstractDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
     q_si  = convert(with_type_parameters(Q, T, Dimensions{R}), q)
-    dims  = AffineDimensions{R}(scale=ustrip(q_si), offset=0.0, basedim=dimension(q))
+    dims  = AffineDimensions{R}(scale=ustrip(q_si), offset=0.0, basedim=dimension(q_si))
     return constructorof(Q)(one(T), dims)
 end
 
@@ -254,6 +256,7 @@ module AffineUnitsParse
     import ..Constants
     import ..Quantity
     import ..INDEX_TYPE
+    import ..AbstractDimensions
     import ..AffineDimensions
     import ..UnionAbstractQuantity
 
@@ -279,6 +282,7 @@ module AffineUnitsParse
         return nothing
     end
     update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity) = update_external_affine_unit(name, affine_unit(q))
+    update_external_affine_unit(name::Symbol, d::AbstractDimensions)    = update_external_affine_unit(name, Quantity(DEFAULT_VALUE_TYPE(1.0), d))
 
 
     """

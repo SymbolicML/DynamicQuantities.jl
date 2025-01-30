@@ -11,7 +11,7 @@ export QuantityArray
 export DimensionError
 export ustrip, dimension
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
-export uparse, @u_str, sym_uparse, @us_str, aff_uparse, @ua_str, uexpand, uconvert, @register_unit
+export uparse, @u_str, sym_uparse, @us_str, aff_uparse, @ua_str, uexpand, uconvert, @register_unit, @register_affine_unit
 
 # Deprecated:
 export expand_units

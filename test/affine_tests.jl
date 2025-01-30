@@ -18,3 +18,12 @@ velocity = ua"mm/s"
 
 @register_unit lb 0.453592u"kg"
 mass_flow = ua"lb/min"
+
+@register_affine_unit °C AffineDimensions(scale=1.0, offset=273.15, basedim=u"K")
+temp_c = ua"°C"
+
+@register_affine_unit °F AffineDimensions(scale=5/9, offset=-(5/9)*32, basedim=ua"°C")
+temp_f = ua"°F"
+
+uconvert(ua"°C", 0*ua"°F")
+uexpand(0*ua"°F")
