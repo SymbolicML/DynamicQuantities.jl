@@ -8,6 +8,7 @@ celsius = AffineDimensions(scale=1.0, offset=273.15, basedim=u"K")
 fahrenheit = AffineDimensions(scale=5/9, offset=-(5/9)*32, basedim=celsius)
 
 uconvert(Quantity(1.0, fahrenheit), Quantity(-40.0, celsius))
+uconvert(Quantity(1.0, celsius), Quantity(-40.0, fahrenheit))
 uconvert(us"K", Quantity(-40.0, celsius))
 
 Quantity(-40.0, celsius) isa DynamicQuantities.AbstractQuantityOrArray{<:Any, <:AbstractAffineDimensions}
@@ -25,6 +26,9 @@ uconvert(ua"psig", u"Constants.atm")
 uexpand(0ua"psig")
 
 
-uconvert(ua"°C", 0*ua"°F")
-uexpand(0*ua"°F")
+uconvert(ua"°C", 0ua"°F")
+uconvert(ua"°F", 0ua"°C")
+uexpand(0ua"°F")
 uconvert(ua"°C", 0u"K")
+uconvert(ua"°C", -40ua"°F")
+uconvert(ua"°F", -40ua"°C")

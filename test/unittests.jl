@@ -1991,6 +1991,90 @@ end
     @test QuantityArray([km, km]) |> uconvert(us"m") != [km, km]
 end
 
+@testset "Tests of AffineDimensions" begin
+    °C = ua"°C"
+    °F = ua"°F"
+
+    @test km isa Quantity{T,SymbolicDimensionsSingleton{R}} where {T,R}
+    @test dimension(km) isa SymbolicDimensionsSingleton
+    @test dimension(km) isa AbstractSymbolicDimensions
+
+    @test dimension(km).km == 1
+    @test dimension(km).m == 0
+    @test_throws "is not available as a symbol" dimension(km).γ
+    @test !iszero(dimension(km))
+    @test inv(km) == us"km^-1"
+    @test inv(km) == u"km^-1"
+
+    @test !iszero(dimension(SymbolicConstants.c))
+    @test SymbolicConstants.c isa Quantity{T,SymbolicDimensionsSingleton{R}} where {T,R}
+
+    # Constructors
+    @test SymbolicDimensionsSingleton(:cm) isa SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}
+    @test constructorof(SymbolicDimensionsSingleton) === SymbolicDimensionsSingleton
+
+    @test with_type_parameters(
+            SymbolicDimensionsSingleton{Int64},
+            Int32
+        ) === SymbolicDimensionsSingleton{Int32}
+
+    @test convert(
+            SymbolicDimensions,
+            SymbolicDimensionsSingleton{Int32}(:cm)
+        ) isa SymbolicDimensions{Int32}
+
+    @test copy(km) == km
+    # Any operation should immediately convert it:
+    @test km ^ -1 isa Quantity{T,DynamicQuantities.SymbolicDimensions{R}} where {T,R}
+
+    # Test promotion explicitly for coverage:
+    @test promote_type(
+            SymbolicDimensionsSingleton{Int16},
+            SymbolicDimensionsSingleton{Int32}
+        ) === SymbolicDimensions{Int32}
+    # ^ Note how we ALWAYS convert to SymbolicDimensions, even
+    # if the types are the same.
+    @test promote_type(
+            SymbolicDimensionsSingleton{Int16},
+            SymbolicDimensions{Int32}
+        ) === SymbolicDimensions{Int32}
+    @test promote_type(
+            SymbolicDimensionsSingleton{Int64},
+            Dimensions{Int16}
+        ) === Dimensions{Int64}
+
+    # Test map_dimensions explicitly for coverage:
+    @test map_dimensions(-, dimension(km)).km == -1
+    @test map_dimensions(-, dimension(km)) isa SymbolicDimensions
+    @test map_dimensions(+, dimension(km), dimension(m)).km == 1
+    @test map_dimensions(+, dimension(km), dimension(m)).m == 1
+    @test map_dimensions(+, dimension(km), dimension(m)).cm == 0
+    @test map_dimensions(+, dimension(km), SymbolicDimensions(dimension(m))).km == 1
+    @test map_dimensions(+, dimension(km), SymbolicDimensions(dimension(m))).m == 1
+    @test map_dimensions(+, dimension(km), SymbolicDimensions(dimension(m))).cm == 0
+    @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).km == 1
+    @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).m == 1
+    @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).cm == 0
+
+    # Note that we avoid converting to SymbolicDimensionsSingleton for uconvert:
+    @test km |> uconvert(us"m") == 1000m
+    @test km |> uconvert(us"m") isa Quantity{T,SymbolicDimensions{R}} where {T,R}
+    @test [km, km] isa Vector{Quantity{T,SymbolicDimensionsSingleton{R}}} where {T,R}
+    @test [km^2, km] isa Vector{Quantity{T,SymbolicDimensions{R}}} where {T,R}
+
+    @test km |> uconvert(us"m") == km |> us"m"
+    # No issue when converting to SymbolicDimensionsSingleton (gets
+    # converted)
+    @test uconvert(km, u"m") == 0.001km
+    @test uconvert(km, u"m") isa Quantity{T,SymbolicDimensions{R}} where {T,R}
+
+    # Symbolic dimensions retain symbols:
+    @test QuantityArray([km, km]) |> uconvert(us"m") == [1000m, 1000m]
+    @test QuantityArray([km, km]) |> uconvert(us"m") != [km, km]
+end
+
+
+
 @testset "Test div" begin
     for Q in (RealQuantity, Quantity, GenericQuantity)
         x = Q{Int}(10, length=1)

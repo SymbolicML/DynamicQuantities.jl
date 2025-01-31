@@ -40,19 +40,17 @@ const AffineOrSymbolicDimensions{R} = Union{AbstractAffineDimensions{R}, Abstrac
     symbol::Symbol = :nothing
 end
 
-
+#Inferring the type parameter R ========================================================================================================================
 function AffineDimensions(s::Real, o::Real, dims::Dimensions{R}, sym::Symbol=:nothing) where {R}
     return AffineDimensions{R}(s, o, dims, sym)
 end
 
-#Inferring the type parameter R
 AffineDimensions(s::Real, o::Real, dims::AbstractAffineDimensions{R}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, dims, sym)
 AffineDimensions(s::Real, o::Real, q::UnionAbstractQuantity{<:Any,<:AbstractDimensions{R}}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, q, sym)
 AffineDimensions(s::Real, o::UnionAbstractQuantity, q::UnionAbstractQuantity{<:Any,<:AbstractDimensions{R}}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, q, sym)
-
 AffineDimensions(d::Dimensions{R}) where R = AffineDimenions{R}(scale=1.0, offset=0.0, basedim=d, symbol=:nothing)
 
-
+#Affine dimensions from other affine dimensions =========================================================================================================
 function AffineDimensions{R}(s::Real, o::Real, dims::AbstractAffineDimensions, sym::Symbol=:nothing) where {R}
     new_s = s*scale(dims)
     new_o = offset(dims) + o
@@ -60,14 +58,21 @@ function AffineDimensions{R}(s::Real, o::Real, dims::AbstractAffineDimensions, s
 end
 
 
-#Affine dimensions from quantities
+#Affine dimensions from quantities =========================================================================================================================
 function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity, q::UnionAbstractQuantity, sym::Symbol=:nothing) where R
-    o_si = si_units(o)
-    q_si = si_units(q)
-    dimension(o_si) == dimension(q_si) || throw(DimensionError(o, q))
-    return AffineDimensions{R}(s, o_si, u_si, sym)
+    q0   = si_units(0*q) #Origin point in SI units
+    oΔ   = si_units(o) - si_units(0*o) #Offset is a difference in affine units
+    dimension(q0) == dimension(oΔ) || throw(DimensionError(o, q)) #Check the units and give an informative error
+    
+    #Obtain SI units of the scale and offset
+    o_si = oΔ + q0 #Total offset is origin plus the offset
+    q_si = si_units(q) - q0 #The scaling quantity must remove the origin
+    
+    #Call the SI quantity constructor
+    return AffineDimensions{R}(s, o_si, q_si, sym)
 end
 
+#Base case when everyting is convrted to si units (offset is assumed to be in SI units)
 function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity{<:Any,<:Dimensions}, q::UnionAbstractQuantity{<:Any,<:Dimensions}, sym::Symbol=:nothing) where R
     dimension(o) == dimension(q) || throw(DimensionError(o, q))
     o_val = ustrip(o)
@@ -75,18 +80,10 @@ function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity{<:Any,<:Dimension
     return AffineDimensions{R}(s*q_val, o_val, dimension(q), sym)
 end
 
-function AffineDimensions{R}(scale::Real, offset::Real, q::UnionAbstractQuantity{<:Any,<:AbstractDimensions}, sym::Symbol=:nothing) where R
-    return AffineDimensions{R}(scale, offset, uexpand(q), sym)
+#If a quantity is used, the offset is assumed to be in the same scale as the quantity 
+function AffineDimensions{R}(s::Real, o::Real, q::Q, sym::Symbol=:nothing) where {R, Q<:UnionAbstractQuantity}
+    return AffineDimensions{R}(s, constructorof(Q)(o, dimension(q)), q, sym)
 end
-
-function AffineDimensions{R}(scale::Real, offset::Real, q::UnionAbstractQuantity{<:Any,<:Dimensions}, sym::Symbol=:nothing) where R
-    q_val = ustrip(q)
-    return AffineDimensions{R}(scale*q_val, offset*q_val, dimension(q), sym)
-end
-
-
-
-
 
 
 scale(d::AffineDimensions)  = d.scale
@@ -107,9 +104,9 @@ function Base.show(io::IO, d::AbstractAffineDimensions)
     elseif iszero(offset(d))
         print(io, "(", scale(d), " ", basedim(d),")")
     elseif iszero(scale(d))
-        print(io, "(", basedim(d), addsign, abs(offset(d)), ")")
+        print(io, "(", addsign, abs(offset(d)), basedim(d), ")")
     else
-        print(io, "(", scale(d), " ", basedim(d), addsign, abs(offset(d))),")"
+        print(io, "(", scale(d), addsign, abs(offset(d)), " ", basedim(d),")")
     end
 end
 
@@ -350,9 +347,13 @@ module AffineUnitsParse
         AFFINE_UNIT_MAPPING[name] = lastindex(AFFINE_UNIT_SYMBOLS)
         return nothing
     end
+    
     update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity) = update_external_affine_unit(name, affine_unit(q))
     update_external_affine_unit(name::Symbol, d::AbstractDimensions)    = update_external_affine_unit(name, Quantity(DEFAULT_VALUE_TYPE(1.0), d))
-
+    function update_external_affine_unit(d::AffineDimensions)  
+        d.symbol != :nothing || error("Cannot register affine dimension if symbol is :nothing")
+        return update_external_affine_unit(d.symbol, d)
+    end
 
     """
         aff_uparse(s::AbstractString)
@@ -419,6 +420,15 @@ module AffineUnitsParse
         return AFFINE_UNIT_VALUES[i]
     end
 
+    #Register Celsius and Fahrenheit (the most commonly used affine units)
+    begin
+        K  = Quantity(1.0, temperature=1)
+        °C = Quantity(1.0, AffineDimensions(scale=1.0, offset=273.15*K, basedim=K, symbol=:°C))
+        °F = Quantity(1.0, AffineDimensions(scale=5/9, offset=(-160/9)°C, basedim=°C, symbol=:°F))
+        update_external_affine_unit(dimension(°C))
+        update_external_affine_unit(dimension(°F))
+    end
+    
 end
 
 
