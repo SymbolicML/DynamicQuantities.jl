@@ -54,4 +54,8 @@ let _units_import_expr = :(using .Units: m, g)
     eval(_units_import_expr)
 end
 
+#Register Celsius and Fahrenheit (the most commonly used affine units)
+@register_affine_unit °C AffineDimensions(scale=1.0, offset=273.15, basedim=u"K")
+@register_affine_unit °F AffineDimensions(scale=5/9, offset=-(5/9)*32, basedim=ua"°C")
+
 end
