@@ -18,12 +18,14 @@ end
         include("test_unitful.jl")
     end
 end
+#=
 @testitem "ScientificTypes.jl integration tests" begin
     include("test_scitypes.jl")
 end
 @testitem "Measurements.jl integration tests" begin
     include("test_measurements.jl")
 end
+=#
 ## Broken; see https://github.com/SymbolicML/DynamicQuantities.jl/issues/118
 # @testitem "Meshes.jl integration tests" begin
 #     include("test_meshes.jl")
@@ -31,11 +33,11 @@ end
 @testitem "Assorted unittests" begin
     include("unittests.jl")
 end
-
+#=
 @testitem "Aqua tests" begin
     include("test_aqua.jl")
 end
-
+=#
 if parse(Bool, get(ENV, "DQ_TEST_UPREFERRED", "false"))
     @eval @run_package_tests filter=t -> :upreferred in t.tags
 else

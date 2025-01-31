@@ -2093,6 +2093,8 @@ end
     @test MyV == us"V"
     @test MySV == us"V"
     @test MySV2 == us"km/h"
+    @test MySV == ua"V"
+    @test MySV2 == ua"km/h"
 
     if !skipped_register_unit
         @test length(UNIT_MAPPING) == map_count_before_registering + 3

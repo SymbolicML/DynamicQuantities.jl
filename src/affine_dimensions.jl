@@ -173,17 +173,18 @@ function uconvert(qout::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q::Quan
     return QuantityArray(vout, dout, quantity_type(q))
 end
 
-# Conversions for AffineOrSymbolicDimensions |> SymbolicDimensions =======================================================
-function uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions}, qin::AbstractQuantityOrArray{<:Any, <:AffineOrSymbolicDimensions})
+# Conversions for AbstractAffineDimensions |> AbstractSymbolicDimensions =======================================================
+function uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions}, qin::AbstractQuantityOrArray{<:Any, <:AbstractAffineDimensions})
     uconvert(qout, uexpand(qin))
 end
 
-function uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}, qin::AbstractQuantityOrArray{<:Any, <:AffineOrSymbolicDimensions})
+# Conversions for AbstractSymbolicDimensions |> AbstractAffineDimensions   =======================================================
+function uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}, qin::AbstractQuantityOrArray{<:Any, <:AbstractSymbolicDimensions})
     uconvert(qout, uexpand(qin))
 end
 
-# Conversions for AffineDimensions |> AffineDimensions =======================================================
-function uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractAffineDimensions}, qin::AbstractQuantityOrArray{<:Any, <:AffineDimensions})
+# Conversions for AbstractAffineDimensions |> AbstractAffineDimensions =======================================================
+function uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractAffineDimensions}, qin::AbstractQuantityOrArray{<:Any, <:AbstractAffineDimensions})
     uconvert(qout, uexpand(qin))
 end
 
