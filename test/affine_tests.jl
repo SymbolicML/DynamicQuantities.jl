@@ -4,8 +4,10 @@ using DynamicQuantities
 
 DT = DynamicQuantities.DEFAULT_DIM_BASE_TYPE
 kelvin  = AffineDimensions(scale=1.0, offset=0.0, basedim=u"K")
-celsius = AffineDimensions(scale=1.0, offset=273.15, basedim=u"K")
-fahrenheit = AffineDimensions(scale=5/9, offset=-(5/9)*32, basedim=celsius)
+rankine = AffineDimensions(scale=5/9, offset=0.0, basedim=kelvin)
+fahrenheit = AffineDimensions(scale=1.0, offset=459.67, basedim=rankine)
+celsius = AffineDimensions(scale=9/5, offset=32, basedim=fahrenheit)
+
 
 uconvert(Quantity(1.0, fahrenheit), Quantity(-40.0, celsius))
 uconvert(Quantity(1.0, celsius), Quantity(-40.0, fahrenheit))

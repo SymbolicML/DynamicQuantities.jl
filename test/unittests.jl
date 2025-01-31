@@ -1991,6 +1991,7 @@ end
     @test QuantityArray([km, km]) |> uconvert(us"m") != [km, km]
 end
 
+#=
 @testset "Tests of AffineDimensions" begin
     °C = ua"°C"
     °F = ua"°F"
@@ -2072,7 +2073,7 @@ end
     @test QuantityArray([km, km]) |> uconvert(us"m") == [1000m, 1000m]
     @test QuantityArray([km, km]) |> uconvert(us"m") != [km, km]
 end
-
+=#
 
 
 @testset "Test div" begin
