@@ -60,17 +60,19 @@ function AffineDimensions{R}(s::Real, o::Real, dims::AbstractAffineDimensions, s
 end
 
 
-
 #Affine dimensions from quantities
-function AffineDimensions{R}(scale::Real, offset::UnionAbstractQuantity, q::UnionAbstractQuantity, sym::Symbol=:nothing) where R
-    return AffineDimensions{R}(scale, si_units(offset), si_units(q), sym)
+function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity, q::UnionAbstractQuantity, sym::Symbol=:nothing) where R
+    o_si = si_units(o)
+    q_si = si_units(q)
+    dimension(o_si) == dimension(q_si) || throw(DimensionError(o, q))
+    return AffineDimensions{R}(s, o_si, u_si, sym)
 end
 
-function AffineDimensions{R}(scale::Real, offset::UnionAbstractQuantity{<:Any,<:Dimensions}, q::UnionAbstractQuantity{<:Any,<:Dimensions}, sym::Symbol=:nothing) where R
-    dimension(offset) == dimension(q) || throw(DimensionError(offset, q))
-    o_val = ustrip(offset)
+function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity{<:Any,<:Dimensions}, q::UnionAbstractQuantity{<:Any,<:Dimensions}, sym::Symbol=:nothing) where R
+    dimension(o) == dimension(q) || throw(DimensionError(o, q))
+    o_val = ustrip(o)
     q_val = ustrip(q)
-    return AffineDimensions{R}(scale*q_val, o_val, dimension(q), sym)
+    return AffineDimensions{R}(s*q_val, o_val, dimension(q), sym)
 end
 
 function AffineDimensions{R}(scale::Real, offset::Real, q::UnionAbstractQuantity{<:Any,<:AbstractDimensions}, sym::Symbol=:nothing) where R
