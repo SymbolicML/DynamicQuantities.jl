@@ -27,6 +27,9 @@ mass_flow = ua"lb/min"
 uconvert(ua"psig", u"Constants.atm")
 uexpand(0ua"psig")
 
+@register_unit half_meter 0.5u"m"
+AffineDimensions(offset=1, basedim=0.5u"m")
+AffineDimensions(offset=1, basedim=u"half_meter")
 
 uconvert(ua"°C", 0ua"°F")
 uconvert(ua"°F", 0ua"°C")

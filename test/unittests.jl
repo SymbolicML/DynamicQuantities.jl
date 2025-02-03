@@ -1991,89 +1991,65 @@ end
     @test QuantityArray([km, km]) |> uconvert(us"m") != [km, km]
 end
 
-#=
+
 @testset "Tests of AffineDimensions" begin
-    °C = ua"°C"
-    °F = ua"°F"
+    °C  = ua"°C"
+    °F  = ua"°F"
+    mps = ua"m/s"
 
-    @test km isa Quantity{T,SymbolicDimensionsSingleton{R}} where {T,R}
-    @test dimension(km) isa SymbolicDimensionsSingleton
-    @test dimension(km) isa AbstractSymbolicDimensions
+    @test °C isa Quantity{T,AffineDimensions{R}} where {T,R}
+    @test dimension(°C) isa AffineDimensions
+    @test dimension(°C) isa AbstractAffineDimensions
 
-    @test dimension(km).km == 1
-    @test dimension(km).m == 0
-    @test_throws "is not available as a symbol" dimension(km).γ
-    @test !iszero(dimension(km))
-    @test inv(km) == us"km^-1"
-    @test inv(km) == u"km^-1"
+    @test DynamicQuantities.basedim(dimension(°C)).temperature == 1
+    @test DynamicQuantities.basedim(dimension(°C)).length == 0
 
-    @test !iszero(dimension(SymbolicConstants.c))
-    @test SymbolicConstants.c isa Quantity{T,SymbolicDimensionsSingleton{R}} where {T,R}
+    @test inv(mps) == us"s/m"
+    @test inv(mps) == u"s/m"
+    @test mps^2 == u"m^2/s^2"
+
 
     # Constructors
-    @test SymbolicDimensionsSingleton(:cm) isa SymbolicDimensionsSingleton{DEFAULT_DIM_BASE_TYPE}
-    @test constructorof(SymbolicDimensionsSingleton) === SymbolicDimensionsSingleton
+    kelvin  = AffineDimensions(basedim=u"K")
+    @test Quantity(1.0, kelvin) == u"K"
 
-    @test with_type_parameters(
-            SymbolicDimensionsSingleton{Int64},
-            Int32
-        ) === SymbolicDimensionsSingleton{Int32}
+    rankine = AffineDimensions(scale=5/9, offset=0.0, basedim=kelvin)
+    @test Quantity(1.0, rankine) == (5/9)u"K"
 
-    @test convert(
-            SymbolicDimensions,
-            SymbolicDimensionsSingleton{Int32}(:cm)
-        ) isa SymbolicDimensions{Int32}
+    fahrenheit = AffineDimensions(scale=1.0, offset=Quantity(459.67, rankine), basedim=rankine)
+    @test Quantity(1.0, fahrenheit) ≈ °F
 
-    @test copy(km) == km
-    # Any operation should immediately convert it:
-    @test km ^ -1 isa Quantity{T,DynamicQuantities.SymbolicDimensions{R}} where {T,R}
+    celsius = AffineDimensions(scale=9/5, offset=Quantity(32.0, rankine), basedim=°F)
+    @test Quantity(1.0, celsius) ≈ °C
 
+    # Round-trip sanity checks
+    @test -40°C ≈ -40°F
+    @test Quantity(-40.0, celsius) ≈ Quantity(-40.0, fahrenheit)
+    
     # Test promotion explicitly for coverage:
-    @test promote_type(
-            SymbolicDimensionsSingleton{Int16},
-            SymbolicDimensionsSingleton{Int32}
-        ) === SymbolicDimensions{Int32}
-    # ^ Note how we ALWAYS convert to SymbolicDimensions, even
-    # if the types are the same.
-    @test promote_type(
-            SymbolicDimensionsSingleton{Int16},
-            SymbolicDimensions{Int32}
-        ) === SymbolicDimensions{Int32}
-    @test promote_type(
-            SymbolicDimensionsSingleton{Int64},
-            Dimensions{Int16}
-        ) === Dimensions{Int64}
+    @test promote_type(AffineDimensions{Int16}, AffineDimensions{Int32}) === AffineDimensions{Int32}
+    @test promote_type(Dimensions{Int16}, AffineDimensions{Int32}) === Dimensions{Int32}
+    @test promote_type(AffineDimensions{Int16}, Dimensions{Int32}) === Dimensions{Int32}
+    @test promote_type(SymbolicDimensions{Int16}, AffineDimensions{Int32}) === Dimensions{Int32}
+    @test promote_type(AffineDimensions{Int16}, SymbolicDimensions{Int32}) === Dimensions{Int32}
 
-    # Test map_dimensions explicitly for coverage:
-    @test map_dimensions(-, dimension(km)).km == -1
-    @test map_dimensions(-, dimension(km)) isa SymbolicDimensions
-    @test map_dimensions(+, dimension(km), dimension(m)).km == 1
-    @test map_dimensions(+, dimension(km), dimension(m)).m == 1
-    @test map_dimensions(+, dimension(km), dimension(m)).cm == 0
-    @test map_dimensions(+, dimension(km), SymbolicDimensions(dimension(m))).km == 1
-    @test map_dimensions(+, dimension(km), SymbolicDimensions(dimension(m))).m == 1
-    @test map_dimensions(+, dimension(km), SymbolicDimensions(dimension(m))).cm == 0
-    @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).km == 1
-    @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).m == 1
-    @test map_dimensions(+, SymbolicDimensions(dimension(km)), dimension(m)).cm == 0
+    # Test conversions
+    @test °C |> us"K" isa Quantity{<:Real, <:SymbolicDimensions}
+    @test 0°C |> us"K" == 273.15us"K"
+    @test us"K" |> °C isa Quantity{<:Real, <:AffineDimensions}
+    @test 0us"K" |> °C  == -273.15°C
+    @test °C |> °F isa Quantity{<:Real, <:AffineDimensions}
+    @test 0°C |> °F == 32°F
 
-    # Note that we avoid converting to SymbolicDimensionsSingleton for uconvert:
-    @test km |> uconvert(us"m") == 1000m
-    @test km |> uconvert(us"m") isa Quantity{T,SymbolicDimensions{R}} where {T,R}
-    @test [km, km] isa Vector{Quantity{T,SymbolicDimensionsSingleton{R}}} where {T,R}
-    @test [km^2, km] isa Vector{Quantity{T,SymbolicDimensions{R}}} where {T,R}
+    @test QuantityArray([0,1]°C) |> uconvert(°F) isa QuantityArray{T, <:Any, AffineDimensions{R}} where {T,R}
 
-    @test km |> uconvert(us"m") == km |> us"m"
-    # No issue when converting to SymbolicDimensionsSingleton (gets
-    # converted)
-    @test uconvert(km, u"m") == 0.001km
-    @test uconvert(km, u"m") isa Quantity{T,SymbolicDimensions{R}} where {T,R}
+    # Test display against errors
+    celsius = AffineDimensions(offset=273.15, basedim=u"K")
+    io = IOBuffer()
+    @test isnothing(show(io, (dimension(°F), dimension(ua"K"), celsius, fahrenheit)))
 
-    # Symbolic dimensions retain symbols:
-    @test QuantityArray([km, km]) |> uconvert(us"m") == [1000m, 1000m]
-    @test QuantityArray([km, km]) |> uconvert(us"m") != [km, km]
 end
-=#
+
 
 
 @testset "Test div" begin

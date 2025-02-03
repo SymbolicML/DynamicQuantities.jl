@@ -27,7 +27,7 @@ import DynamicQuantities: disambiguate_constant_symbol, ALL_MAPPING, ALL_VALUES
 
 
 const INDEX_TYPE = UInt16
-const AbstractQuantityOrArray{T,D} = Union{Quantity{T,D}, QuantityArray{T,<:Any,D}}
+const AbstractQuantityOrArray{T,D} = Union{UnionAbstractQuantity{T,D}, QuantityArray{T,<:Any,D}}
 
 abstract type AbstractAffineDimensions{R} <: AbstractDimensions{R} end
 
@@ -46,6 +46,7 @@ function AffineDimensions(s::Real, o::Real, dims::Dimensions{R}, sym::Symbol=:no
 end
 
 AffineDimensions(s::Real, o::Real, dims::AbstractAffineDimensions{R}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, dims, sym)
+AffineDimensions(s::Real, o::UnionAbstractQuantity, dims::AbstractAffineDimensions{R}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, dims, sym)
 AffineDimensions(s::Real, o::Real, q::UnionAbstractQuantity{<:Any,<:AbstractDimensions{R}}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, q, sym)
 AffineDimensions(s::Real, o::UnionAbstractQuantity, q::UnionAbstractQuantity{<:Any,<:AbstractDimensions{R}}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, q, sym)
 AffineDimensions(d::Dimensions{R}) where R = AffineDimenions{R}(scale=1.0, offset=0.0, basedim=d, symbol=:nothing)
@@ -57,6 +58,11 @@ function AffineDimensions{R}(s::Real, o::Real, dims::AbstractAffineDimensions, s
     return AffineDimensions{R}(new_s, new_o, basedim(dims), sym)
 end
 
+function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity, dims::AbstractAffineDimensions, sym::Symbol=:nothing) where {R}
+    new_s = s*scale(dims)
+    new_o = offset(dims) + ustrip(si_units(o)) #Offset is always in SI units
+    return AffineDimensions{R}(new_s, new_o, basedim(dims), sym)
+end
 
 #Affine dimensions from quantities =========================================================================================================================
 function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity, q::UnionAbstractQuantity, sym::Symbol=:nothing) where R
@@ -103,7 +109,7 @@ function Base.show(io::IO, d::AbstractAffineDimensions)
         print(io, basedim(d))
     elseif iszero(offset(d))
         print(io, "(", scale(d), " ", basedim(d),")")
-    elseif iszero(scale(d))
+    elseif isone(scale(d))
         print(io, "(", addsign, abs(offset(d)), basedim(d), ")")
     else
         print(io, "(", scale(d), addsign, abs(offset(d)), " ", basedim(d),")")
@@ -116,6 +122,7 @@ si_units(q::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions}) = uexpan
 function si_units(q::Q) where {T, R, D<:AbstractAffineDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
     return force_convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
+si_units(q::QuantityArray) = si_units.(q)
 
 
 """
@@ -180,6 +187,9 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
 end
 
 #Promotion rules
+function Base.promote_rule(::Type{AffineDimensions{R1}}, ::Type{AffineDimensions{R2}}) where {R1,R2}
+    return AffineDimensions{promote_type(R1,R2)}
+end
 function Base.promote_rule(::Type{AffineDimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
     return Dimensions{promote_type(R1,R2)}
 end
@@ -259,9 +269,18 @@ end
 function Base.:^(l::AffineDimensions{R}, r::Number) where {R}
     assert_no_offset(l)
     return AffineDimensions(
-        scale = scale(l)^r,
-        offset = offset(l),
-        basedim = map_dimensions(Base.Fix1(*, tryrationalize(R, r)), basedim(l))
+        scale   = scale(l)^r,
+        offset  = offset(l),
+        basedim = basedim(l)^tryrationalize(R, r)
+    )
+end
+
+function Base.:inv(l::AffineDimensions{R}) where {R}
+    assert_no_offset(l)
+    return AffineDimensions(
+        scale   = inv(scale(l)),
+        offset  = offset(l),
+        basedim = inv(basedim(l))
     )
 end
 
