@@ -291,7 +291,7 @@ Base.:(≈)(q1::UnionAbstractQuantity{<:Any, <:AbstractDimensions}, q2::UnionAbs
 # Units are stored using SymbolicDimensionsSingleton
 const DEFAULT_AFFINE_QUANTITY_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE, DEFAULT_VALUE_TYPE, AffineDimensions{DEFAULT_DIM_BASE_TYPE})
 
-module AffineUnitsParse
+module AffineUnits
 
     using DispatchDoctor: @unstable
 
@@ -434,7 +434,7 @@ end
 
 
 
-import .AffineUnitsParse: aff_uparse, update_external_affine_unit
+import .AffineUnits: aff_uparse, update_external_affine_unit
 
 """
     ua"[unit expression]"
@@ -450,8 +450,8 @@ import .AffineUnitsParse: aff_uparse, update_external_affine_unit
     `Quantity(1.0, AffineDimensions(scale=1000.0, offset=0.0, basedim=Dimensions(length=1, time=-2)))`.
 """
 macro ua_str(s)
-    ex = AffineUnitsParse.map_to_scope(Meta.parse(s))
-    ex = :($AffineUnitsParse.as_quantity($ex))
+    ex = AffineUnits.map_to_scope(Meta.parse(s))
+    ex = :($AffineUnits.as_quantity($ex))
     return esc(ex)
 end
 

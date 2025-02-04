@@ -86,9 +86,9 @@ end
 
 function _register_affine_unit(name, expr)
     name_symbol = Meta.quot(name)
-    index = get(AffineUnitsParse.AFFINE_UNIT_MAPPING, name, INDEX_TYPE(0))
+    index = get(AffineUnits.AFFINE_UNIT_MAPPING, name, INDEX_TYPE(0))
     if !iszero(index)
-        unit = AffineUnitsParse.AFFINE_UNIT_VALUES[index]
+        unit = AffineUnits.AFFINE_UNIT_VALUES[index]
         error("Unit `$name` is already defined as `$unit`")
     end
     return :($update_affine_values($name_symbol, $expr))
