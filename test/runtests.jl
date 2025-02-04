@@ -4,6 +4,7 @@ import Ratios: SimpleRatio
 
 #=
 Run using:
+julia --startup-file=no --depwarn=yes --threads=auto -e 'using Coverage; clean_folder(\"src\"); clean_folder(\"test\")'
 julia --startup-file=no --depwarn=yes --threads=auto --code-coverage=user --project=. -e 'using Pkg; Pkg.test(coverage=true)'
 julia --startup-file=no --depwarn=yes --threads=auto coverage.jl
 =#

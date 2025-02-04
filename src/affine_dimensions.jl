@@ -41,15 +41,9 @@ const AffineOrSymbolicDimensions{R} = Union{AbstractAffineDimensions{R}, Abstrac
 end
 
 #Inferring the type parameter R ========================================================================================================================
-function AffineDimensions(s::Real, o::Real, dims::Dimensions{R}, sym::Symbol=:nothing) where {R}
-    return AffineDimensions{R}(s, o, dims, sym)
-end
-
-AffineDimensions(s::Real, o::Real, dims::AbstractAffineDimensions{R}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, dims, sym)
-AffineDimensions(s::Real, o::UnionAbstractQuantity, dims::AbstractAffineDimensions{R}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, dims, sym)
-AffineDimensions(s::Real, o::Real, q::UnionAbstractQuantity{<:Any,<:AbstractDimensions{R}}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, q, sym)
-AffineDimensions(s::Real, o::UnionAbstractQuantity, q::UnionAbstractQuantity{<:Any,<:AbstractDimensions{R}}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, q, sym)
-AffineDimensions(d::Dimensions{R}) where R = AffineDimenions{R}(scale=1.0, offset=0.0, basedim=d, symbol=:nothing)
+AffineDimensions(s, o, dims::AbstractDimensions{R}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, dims, sym)
+AffineDimensions(s, o, q::UnionAbstractQuantity{<:Any,<:AbstractDimensions{R}}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, q, sym)
+AffineDimensions(d::Dimensions{R}) where R = AffineDimensions{R}(scale=1.0, offset=0.0, basedim=d, symbol=:nothing)
 
 #Affine dimensions from other affine dimensions =========================================================================================================
 function AffineDimensions{R}(s::Real, o::Real, dims::AbstractAffineDimensions, sym::Symbol=:nothing) where {R}
@@ -62,6 +56,10 @@ function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity, dims::AbstractAf
     new_s = s*scale(dims)
     new_o = offset(dims) + ustrip(si_units(o)) #Offset is always in SI units
     return AffineDimensions{R}(new_s, new_o, basedim(dims), sym)
+end
+
+function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity, dims::Dimensions, sym::Symbol=:nothing) where {R}
+    return AffineDimensions{R}(s, ustrip(si_units(o)), dims, sym)
 end
 
 #Affine dimensions from quantities =========================================================================================================================
@@ -86,7 +84,7 @@ function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity{<:Any,<:Dimension
     return AffineDimensions{R}(s*q_val, o_val, dimension(q), sym)
 end
 
-#If a quantity is used, the offset is assumed to be in the same scale as the quantity 
+#If a quantity is used only for the dimension, the offset is assumed to be in the same scale as the quantity 
 function AffineDimensions{R}(s::Real, o::Real, q::Q, sym::Symbol=:nothing) where {R, Q<:UnionAbstractQuantity}
     return AffineDimensions{R}(s, o*q, q, sym)
 end
