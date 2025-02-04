@@ -6,8 +6,9 @@ using DynamicQuantities: GenericQuantity, with_type_parameters, constructorof
 using DynamicQuantities: promote_quantity_on_quantity, promote_quantity_on_value
 using DynamicQuantities: UNIT_VALUES, UNIT_MAPPING, UNIT_SYMBOLS, ALL_MAPPING, ALL_SYMBOLS, ALL_VALUES
 using DynamicQuantities.SymbolicUnits: SYMBOLIC_UNIT_VALUES
+using DynamicQuantities.AffineUnits: AFFINE_UNIT_SYMBOLS, AFFINE_UNIT_MAPPING, AFFINE_UNIT_VALUES
 using DynamicQuantities: map_dimensions
-using DynamicQuantities: _register_unit
+using DynamicQuantities: _register_unit, _register_affine_unit
 using Ratios: SimpleRatio
 using SaferIntegers: SafeInt16
 using StaticArrays: SArray, MArray
@@ -2165,8 +2166,10 @@ end
 # test block.
 map_count_before_registering = length(UNIT_MAPPING)
 all_map_count_before_registering = length(ALL_MAPPING)
+affine_count_before_registering = length(AFFINE_UNIT_MAPPING)
 
 skipped_register_unit = false
+#Registering Symbolic Units
 if :MyV ∉ UNIT_SYMBOLS  # (In case we run this script twice)
     @eval @register_unit MyV u"V"
 else
@@ -2179,7 +2182,18 @@ if :MySV2 ∉ UNIT_SYMBOLS
     @eval @register_unit MySV2 us"km/h"
 end
 
+#Registering Affine Units
+if :My°C ∉ AFFINE_UNIT_SYMBOLS  # (In case we run this script twice)
+    @eval @register_affine_unit My°C ua"°C"
+else
+    skipped_register_unit = true
+end
+if :My°C2 ∉ AFFINE_UNIT_SYMBOLS
+    @eval @register_affine_unit My°C2 dimension(ua"°C")
+end
+
 @test_throws "Unit `m` is already defined as `1.0 m`" esc(_register_unit(:m, u"s"))
+@test_throws "Unit `°C` is already defined as `1.0 °C`" esc(_register_affine_unit(:°C, ua"°C"))
 
 # Constants as well:
 @test_throws "Unit `Ryd` is already defined" esc(_register_unit(:Ryd, u"Constants.Ryd"))
@@ -2188,6 +2202,8 @@ end
     MyV = u"MyV"
     MySV = u"MySV"
     MySV2 = u"MySV2"
+    My°C = ua"My°C"
+    My°C2 = ua"My°C2"
 
     @test MyV === u"V"
     @test MyV == us"V"
@@ -2195,20 +2211,36 @@ end
     @test MySV2 == us"km/h"
     @test MySV == ua"V"
     @test MySV2 == ua"km/h"
+    @test My°C == ua"My°C"
+    @test My°C == uexpand(ua"My°C")
+    @test My°C2 == ua"My°C2"
+    @test My°C2 == uexpand(ua"My°C2")
 
     if !skipped_register_unit
         @test length(UNIT_MAPPING) == map_count_before_registering + 3
         @test length(ALL_MAPPING) == all_map_count_before_registering + 3
+        @test length(AFFINE_UNIT_MAPPING) == affine_count_before_registering + 5
     end
 
     for my_unit in (MySV, MyV)
         @test my_unit in UNIT_VALUES
         @test my_unit in ALL_VALUES
         @test my_unit in SYMBOLIC_UNIT_VALUES
+        @test my_unit in AFFINE_UNIT_VALUES #Non-affine units should also be registered
     end
+    
     for my_unit in (:MySV, :MyV)
         @test my_unit in UNIT_SYMBOLS
         @test my_unit in ALL_SYMBOLS
+        @test my_unit in AFFINE_UNIT_SYMBOLS #Non-affine units should also be registered
+    end
+
+    for my_unit in (My°C, My°C2) #Affine units should only show up in the affine unit registry
+        @test my_unit in AFFINE_UNIT_VALUES
+    end
+
+    for my_unit in (:My°C, :My°C2) #Affine units should only show up in the affine unit registry
+        @test my_unit in AFFINE_UNIT_SYMBOLS
     end
 end
 
