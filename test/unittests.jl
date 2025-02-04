@@ -2082,11 +2082,10 @@ end
     @test isnothing(show(io, (dimension(°F), dimension(ua"K"), psi, celsius, fahrenheit)))
 
     # Test updating affine units
-    @test DynamicQuantities.update_external_affine_unit(:°C, °C) === nothing
-    @test DynamicQuantities.update_external_affine_unit(:°C, dimension(°C)) === nothing
-    @test DynamicQuantities.update_external_affine_unit(dimension(°C)) === nothing
+    @test_warn "unit °C already exists, skipping" DynamicQuantities.update_external_affine_unit(:°C, °C)
+    @test_warn "unit °C already exists, skipping" DynamicQuantities.update_external_affine_unit(:°C, dimension(°C))
+    @test_warn "unit °C already exists, skipping" DynamicQuantities.update_external_affine_unit(dimension(°C))
     @test_throws "Cannot register affine dimension if symbol is :nothing" DynamicQuantities.update_external_affine_unit(celsius)
-
 
 end
 
@@ -2183,10 +2182,12 @@ if :MySV2 ∉ UNIT_SYMBOLS
 end
 
 #Registering Affine Units
+if :psig ∉ AFFINE_UNIT_SYMBOLS  #This example is in the documentation so it better work
+    @eval @register_unit psi 6.89476us"kPa"
+    @eval @register_affine_unit psig AffineDimensions(offset=u"Constants.atm", basedim=u"psi")
+end
 if :My°C ∉ AFFINE_UNIT_SYMBOLS  # (In case we run this script twice)
     @eval @register_affine_unit My°C ua"°C"
-else
-    skipped_register_unit = true
 end
 if :My°C2 ∉ AFFINE_UNIT_SYMBOLS
     @eval @register_affine_unit My°C2 dimension(ua"°C")
@@ -2204,6 +2205,8 @@ end
     MySV2 = u"MySV2"
     My°C = ua"My°C"
     My°C2 = ua"My°C2"
+    psi = u"psi"
+    psig = ua"psig"
 
     @test MyV === u"V"
     @test MyV == us"V"
@@ -2211,15 +2214,19 @@ end
     @test MySV2 == us"km/h"
     @test MySV == ua"V"
     @test MySV2 == ua"km/h"
+    @test psi == ua"psi"
+    @test psi == u"psi"
+    @test psig == ua"psig"
+    @test 0*psig == u"Constants.atm"
     @test My°C == ua"My°C"
     @test My°C == uexpand(ua"My°C")
     @test My°C2 == ua"My°C2"
     @test My°C2 == uexpand(ua"My°C2")
 
     if !skipped_register_unit
-        @test length(UNIT_MAPPING) == map_count_before_registering + 3
-        @test length(ALL_MAPPING) == all_map_count_before_registering + 3
-        @test length(AFFINE_UNIT_MAPPING) == affine_count_before_registering + 5
+        @test length(UNIT_MAPPING) == map_count_before_registering + 4
+        @test length(ALL_MAPPING) == all_map_count_before_registering + 4
+        @test length(AFFINE_UNIT_MAPPING) == affine_count_before_registering + 6
     end
 
     for my_unit in (MySV, MyV)
