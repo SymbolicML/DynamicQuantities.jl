@@ -283,7 +283,7 @@ julia> 3us"V" |> us"OneFiveV"
 2.0 OneFiveV
 ```
 
-### Affine Dimensions
+### Affine units
 Units that have an offset (such as °C = K + 273.15) are an unfortunate fact of life: they are used extensively but often result in ambiguous mathematical operations (many other packages, such as Unitful.jl only support limited operations for affine dimensions). `AffineDimensions` seeks to extend DynamicQuantities.jl to reduce dependence on Unitful.jl, and enable handling/converting such units in a flexible, type-stable manner.
 
 `AffineDimensions` are a generalization of `Dimensions` and `SymbolicDimensions`. While SymbolicDimensions essentially add a scale to Dimensions, AffineDimensions will add both a scale and an offset. Verious constructors can be used to construct `AffineDimensions` from other dimensions.
