@@ -1,32 +1,4 @@
-#=
-ToDo:
-    (1) Unit registration
-         -  @register_affine_unit
 
-    (2) Symbol ids (add id field)
-         -  Add an id::Symbol field
-         -  Default field is :nothing (displaying AffineDimensions with his id reverts to current behaviour)
-         -  Registered units will have a symbol (such as :°C), in such cases a symbol will be displayed
-         -  Operations will result in a :nothing field (we shouldn't do many operations on AffineDimensions)
-         -  uconvert(u::AffineDimensions) as currently programmed, will populate the id field with the targeted unit of u
-
-    (3) Tests
-
-    (4) Documentation
-
-
-using DynamicQuantities
-
-import DynamicQuantities.Units: UNIT_SYMBOLS, UNIT_MAPPING, UNIT_VALUES
-import DynamicQuantities.ABSTRACT_QUANTITY_TYPES
-import DynamicQuantities: DEFAULT_DIM_BASE_TYPE, DEFAULT_QUANTITY_TYPE, DEFAULT_VALUE_TYPE
-import DynamicQuantities: WriteOnceReadMany, with_type_parameters, constructorof, isinteger, uexpand, uconvert, new_quantity
-import DynamicQuantities.Constants: CONSTANT_SYMBOLS, CONSTANT_MAPPING, CONSTANT_VALUES
-import DynamicQuantities: disambiguate_constant_symbol, ALL_MAPPING, ALL_VALUES
-=#
-
-
-const INDEX_TYPE = UInt16
 const AbstractQuantityOrArray{T,D} = Union{UnionAbstractQuantity{T,D}, QuantityArray{T,<:Any,D}}
 
 abstract type AbstractAffineDimensions{R} <: AbstractDimensions{R} end
@@ -51,6 +23,7 @@ function AffineDimensions{R}(s::Real, o::Real, dims::AbstractAffineDimensions, s
     new_o = offset(dims) + o*scale(dims) #Scale of o is assumed to be scale of base dimensions
     return AffineDimensions{R}(new_s, new_o, basedim(dims), sym)
 end
+
 
 function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity, dims::AbstractAffineDimensions, sym::Symbol=:nothing) where {R}
     new_s = s*scale(dims)
@@ -273,6 +246,15 @@ function Base.:^(l::AffineDimensions{R}, r::Number) where {R}
     )
 end
 
+function Base.:^(l::AffineDimensions{R}, r::Integer) where {R}
+    assert_no_offset(l)
+    return AffineDimensions(
+        scale   = scale(l)^r,
+        offset  = offset(l),
+        basedim = basedim(l)^tryrationalize(R, r)
+    )
+end
+
 function Base.:inv(l::AffineDimensions{R}) where {R}
     assert_no_offset(l)
     return AffineDimensions(
@@ -334,6 +316,7 @@ module AffineUnitsParse
 
     import ..DEFAULT_DIM_BASE_TYPE
     import ..WriteOnceReadMany
+    import ..SymbolicUnits.as_quantity
 
     #Constants are not imported
     const AFFINE_UNIT_SYMBOLS = WriteOnceReadMany([UNIT_SYMBOLS...])
@@ -393,8 +376,6 @@ module AffineUnitsParse
     end
 
     as_quantity(q::DEFAULT_AFFINE_QUANTITY_TYPE) = q
-    as_quantity(x::Number) = convert(DEFAULT_AFFINE_QUANTITY_TYPE, x)
-    as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 
     """
         ua"[unit expression]"

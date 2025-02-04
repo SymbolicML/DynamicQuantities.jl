@@ -2018,7 +2018,7 @@ end
     @test constructorof(AffineDimensions{Float64}) == AffineDimensions{Float64}
     @test Quantity(1.0, AffineDimensions(dimension(u"K"))) == u"K"
     @test AffineDimensions(scale=1, offset=0, basedim=dimension(u"K")) == AffineDimensions(basedim=dimension(u"K"))
-    @test AffineDimensions(scale=1, offset=0, basedim=u"K") == AffineDimensions(basedim=ua"K")
+    @test AffineDimensions(scale=1, offset=0, basedim=u"K") == AffineDimensions(basedim=dimension(ua"K"))
     @test AffineDimensions(scale=1.0, offset=273.15u"K", basedim=dimension(u"K")) == AffineDimensions(basedim=ua"°C")
 
     kelvin  = AffineDimensions(basedim=u"K")
@@ -2051,7 +2051,7 @@ end
     
     # Test uncovered operations
     @test (2.0ua"m")^2 == (2.0u"m")^2
-    @test dimension(ua"m")^2 == dimension(ua"m^2")
+    @test dimension(ua"m")^Int32(2) == dimension(ua"m^2")
     @test 2.0u"m" + 2.0ua"m" === 4.0u"m"
     @test 2.0ua"m" + 2.0ua"m" === 4.0u"m"
     @test 2.0u"m" - 2.0ua"m" === 0.0u"m"
