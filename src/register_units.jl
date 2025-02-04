@@ -101,7 +101,7 @@ ua"psig"
 >> 1.0 psig
 us"psig"
 >> ERROR: LoadError: ArgumentError: Symbol psig not found in `Units` or `Constants`.
-    ```
+```
 """
 macro register_affine_unit(name, expr)
     return esc(_register_affine_unit(name, expr))
