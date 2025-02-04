@@ -34,7 +34,7 @@ aff_uparse("°C")
 ```
 ```@docs
 @ua_str
-@register_affine_units
+@register_affine_unit
 aff_uparse
 ```
 ## Operations
