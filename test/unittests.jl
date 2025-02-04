@@ -2180,11 +2180,15 @@ end
 if :MySV2 ∉ UNIT_SYMBOLS
     @eval @register_unit MySV2 us"km/h"
 end
+if :psi ∉ UNIT_SYMBOLS
+    @eval @register_unit psi 6.89476us"kPa"
+end
 
 #Registering Affine Units
 if :psig ∉ AFFINE_UNIT_SYMBOLS  #This example is in the documentation so it better work
-    @eval @register_unit psi 6.89476us"kPa"
     @eval @register_affine_unit psig AffineDimensions(offset=u"Constants.atm", basedim=u"psi")
+else
+    skipped_register_unit = true
 end
 if :My°C ∉ AFFINE_UNIT_SYMBOLS  # (In case we run this script twice)
     @eval @register_affine_unit My°C ua"°C"
@@ -2226,7 +2230,7 @@ end
     if !skipped_register_unit
         @test length(UNIT_MAPPING) == map_count_before_registering + 4
         @test length(ALL_MAPPING) == all_map_count_before_registering + 4
-        @test length(AFFINE_UNIT_MAPPING) == affine_count_before_registering + 6
+        @test length(AFFINE_UNIT_MAPPING) == affine_count_before_registering + 7
     end
 
     for my_unit in (MySV, MyV)
