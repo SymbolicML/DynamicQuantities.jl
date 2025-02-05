@@ -427,7 +427,9 @@ module AffineUnits
         °C = Quantity(1.0, AffineDimensions(scale=1.0, offset=273.15*K, basedim=K, symbol=:°C))
         °F = Quantity(1.0, AffineDimensions(scale=5/9, offset=(-160/9)°C, basedim=°C, symbol=:°F))
         update_external_affine_unit(dimension(°C))
+        update_external_affine_unit(:degC, dimension(°C))
         update_external_affine_unit(dimension(°F))
+        update_external_affine_unit(:degF, dimension(°F))
     end
     
 end

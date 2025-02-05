@@ -2012,6 +2012,8 @@ end
     @test inv(mps) == u"s/m"
     @test mps^2 == u"m^2/s^2"
 
+    @test °C == ua"degC"
+    @test °F == ua"degF"
 
     # Constructors
     @test with_type_parameters(AffineDimensions, Float64) == AffineDimensions{Float64}
