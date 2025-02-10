@@ -2014,6 +2014,8 @@ end
 
     @test °C == ua"degC"
     @test °F == ua"degF"
+    @test dimension(°C) == dimension(ua"degC")
+    @test (°C - ua"degC") == 0.0u"K"
 
     # Constructors
     @test with_type_parameters(AffineDimensions, Float64) == AffineDimensions{Float64}

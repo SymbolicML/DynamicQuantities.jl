@@ -287,6 +287,7 @@ Base.:(==)(q1::UnionAbstractQuantity{<:Any, <:AbstractDimensions}, q2::UnionAbst
 Base.:(≈)(q1::UnionAbstractQuantity{<:Any, <:AffineDimensions}, q2::UnionAbstractQuantity{<:Any, <:AffineDimensions})    = (siunits(q1) ≈ siunits(q2))
 Base.:(≈)(q1::UnionAbstractQuantity{<:Any, <:AffineDimensions}, q2::UnionAbstractQuantity{<:Any, <:AbstractDimensions})  = (siunits(q1) ≈ siunits(q2))
 Base.:(≈)(q1::UnionAbstractQuantity{<:Any, <:AbstractDimensions}, q2::UnionAbstractQuantity{<:Any, <:AffineDimensions})  = (siunits(q1) ≈ siunits(q2))
+Base.:(==)(d1::AffineDimensions, d2::AffineDimensions) = (d1.scale==d2.scale) & (d1.offset==d2.offset) & (d1.basedim == d2.basedim)
 
 # Units are stored using SymbolicDimensionsSingleton
 const DEFAULT_AFFINE_QUANTITY_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE, DEFAULT_VALUE_TYPE, AffineDimensions{DEFAULT_DIM_BASE_TYPE})
