@@ -30,10 +30,11 @@ using DispatchDoctor: @stable
     include("constants.jl")
     include("uparse.jl")
     include("symbolic_dimensions.jl")
+    include("affine_dimensions.jl")
     include("complex.jl")
     include("register_units.jl")
     include("disambiguities.jl")
-    include("affine_dimensions.jl")
+    
 
     include("deprecated.jl")
 end
