@@ -416,7 +416,7 @@ module AffineUnits
     end
 
     #Register Celsius and Fahrenheit (the most commonly used affine units)
-    begin
+    let
         K  = Quantity(1.0, temperature=1)
         °C = Quantity(1.0, AffineDimensions(scale=1.0, offset=273.15*K, basedim=K, symbol=:°C))
         °F = Quantity(1.0, AffineDimensions(scale=5/9, offset=(-160/9)°C, basedim=°C, symbol=:°F))
