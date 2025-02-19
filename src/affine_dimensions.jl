@@ -5,6 +5,12 @@ abstract type AbstractAffineDimensions{R} <: AbstractDimensions{R} end
 
 const AffineOrSymbolicDimensions{R} = Union{AbstractAffineDimensions{R}, AbstractSymbolicDimensions{R}}
 
+"""
+    AffineDimensions{R}(scale::Float64, offset:Float64, basedim::Dimensions{R}, symbol::Symbol=nothing)
+
+AffineDimensions adds a scale and offset to Dimensions{R} allowing the expression of affine transformations of units (for example °C)
+The offset parameter is in SI units (i.e. having the dimension of basedim)
+"""
 @kwdef struct AffineDimensions{R} <: AbstractAffineDimensions{R}
     scale::Float64 = 1.0
     offset::Float64 = 0.0
@@ -12,12 +18,12 @@ const AffineOrSymbolicDimensions{R} = Union{AbstractAffineDimensions{R}, Abstrac
     symbol::Symbol = :nothing
 end
 
-#Inferring the type parameter R ========================================================================================================================
+# Inferring the type parameter R
 AffineDimensions(s, o, dims::AbstractDimensions{R}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, dims, sym)
 AffineDimensions(s, o, q::UnionAbstractQuantity{<:Any,<:AbstractDimensions{R}}, sym::Symbol=:nothing) where {R} = AffineDimensions{R}(s, o, q, sym)
 AffineDimensions(d::Dimensions{R}) where R = AffineDimensions{R}(scale=1.0, offset=0.0, basedim=d, symbol=:nothing)
 
-#Affine dimensions from other affine dimensions =========================================================================================================
+# Affine dimensions from other affine dimensions 
 function AffineDimensions{R}(s::Real, o::Real, dims::AbstractAffineDimensions, sym::Symbol=:nothing) where {R}
     new_s = s*scale(dims)
     new_o = offset(dims) + o*scale(dims) #Scale of o is assumed to be scale of base dimensions
@@ -35,10 +41,10 @@ function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity, dims::Dimensions
     return AffineDimensions{R}(s, ustrip(siunits(o)), dims, sym)
 end
 
-#Affine dimensions from quantities =========================================================================================================================
-function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity, q::UnionAbstractQuantity, sym::Symbol=:nothing) where R
-    q0   = siunits(0*q) #Origin point in SI units
-    oΔ   = siunits(o) - siunits(0*o) #Offset is a difference in affine units
+# Affine dimensions from quantities 
+function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity, q::UnionAbstractQuantity, sym::Symbol=:nothing) where {R}
+    q0 = siunits(0*q) #Origin point in SI units
+    oΔ = siunits(o) - siunits(0*o) #Offset is a difference in affine units
     dimension(q0) == dimension(oΔ) || throw(DimensionError(o, q)) #Check the units and give an informative error
     
     #Obtain SI units of the scale and offset
@@ -49,27 +55,27 @@ function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity, q::UnionAbstract
     return AffineDimensions{R}(s, o_si, q_si, sym)
 end
 
-#Base case when everyting is convrted to si units (offset is assumed to be in SI units)
-function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity{<:Any,<:Dimensions}, q::UnionAbstractQuantity{<:Any,<:Dimensions}, sym::Symbol=:nothing) where R
+# Base case when everyting is convrted to si units (offset is assumed to be in SI units)
+function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity{<:Any,<:Dimensions}, q::UnionAbstractQuantity{<:Any,<:Dimensions}, sym::Symbol=:nothing) where {R}
     dimension(o) == dimension(q) || throw(DimensionError(o, q))
     o_val = ustrip(o)
     q_val = ustrip(q)
     return AffineDimensions{R}(s*q_val, o_val, dimension(q), sym)
 end
 
-#If a quantity is used only for the dimension, the offset is assumed to be in the same scale as the quantity 
+# If a quantity is used only for the dimension, the offset is assumed to be in the same scale as the quantity 
 function AffineDimensions{R}(s::Real, o::Real, q::Q, sym::Symbol=:nothing) where {R, Q<:UnionAbstractQuantity}
     return AffineDimensions{R}(s, o*q, q, sym)
 end
 
 
-scale(d::AffineDimensions)  = d.scale
+scale(d::AffineDimensions) = d.scale
 offset(d::AffineDimensions) = d.offset
 basedim(d::AffineDimensions) = d.basedim
 
 with_type_parameters(::Type{<:AffineDimensions}, ::Type{R}) where {R} = AffineDimensions{R}
 constructorof(::Type{AffineDimensions}) = AffineDimensions{DEFAULT_DIM_BASE_TYPE}
-constructorof(::Type{AffineDimensions{R}}) where R = AffineDimensions{R}
+constructorof(::Type{AffineDimensions{R}}) where {R} = AffineDimensions{R}
 
 function Base.show(io::IO, d::AbstractAffineDimensions)
     addsign = ifelse(offset(d)<0, "-" , "+")
@@ -88,30 +94,30 @@ function Base.show(io::IO, d::AbstractAffineDimensions)
 end
 
 assert_no_offset(d::AffineDimensions) = iszero(offset(d)) || throw(AssertionError("AffineDimensions $(d) has a non-zero offset, implicit conversion is not allowed due to ambiguity. Use uexpand(x) to explicitly convert"))
-siunits(q::UnionAbstractQuantity{<:Any, <:Dimensions}) = q
-siunits(q::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions}) = uexpand(q)
-function siunits(q::Q) where {T, R, D<:AbstractAffineDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
+siunits(q::UnionAbstractQuantity{<:Any,<:Dimensions}) = q
+siunits(q::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions}) = uexpand(q)
+function siunits(q::Q) where {T,R,D<:AbstractAffineDimensions{R},Q<:UnionAbstractQuantity{T,D}}
     return force_convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
 siunits(q::QuantityArray) = siunits.(q)
 
 
 """
-uexpand(q::Q) where {T, R, D<:AbstractAffineDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
+    uexpand(q::Q) where {T,R,D<:AbstractAffineDimensions{R},Q<:UnionAbstractQuantity{T,D}}
 
 Expand the affine units in a quantity to their base SI form. In other words, this converts a quantity with AbstractAffineDimensions   
 to one with Dimensions. The opposite of this function is uconvert, for converting to specific symbolic units, or, e.g.,
 convert(Quantity{<:Any,<:AbstractSymbolicDimensions}, q), for assuming SI units as the output symbols.
 """
-uexpand(q::UnionAbstractQuantity{<:Any, <:AbstractAffineDimensions}) = siunits(q)
+uexpand(q::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}) = siunits(q)
 
 
 """
-affine_quantity(q::UnionAbstractQuantity)
+    affine_quantity(q::UnionAbstractQuantity)
 
 Converts a quantity to its nearest affine quantity representation (with scale=1.0 and offset=0.0)
 """
-function affine_quantity(q::Q) where {T, R, D<:AbstractDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
+function affine_quantity(q::Q) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstractQuantity{T,D}}
     q_si  = siunits(q)
     dims  = AffineDimensions{R}(scale=1.0, offset=0.0, basedim=dimension(q_si))
     q_val = convert(T, ustrip(q_si))
@@ -119,37 +125,35 @@ function affine_quantity(q::Q) where {T, R, D<:AbstractDimensions{R}, Q<:UnionAb
 end
 
 """
-affine_unit(q::UnionAbstractQuantity)
+    affine_unit(q::UnionAbstractQuantity)
 
 Converts a quantity to its nearest affine unit (with scale=ustrip(q) and offset=0.0)
 """
-function affine_unit(q::Q) where {T, R, D<:AbstractDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
+function affine_unit(q::Q) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstractQuantity{T,D}}
     q_si  = siunits(q)
     dims  = AffineDimensions{R}(scale=ustrip(q_si), offset=0.0, basedim=dimension(q_si))
     return constructorof(Q)(one(T), dims)
 end
 
-#Conversions
 for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:Dimensions}) where {T,Q<:$type{T,AffineDimensions}}
             return convert(with_type_parameters(Q, T, AffineDimensions{DEFAULT_DIM_BASE_TYPE}), q)
         end
 
-        #Conversion of (AbstractQuantity){T,Dimensions{R}} to (AbstractQuantity){T,AffineDimensions{R}}
         function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:Dimensions}) where {T,R,Q<:$type{T,AffineDimensions{R}}}
             dims = AffineDimensions{R}(scale=1, offset=0, basedim=dimension(q))
             return constructorof(Q)(convert(T, ustrip(q)), dims)
         end
 
-        #Forced conversion of (AbstractQuantity){T,R<:AffineDimensions} to (AbstractQuantity){T,R<:Dimensions} (zero offset requirement overridden)
+        # Forced (explicit) conversions will not error if offset is non-zero
         function force_convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
             d = dimension(q)
             v = ustrip(q)*scale(d) + offset(d)
             return constructorof(Q)(convert(T, v), basedim(d))
         end
 
-        #Conversion of (AbstractQuantity){T,R<:AffineDimensions} to (AbstractQuantity){T,R<:Dimensions}
+        # Implicit conversions will fail if the offset it non-zero (to prevent silently picking ambiguous operations)
         function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
             assert_no_offset(dimension(q))
             return force_convert(Q, q)
@@ -157,7 +161,6 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     end
 end
 
-#Promotion rules
 function Base.promote_rule(::Type{AffineDimensions{R1}}, ::Type{AffineDimensions{R2}}) where {R1,R2}
     return AffineDimensions{promote_type(R1,R2)}
 end
@@ -175,20 +178,18 @@ function Base.promote_rule(::Type{AffineDimensions{R1}}, ::Type{SymbolicDimensio
 end
 
 
-
-
-# Conversions for Dimensions |> AffineDimenions =====================================================================================
+# Conversions for Dimensions |> AffineDimenions 
 """
     uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractAffineDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
 
 Convert a quantity `q` with base SI units to the affine units of `qout`, for `q` and `qout` with compatible units.
 You can also use `|>` as a shorthand for `uconvert`
 """
-function uconvert(qout::UnionAbstractQuantity{<:Any, <:AffineDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
+function uconvert(qout::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q::UnionAbstractQuantity{<:Any,<:Dimensions})
     @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
     dout = dimension(qout)
     dimension(q) == basedim(dout) || throw(DimensionError(q, qout))
-    vout = (ustrip(q)-offset(dout))/scale(dout)
+    vout = (ustrip(q) - offset(dout))/scale(dout)
     return new_quantity(typeof(q), vout, dout)
 end
 
@@ -200,79 +201,74 @@ function uconvert(qout::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q::Quan
     return QuantityArray(vout, dout, quantity_type(q))
 end
 
-# Conversions for AbstractAffineDimensions |> AbstractSymbolicDimensions =======================================================
-function uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractSymbolicDimensions}, qin::AbstractQuantityOrArray{<:Any, <:AbstractAffineDimensions})
+function uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions}, qin::AbstractQuantityOrArray{<:Any,<:AbstractAffineDimensions})
     uconvert(qout, siunits(qin))
 end
 
-# Conversions for AbstractSymbolicDimensions |> AbstractAffineDimensions   =======================================================
-function uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}, qin::AbstractQuantityOrArray{<:Any, <:AbstractSymbolicDimensions})
+function uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}, qin::AbstractQuantityOrArray{<:Any,<:AbstractSymbolicDimensions})
     uconvert(qout, siunits(qin))
 end
 
-# Conversions for AbstractAffineDimensions |> AbstractAffineDimensions =======================================================
-function uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractAffineDimensions}, qin::AbstractQuantityOrArray{<:Any, <:AbstractAffineDimensions})
+function uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}, qin::AbstractQuantityOrArray{<:Any,<:AbstractAffineDimensions})
     uconvert(qout, siunits(qin))
 end
 
-# Multiplication and division of AffineDimensions ===============================================================
-function Base.:*(l::AffineDimensions, r::AffineDimensions) 
-    assert_no_offset(l)
-    assert_no_offset(r)
+function map_dimensions(op::typeof(+), args::AffineDimensions...) 
+    assert_no_offset.(args)
     return AffineDimensions(
-        scale  = scale(l)*scale(r),
-        offset = offset(l),
-        basedim = basedim(l)*basedim(r)
+        scale=*(scale.(args)...),
+        offset=zero(Float64),
+        basedim=map_dimensions(op, basedim.(args)...)
     )
 end
 
-function Base.:/(l::AffineDimensions, r::AffineDimensions) 
-    assert_no_offset(l)
-    assert_no_offset(r)
+function map_dimensions(op::typeof(-), args::AffineDimensions...) 
+    assert_no_offset.(args)
     return AffineDimensions(
-        scale  = scale(l)/scale(r),
-        offset = offset(l),
-        basedim = basedim(l)/basedim(r)
+        scale=/(scale.(args)...),
+        offset=zero(Float64),
+        basedim=map_dimensions(op, basedim.(args)...)
     )
 end
 
-# Exponentiation ===============================================================
-function Base.:^(l::AffineDimensions{R}, r::Number) where {R}
-    assert_no_offset(l)
+#This is required because /(x::Number) results in an error, so it needs to be cased out to inv
+function map_dimensions(op::typeof(-), d::AffineDimensions) 
+    assert_no_offset(d)
     return AffineDimensions(
-        scale   = scale(l)^r,
-        offset  = offset(l),
-        basedim = basedim(l)^tryrationalize(R, r)
+        scale=inv(scale(d)),
+        offset=zero(Float64),
+        basedim=map_dimensions(op, basedim(d))
     )
 end
 
-function Base.:^(l::AffineDimensions{R}, r::Integer) where {R}
+function map_dimensions(fix1::Base.Fix1{typeof(*)}, l::AffineDimensions{R}) where {R}
     assert_no_offset(l)
     return AffineDimensions(
-        scale   = scale(l)^r,
-        offset  = offset(l),
-        basedim = basedim(l)^tryrationalize(R, r)
+        scale=scale(l)^fix1.x,
+        offset=zero(Float64),
+        basedim=map_dimensions(fix1, basedim(l))
     )
 end
 
-function Base.:inv(l::AffineDimensions{R}) where {R}
-    assert_no_offset(l)
+# Generic fallback for mapping dimensions using log/exp transformations
+function map_dimensions(op::F, args::AffineDimensions...) where {F<:Function}
+    assert_no_offset.(args)
     return AffineDimensions(
-        scale   = inv(scale(l)),
-        offset  = offset(l),
-        basedim = inv(basedim(l))
+        scale=exp(op(log.(scale.(args))...)),
+        offset=zero(Float64),
+        basedim=map_dimensions(op, basedim.(args)...)
     )
 end
 
-# Operations on self-values ======================================================================================
-function _no_offset_expand(q::Q) where {T, R, D<:AbstractAffineDimensions{R}, Q<:UnionAbstractQuantity{T,D}}
+# This function works like uexpand but will throw an error if the offset is 0
+function _no_offset_expand(q::Q) where {T,R,D<:AbstractAffineDimensions{R},Q<:UnionAbstractQuantity{T,D}}
     return convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
 
-#Addition will return Quantity{T, Dimensions}
+# Addition will return Quantity{T, Dimensions}
 Base.:+(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = _no_offset_expand(q1) + _no_offset_expand(q2)
 
-#Subtraction will return Quantity{T, Dimensions}, in special cases, differences between offsetted AffineDimensions is allowed as offsets cancel out
+# Subtraction will return Quantity{T, Dimensions}, in special cases, differences between offsetted AffineDimensions is allowed as offsets cancel out
 function Base.:-(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions})
     if dimension(q1) == dimension(q2)
         return siunits(q1) - siunits(q2)
@@ -281,12 +277,12 @@ function Base.:-(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionA
     end
 end
 
-Base.:(==)(q1::UnionAbstractQuantity{<:Any, <:AffineDimensions}, q2::UnionAbstractQuantity{<:Any, <:AffineDimensions})   = (siunits(q1) == siunits(q2))
-Base.:(==)(q1::UnionAbstractQuantity{<:Any, <:AffineDimensions}, q2::UnionAbstractQuantity{<:Any, <:AbstractDimensions}) = (siunits(q1) == siunits(q2))
-Base.:(==)(q1::UnionAbstractQuantity{<:Any, <:AbstractDimensions}, q2::UnionAbstractQuantity{<:Any, <:AffineDimensions}) = (siunits(q1) == siunits(q2))
-Base.:(≈)(q1::UnionAbstractQuantity{<:Any, <:AffineDimensions}, q2::UnionAbstractQuantity{<:Any, <:AffineDimensions})    = (siunits(q1) ≈ siunits(q2))
-Base.:(≈)(q1::UnionAbstractQuantity{<:Any, <:AffineDimensions}, q2::UnionAbstractQuantity{<:Any, <:AbstractDimensions})  = (siunits(q1) ≈ siunits(q2))
-Base.:(≈)(q1::UnionAbstractQuantity{<:Any, <:AbstractDimensions}, q2::UnionAbstractQuantity{<:Any, <:AffineDimensions})  = (siunits(q1) ≈ siunits(q2))
+for op in (:(==), :(≈))
+    @eval Base.$op(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions})   = $op(siunits(q1), siunits(q2))
+    @eval Base.$op(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AbstractDimensions}) = $op(siunits(q1), siunits(q2))
+    @eval Base.$op(q1::UnionAbstractQuantity{<:Any,<:AbstractDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = $op(siunits(q1), siunits(q2))
+end
+
 Base.:(==)(d1::AffineDimensions, d2::AffineDimensions) = (d1.scale==d2.scale) & (d1.offset==d2.offset) & (d1.basedim == d2.basedim)
 
 # Units are stored using SymbolicDimensionsSingleton
@@ -319,31 +315,30 @@ module AffineUnits
     import ..WriteOnceReadMany
     import ..SymbolicUnits.as_quantity
 
-    #Constants are not imported
     const AFFINE_UNIT_SYMBOLS = WriteOnceReadMany([UNIT_SYMBOLS...])
     const AFFINE_UNIT_VALUES  = WriteOnceReadMany(affine_unit.([UNIT_VALUES...]))
     const AFFINE_UNIT_MAPPING = WriteOnceReadMany(Dict(s => INDEX_TYPE(i) for (i, s) in enumerate(AFFINE_UNIT_SYMBOLS)))
 
     # Used for registering units in current module
-    function update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity{<:Any,<:AffineDimensions{R}}) where R
+    function update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity{<:Any,<:AffineDimensions{R}}) where {R}
         ind = get(AFFINE_UNIT_MAPPING, name, INDEX_TYPE(0))
         if !iszero(ind)
             @warn "unit $(name) already exists, skipping"
             return nothing
         end
 
-        #Extract original dimensions
+        # Extract original dimensions
         dims  = dimension(q)
 
-        #Add "name" to the symbol to make it display
+        # Add "name" to the symbol to make it display
         d_sym = AffineDimensions{DEFAULT_DIM_BASE_TYPE}(
-            scale = scale(dims),
-            offset = offset(dims),
-            basedim = basedim(dims),
-            symbol = name
+            scale=scale(dims),
+            offset=offset(dims),
+            basedim=basedim(dims),
+            symbol=name
         )
 
-        #Reconstruct the quantity with the new name
+        # Reconstruct the quantity with the new name
         q_sym = constructorof(DEFAULT_AFFINE_QUANTITY_TYPE)(ustrip(q), d_sym)
 
         push!(AFFINE_UNIT_SYMBOLS, name)
@@ -391,12 +386,12 @@ module AffineUnits
     """
     macro ua_str(s)
         ex = map_to_scope(Meta.parse(s))
-        ex = :($as_quantity($ex))
+        ex = :($(as_quantity)($ex))
         return esc(ex)
     end
 
     @unstable function map_to_scope(ex::Expr)
-        if !(ex.head == :call)
+        if ex.head != :call
             throw(ArgumentError("Unexpected expression: $ex. Only `:call` is expected."))
         end
         if ex.head == :call
@@ -406,11 +401,8 @@ module AffineUnits
     end
 
     function map_to_scope(sym::Symbol)
-        if sym in AFFINE_UNIT_SYMBOLS
-            return lookup_unit(sym)
-        else
-            throw(ArgumentError("Symbol $sym not found in `AffineUnits`."))
-        end
+        sym in AFFINE_UNIT_SYMBOLS || throw(ArgumentError("Symbol $sym not found in `AffineUnits`."))
+        return lookup_unit(sym)
     end
 
     function map_to_scope(ex)
@@ -442,25 +434,18 @@ import .AffineUnits: aff_uparse, update_external_affine_unit
 """
     ua"[unit expression]"
 
-    Parse a string containing an expression of units and return the
-    corresponding `Quantity` object with `Float64` value. 
-    However, unlike the regular `u"..."` macro, this macro uses
-    `AffineDimensions` for the dimension type, which can represent a greater
-    number of units, but supports a much smaller set of operations. It is
-    adviced to convert AffineDimensions to regular are symbolic dimensions
-    as soon as possible. 
-    For example, `ua"km/s^2"` would be parsed to
-    `Quantity(1.0, AffineDimensions(scale=1000.0, offset=0.0, basedim=Dimensions(length=1, time=-2)))`.
+Parse a string containing an expression of units and return the
+corresponding `Quantity` object with `Float64` value. 
+However, unlike the regular `u"..."` macro, this macro uses
+`AffineDimensions` for the dimension type, which can represent a greater
+number of units, but supports a much smaller set of operations. It is
+adviced to convert AffineDimensions to regular are symbolic dimensions
+as soon as possible. 
+For example, `ua"km/s^2"` would be parsed to
+`Quantity(1.0, AffineDimensions(scale=1000.0, offset=0.0, basedim=Dimensions(length=1, time=-2)))`.
 """
 macro ua_str(s)
     ex = AffineUnits.map_to_scope(Meta.parse(s))
-    ex = :($AffineUnits.as_quantity($ex))
+    ex = :($(AffineUnits.as_quantity)($ex))
     return esc(ex)
 end
-
-
-
-
-
-
-
