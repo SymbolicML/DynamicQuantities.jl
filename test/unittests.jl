@@ -2091,6 +2091,12 @@ end
     @test_warn "unit °C already exists, skipping" DynamicQuantities.update_external_affine_unit(dimension(°C))
     @test_throws "Cannot register affine dimension if symbol is :nothing" DynamicQuantities.update_external_affine_unit(celsius)
 
+    # Test map_dimensions
+    @test map_dimensions(+, dimension(ua"m/s"), dimension(ua"m/s")) == AffineDimensions(Dimensions(length=2, time=-2))
+    @test map_dimensions(-, dimension(ua"m"), dimension(ua"s"))     == AffineDimensions(Dimensions(length=1, time=-1))
+    @test map_dimensions(Base.Fix1(*,2), dimension(ua"m/s"))        == AffineDimensions(Dimensions(length=2, time=-2))
+    @test map_dimensions(x->x*2, dimension(ua"m/s"))                ≈  AffineDimensions(Dimensions(length=2, time=-2)) #Generic fallback
+
 end
 
 

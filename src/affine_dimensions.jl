@@ -97,7 +97,7 @@ assert_no_offset(d::AffineDimensions) = iszero(offset(d)) || throw(AssertionErro
 siunits(q::UnionAbstractQuantity{<:Any,<:Dimensions}) = q
 siunits(q::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions}) = uexpand(q)
 function siunits(q::Q) where {T,R,D<:AbstractAffineDimensions{R},Q<:UnionAbstractQuantity{T,D}}
-    return force_convert(with_type_parameters(Q, T, Dimensions{R}), q)
+    return _explicit_convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
 siunits(q::QuantityArray) = siunits.(q)
 
@@ -147,7 +147,7 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
         end
 
         # Forced (explicit) conversions will not error if offset is non-zero
-        function force_convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
+        function _explicit_convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
             d = dimension(q)
             v = ustrip(q)*scale(d) + offset(d)
             return constructorof(Q)(convert(T, v), basedim(d))
@@ -156,7 +156,7 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
         # Implicit conversions will fail if the offset it non-zero (to prevent silently picking ambiguous operations)
         function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
             assert_no_offset(dimension(q))
-            return force_convert(Q, q)
+            return _explicit_convert(Q, q)
         end
     end
 end
@@ -250,6 +250,15 @@ function map_dimensions(fix1::Base.Fix1{typeof(*)}, l::AffineDimensions{R}) wher
     )
 end
 
+#Generic fallback (slower and less accurate but works for more cases)
+function map_dimensions(op::F, args::AffineDimensions...) where {F<:Function}
+    assert_no_offset.(args)
+    return AffineDimensions(
+        scale=exp(op(log.(scale.(args))...)),
+        offset=zero(Float64),
+        basedim=map_dimensions(op, basedim.(args)...)
+    )
+end
 
 # This function works like uexpand but will throw an error if the offset is 0
 function _no_offset_expand(q::Q) where {T,R,D<:AbstractAffineDimensions{R},Q<:UnionAbstractQuantity{T,D}}
@@ -274,7 +283,8 @@ for op in (:(==), :(≈))
     @eval Base.$op(q1::UnionAbstractQuantity{<:Any,<:AbstractDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = $op(siunits(q1), siunits(q2))
 end
 
-Base.:(==)(d1::AffineDimensions, d2::AffineDimensions) = (d1.scale==d2.scale) & (d1.offset==d2.offset) & (d1.basedim == d2.basedim)
+Base.:(==)(d1::AffineDimensions, d2::AffineDimensions) = (d1.scale==d2.scale) & (d1.offset==d2.offset) & (d1.basedim==d2.basedim)
+Base.:(≈)(d1::AffineDimensions, d2::AffineDimensions)  = (d1.offset≈d2.offset) & (Quantity(d1.scale, d1.basedim)≈Quantity(d2.scale, d2.basedim))
 
 # Units are stored using SymbolicDimensionsSingleton
 const DEFAULT_AFFINE_QUANTITY_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE, DEFAULT_VALUE_TYPE, AffineDimensions{DEFAULT_DIM_BASE_TYPE})
@@ -306,8 +316,8 @@ module AffineUnits
     import ..WriteOnceReadMany
     import ..SymbolicUnits.as_quantity
 
-    const AFFINE_UNIT_SYMBOLS = WriteOnceReadMany([UNIT_SYMBOLS...])
-    const AFFINE_UNIT_VALUES  = WriteOnceReadMany(affine_unit.([UNIT_VALUES...], [UNIT_SYMBOLS...]))
+    const AFFINE_UNIT_SYMBOLS = WriteOnceReadMany(deepcopy(UNIT_SYMBOLS))
+    const AFFINE_UNIT_VALUES  = WriteOnceReadMany(map(affine_unit, UNIT_VALUES, UNIT_SYMBOLS))
     const AFFINE_UNIT_MAPPING = WriteOnceReadMany(Dict(s => INDEX_TYPE(i) for (i, s) in enumerate(AFFINE_UNIT_SYMBOLS)))
 
     # Used for registering units in current module
