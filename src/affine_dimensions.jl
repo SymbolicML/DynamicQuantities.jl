@@ -125,13 +125,13 @@ function affine_quantity(q::Q) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstr
 end
 
 """
-    affine_unit(q::UnionAbstractQuantity)
+    affine_unit(q::UnionAbstractQuantity, symbol::Symbol=:nothing)
 
 Converts a quantity to its nearest affine unit (with scale=ustrip(q) and offset=0.0)
 """
-function affine_unit(q::Q) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstractQuantity{T,D}}
+function affine_unit(q::Q, symbol::Symbol=:nothing) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstractQuantity{T,D}}
     q_si  = siunits(q)
-    dims  = AffineDimensions{R}(scale=ustrip(q_si), offset=0.0, basedim=dimension(q_si))
+    dims  = AffineDimensions{R}(scale=ustrip(q_si), offset=0.0, basedim=dimension(q_si), symbol=symbol)
     return constructorof(Q)(one(T), dims)
 end
 
@@ -250,15 +250,6 @@ function map_dimensions(fix1::Base.Fix1{typeof(*)}, l::AffineDimensions{R}) wher
     )
 end
 
-# Generic fallback for mapping dimensions using log/exp transformations
-function map_dimensions(op::F, args::AffineDimensions...) where {F<:Function}
-    assert_no_offset.(args)
-    return AffineDimensions(
-        scale=exp(op(log.(scale.(args))...)),
-        offset=zero(Float64),
-        basedim=map_dimensions(op, basedim.(args)...)
-    )
-end
 
 # This function works like uexpand but will throw an error if the offset is 0
 function _no_offset_expand(q::Q) where {T,R,D<:AbstractAffineDimensions{R},Q<:UnionAbstractQuantity{T,D}}
@@ -316,7 +307,7 @@ module AffineUnits
     import ..SymbolicUnits.as_quantity
 
     const AFFINE_UNIT_SYMBOLS = WriteOnceReadMany([UNIT_SYMBOLS...])
-    const AFFINE_UNIT_VALUES  = WriteOnceReadMany(affine_unit.([UNIT_VALUES...]))
+    const AFFINE_UNIT_VALUES  = WriteOnceReadMany(affine_unit.([UNIT_VALUES...], [UNIT_SYMBOLS...]))
     const AFFINE_UNIT_MAPPING = WriteOnceReadMany(Dict(s => INDEX_TYPE(i) for (i, s) in enumerate(AFFINE_UNIT_SYMBOLS)))
 
     # Used for registering units in current module
@@ -335,7 +326,7 @@ module AffineUnits
             scale=scale(dims),
             offset=offset(dims),
             basedim=basedim(dims),
-            symbol=name
+            symbol=(dims.symbol == :nothing) ? name : dims.symbol
         )
 
         # Reconstruct the quantity with the new name
