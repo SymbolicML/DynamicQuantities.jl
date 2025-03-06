@@ -48,7 +48,9 @@ makedocs(;
         "Symbolic Units" => "symbolic_units.md",
         "Types" => "types.md",
     ],
-    warnonly = [:missing_docs]
+    warnonly = [:missing_docs],
+    clean = false,
+
 )
 
 deploydocs(;

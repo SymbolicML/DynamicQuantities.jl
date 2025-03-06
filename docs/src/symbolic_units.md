@@ -31,3 +31,9 @@ To convert a quantity in regular base SI units to corresponding symbolic units, 
 ```@docs
 uconvert
 ```
+
+In order to obtain the numerical value of the quantity in its SI base units, use `sibasevalue`.
+
+```@docs
+sibasevalue
+```

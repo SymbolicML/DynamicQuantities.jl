@@ -855,7 +855,14 @@ end
     @test dimension(inv(us"s") * us"km") == dimension(us"km/s")
     @test dimension(inv(us"s") * us"m") != dimension(us"km/s")
     @test dimension(uexpand(inv(us"s") * us"m")) == dimension(uexpand(us"km/s"))
+    
 
+    @test sibasevalue(u"h") == 3600.0
+    @test sibasevalue(us"h") == 3600.0
+    @test sibasevalue(QuantityArray(fill(1.0,5),u"h")) == fill(3600.0,5)
+    @test sibasevalue(QuantityArray(fill(1.0,5),us"h")) == fill(3600.0,5)
+
+    
     f2(i::Int) = us"s"^i
     @inferred f2(5)
     @test uexpand(f2(5)) == u"s"^5
