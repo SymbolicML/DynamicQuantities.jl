@@ -1,3 +1,2 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-DynamicQuantities = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
