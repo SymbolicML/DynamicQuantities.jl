@@ -859,8 +859,8 @@ end
 
     @test sibasevalue(u"h") == 3600.0
     @test sibasevalue(us"h") == 3600.0
-    @test sibasevalue(QuantityArray(fill(1.0,5),u"h")) == fill(3600.0,5)
-    @test sibasevalue(QuantityArray(fill(1.0,5),us"h")) == fill(3600.0,5)
+    @test sibasevalue(QuantityArray(fill(1.0,5), u"h")) == fill(3600.0, 5)
+    @test sibasevalue(QuantityArray(fill(1.0,5), us"h")) == fill(3600.0, 5)
 
     
     f2(i::Int) = us"s"^i
