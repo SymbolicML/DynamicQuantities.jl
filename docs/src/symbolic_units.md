@@ -24,6 +24,7 @@ To convert a quantity to its regular base SI units, use `uexpand`:
 
 ```@docs
 uexpand
+ustripexpand
 ```
 
 To convert a quantity in regular base SI units to corresponding symbolic units, use `uconvert`:
@@ -32,8 +33,3 @@ To convert a quantity in regular base SI units to corresponding symbolic units, 
 uconvert
 ```
 
-In order to obtain the numerical value of the quantity in its SI base units, use `ustripexpand`.
-
-```@docs
-ustripexpand
-```
