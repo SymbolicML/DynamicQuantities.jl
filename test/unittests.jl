@@ -857,10 +857,10 @@ end
     @test dimension(uexpand(inv(us"s") * us"m")) == dimension(uexpand(us"km/s"))
     
 
-    @test sibasevalue(u"h") == 3600.0
-    @test sibasevalue(us"h") == 3600.0
-    @test sibasevalue(QuantityArray(fill(1.0,5), u"h")) == fill(3600.0, 5)
-    @test sibasevalue(QuantityArray(fill(1.0,5), us"h")) == fill(3600.0, 5)
+    @test ustripexpand(u"h") == 3600.0
+    @test ustripexpand(us"h") == 3600.0
+    @test ustripexpand(QuantityArray(fill(1.0,5), u"h")) == fill(3600.0, 5)
+    @test ustripexpand(QuantityArray(fill(1.0,5), us"h")) == fill(3600.0, 5)
 
     
     f2(i::Int) = us"s"^i

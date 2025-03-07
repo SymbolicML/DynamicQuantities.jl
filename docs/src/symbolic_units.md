@@ -32,8 +32,8 @@ To convert a quantity in regular base SI units to corresponding symbolic units, 
 uconvert
 ```
 
-In order to obtain the numerical value of the quantity in its SI base units, use `sibasevalue`.
+In order to obtain the numerical value of the quantity in its SI base units, use `ustripexpand`.
 
 ```@docs
-sibasevalue
+ustripexpand
 ```

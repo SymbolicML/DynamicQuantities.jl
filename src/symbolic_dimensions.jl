@@ -257,13 +257,13 @@ function Base.:(|>)(
 end
 
 """
-    sibasevalue(q::AbstractQuantity)
-    sibasevalue(q::QuantityArray)
+    ustripexpand(q::AbstractQuantity)
+    ustripexpand(q::QuantityArray)
 
 Return the value of `q` in SI base units. This is equivalent with `ustrip(uexpand(q))`.
 """
-sibasevalue(q::AbstractQuantity) = ustrip(uexpand(q))
-sibasevalue(q::QuantityArray) = ustrip(uexpand(q))
+ustripexpand(q::AbstractQuantity) = ustrip(uexpand(q))
+ustripexpand(q::QuantityArray) = ustrip(uexpand(q))
 
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(nzdims(d)), copy(nzvals(d)))
