@@ -8,7 +8,7 @@ export AbstractDimensions, Dimensions, NoDims
 export AbstractSymbolicDimensions, SymbolicDimensions, SymbolicDimensionsSingleton
 export QuantityArray
 export DimensionError
-export ustrip, dimension, sibasevalue
+export ustrip, dimension, ustripexpand
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
 export uparse, @u_str, sym_uparse, @us_str, uexpand, uconvert, @register_unit
 
