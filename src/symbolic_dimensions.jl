@@ -262,7 +262,7 @@ end
 
 Return the value of `q` in SI base units. This is equivalent with `ustrip(uexpand(q))`.
 """
-ustripexpand(q::AbstractQuantity) = ustrip(uexpand(q))
+ustripexpand(q::UnionAbstractQuantity) = ustrip(uexpand(q))
 ustripexpand(q::QuantityArray) = ustrip(uexpand(q))
 
 
