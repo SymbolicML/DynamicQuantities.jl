@@ -1,5 +1,7 @@
 module UnitsParse
 
+using DispatchDoctor: @unstable
+
 import ..constructorof
 import ..DEFAULT_QUANTITY_TYPE
 import ..DEFAULT_DIM_TYPE
@@ -62,15 +64,16 @@ macro u_str(s)
     return esc(ex)
 end
 
-function map_to_scope(ex::Expr)
+@unstable function map_to_scope(ex::Expr)
+    if !(ex.head == :call) && !(ex.head == :. && ex.args[1] == :Constants)
+        throw(ArgumentError("Unexpected expression: $ex. Only `:call` and `:.` (for `Constants`) are expected."))
+    end
     if ex.head == :call
         ex.args[2:end] = map(map_to_scope, ex.args[2:end])
         return ex
-    elseif ex.head == :. && ex.args[1] == :Constants
+    else # if ex.head == :. && ex.args[1] == :Constants
         @assert ex.args[2] isa QuoteNode
         return lookup_constant(ex.args[2].value)
-    else
-        throw(ArgumentError("Unexpected expression: $ex. Only `:call` and `:.` (for `Constants`) are expected."))
     end
 end
 function map_to_scope(sym::Symbol)

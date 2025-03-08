@@ -1,4 +1,8 @@
-using Tricks: static_fieldnames
+@static if VERSION <= v"1.11.0-"
+    @eval using Tricks: static_fieldnames
+else
+    @eval const static_fieldnames = fieldnames
+end
 
 const DEFAULT_DIM_BASE_TYPE = FixedRational{DEFAULT_NUMERATOR_TYPE,DEFAULT_DENOM}
 const DEFAULT_VALUE_TYPE = Float64

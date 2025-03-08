@@ -4,6 +4,7 @@ using DynamicQuantities: constructorof, with_type_parameters, dimension_names
 using Documenter
 
 DocMeta.setdocmeta!(DynamicQuantities, :DocTestSetup, :(using DynamicQuantities); recursive=true)
+doctest(DynamicQuantities)
 
 readme = open(dirname(@__FILE__) * "/../README.md") do io
     read(io, String)
@@ -34,7 +35,7 @@ makedocs(;
     sitename="DynamicQuantities.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://symbolicml.org/DynamicQuantities.jl",
+        canonical="https://ai.damtp.cam.ac.uk/dynamicquantities/stable",
         edit_link="main",
         assets=String[]
     ),
@@ -52,5 +53,13 @@ makedocs(;
 
 deploydocs(;
     repo="github.com/SymbolicML/DynamicQuantities.jl",
+    devbranch="main"
+)
+
+# Mirror to DAMTP:
+ENV["DOCUMENTER_KEY"] = ENV["DOCUMENTER_KEY_CAM"]
+ENV["GITHUB_REPOSITORY"] = "ai-damtp-cam-ac-uk/dynamicquantities.git"
+deploydocs(;
+    repo="github.com/ai-damtp-cam-ac-uk/dynamicquantities.git",
     devbranch="main"
 )

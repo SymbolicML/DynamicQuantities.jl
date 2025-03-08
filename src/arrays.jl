@@ -1,4 +1,3 @@
-import Compat: allequal
 using TestItems: @testitem
 
 """
@@ -218,6 +217,7 @@ for f in (:append!, :prepend!)
     end
 end
 
+Base.zero(A::QuantityArray) = QuantityArray(zero(ustrip(A)), dimension(A), quantity_type(A))
 Base.similar(A::QuantityArray) = QuantityArray(similar(ustrip(A)), dimension(A), quantity_type(A))
 Base.similar(A::QuantityArray, ::Type{S}) where {S} = QuantityArray(similar(ustrip(A), S), dimension(A), quantity_type(A))
 for (type, _, _) in ABSTRACT_QUANTITY_TYPES
@@ -250,26 +250,6 @@ Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.SizeUnknown, ::Nothing) 
 Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.HasLength, ::Integer) where {T} =
     error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
 
-# In earlier Julia, `Base._similar_for` has different signatures.
-@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasShape})
-    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape) where {T<:UnionAbstractQuantity} =
-        QuantityArray(similar(ustrip(c), value_type(T), axes(itr)), dimension(materialize_first(itr))::dim_type(T), T)
-    @eval Base._similar_for(c::QuantityArray, ::Type{T}, itr, ::Base.HasShape) where {T} =
-        similar(ustrip(c), T, axes(itr))
-end
-@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.HasLength})
-    @eval Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.HasLength) where {T} =
-        error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
-end
-@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Base.SizeUnknown})
-    @eval Base._similar_for(::QuantityArray, ::Type{T}, _, ::Base.SizeUnknown) where {T} =
-        error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
-end
-@static if hasmethod(Base._similar_for, Tuple{Array,Type,Any,Any})
-    @eval Base._similar_for(::QuantityArray, ::Type{T}, _, _) where {T} =
-        error("Not implemented. Please raise an issue on DynamicQuantities.jl.")
-end
-
 Base.BroadcastStyle(::Type{QA}) where {QA<:QuantityArray} = Broadcast.ArrayStyle{QA}()
 
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{QA}}, ::Type{ElType}) where {QA<:QuantityArray,ElType<:UnionAbstractQuantity}
@@ -291,7 +271,7 @@ end
 
 # Basically, we want to solve a single element to find the output dimension.
 # Then we can put results in the output `QuantityArray`.
-materialize_first(bc::Base.Broadcast.Broadcasted) = bc.f(materialize_first.(bc.args)...)
+materialize_first(bc::Base.Broadcast.Broadcasted) = bc.f(map(materialize_first, bc.args)...)
 
 # Base cases
 materialize_first(q::AbstractGenericQuantity{<:AbstractArray}) = new_quantity(typeof(q), first(ustrip(q)), dimension(q))

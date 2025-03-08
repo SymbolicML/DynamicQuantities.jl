@@ -1,4 +1,4 @@
-import Compat: allequal
+using DispatchDoctor: @unstable
 
 function map_dimensions(f::F, args::AbstractDimensions...) where {F<:Function}
     dimension_type = promote_type(typeof(args).parameters...)
@@ -48,10 +48,10 @@ The user should overload this function to define a custom type hierarchy.
 
 Also see `promote_quantity_on_quantity`.
 """
-@inline promote_quantity_on_value(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Any}) = GenericQuantity
-@inline promote_quantity_on_value(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Number}) = Quantity
-@inline promote_quantity_on_value(::Type{<:RealQuantity}, ::Type{<:Real}) = RealQuantity
-@inline promote_quantity_on_value(T, _) = T
+@unstable @inline promote_quantity_on_value(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Any}) = GenericQuantity
+@unstable @inline promote_quantity_on_value(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Number}) = Quantity
+@unstable @inline promote_quantity_on_value(::Type{<:RealQuantity}, ::Type{<:Real}) = RealQuantity
+@unstable @inline promote_quantity_on_value(T, _) = T
 
 """
     promote_quantity_on_quantity(Q1, Q2)
@@ -65,10 +65,10 @@ as that is the most specific type.
 
 Also see `promote_quantity_on_value`.
 """
-@inline promote_quantity_on_quantity(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}) = GenericQuantity
-@inline promote_quantity_on_quantity(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Union{Quantity,RealQuantity}}) = Quantity
-@inline promote_quantity_on_quantity(::Type{<:RealQuantity}, ::Type{<:RealQuantity}) = RealQuantity
-@inline promote_quantity_on_quantity(::Type{Q}, ::Type{Q}) where {Q<:UnionAbstractQuantity} = Q
+@unstable @inline promote_quantity_on_quantity(::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}, ::Type{<:Union{GenericQuantity,Quantity,RealQuantity}}) = GenericQuantity
+@unstable @inline promote_quantity_on_quantity(::Type{<:Union{Quantity,RealQuantity}}, ::Type{<:Union{Quantity,RealQuantity}}) = Quantity
+@unstable @inline promote_quantity_on_quantity(::Type{<:RealQuantity}, ::Type{<:RealQuantity}) = RealQuantity
+@unstable @inline promote_quantity_on_quantity(::Type{Q}, ::Type{Q}) where {Q<:UnionAbstractQuantity} = Q
 
 for (type1, _, _) in ABSTRACT_QUANTITY_TYPES, (type2, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval function Base.promote_rule(::Type{Q1}, ::Type{Q2}) where {T1,T2,D1,D2,Q1<:$type1{T1,D1},Q2<:$type2{T2,D2}}
@@ -149,6 +149,34 @@ Base.getindex(d::AbstractDimensions, k::Symbol) = getfield(d, k)
     return dimension_names(T1) == dimension_names(T2)
 end
 
+# Multiplying ranges with units
+Base.TwicePrecision{T}(x::T) where {T<:AbstractQuantity} = Base.TwicePrecision{typeof(x)}(x, zero(x))
+# TODO: Note that to get RealQuantity working, we have to overload many other functions,
+#       which is why we skip it.
+
+# Avoid https://github.com/JuliaLang/julia/issues/56610
+for T1 in (AbstractQuantity{<:Real}, Real),
+    T2 in (AbstractQuantity{<:Real}, Real),
+    T3 in (AbstractQuantity{<:Real}, Real)
+
+    T1 === T2 === T3 === Real && continue
+
+    @eval function Base.:(:)(start::$T1, step::$T2, stop::$T3)
+        dimension(start) == dimension(step) || throw(DimensionError(start, step))
+        dimension(start) == dimension(stop) || throw(DimensionError(start, stop))
+        return range(start, stop, length=length(ustrip(start):ustrip(step):ustrip(stop)))
+    end
+
+    if T3 === Real && !(T1 === T2 === Real)
+        @eval function Base.:(:)(start::$T1, stop::$T2)
+            if !iszero(dimension(start)) || !iszero(dimension(stop))
+                error("When creating a range over dimensionful quantities, you must specify a step.")
+            end
+            return start:1:stop
+        end
+    end
+end
+
 # Compatibility with `.*`
 Base.size(q::UnionAbstractQuantity) = size(ustrip(q))
 Base.length(q::UnionAbstractQuantity) = length(ustrip(q))
@@ -170,7 +198,7 @@ end
 Base.keys(q::UnionAbstractQuantity) = keys(ustrip(q))
 
 # If atol specified in kwargs, validate its dimensions and then strip units
-@inline function _validate_isapprox(dimcheck, kws)
+@inline @unstable function _validate_isapprox(dimcheck, kws)
     if haskey(kws, :atol)
         dimension(dimcheck) == dimension(kws[:atol]) || throw(DimensionError(dimcheck, kws[:atol]))
         return (; kws..., atol=ustrip(kws[:atol]))
@@ -351,6 +379,10 @@ Base.copy(q::Q) where {Q<:UnionAbstractQuantity} = new_quantity(Q, copy(ustrip(q
     ustrip(q::AbstractGenericQuantity)
 
 Remove the units from a quantity.
+
+!!! note
+
+    If using symbolic dimensions, you might also consider using [`ustripexpand`](@ref) to first convert to SI base units before stripping.
 """
 @inline ustrip(q::UnionAbstractQuantity) = q.value
 ustrip(::AbstractDimensions) = error("Cannot remove units from an `AbstractDimensions` object.")

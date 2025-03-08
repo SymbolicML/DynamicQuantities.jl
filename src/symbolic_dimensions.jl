@@ -34,7 +34,7 @@ are so many unit symbols).
 
 You can convert a quantity using `SymbolicDimensions` as its dimensions
 to one which uses `Dimensions` as its dimensions (i.e., base SI units)
-`uexpand`.
+with [`uexpand`](@ref).
 """
 struct SymbolicDimensions{R} <: AbstractSymbolicDimensions{R}
     nzdims::Vector{INDEX_TYPE}
@@ -94,8 +94,8 @@ end
 dimension_names(::Type{<:AbstractSymbolicDimensions}) = ALL_SYMBOLS
 Base.propertynames(::AbstractSymbolicDimensions) = ALL_SYMBOLS
 Base.getindex(d::AbstractSymbolicDimensions, k::Symbol) = getproperty(d, k)
-constructorof(::Type{<:SymbolicDimensions}) = SymbolicDimensions
-constructorof(::Type{<:SymbolicDimensionsSingleton}) = SymbolicDimensionsSingleton
+@unstable constructorof(::Type{<:SymbolicDimensions}) = SymbolicDimensions
+@unstable constructorof(::Type{<:SymbolicDimensionsSingleton}) = SymbolicDimensionsSingleton
 with_type_parameters(::Type{<:SymbolicDimensions}, ::Type{R}) where {R} = SymbolicDimensions{R}
 with_type_parameters(::Type{<:SymbolicDimensionsSingleton}, ::Type{R}) where {R} = SymbolicDimensionsSingleton{R}
 nzdims(d::SymbolicDimensions) = getfield(d, :nzdims)
@@ -147,18 +147,23 @@ end
 
 
 """
-    uexpand(q::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions})
+    uexpand(q::UnionAbstractQuantity)
+    uexpand(q::QuantityArray)
 
-Expand the symbolic units in a quantity to their base SI form.
+Expand  the symbolic units in a quantity with symbolic dimensions to their base SI form.
 In other words, this converts a quantity with `AbstractSymbolicDimensions`
 to one with `Dimensions`. The opposite of this function is `uconvert`,
 for converting to specific symbolic units, or, e.g., `convert(Quantity{<:Any,<:AbstractSymbolicDimensions}, q)`,
 for assuming SI units as the output symbols.
+
+For quantities with `Dimensions`, this function just passes through the value `q`.
 """
+uexpand(q::Q) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstractQuantity{T,D}} = q
+uexpand(q::QuantityArray{T,N,D}) where {T,N,D} = q
 function uexpand(q::Q) where {T,R,D<:AbstractSymbolicDimensions{R},Q<:UnionAbstractQuantity{T,D}}
     return convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
-uexpand(q::QuantityArray) = uexpand.(q)
+uexpand(q::QuantityArray{T,N,D}) where {T,N,D<:AbstractSymbolicDimensions} = uexpand.(q)
 # TODO: Make the array-based one more efficient
 
 """
@@ -250,6 +255,15 @@ function Base.:(|>)(
 )
     return uconvert(qout, q)
 end
+
+"""
+    ustripexpand(q::AbstractQuantity)
+    ustripexpand(q::QuantityArray)
+
+Return the value of `q` in SI base units. This is equivalent with `ustrip(uexpand(q))`.
+"""
+ustripexpand(q::UnionAbstractQuantity) = ustrip(uexpand(q))
+ustripexpand(q::QuantityArray) = ustrip(uexpand(q))
 
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(nzdims(d)), copy(nzvals(d)))
@@ -391,6 +405,8 @@ to enable pretty-printing of units.
 """
 module SymbolicUnits
 
+    using DispatchDoctor: @unstable
+
     import ..UNIT_SYMBOLS
     import ..CONSTANT_SYMBOLS
     import ..SymbolicDimensionsSingleton
@@ -479,25 +495,27 @@ module SymbolicUnits
     as_quantity(x::Number) = convert(DEFAULT_SYMBOLIC_QUANTITY_OUTPUT_TYPE, x)
     as_quantity(x) = error("Unexpected type evaluated: $(typeof(x))")
 
-    function map_to_scope(ex::Expr)
+    @unstable function map_to_scope(ex::Expr)
+        if !(ex.head == :call) && !(ex.head == :. && ex.args[1] == :Constants)
+            throw(ArgumentError("Unexpected expression: $ex. Only `:call` and `:.` (for `SymbolicConstants`) are expected."))
+        end
         if ex.head == :call
             ex.args[2:end] = map(map_to_scope, ex.args[2:end])
             return ex
-        elseif ex.head == :. && ex.args[1] == :Constants
+        else # if ex.head == :. && ex.args[1] == :Constants
             @assert ex.args[2] isa QuoteNode
             return lookup_constant(ex.args[2].value)
-        else
-            throw(ArgumentError("Unexpected expression: $ex. Only `:call` and `:.` (for `SymbolicConstants`) are expected."))
         end
     end
     function map_to_scope(sym::Symbol)
         if sym in UNIT_SYMBOLS
-            return lookup_unit(sym)
+            # return at end
         elseif sym in CONSTANT_SYMBOLS
             throw(ArgumentError("Symbol $sym found in `Constants` but not `Units`. Please use `us\"Constants.$sym\"` instead."))
         else
             throw(ArgumentError("Symbol $sym not found in `Units` or `Constants`."))
         end
+        return lookup_unit(sym)
     end
     function map_to_scope(ex)
         return ex
