@@ -9,9 +9,9 @@ export AbstractSymbolicDimensions, SymbolicDimensions, SymbolicDimensionsSinglet
 export AbstractAffineDimensions, AffineDimensions
 export QuantityArray
 export DimensionError
-export ustrip, dimension
+export ustrip, dimension, uexpand, uconvert, ustripexpand
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
-export uparse, @u_str, sym_uparse, @us_str, aff_uparse, @ua_str, uexpand, uconvert, @register_unit, @register_affine_unit
+export uparse, @u_str, sym_uparse, @us_str, @register_unit, aff_uparse, @ua_str, @register_affine_unit
 
 # Deprecated:
 export expand_units
