@@ -378,8 +378,11 @@ Base.copy(q::Q) where {Q<:UnionAbstractQuantity} = new_quantity(Q, copy(ustrip(q
     ustrip(q::AbstractQuantity)
     ustrip(q::AbstractGenericQuantity)
 
-Remove the units from a quantity. Note, that for quantities with symbolic dimensions, the returned value is not 
-the value of the quantity in SI base units. If this functionality is desired, consider using [`ustripexpand`](@ref).
+Remove the units from a quantity.
+
+!!! note
+
+    If using symbolic dimensions, you might also consider using [`ustripexpand`](@ref) to first convert to SI base units before stripping.
 """
 @inline ustrip(q::UnionAbstractQuantity) = q.value
 ustrip(::AbstractDimensions) = error("Cannot remove units from an `AbstractDimensions` object.")
