@@ -1,3 +1,5 @@
+using DispatchDoctor: @unstable
+
 abstract type AbstractStaticDimensions{R,D,dim} <: AbstractDimensions{R} end
 
 """
@@ -10,9 +12,9 @@ This is not yet stable, so this type is not exported.
 """
 struct StaticDimensions{R,D<:AbstractDimensions{R},dim} <: AbstractStaticDimensions{R,D,dim}
 
-    StaticDimensions(d::AbstractDimensions) = new{eltype(d),typeof(d),d}()
-    StaticDimensions(; kws...) = StaticDimensions(Dimensions(; kws...))
-    StaticDimensions{_R}(d::AbstractDimensions) where {_R} = (d = convert(with_type_parameters(typeof(d), _R), d); StaticDimensions(d))
+    @unstable StaticDimensions(d::AbstractDimensions) = new{eltype(d),typeof(d),d}()
+    @unstable StaticDimensions(; kws...) = StaticDimensions(Dimensions(; kws...))
+    @unstable StaticDimensions{_R}(d::AbstractDimensions) where {_R} = (d = convert(with_type_parameters(typeof(d), _R), d); StaticDimensions(d))
 end
 
 Base.propertynames(::AbstractStaticDimensions{R,D,dim}) where {R,D,dim} = propertynames(dim)
@@ -22,7 +24,7 @@ Base.getindex(::AbstractStaticDimensions{R,D,dim}, i::Symbol) where {R,D,dim} = 
 raw_dimension(::Type{<:AbstractStaticDimensions{R,D,dim}}) where {R,D,dim} = dim
 dimension_names(::Type{<:AbstractStaticDimensions{R,D}}) where {R,D} = dimension_names(D)
 
-constructorof(::Type{<:StaticDimensions}) = StaticDimensions
+@unstable constructorof(::Type{<:StaticDimensions}) = StaticDimensions
 with_type_parameters(::Type{StaticDimensions{Rold,D}}, ::Type{R}) where {Rold,D,R}  = StaticDimensions{R,D}
 
 function Base.promote_rule(::Type{StaticDimensions{R1,D1}}, ::Type{StaticDimensions{R2,D2}}) where {R1,D1,R2,D2}
