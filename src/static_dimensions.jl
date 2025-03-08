@@ -49,20 +49,19 @@ end
 
 function Base.convert(::Type{Q1}, q::Q2) where {
     T1,D1,Q1<:AbstractQuantity{T1,D1},
-    dims,
-    Q2<:AbstractQuantity{<:Any,<:AbstractStaticDimensions{<:Any,<:Any,dims}}
+    Q2<:AbstractQuantity{<:Any,<:AbstractStaticDimensions}
 }
     if q isa Q1
         return q
     end
     val = ustrip(q)
     # First, construct dynamic version in the input types
-    q_dynamic = new_quantity(Q2, val, dims)
+    q_dynamic = new_quantity(Q2, val, raw_dimension(dimension(q)))
     # Then, convert that
     return convert(Q1, q_dynamic)
 end
 
-Base.:(==)(::AbstractStaticDimensions{<:Any,<:Any,dim1}, ::AbstractStaticDimensions{<:Any,<:Any,dim2}) where {dim1,dim2} = dim1 == dim2
+Base.:(==)(d1::AbstractStaticDimensions, d2::AbstractStaticDimensions) = raw_dimension(d1) == raw_dimension(d2)
 @generated function map_dimensions(f::F, args::AbstractStaticDimensions...) where {F<:Function}
     cons = constructorof(promote_type(args...))
     dims = map(raw_dimension, args)
