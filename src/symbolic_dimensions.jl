@@ -34,7 +34,7 @@ are so many unit symbols).
 
 You can convert a quantity using `SymbolicDimensions` as its dimensions
 to one which uses `Dimensions` as its dimensions (i.e., base SI units)
-`uexpand`.
+with [`uexpand`](@ref).
 """
 struct SymbolicDimensions{R} <: AbstractSymbolicDimensions{R}
     nzdims::Vector{INDEX_TYPE}
@@ -147,18 +147,23 @@ end
 
 
 """
-    uexpand(q::UnionAbstractQuantity{<:Any,<:AbstractSymbolicDimensions})
+    uexpand(q::UnionAbstractQuantity)
+    uexpand(q::QuantityArray)
 
-Expand the symbolic units in a quantity to their base SI form.
+Expand  the symbolic units in a quantity with symbolic dimensions to their base SI form.
 In other words, this converts a quantity with `AbstractSymbolicDimensions`
 to one with `Dimensions`. The opposite of this function is `uconvert`,
 for converting to specific symbolic units, or, e.g., `convert(Quantity{<:Any,<:AbstractSymbolicDimensions}, q)`,
 for assuming SI units as the output symbols.
+
+For quantities with `Dimensions`, this function just passes through the value `q`.
 """
+uexpand(q::Q) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstractQuantity{T,D}} = q
+uexpand(q::QuantityArray{T,N,D}) where {T,N,D} = q
 function uexpand(q::Q) where {T,R,D<:AbstractSymbolicDimensions{R},Q<:UnionAbstractQuantity{T,D}}
     return convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
-uexpand(q::QuantityArray) = uexpand.(q)
+uexpand(q::QuantityArray{T,N,D}) where {T,N,D<:AbstractSymbolicDimensions} = uexpand.(q)
 # TODO: Make the array-based one more efficient
 
 """
@@ -250,6 +255,15 @@ function Base.:(|>)(
 )
     return uconvert(qout, q)
 end
+
+"""
+    ustripexpand(q::AbstractQuantity)
+    ustripexpand(q::QuantityArray)
+
+Return the value of `q` in SI base units. This is equivalent with `ustrip(uexpand(q))`.
+"""
+ustripexpand(q::UnionAbstractQuantity) = ustrip(uexpand(q))
+ustripexpand(q::QuantityArray) = ustrip(uexpand(q))
 
 
 Base.copy(d::SymbolicDimensions) = SymbolicDimensions(copy(nzdims(d)), copy(nzvals(d)))
