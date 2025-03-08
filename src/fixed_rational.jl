@@ -1,3 +1,5 @@
+import Base: Rational, Bool
+
 """
     FixedRational{T,den}
 
