@@ -6,16 +6,24 @@ abstract type AbstractAffineDimensions{R} <: AbstractDimensions{R} end
 const AffineOrSymbolicDimensions{R} = Union{AbstractAffineDimensions{R}, AbstractSymbolicDimensions{R}}
 
 """
-    AffineDimensions{R}(scale::Float64, offset:Float64, basedim::Dimensions{R}, symbol::Symbol=nothing)
+    AffineDimensions{R}(scale::Float64, offset::Float64, basedim::Dimensions{R}, symbol::Symbol=nothing)
 
 AffineDimensions adds a scale and offset to Dimensions{R} allowing the expression of affine transformations of units (for example °C)
 The offset parameter is in SI units (i.e. having the dimension of basedim)
 """
-@kwdef struct AffineDimensions{R} <: AbstractAffineDimensions{R}
-    scale::Float64 = 1.0
-    offset::Float64 = 0.0
+struct AffineDimensions{R} <: AbstractAffineDimensions{R}
+    scale::Float64
+    offset::Float64
     basedim::Dimensions{R}
-    symbol::Symbol = :nothing
+    symbol::Symbol
+end
+
+function AffineDimensions(;scale=1.0, offset=0.0, basedim, symbol=:nothing)
+    return AffineDimensions(scale, offset, basedim, symbol)
+end
+
+function AffineDimensions{R}(;scale=1.0, offset=0.0, basedim, symbol=:nothing) where R
+    return AffineDimensions{R}(scale, offset, basedim, symbol)
 end
 
 # Inferring the type parameter R
@@ -223,27 +231,7 @@ for (op, combine) in ((:+, :*), (:-, :/))
             basedim=map_dimensions(op, map(basedim, args)...) 
         )
     end
- end
-
-#=
-function map_dimensions(op::typeof(+), args::AffineDimensions...) 
-    assert_no_offset.(args)
-    return AffineDimensions(
-        scale=*(scale.(args)...),
-        offset=zero(Float64),
-        basedim=map_dimensions(op, basedim.(args)...)
-    )
 end
-
-function map_dimensions(op::typeof(-), args::AffineDimensions...) 
-    assert_no_offset.(args)
-    return AffineDimensions(
-        scale=/(scale.(args)...),
-        offset=zero(Float64),
-        basedim=map_dimensions(op, basedim.(args)...)
-    )
-end
-=#
 
 #This is required because /(x::Number) results in an error, so it needs to be cased out to inv
 function map_dimensions(op::typeof(-), d::AffineDimensions) 
