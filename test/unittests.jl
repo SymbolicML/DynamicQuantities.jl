@@ -856,9 +856,11 @@ end
     @test dimension(inv(us"s") * us"m") != dimension(us"km/s")
     @test dimension(uexpand(inv(us"s") * us"m")) == dimension(uexpand(us"km/s"))
     
-
     @test ustripexpand(u"h") == 3600.0
     @test ustripexpand(us"h") == 3600.0
+    # Different behavior than ustrip alone:
+    @test ustrip(us"h") == 1.0
+
     @test ustripexpand(QuantityArray(fill(1.0,5), u"h")) == fill(3600.0, 5)
     @test ustripexpand(QuantityArray(fill(1.0,5), us"h")) == fill(3600.0, 5)
 
