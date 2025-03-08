@@ -49,6 +49,7 @@ end
 ################################################################################
 # Assorted calls found by Aqua: ################################################
 ################################################################################
+import Base: Bool, Complex
 
 for type in (Signed, Float64, Float32, Rational), op in (:flipsign, :copysign)
     @eval function Base.$(op)(x::$type, y::AbstractRealQuantity)
