@@ -29,6 +29,7 @@ using DispatchDoctor: @stable
     include("constants.jl")
     include("uparse.jl")
     include("symbolic_dimensions.jl")
+    include("static_dimensions.jl")
     include("complex.jl")
     include("register_units.jl")
     include("disambiguities.jl")
