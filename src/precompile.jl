@@ -41,9 +41,19 @@ PrecompileTools.@setup_workload begin
         q1 / q3_s
         q1_s / q3
 
+        # Power operations
+        q3^2
+        q3_s^2
+        q3^2.0
+        q3_s^2.0
+        inv(q3)
+        inv(q3_s)
+
         # Conversion/display
-        string(q1)
-        string(q1_s)
+        string(q3)
+        string(q3_s)
+        show(devnull, MIME"text/plain"(), q1)
+        show(devnull, MIME"text/plain"(), q1_s)
         print(devnull, q1)
         print(devnull, q1_s)
 
