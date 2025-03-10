@@ -5,6 +5,7 @@ version = "1.5.1"
 
 [deps]
 DispatchDoctor = "8d63f2c5-f18a-4cf2-ba9d-b3f60fc568c8"
+PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 TestItems = "1c621080-faea-4a02-84b6-bbd5e436b8fe"
 Tricks = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
 
@@ -24,6 +25,7 @@ DynamicQuantitiesUnitfulExt = "Unitful"
 DispatchDoctor = "0.4"
 LinearAlgebra = "1"
 Measurements = "2"
+PrecompileTools = "1"
 ScientificTypes = "3"
 TestItems = "0.1, 1"
 Tricks = "0.1.9"
