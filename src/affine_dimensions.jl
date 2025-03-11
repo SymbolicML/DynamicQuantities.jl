@@ -92,17 +92,8 @@ with_type_parameters(::Type{<:AffineDimensions}, ::Type{R}) where {R} = AffineDi
 function Base.show(io::IO, d::AbstractAffineDimensions)
     if d.symbol != :nothing
         print(io, d.symbol)
-    elseif isone(affine_scale(d)) && iszero(affine_offset(d))
-        print(io, affine_base_dim(d))
-    elseif iszero(affine_offset(d))
-        print(io, "(", affine_scale(d), " ", affine_base_dim(d),")")
     else
-        addsign = affine_offset(d) < 0 ? "-" : "+"
-        if isone(affine_scale(d))
-            print(io, "(", addsign, abs(affine_offset(d)), affine_base_dim(d), ")")
-        else
-            print(io, "(", affine_scale(d), addsign, abs(affine_offset(d)), " ", affine_base_dim(d),")")
-        end
+        print(io, "AffineDimensions(scale=", affine_scale(d), ", offset=", affine_offset(d), ", basedim=", affine_base_dim(d), ")")
     end
 end
 
