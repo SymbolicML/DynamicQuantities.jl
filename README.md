@@ -284,18 +284,21 @@ julia> 3us"V" |> us"OneFiveV"
 2.0 OneFiveV
 ```
 
-#### Affine units
-Units that have an offset (such as °C = K + 273.15) are an unfortunate fact of life. `AffineDimensions` seeks to extend DynamicQuantities.jl to reduce dependence on Unitful.jl, and enable handling/converting such units in a flexible, type-stable manner. You can access these units through the `ua"..."` string macro:
+#### Affine Units
+
+You can also use "*affine*" units such as Celsius or Fahrenheit,
+using the `ua"..."` string macro:
+
+```julia
+julia> room_temp = 22ua"degC"
+22.0 °C
+
+julia> room_temp |> ua"degF" |> round
+72.0 °F
+
+julia> room_temp |> uexpand |> round
+295.0 K
 ```
-t = ua"degC"
-t = ua"°C"
-t = ua"°F"
-```
-Because `AffineDimensions` are more general than `SymbolicDimensions`, units available `SymbolicDimensions` are also available in `AffineDimensions`, allowing you to have something that can handle affine and non-affine quantities in a type-stable manner
-```
-p = ua"kPa"
-```
-Registering Symbolic units will automatically register affine units, and a special macro can be used to register custom affine units if need be. Please refer to the docs for this functionality.
 
 ### Arrays
 
