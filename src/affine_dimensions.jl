@@ -19,7 +19,7 @@ struct AffineOffsetError{D} <: Exception
     AffineOffsetError(dim) = new{typeof(dim)}(dim)
 end
 
-Base.showerror(io::IO, e::AffineOffsetError) = print(io, "AffineOffsetError: ", e.dim, " has a non-zero offset, implicit conversion is not allowed due to ambiguity. Use uexpand(x) to explicitly convert")
+Base.showerror(io::IO, e::AffineOffsetError) = print(io, "AffineOffsetError: ", e.dim, " has a non-zero offset, implicit conversion is not allowed due to ambiguity. Use `uexpand(x)` to explicitly convert")
 
 """
     AffineDimensions{R}(scale::Float64, offset::Float64, basedim::Dimensions{R}, symbol::Symbol=:nothing)
