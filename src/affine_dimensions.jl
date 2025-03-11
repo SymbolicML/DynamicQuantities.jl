@@ -197,7 +197,7 @@ for (op, combine) in ((:+, :*), (:-, :/))
         return AffineDimensions(
             scale=($combine)(map(affine_scale, args)...),
             offset=zero(Float64),
-            basedim=map_dimensions(op, map(affine_base_dim, args)...) 
+            basedim=map_dimensions($op, map(affine_base_dim, args)...) 
         )
     end
 end
