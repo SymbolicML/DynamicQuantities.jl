@@ -195,9 +195,7 @@ for (op, combine) in ((:+, :*), (:-, :/))
     @eval function map_dimensions(::typeof($op), args::AffineDimensions...)
         map(assert_no_offset, args)
         return AffineDimensions(
-            scale=($combine)(map(affine_scale, args)...),
-            offset=zero(Float64),
-            basedim=map_dimensions($op, map(affine_base_dim, args)...) 
+            scale=($combine)(map(affine_scale, args)...), offset=0.0, basedim=map_dimensions($op, map(affine_base_dim, args)...) 
         )
     end
 end
@@ -206,19 +204,13 @@ end
 function map_dimensions(op::typeof(-), d::AffineDimensions) 
     assert_no_offset(d)
     return AffineDimensions(
-        scale=inv(affine_scale(d)),
-        offset=zero(Float64),
-        basedim=map_dimensions(op, affine_base_dim(d))
+        scale=inv(affine_scale(d)), offset=0.0, basedim=map_dimensions(op, affine_base_dim(d))
     )
 end
-
-# This is needed for parsing out exponentials in string macros
-function map_dimensions(fix1::Base.Fix1{typeof(*)}, l::AffineDimensions{R}) where {R}
+function map_dimensions(fix1::Base.Fix1{typeof(*)}, l::AffineDimensions) where {R}
     assert_no_offset(l)
     return AffineDimensions(
-        scale=affine_scale(l)^fix1.x,
-        offset=zero(Float64),
-        basedim=map_dimensions(fix1, affine_base_dim(l))
+        scale=affine_scale(l)^fix1.x, offset=0.0, basedim=map_dimensions(fix1, affine_base_dim(l))
     )
 end
 
