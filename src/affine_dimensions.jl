@@ -361,15 +361,13 @@ module AffineUnits
         update_external_affine_unit(:degC, dimension(°C))
         update_external_affine_unit(dimension(°F))
         update_external_affine_unit(:degF, dimension(°F))
-
-        # Register unit symbols as exportable constants
-        for (name, val) in zip(AFFINE_UNIT_SYMBOLS, AFFINE_UNIT_VALUES)
-            @eval begin
-                const $name = $val
-            end
+    end
+    # Register unit symbols as exportable constants
+    for (name, val) in zip(AFFINE_UNIT_SYMBOLS, AFFINE_UNIT_VALUES)
+        @eval begin
+            const $name = $val
         end
     end
-
 end
 
 import .AffineUnits: aff_uparse, update_external_affine_unit
