@@ -227,7 +227,9 @@ end
 
 for op in (:(==), :(≈))
     @eval begin
-        Base.$op(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions}) = $op(uexpand(q1), uexpand(q2))
+        function Base.$op(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions})
+            $op(uexpand(q1), uexpand(q2))
+        end
         function Base.$op(d1::AffineDimensions, d2::AffineDimensions)
             $op(affine_base_dim(d1), affine_base_dim(d2)) &&
                 $op(affine_scale(d1), affine_scale(d2)) &&
