@@ -55,4 +55,7 @@ let _units_import_expr = :(using .Units: m, g)
     eval(_units_import_expr)
 end
 
+# Include precompilation directives
+include("precompile.jl")
+
 end
