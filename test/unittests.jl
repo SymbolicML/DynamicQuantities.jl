@@ -2018,8 +2018,8 @@ end
     @test dimension(°C) isa AffineDimensions
     @test dimension(°C) isa AbstractAffineDimensions
 
-    @test DynamicQuantities.basedim(dimension(°C)).temperature == 1
-    @test DynamicQuantities.basedim(dimension(°C)).length == 0
+    @test DynamicQuantities.ubasedim(dimension(°C)).temperature == 1
+    @test DynamicQuantities.ubasedim(dimension(°C)).length == 0
 
     @test inv(mps) == us"s/m"
     @test inv(mps) == u"s/m"
@@ -2089,7 +2089,7 @@ end
     @test °C |> °F isa Quantity{<:Real, <:AffineDimensions}
     @test 0°C |> °F == 32°F
 
-    @test QuantityArray([0,1]°C) |> uconvert(°F) isa QuantityArray{T, <:Any, AffineDimensions{R}} where {T,R}
+    @test QuantityArray([0,1]°C) |> °F isa QuantityArray{T, <:Any, AffineDimensions{R}} where {T,R}
     @test DynamicQuantities.affine_quantity(us"kPa") == u"kPa"
 
     # Test display against errors
