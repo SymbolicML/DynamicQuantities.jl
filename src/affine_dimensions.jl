@@ -192,7 +192,7 @@ function uconvert(qout::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions},
 end
 
 for (op, combine) in ((:+, :*), (:-, :/))
-    @eval function map_dimensions(op::typeof($op), args::AffineDimensions...)
+    @eval function map_dimensions(::typeof($op), args::AffineDimensions...)
         map(assert_no_offset, args)
         return AffineDimensions(
             scale=($combine)(map(affine_scale, args)...),
