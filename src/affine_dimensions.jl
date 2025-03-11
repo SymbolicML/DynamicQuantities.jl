@@ -117,17 +117,6 @@ end
 uexpand(q::QuantityArray{T,N,D}) where {T,N,D<:AbstractAffineDimensions} = uexpand.(q)
 
 """
-    affine_quantity(q::UnionAbstractQuantity)
-
-Converts a quantity to its equivalent affine quantity representation (with scale=1.0 and offset=0.0)
-"""
-function affine_quantity(q::Q) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstractQuantity{T,D}}
-    q_si = uexpand(q)
-    dims = AffineDimensions{R}(scale=1.0, offset=0.0, basedim=dimension(q_si))
-    return constructorof(Q)(convert(T, ustrip(q_si)), dims)
-end
-
-"""
     affine_unit(q::UnionAbstractQuantity, symbol::Symbol=:nothing)
 
 Converts a quantity to its nearest affine unit (with scale=ustrip(q) and offset=0.0)

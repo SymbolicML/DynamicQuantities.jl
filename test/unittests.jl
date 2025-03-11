@@ -2091,7 +2091,6 @@ end
     @test 0°C |> °F == 32°F
 
     @test QuantityArray([0,1]°C) |> °F isa QuantityArray{T, <:Any, AffineDimensions{R}} where {T,R}
-    @test DynamicQuantities.affine_quantity(us"kPa") == u"kPa"
 
     # Test display against errors
     celsius = AffineDimensions(offset=273.15, basedim=u"K")
