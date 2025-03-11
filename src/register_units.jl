@@ -82,26 +82,7 @@ end
 """
     @register_affine_unit symbol value
 
-Register a new unit under the given symbol in the AFFINE UNIT REGISTRY ONLY.
-
-All units registered with @register_unit will automatically be registered in the affine units registry
-```
-@register_unit psi 6.89476us"kPa"
-u"psi"
->> 6894.76 m⁻¹ kg s⁻²
-us"psi"
->> 1.0 psi
-ua"psi"
->> 1.0 psi
-```
-However, strictly affine units cannot belong to the symbolic registry, so a different macro must be used on an AffineDimension (or quantity thereof)
-```
-@register_affine_unit psig AffineDimensions(offset=u"Constants.atm", basedim=u"psi") #Gauge pressure implies atmospheric offset
-ua"psig"
->> 1.0 psig
-us"psig"
->> ERROR: LoadError: ArgumentError: Symbol psig not found in `Units` or `Constants`.
-```
+Affine unit version of [`@register_unit`](@ref).
 """
 macro register_affine_unit(name, expr)
     return esc(_register_affine_unit(name, expr))
