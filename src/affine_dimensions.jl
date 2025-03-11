@@ -258,7 +258,7 @@ module AffineUnits
     using DispatchDoctor: @unstable
 
     import ..affine_scale, ..affine_offset, ..affine_base_dim, ..dimension
-    import ..ustrip, ..ustripexpand, ..constructorof, ..DEFAULT_AFFINE_QUANTITY_TYPE
+    import ..ustrip, ..uexpand, ..constructorof, ..DEFAULT_AFFINE_QUANTITY_TYPE
     import ..DEFAULT_DIM_TYPE, ..DEFAULT_VALUE_TYPE, ..DEFAULT_DIM_BASE_TYPE
     import ..Units: UNIT_SYMBOLS, UNIT_VALUES
     import ..Constants: CONSTANT_SYMBOLS, CONSTANT_VALUES
@@ -268,7 +268,8 @@ module AffineUnits
 
     # Register a new affine unit
     function _make_affine_unit(q::Q, symbol::Symbol=:nothing) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstractQuantity{T,D}}
-        return constructorof(Q)(one(T), AffineDimensions{R}(scale=ustripexpand(q), offset=0.0, basedim=dimension(q), symbol=symbol))
+        q_si = uexpand(q)
+        return constructorof(Q)(one(T), AffineDimensions{R}(scale=ustrip(q_si), offset=0.0, basedim=dimension(q_si), symbol=symbol))
     end
 
     const AFFINE_UNIT_SYMBOLS = WriteOnceReadMany(deepcopy(UNIT_SYMBOLS))
