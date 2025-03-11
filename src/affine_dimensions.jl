@@ -41,7 +41,7 @@ AffineDimensions(; scale=1.0, offset=0.0, basedim, symbol=:nothing) = AffineDime
 AffineDimensions{R}(; scale=1.0, offset=0.0, basedim, symbol=:nothing) where {R} = AffineDimensions{R}(scale, offset, basedim, symbol)
 AffineDimensions(s, o, dims::AbstractDimensions{R}, symbol=:nothing) where {R} = AffineDimensions{R}(s, o, dims, symbol)
 AffineDimensions(s, o, q::UnionAbstractQuantity{<:Any,<:AbstractDimensions{R}}, sym=:nothing) where {R} = AffineDimensions{R}(s, o, q, sym)
-AffineDimensions(d::Dimensions{R}) where R = AffineDimensions{R}(scale=1.0, offset=0.0, basedim=d, symbol=:nothing)
+AffineDimensions(d::Dimensions{R}) where R = AffineDimensions{R}(basedim=d)
 
 # Handle offsets in affine dimensions
 function AffineDimensions{R}(s::Real, o::Real, dims::AbstractAffineDimensions, sym=:nothing) where {R}
@@ -109,51 +109,43 @@ end
 Expand the affine units in a quantity to their base SI form (with `Dimensions`).
 """
 function uexpand(q::Q) where {T,R,D<:AbstractAffineDimensions{R},Q<:UnionAbstractQuantity{T,D}}
-    return _explicit_convert(with_type_parameters(Q, T, Dimensions{R}), q)
+    return _unsafe_convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
 uexpand(q::QuantityArray{T,N,D}) where {T,N,D<:AbstractAffineDimensions} = uexpand.(q)
 
 for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
-        # Dimensions to AffineDimensions
-        function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:Dimensions}) where {T,Q<:$type{T,AffineDimensions}}
-            return convert(with_type_parameters(Q, T, AffineDimensions{DEFAULT_DIM_BASE_TYPE}), q)
-        end
-
-        function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:Dimensions}) where {T,R,Q<:$type{T,AffineDimensions{R}}}
-            dims = AffineDimensions{R}(scale=1, offset=0, basedim=dimension(q))
-            return constructorof(Q)(convert(T, ustrip(q)), dims)
-        end
-
-        # AffineDimensions to Dimensions (explicit)
-        function _explicit_convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
+        function _unsafe_convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
             d = dimension(q)
             v = ustrip(q) * affine_scale(d) + affine_offset(d)
             return constructorof(Q)(convert(T, v), affine_base_dim(d))
         end
 
-        # AffineDimensions to Dimensions (implicit - fails if offset ≠ 0)
+        function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:Dimensions}) where {T,Q<:$type{T,AffineDimensions}}
+            return convert(with_type_parameters(Q, T, AffineDimensions{DEFAULT_DIM_BASE_TYPE}), q)
+        end
+        function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:Dimensions}) where {T,R,Q<:$type{T,AffineDimensions{R}}}
+            return constructorof(Q)(convert(T, ustrip(q)), AffineDimensions{R}(scale=1, offset=0, basedim=dimension(q)))
+        end
         function Base.convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
             assert_no_offset(dimension(q))
-            return _explicit_convert(Q, q)
+            return _unsafe_convert(Q, q)
         end
     end
 end
 
-function Base.promote_rule(::Type{AffineDimensions{R1}}, ::Type{AffineDimensions{R2}}) where {R1,R2}
-    return AffineDimensions{promote_type(R1,R2)}
-end
-function Base.promote_rule(::Type{AffineDimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
-    return Dimensions{promote_type(R1,R2)}
-end
-function Base.promote_rule(::Type{Dimensions{R1}}, ::Type{AffineDimensions{R2}}) where {R1,R2}
-    return Dimensions{promote_type(R1,R2)}
-end
-function Base.promote_rule(::Type{SymbolicDimensions{R1}}, ::Type{AffineDimensions{R2}}) where {R1,R2}
-    return Dimensions{promote_type(R1,R2)}
-end
-function Base.promote_rule(::Type{AffineDimensions{R1}}, ::Type{SymbolicDimensions{R2}}) where {R1,R2}
-    return Dimensions{promote_type(R1,R2)}
+# Generate promotion rules for affine dimensions
+for D1 in (:AffineDimensions, :Dimensions, :SymbolicDimensions), D2 in (:AffineDimensions, :Dimensions, :SymbolicDimensions)
+
+    # Skip if both are not affine dimensions
+    (D1 != :AffineDimensions && D2 != :AffineDimensions) && continue
+
+    # Determine the output type
+    OUT_D = (D1 == :AffineDimensions == D2) ? :AffineDimensions : :Dimensions
+
+    @eval function Base.promote_rule(::Type{$D1{R1}}, ::Type{$D2{R2}}) where {R1,R2}
+        return $OUT_D{promote_type(R1,R2)}
+    end
 end
 
 """
