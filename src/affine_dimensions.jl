@@ -83,7 +83,6 @@ ubasedim(d::AffineDimensions) = d.basedim
 
 with_type_parameters(::Type{<:AffineDimensions}, ::Type{R}) where {R} = AffineDimensions{R}
 @unstable constructorof(::Type{<:AffineDimensions}) = AffineDimensions
-constructorof(::Type{AffineDimensions{R}}) where {R} = AffineDimensions{R}
 
 function Base.show(io::IO, d::AbstractAffineDimensions)
     addsign = ifelse(uoffset(d)<0, "-" , "+")

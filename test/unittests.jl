@@ -2033,7 +2033,7 @@ end
     # Constructors
     @test with_type_parameters(AffineDimensions, Float64) == AffineDimensions{Float64}
     @test constructorof(AffineDimensions) == AffineDimensions
-    @test constructorof(AffineDimensions{Float64}) == AffineDimensions{Float64}
+    @test constructorof(AffineDimensions{Float64}) == AffineDimensions
     @test Quantity(1.0, AffineDimensions(dimension(u"K"))) == u"K"
     @test AffineDimensions(scale=1, offset=0, basedim=dimension(u"K")) == AffineDimensions(basedim=dimension(u"K"))
     @test AffineDimensions(scale=1, offset=0, basedim=u"K") == AffineDimensions(basedim=dimension(ua"K"))
