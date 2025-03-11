@@ -33,16 +33,16 @@ AffineDimensions(d::Dimensions{R}) where R = AffineDimensions{R}(scale=1.0, offs
 
 # Affine dimensions from other affine dimensions 
 function AffineDimensions{R}(s::Real, o::Real, dims::AbstractAffineDimensions, sym::Symbol=:nothing) where {R}
-    new_s = s * uscale(dims)
-    new_o = uoffset(dims) + o * uscale(dims) #Scale of o is assumed to be scale of base dimensions
-    return AffineDimensions{R}(new_s, new_o, ubasedim(dims), sym)
+    new_s = s * affscale(dims)
+    new_o = affoffset(dims) + o * affscale(dims) #Scale of o is assumed to be scale of base dimensions
+    return AffineDimensions{R}(new_s, new_o, affbasedim(dims), sym)
 end
 
 
 function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity, dims::AbstractAffineDimensions, sym::Symbol=:nothing) where {R}
-    new_s = s * uscale(dims)
-    new_o = uoffset(dims) + ustrip(uexpand(o)) #Offset is always in SI units
-    return AffineDimensions{R}(new_s, new_o, ubasedim(dims), sym)
+    new_s = s * affscale(dims)
+    new_o = affoffset(dims) + ustrip(uexpand(o)) #Offset is always in SI units
+    return AffineDimensions{R}(new_s, new_o, affbasedim(dims), sym)
 end
 
 function AffineDimensions{R}(s::Real, o::UnionAbstractQuantity, dims::Dimensions, sym::Symbol=:nothing) where {R}
@@ -77,30 +77,30 @@ function AffineDimensions{R}(s::Real, o::Real, q::Q, sym::Symbol=:nothing) where
 end
 
 
-uscale(d::AffineDimensions) = d.scale
-uoffset(d::AffineDimensions) = d.offset
-ubasedim(d::AffineDimensions) = d.basedim
+affscale(d::AffineDimensions) = d.scale
+affoffset(d::AffineDimensions) = d.offset
+affbasedim(d::AffineDimensions) = d.basedim
 
 with_type_parameters(::Type{<:AffineDimensions}, ::Type{R}) where {R} = AffineDimensions{R}
 @unstable constructorof(::Type{<:AffineDimensions}) = AffineDimensions
 
 function Base.show(io::IO, d::AbstractAffineDimensions)
-    addsign = ifelse(uoffset(d)<0, "-" , "+")
+    addsign = ifelse(affoffset(d)<0, "-" , "+")
 
     if d.symbol != :nothing
         print(io, d.symbol)
-    elseif isone(uscale(d)) && iszero(uoffset(d))
-        print(io, ubasedim(d))
-    elseif iszero(uoffset(d))
-        print(io, "(", uscale(d), " ", ubasedim(d),")")
-    elseif isone(uscale(d))
-        print(io, "(", addsign, abs(uoffset(d)), ubasedim(d), ")")
+    elseif isone(affscale(d)) && iszero(affoffset(d))
+        print(io, affbasedim(d))
+    elseif iszero(affoffset(d))
+        print(io, "(", affscale(d), " ", affbasedim(d),")")
+    elseif isone(affscale(d))
+        print(io, "(", addsign, abs(affoffset(d)), affbasedim(d), ")")
     else
-        print(io, "(", uscale(d), addsign, abs(uoffset(d)), " ", ubasedim(d),")")
+        print(io, "(", affscale(d), addsign, abs(affoffset(d)), " ", affbasedim(d),")")
     end
 end
 
-assert_no_offset(d::AffineDimensions) = iszero(uoffset(d)) || throw(AssertionError("AffineDimensions $(d) has a non-zero offset, implicit conversion is not allowed due to ambiguity. Use uexpand(x) to explicitly convert"))
+assert_no_offset(d::AffineDimensions) = iszero(affoffset(d)) || throw(AssertionError("AffineDimensions $(d) has a non-zero offset, implicit conversion is not allowed due to ambiguity. Use uexpand(x) to explicitly convert"))
 
 """
     uexpand(q::Q) where {T,R,D<:AbstractAffineDimensions{R},Q<:UnionAbstractQuantity{T,D}}
@@ -151,8 +151,8 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
         # Forced (explicit) conversions will not error if offset is non-zero
         function _explicit_convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
             d = dimension(q)
-            v = ustrip(q) * uscale(d) + uoffset(d)
-            return constructorof(Q)(convert(T, v), ubasedim(d))
+            v = ustrip(q) * affscale(d) + affoffset(d)
+            return constructorof(Q)(convert(T, v), affbasedim(d))
         end
 
         # Implicit conversions will fail if the offset it non-zero (to prevent silently picking ambiguous operations)
@@ -190,16 +190,16 @@ You can also use `|>` as a shorthand for `uconvert`
 function uconvert(qout::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q::UnionAbstractQuantity{<:Any,<:Dimensions})
     @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
     dout = dimension(qout)
-    dimension(q) == ubasedim(dout) || throw(DimensionError(q, qout))
-    vout = (ustrip(q) - uoffset(dout)) / uscale(dout)
+    dimension(q) == affbasedim(dout) || throw(DimensionError(q, qout))
+    vout = (ustrip(q) - affoffset(dout)) / affscale(dout)
     return new_quantity(typeof(q), vout, dout)
 end
 
 function uconvert(qout::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q::QuantityArray{<:Any,<:Any,<:Dimensions})
     @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
     dout = dimension(qout)
-    dimension(q) == ubasedim(dout) || throw(DimensionError(q, qout))
-    vout = (ustrip(q) .- uoffset(dout)) ./ uscale(dout)
+    dimension(q) == affbasedim(dout) || throw(DimensionError(q, qout))
+    vout = (ustrip(q) .- affoffset(dout)) ./ affscale(dout)
     return QuantityArray(vout, dout, quantity_type(q))
 end
 
@@ -220,9 +220,9 @@ for (op, combine) in ((:+, :*), (:-, :/))
     @eval function map_dimensions(op::typeof($op), args::AffineDimensions...)
         map(assert_no_offset, args)
         return AffineDimensions(
-            scale=($combine)(map(uscale, args)...),
+            scale=($combine)(map(affscale, args)...),
             offset=zero(Float64),
-            basedim=map_dimensions(op, map(ubasedim, args)...) 
+            basedim=map_dimensions(op, map(affbasedim, args)...) 
         )
     end
 end
@@ -231,9 +231,9 @@ end
 function map_dimensions(op::typeof(-), d::AffineDimensions) 
     assert_no_offset(d)
     return AffineDimensions(
-        scale=inv(uscale(d)),
+        scale=inv(affscale(d)),
         offset=zero(Float64),
-        basedim=map_dimensions(op, ubasedim(d))
+        basedim=map_dimensions(op, affbasedim(d))
     )
 end
 
@@ -241,19 +241,9 @@ end
 function map_dimensions(fix1::Base.Fix1{typeof(*)}, l::AffineDimensions{R}) where {R}
     assert_no_offset(l)
     return AffineDimensions(
-        scale=uscale(l)^fix1.x,
+        scale=affscale(l)^fix1.x,
         offset=zero(Float64),
-        basedim=map_dimensions(fix1, ubasedim(l))
-    )
-end
-
-#Generic fallback (slower and less accurate but works for more cases)
-function map_dimensions(op::F, args::AffineDimensions...) where {F<:Function}
-    assert_no_offset.(args)
-    return AffineDimensions(
-        scale=exp(op(log.(uscale.(args))...)),
-        offset=zero(Float64),
-        basedim=map_dimensions(op, ubasedim.(args)...)
+        basedim=map_dimensions(fix1, affbasedim(l))
     )
 end
 
@@ -291,9 +281,9 @@ module AffineUnits
     using DispatchDoctor: @unstable
 
     import ..affine_unit
-    import ..uscale
-    import ..uoffset
-    import ..ubasedim
+    import ..affscale
+    import ..affoffset
+    import ..affbasedim
     import ..dimension
     import ..ustrip
     import ..constructorof
@@ -330,9 +320,9 @@ module AffineUnits
 
         # Add "name" to the symbol to make it display
         d_sym = AffineDimensions{DEFAULT_DIM_BASE_TYPE}(
-            scale=uscale(dims),
-            offset=uoffset(dims),
-            basedim=ubasedim(dims),
+            scale=affscale(dims),
+            offset=affoffset(dims),
+            basedim=affbasedim(dims),
             symbol=(dims.symbol == :nothing) ? name : dims.symbol
         )
 

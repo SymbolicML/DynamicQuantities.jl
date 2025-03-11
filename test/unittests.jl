@@ -2018,8 +2018,8 @@ end
     @test dimension(°C) isa AffineDimensions
     @test dimension(°C) isa AbstractAffineDimensions
 
-    @test DynamicQuantities.ubasedim(dimension(°C)).temperature == 1
-    @test DynamicQuantities.ubasedim(dimension(°C)).length == 0
+    @test DynamicQuantities.affbasedim(dimension(°C)).temperature == 1
+    @test DynamicQuantities.affbasedim(dimension(°C)).length == 0
 
     @test inv(mps) == us"s/m"
     @test inv(mps) == u"s/m"
@@ -2108,7 +2108,6 @@ end
     @test map_dimensions(+, dimension(ua"m/s"), dimension(ua"m/s")) == AffineDimensions(Dimensions(length=2, time=-2))
     @test map_dimensions(-, dimension(ua"m"), dimension(ua"s"))     == AffineDimensions(Dimensions(length=1, time=-1))
     @test map_dimensions(Base.Fix1(*,2), dimension(ua"m/s"))        == AffineDimensions(Dimensions(length=2, time=-2))
-    @test map_dimensions(x->x*2, dimension(ua"m/s"))                ≈  AffineDimensions(Dimensions(length=2, time=-2)) #Generic fallback
 
 end
 

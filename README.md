@@ -295,41 +295,7 @@ Because `AffineDimensions` are more general than `SymbolicDimensions`, units ava
 ```
 p = ua"kPa"
 ```
-
-#### Custom affine units
-To access units from the affine unit registry, the string macro `ua"..."` can be used. This macro will always return quantities with AffineDimensions, even if a non-affine unit is called (it will simply have an offset of 0). Because AffineDimensions are a generalization of SymbolicDimensions, the affine unit registry will mirror the symbolic unit registry.
-```
-@register_unit psi 6.89476us"kPa"
-ua"psi"
->> 1.0 psi
-```
-However, strictly affine units cannot belong to the symbolic registry, so a different macro must be used on an AffineDimension (or quantity thereof)
-```
-@register_affine_unit psig AffineDimensions(offset=u"Constants.atm", basedim=u"psi") #Gauge pressure implies atmospheric offset
-ua"psig"
->> 1.0 psig
-us"psig"
->> ERROR: LoadError: ArgumentError: Symbol psig not found in `Units` or `Constants`.
-```
-Affine unit parsing can also be done outside of a macro using `aff_uparse(str::AbstractString)`
-```
-aff_uparse("°C")
->> 1.0 °C
-```
-#### Operations on affine quantities
-In Unitful.jl, multiplication of affine quantities is not supported for affine dimensions:
-```
-using Unitful
-u"R"*0u"°C"
->> ERROR: AffineError: an invalid operation was attempted with affine units: °C
-```
-This behaviour is mimicked in DynamicQuantities:
-```
-using DynamicQuantities
-u"Constants.R"*(0ua"°C")
->> AssertionError: AffineDimensions °C has a non-zero offset, implicit conversion is not allowed due to ambiguity. Use uexpand(x) to explicitly convert 
-```
-In general, it's best to treat quantities with AffineDimensions as placeholders and use `uexpand(q)` or `uconvert(units, q)` as soon as possible. The main objective of AffineDimesnions is to provide you with convenient, type-stable tools to do this conversion before applying mathematical operations.
+Registering Symbolic units will automatically register affine units, and a special macro can be used to register custom affine units. Please refer to the docs for this functionality.
 
 ### Arrays
 
