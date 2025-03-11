@@ -207,7 +207,7 @@ function map_dimensions(op::typeof(-), d::AffineDimensions)
         scale=inv(affine_scale(d)), offset=0.0, basedim=map_dimensions(op, affine_base_dim(d))
     )
 end
-function map_dimensions(fix1::Base.Fix1{typeof(*)}, l::AffineDimensions) where {R}
+function map_dimensions(fix1::Base.Fix1{typeof(*)}, l::AffineDimensions{R}) where {R}
     assert_no_offset(l)
     return AffineDimensions(
         scale=affine_scale(l)^fix1.x, offset=0.0, basedim=map_dimensions(fix1, affine_base_dim(l))
