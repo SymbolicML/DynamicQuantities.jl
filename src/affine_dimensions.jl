@@ -9,6 +9,9 @@ const AffineOrSymbolicDimensions{R} = Union{AbstractAffineDimensions{R}, Abstrac
 
 Error thrown when attempting an implicit conversion of an `AffineDimensions` 
 with a non-zero offset.
+
+!!! warning
+    This is an experimental feature and may change in the future.
 """
 struct AffineOffsetError{D} <: Exception
     dim::D
@@ -23,6 +26,9 @@ Base.showerror(io::IO, e::AffineOffsetError) = print(io, "AffineOffsetError: ", 
 
 AffineDimensions adds a scale and offset to Dimensions{R} allowing the expression of affine transformations of units (for example °C)
 The offset parameter is in SI units (i.e. having the dimension of basedim)
+
+!!! warning
+    This is an experimental feature and may change in the future.
 """
 struct AffineDimensions{R} <: AbstractAffineDimensions{R}
     scale::Float64
@@ -115,17 +121,6 @@ function uexpand(q::Q) where {T,R,D<:AbstractAffineDimensions{R},Q<:UnionAbstrac
     return _explicit_convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
 uexpand(q::QuantityArray{T,N,D}) where {T,N,D<:AbstractAffineDimensions} = uexpand.(q)
-
-"""
-    affine_unit(q::UnionAbstractQuantity, symbol::Symbol=:nothing)
-
-Converts a quantity to its nearest affine unit (with scale=ustrip(q) and offset=0.0)
-"""
-function affine_unit(q::Q, symbol=:nothing) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstractQuantity{T,D}}
-    q_si = uexpand(q)
-    dims = AffineDimensions{R}(scale=ustrip(q_si), offset=0.0, basedim=dimension(q_si), symbol=symbol)
-    return constructorof(Q)(one(T), dims)
-end
 
 for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
@@ -237,7 +232,7 @@ function map_dimensions(fix1::Base.Fix1{typeof(*)}, l::AffineDimensions{R}) wher
 end
 
 # Helper function for conversions
-function _no_offset_expand(q::Q) where {T,R,D<:AbstractAffineDimensions{R},Q<:UnionAbstractQuantity{T,D}}
+function _no_offset_expand(q::Q) where {T,R,Q<:UnionAbstractQuantity{T,<:AbstractAffineDimensions{R}}}
     return convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
 
@@ -272,7 +267,7 @@ module AffineUnits
     using DispatchDoctor: @unstable
 
     import ..affine_unit, ..affine_scale, ..affine_offset, ..affine_base_dim, ..dimension
-    import ..ustrip, ..constructorof, ..DEFAULT_AFFINE_QUANTITY_TYPE
+    import ..ustrip, ..ustripexpand, ..constructorof, ..DEFAULT_AFFINE_QUANTITY_TYPE
     import ..DEFAULT_DIM_TYPE, ..DEFAULT_VALUE_TYPE, ..DEFAULT_DIM_BASE_TYPE
     import ..Units: UNIT_SYMBOLS, UNIT_VALUES
     import ..Constants: CONSTANT_SYMBOLS, CONSTANT_VALUES
@@ -285,6 +280,9 @@ module AffineUnits
     const AFFINE_UNIT_MAPPING = WriteOnceReadMany(Dict(s => INDEX_TYPE(i) for (i, s) in enumerate(AFFINE_UNIT_SYMBOLS)))
 
     # Register a new affine unit
+    function _make_affine_unit(q::Q) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstractQuantity{T,D}}
+        return constructorof(Q)(one(T), AffineDimensions{R}(scale=ustripexpand(q), offset=0.0, basedim=dimension(q)))
+    end
     function update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity{<:Any,<:AffineDimensions{R}}) where {R}
         ind = get(AFFINE_UNIT_MAPPING, name, INDEX_TYPE(0))
         if !iszero(ind)
@@ -307,9 +305,12 @@ module AffineUnits
         AFFINE_UNIT_MAPPING[name] = lastindex(AFFINE_UNIT_SYMBOLS)
         return nothing
     end
-    
-    update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity) = update_external_affine_unit(name, affine_unit(q))
-    update_external_affine_unit(name::Symbol, d::AbstractDimensions) = update_external_affine_unit(name, Quantity(DEFAULT_VALUE_TYPE(1.0), d))
+    function update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity)
+        return update_external_affine_unit(name, _make_affine_unit(q, name))
+    end
+    function update_external_affine_unit(name::Symbol, d::AbstractDimensions)
+        return update_external_affine_unit(name, Quantity(DEFAULT_VALUE_TYPE(1.0), d))
+    end
     function update_external_affine_unit(d::AffineDimensions)  
         d.symbol != :nothing || error("Cannot register affine dimension if symbol is :nothing")
         return update_external_affine_unit(d.symbol, d)
@@ -379,6 +380,9 @@ import .AffineUnits: aff_uparse, update_external_affine_unit
 Affine unit parsing macro. This works similarly to `u"[unit expression]"`, but uses 
 `AffineDimensions` instead of `Dimensions`, and permits affine units such
 as `°C` and `°F`. You may also refer to regular units such as `m` or `s`.
+
+!!! warning
+    This is an experimental feature and may change in the future.
 """
 macro ua_str(s)
     ex = AffineUnits.map_to_scope(Meta.parse(s))
