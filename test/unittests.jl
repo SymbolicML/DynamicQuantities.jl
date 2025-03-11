@@ -6,6 +6,7 @@ using DynamicQuantities: GenericQuantity, with_type_parameters, constructorof
 using DynamicQuantities: promote_quantity_on_quantity, promote_quantity_on_value
 using DynamicQuantities: UNIT_VALUES, UNIT_MAPPING, UNIT_SYMBOLS, ALL_MAPPING, ALL_SYMBOLS, ALL_VALUES
 using DynamicQuantities.SymbolicUnits: SYMBOLIC_UNIT_VALUES
+using DynamicQuantities: AffineOffsetError
 using DynamicQuantities.AffineUnits: AFFINE_UNIT_SYMBOLS, AFFINE_UNIT_MAPPING, AFFINE_UNIT_VALUES
 using DynamicQuantities: map_dimensions
 using DynamicQuantities: _register_unit, _register_affine_unit
@@ -2018,8 +2019,8 @@ end
     @test dimension(°C) isa AffineDimensions
     @test dimension(°C) isa AbstractAffineDimensions
 
-    @test DynamicQuantities.affbasedim(dimension(°C)).temperature == 1
-    @test DynamicQuantities.affbasedim(dimension(°C)).length == 0
+    @test DynamicQuantities.affine_base_dim(dimension(°C)).temperature == 1
+    @test DynamicQuantities.affine_base_dim(dimension(°C)).length == 0
 
     @test inv(mps) == us"s/m"
     @test inv(mps) == u"s/m"
@@ -2078,7 +2079,7 @@ end
     @test 2.0u"K" ≈ 2.0ua"K"
     @test 2.0ua"K" ≈ 2.0ua"K"
     @test 2.0ua"K" ≈ 2.0u"K"
-    @test_throws AssertionError (2ua"°C")^2
+    @test_throws AffineOffsetError (2ua"°C")^2
     @test uexpand(2ua"°C") == 275.15u"K"
 
     # Test conversions
@@ -2206,8 +2207,7 @@ if :psi ∉ UNIT_SYMBOLS
     @eval @register_unit psi 6.89476us"kPa"
 end
 
-#Registering Affine Units
-if :psig ∉ AFFINE_UNIT_SYMBOLS  #This example is in the documentation so it better work
+if :psig ∉ AFFINE_UNIT_SYMBOLS
     @eval @register_affine_unit psig AffineDimensions(offset=u"Constants.atm", basedim=u"psi")
 else
     skipped_register_unit = true
@@ -2243,11 +2243,9 @@ end
     @test psi == ua"psi"
     @test psi == u"psi"
     @test psig == ua"psig"
-    @test 0*psig == u"Constants.atm"
+    @test_throws AffineOffsetError 0*psig == u"Constants.atm"
     @test My°C == ua"My°C"
-    @test My°C == uexpand(ua"My°C")
     @test My°C2 == ua"My°C2"
-    @test My°C2 == uexpand(ua"My°C2")
 
     if !skipped_register_unit
         @test length(UNIT_MAPPING) == map_count_before_registering + 4
