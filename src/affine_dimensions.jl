@@ -275,14 +275,15 @@ module AffineUnits
     import ..Quantity, ..INDEX_TYPE, ..AbstractDimensions, ..AffineDimensions, ..UnionAbstractQuantity
     import ..WriteOnceReadMany, ..SymbolicUnits.as_quantity
 
+    # Register a new affine unit
+    function _make_affine_unit(q::Q, symbol::Symbol=:nothing) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstractQuantity{T,D}}
+        return constructorof(Q)(one(T), AffineDimensions{R}(scale=ustripexpand(q), offset=0.0, basedim=dimension(q), symbol=symbol))
+    end
+
     const AFFINE_UNIT_SYMBOLS = WriteOnceReadMany(deepcopy(UNIT_SYMBOLS))
-    const AFFINE_UNIT_VALUES  = WriteOnceReadMany(map(affine_unit, UNIT_VALUES, UNIT_SYMBOLS))
+    const AFFINE_UNIT_VALUES  = WriteOnceReadMany(map(_make_affine_unit, UNIT_VALUES, UNIT_SYMBOLS))
     const AFFINE_UNIT_MAPPING = WriteOnceReadMany(Dict(s => INDEX_TYPE(i) for (i, s) in enumerate(AFFINE_UNIT_SYMBOLS)))
 
-    # Register a new affine unit
-    function _make_affine_unit(q::Q) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstractQuantity{T,D}}
-        return constructorof(Q)(one(T), AffineDimensions{R}(scale=ustripexpand(q), offset=0.0, basedim=dimension(q)))
-    end
     function update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity{<:Any,<:AffineDimensions{R}}) where {R}
         ind = get(AFFINE_UNIT_MAPPING, name, INDEX_TYPE(0))
         if !iszero(ind)
