@@ -266,7 +266,7 @@ const DEFAULT_AFFINE_QUANTITY_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE,
 module AffineUnits
     using DispatchDoctor: @unstable
 
-    import ..affine_unit, ..affine_scale, ..affine_offset, ..affine_base_dim, ..dimension
+    import ..affine_scale, ..affine_offset, ..affine_base_dim, ..dimension
     import ..ustrip, ..ustripexpand, ..constructorof, ..DEFAULT_AFFINE_QUANTITY_TYPE
     import ..DEFAULT_DIM_TYPE, ..DEFAULT_VALUE_TYPE, ..DEFAULT_DIM_BASE_TYPE
     import ..Units: UNIT_SYMBOLS, UNIT_VALUES
