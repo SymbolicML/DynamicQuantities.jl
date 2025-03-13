@@ -2009,6 +2009,8 @@ end
     mps = ua"m/s"
     
     import DynamicQuantities.AffineUnits
+    import DynamicQuantities.affine_base_dim
+
     @test °C == AffineUnits.°C
     @test °C == AffineUnits.°C
 
@@ -2019,8 +2021,8 @@ end
     @test dimension(°C) isa AffineDimensions
     @test dimension(°C) isa AbstractAffineDimensions
 
-    @test DynamicQuantities.affine_base_dim(dimension(°C)).temperature == 1
-    @test DynamicQuantities.affine_base_dim(dimension(°C)).length == 0
+    @test affine_base_dim(dimension(°C)).temperature == 1
+    @test affine_base_dim(dimension(°C)).length == 0
 
     @test inv(mps) == us"s/m"
     @test inv(mps) == u"s/m"
@@ -2100,10 +2102,13 @@ end
     @test isnothing(show(io, (dimension(°F), dimension(ua"K"), psi, celsius, fahrenheit)))
 
     # Test updating affine units
-    @test_warn "unit °C already exists, skipping" DynamicQuantities.update_external_affine_unit(:°C, °C)
-    @test_warn "unit °C already exists, skipping" DynamicQuantities.update_external_affine_unit(:°C, dimension(°C))
-    @test_warn "unit °C already exists, skipping" DynamicQuantities.update_external_affine_unit(dimension(°C))
-    @test_throws "Cannot register affine dimension" DynamicQuantities.update_external_affine_unit(celsius)
+    @test isnothing(DynamicQuantities.update_external_affine_unit(:°C, °C)) #same value yields nothing for quantity
+    @test isnothing(DynamicQuantities.update_external_affine_unit(:°C, dimension(°C))) #same value yields nothing for dimension with symbol
+    @test isnothing(DynamicQuantities.update_external_affine_unit(dimension(°C))) #same value yields for dimension
+    @test_throws "Cannot register affine dimension" DynamicQuantities.update_external_affine_unit(celsius) #cannot register :nothing
+
+    #Cannot re-register a unit if its value changes
+    @test_throws "Unit `°C` already exists as `(scale = 1.0, offset = 273.15, basedim = K)`, its value cannot be changed to `(scale = 2.0, offset = 273.15, basedim = K)`" DynamicQuantities.update_external_affine_unit(:°C, 2*°C)
 
     # Test map_dimensions
     @test map_dimensions(+, dimension(ua"m/s"), dimension(ua"m/s")) == AffineDimensions(Dimensions(length=2, time=-2))
