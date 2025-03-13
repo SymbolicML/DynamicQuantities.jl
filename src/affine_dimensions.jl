@@ -252,47 +252,56 @@ module AffineUnits
     import ..Quantity, ..INDEX_TYPE, ..AbstractDimensions, ..AffineDimensions, ..UnionAbstractQuantity
     import ..WriteOnceReadMany, ..SymbolicUnits.as_quantity
 
-    # Register a new affine unit
-    function _make_affine_unit(q::Q, symbol::Symbol=:nothing) where {T,R,D<:AbstractDimensions{R},Q<:UnionAbstractQuantity{T,D}}
+    # Make a standard affine unit out of a quanitity and assign it a symbol
+    function _make_affine_dims(q::UnionAbstractQuantity{<:Any}, symbol::Symbol=:nothing)
         q_si = uexpand(q)
-        return constructorof(Q)(one(T), AffineDimensions{R}(scale=ustrip(q_si), offset=0.0, basedim=dimension(q_si), symbol=symbol))
+        return AffineDimensions{DEFAULT_DIM_BASE_TYPE}(scale=ustrip(q_si), offset=0.0, basedim=dimension(q_si), symbol=symbol)
+    end
+    function _make_affine_dims(q::UnionAbstractQuantity{<:Any,<:AffineDimensions}, symbol::Symbol=:nothing)
+        olddim = dimension(q)
+        newscale  = ustrip(q) * olddim.scale
+        newoffset = Quantity(olddim.offset, olddim.basedim)
+        return AffineDimensions{DEFAULT_DIM_BASE_TYPE}(scale=newscale, offset=newoffset, basedim=olddim.basedim, symbol=symbol)
+    end
+
+    #Make a standard affine quanitty out of an arbitrary quantity and assign a symbol
+    function _make_affine_quant(q::UnionAbstractQuantity, symbol::Symbol=:nothing)
+        return Quantity(one(DEFAULT_VALUE_TYPE), _make_affine_dims(q, symbol))
     end
 
     const AFFINE_UNIT_SYMBOLS = WriteOnceReadMany(deepcopy(UNIT_SYMBOLS))
-    const AFFINE_UNIT_VALUES  = WriteOnceReadMany(map(_make_affine_unit, UNIT_VALUES, UNIT_SYMBOLS))
+    const AFFINE_UNIT_VALUES  = WriteOnceReadMany(map(_make_affine_quant, UNIT_VALUES, UNIT_SYMBOLS))
     const AFFINE_UNIT_MAPPING = WriteOnceReadMany(Dict(s => INDEX_TYPE(i) for (i, s) in enumerate(AFFINE_UNIT_SYMBOLS)))
 
-    function update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity{<:Any,<:AffineDimensions{R}}) where {R}
+    function update_external_affine_unit(newdims::AffineDimensions)
+        debug_disp(dims::AffineDimensions) = (scale=dims.scale, offset=dims.offset, basedim=dims.basedim)
+
+        #Check to make sure the unit's name is not :nothing (default)
+        name = newdims.symbol
+        if name == :nothing
+            error("Cannot register a unit if its symbol is :nothing")
+        end
+
         ind = get(AFFINE_UNIT_MAPPING, name, INDEX_TYPE(0))
         if !iszero(ind)
-            @warn "unit $(name) already exists, skipping"
+            olddims = dimension(AFFINE_UNIT_VALUES[ind])
+            if (olddims.scale != newdims.scale) || (olddims.offset != newdims.offset) || (olddims.basedim != newdims.basedim)
+                error("Unit `$(name)` already exists as `$(debug_disp(olddims))`, its value cannot be changed to `$(debug_disp(newdims))`")
+            end
             return nothing
         end
 
-        dims = dimension(q)
-        d_sym = AffineDimensions{DEFAULT_DIM_BASE_TYPE}(
-            scale=affine_scale(dims),
-            offset=affine_offset(dims),
-            basedim=affine_base_dim(dims),
-            symbol=(dims.symbol == :nothing) ? name : dims.symbol
-        )
-
-        q_sym = constructorof(DEFAULT_AFFINE_QUANTITY_TYPE)(ustrip(q), d_sym)
-
+        new_q = constructorof(DEFAULT_AFFINE_QUANTITY_TYPE)(1.0, newdims)
         push!(AFFINE_UNIT_SYMBOLS, name)
-        push!(AFFINE_UNIT_VALUES, q_sym)
+        push!(AFFINE_UNIT_VALUES, new_q)
         AFFINE_UNIT_MAPPING[name] = lastindex(AFFINE_UNIT_SYMBOLS)
         return nothing
     end
+    function update_external_affine_unit(name::Symbol, dims::AffineDimensions)
+        return update_external_affine_unit(AffineDimensions{DEFAULT_DIM_BASE_TYPE}(scale=dims.scale, offset=dims.offset, basedim=dims.basedim, symbol=name))
+    end
     function update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity)
-        return update_external_affine_unit(name, _make_affine_unit(q, name))
-    end
-    function update_external_affine_unit(name::Symbol, d::AbstractDimensions)
-        return update_external_affine_unit(name, Quantity(DEFAULT_VALUE_TYPE(1.0), d))
-    end
-    function update_external_affine_unit(d::AffineDimensions)  
-        d.symbol != :nothing || error("Cannot register affine dimension if symbol is :nothing")
-        return update_external_affine_unit(d.symbol, d)
+        return update_external_affine_unit(_make_affine_dims(q, name))
     end
 
     """
