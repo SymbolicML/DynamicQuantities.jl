@@ -103,6 +103,12 @@ function assert_no_offset(d::AffineDimensions)
     end
 end
 
+function change_symbol(d::AffineDimensions{R}, s::Symbol) where R
+    return AffineDimensions{R}(scale=affine_scale(d), offset=affine_offset(d), basedim=affine_base_dim(d), symbol=s)
+end
+
+change_symbol(q::Q, s::Symbol) where Q <: UnionAbstractQuantity = constructorof(Q)(ustrip(q), change_symbol(dimension(q), s))
+
 """
     uexpand(q::Q) where {T,R,D<:AbstractAffineDimensions{R},Q<:UnionAbstractQuantity{T,D}}
 
@@ -238,7 +244,7 @@ const DEFAULT_AFFINE_QUANTITY_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE,
 module AffineUnits
     using DispatchDoctor: @unstable
 
-    import ..affine_scale, ..affine_offset, ..affine_base_dim, ..dimension
+    import ..affine_scale, ..affine_offset, ..affine_base_dim, ..dimension, ..change_symbol
     import ..ustrip, ..uexpand, ..constructorof, ..DEFAULT_AFFINE_QUANTITY_TYPE
     import ..DEFAULT_DIM_TYPE, ..DEFAULT_VALUE_TYPE, ..DEFAULT_DIM_BASE_TYPE
     import ..Units: UNIT_SYMBOLS, UNIT_VALUES
@@ -293,7 +299,7 @@ module AffineUnits
         return nothing
     end
     function update_external_affine_unit(name::Symbol, dims::AffineDimensions)
-        return update_external_affine_unit(AffineDimensions{DEFAULT_DIM_BASE_TYPE}(scale=dims.scale, offset=dims.offset, basedim=dims.basedim, symbol=name))
+        return update_external_affine_unit(change_symbol(dims, name))
     end
     function update_external_affine_unit(name::Symbol, q::UnionAbstractQuantity)
         return update_external_affine_unit(_make_affine_dims(q, name))
@@ -309,7 +315,8 @@ module AffineUnits
     function aff_uparse(s::AbstractString)
         ex = map_to_scope(Meta.parse(s))
         ex = :($as_quantity($ex))
-        return eval(ex)::DEFAULT_AFFINE_QUANTITY_TYPE
+        q  = eval(ex)
+        return Quantity(ustrip(q), change_symbol(dimension(q), Symbol(s)))::DEFAULT_AFFINE_QUANTITY_TYPE
     end
 
     as_quantity(q::DEFAULT_AFFINE_QUANTITY_TYPE) = q
@@ -368,5 +375,6 @@ as `°C` and `°F`. You may also refer to regular units such as `m` or `s`.
 macro ua_str(s)
     ex = AffineUnits.map_to_scope(Meta.parse(s))
     ex = :($(AffineUnits.as_quantity)($ex))
+    ex = :($(change_symbol)($ex, Symbol($s)))
     return esc(ex)
 end
