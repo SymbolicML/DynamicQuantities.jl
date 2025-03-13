@@ -2078,6 +2078,10 @@ end
     @test 2.0u"m" - 2.0ua"m" === 0.0u"m"
     @test 2.0ua"m" - 2.0ua"cm" === 1.98u"m"
     @test 5.0°C - 4.0°C === 1.0u"K"
+    @test mod(2.0u"m", 2.0ua"m") === 0.0u"m"
+    @test mod(2.0ua"m", 2.0ua"m") === 0.0u"m"
+    @test_throws AffineOffsetError mod(2.0ua"°C", 2.0ua"°C")
+
     @test 2.0u"K" ≈ 2.0ua"K"
     @test 2.0ua"K" ≈ 2.0ua"K"
     @test 2.0ua"K" ≈ 2.0u"K"

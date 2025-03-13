@@ -211,12 +211,15 @@ function _no_offset_expand(q::Q) where {T,R,Q<:UnionAbstractQuantity{T,<:Abstrac
     return convert(with_type_parameters(Q, T, Dimensions{R}), q)
 end
 
-# Addition expands
-function Base.:(+)(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions})
-    return _no_offset_expand(q1) + _no_offset_expand(q2)
+for op in (:+, :mod)
+    @eval begin
+        function Base.$op(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions})
+            return $op(_no_offset_expand(q1), _no_offset_expand(q2))
+        end
+    end
 end
 
-# Subtraction
+#Subtraction of identical units is a special case because offsets cancel out
 function Base.:(-)(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::UnionAbstractQuantity{<:Any,<:AffineDimensions})
     if dimension(q1) == dimension(q2)
         return uexpand(q1) - uexpand(q2)
@@ -224,6 +227,7 @@ function Base.:(-)(q1::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q2::Unio
         return _no_offset_expand(q1) - _no_offset_expand(q2)
     end
 end
+
 
 for op in (:(==), :(≈))
     @eval begin
