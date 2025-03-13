@@ -2029,7 +2029,6 @@ end
     @test °C == ua"degC"
     @test °F == ua"degF"
     @test dimension(°C) == dimension(ua"degC")
-    @test (°C - ua"degC") == 0.0u"K"
 
     # Constructors
     @test with_type_parameters(AffineDimensions, Float64) == AffineDimensions{Float64}
@@ -2075,7 +2074,6 @@ end
     @test 2.0ua"m" + 2.0ua"m" === 4.0u"m"
     @test 2.0u"m" - 2.0ua"m" === 0.0u"m"
     @test 2.0ua"m" - 2.0ua"cm" === 1.98u"m"
-    @test 5.0°C - 4.0°C === 1.0u"K"
     @test 2.0u"K" ≈ 2.0ua"K"
     @test 2.0ua"K" ≈ 2.0ua"K"
     @test 2.0ua"K" ≈ 2.0u"K"
@@ -2090,6 +2088,9 @@ end
     @test °C |> °F isa Quantity{<:Real, <:AffineDimensions}
     @test 0°C |> °F == 32°F
 
+    # Invalid usage of parsing
+    @test_throws "Unexpected type returned" aff_uparse("1")
+
     @test QuantityArray([0,1]°C) |> °F isa QuantityArray{T, <:Any, AffineDimensions{R}} where {T,R}
 
     # Test display against errors
@@ -2102,7 +2103,7 @@ end
     @test_warn "unit °C already exists, skipping" DynamicQuantities.update_external_affine_unit(:°C, °C)
     @test_warn "unit °C already exists, skipping" DynamicQuantities.update_external_affine_unit(:°C, dimension(°C))
     @test_warn "unit °C already exists, skipping" DynamicQuantities.update_external_affine_unit(dimension(°C))
-    @test_throws "Cannot register affine dimension if symbol is :nothing" DynamicQuantities.update_external_affine_unit(celsius)
+    @test_throws "Cannot register affine dimension" DynamicQuantities.update_external_affine_unit(celsius)
 
     # Test map_dimensions
     @test map_dimensions(+, dimension(ua"m/s"), dimension(ua"m/s")) == AffineDimensions(Dimensions(length=2, time=-2))
