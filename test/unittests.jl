@@ -2031,7 +2031,7 @@ end
     @test °C == ua"degC"
     @test °F == ua"degF"
     @test dimension(°C) == dimension(ua"degC")
-    @test (°C - ua"degC") == 0.0u"K"
+    @test_throws AffineOffsetError 5.0ua"°C" - 4.0ua"°C"
 
     # Constructors
     @test with_type_parameters(AffineDimensions, Float64) == AffineDimensions{Float64}
@@ -2077,7 +2077,6 @@ end
     @test 2.0ua"m" + 2.0ua"m" === 4.0u"m"
     @test 2.0u"m" - 2.0ua"m" === 0.0u"m"
     @test 2.0ua"m" - 2.0ua"cm" === 1.98u"m"
-    @test 5.0°C - 4.0°C === 1.0u"K"
     @test mod(2.0u"m", 2.0ua"m") === 0.0u"m"
     @test mod(2.0ua"m", 2.0ua"m") === 0.0u"m"
     @test_throws AffineOffsetError mod(2.0ua"°C", 2.0ua"°C")
@@ -2217,8 +2216,6 @@ end
 
 if :psig ∉ AFFINE_UNIT_SYMBOLS
     @eval @register_affine_unit psig AffineDimensions(offset=u"Constants.atm", basedim=u"psi")
-else
-    skipped_register_unit = true
 end
 if :My°C ∉ AFFINE_UNIT_SYMBOLS  # (In case we run this script twice)
     @eval @register_affine_unit My°C ua"°C"
@@ -2265,20 +2262,20 @@ end
         @test my_unit in UNIT_VALUES
         @test my_unit in ALL_VALUES
         @test my_unit in SYMBOLIC_UNIT_VALUES
-        @test my_unit in AFFINE_UNIT_VALUES #Non-affine units should also be registered
+        @test my_unit in AFFINE_UNIT_VALUES # Non-affine units should also be registered
     end
     
     for my_unit in (:MySV, :MyV)
         @test my_unit in UNIT_SYMBOLS
         @test my_unit in ALL_SYMBOLS
-        @test my_unit in AFFINE_UNIT_SYMBOLS #Non-affine units should also be registered
+        @test my_unit in AFFINE_UNIT_SYMBOLS # Non-affine units should also be registered
     end
 
-    for my_unit in (My°C, My°C2) #Affine units should only show up in the affine unit registry
+    for my_unit in (My°C, My°C2) # Affine units should only show up in the affine unit registry
         @test my_unit in AFFINE_UNIT_VALUES
     end
 
-    for my_unit in (:My°C, :My°C2) #Affine units should only show up in the affine unit registry
+    for my_unit in (:My°C, :My°C2) # Affine units should only show up in the affine unit registry
         @test my_unit in AFFINE_UNIT_SYMBOLS
     end
 end
