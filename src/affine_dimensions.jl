@@ -1,6 +1,24 @@
 const AbstractQuantityOrArray{T,D} = Union{UnionAbstractQuantity{T,D}, QuantityArray{T,<:Any,D}}
 
+
 abstract type AbstractAffineDimensions{R} <: AbstractDimensions{R} end
+
+const UnionAffineQuantity{T} = UnionAbstractQuantity{T, <:AbstractAffineDimensions}
+const ABSTRACT_AFFINE_QUANTITY_TYPES = (
+    (AbstractQuantity{<:Number, <:AbstractAffineDimensions}, Number, Quantity{<:Number, <:AbstractAffineDimensions}),
+    (AbstractGenericQuantity{<:Any, <:AbstractAffineDimensions}, Any, GenericQuantity{<:Any, <:AbstractAffineDimensions}),
+    (AbstractRealQuantity{<:Real, <:AbstractAffineDimensions}, Real, RealQuantity{<:Real, <:AbstractAffineDimensions})
+)
+
+# Break `ustrip` for affine quantities because the operation is unsafe, define the unsafe "affine_ustrip" for this
+function ustrip(q::UnionAffineQuantity)
+    assert_no_offset(dimension(q))
+    return affine_ustrip(q)
+end
+affine_ustrip(q::UnionAffineQuantity) = q.value
+affine_ustrip(q::QuantityArray{<:Any, <:AbstractAffineDimensions}) = q.value
+affine_ustrip(q) = ustrip(q)
+
 
 const AffineOrSymbolicDimensions{R} = Union{AbstractAffineDimensions{R}, AbstractSymbolicDimensions{R}}
 
@@ -19,7 +37,7 @@ struct AffineOffsetError{D} <: Exception
     AffineOffsetError(dim) = new{typeof(dim)}(dim)
 end
 
-Base.showerror(io::IO, e::AffineOffsetError) = print(io, "AffineOffsetError: ", e.dim, " has a non-zero offset, implicit conversion is not allowed due to ambiguity. Use `uexpand(x)` to explicitly convert")
+Base.showerror(io::IO, e::AffineOffsetError) = print(io, "AffineOffsetError: ", e.dim, " has a non-zero offset, operation not allowed on affine units. Consider using `uexpand(x)` to explicitly convert")
 
 """
     AffineDimensions{R}(scale::Float64, offset::Float64, basedim::Dimensions{R}, symbol::Symbol=:nothing)
@@ -86,6 +104,7 @@ affine_scale(d::AffineDimensions) = d.scale
 affine_offset(d::AffineDimensions) = d.offset
 affine_base_dim(d::AffineDimensions) = d.basedim
 
+
 with_type_parameters(::Type{<:AffineDimensions}, ::Type{R}) where {R} = AffineDimensions{R}
 @unstable constructorof(::Type{<:AffineDimensions}) = AffineDimensions
 
@@ -97,6 +116,9 @@ function Base.show(io::IO, d::AbstractAffineDimensions)
     end
 end
 
+Base.show(io::IO, q::UnionAffineQuantity{<:Real}) = print(io, affine_ustrip(q), " ", dimension(q))
+Base.show(io::IO, q::UnionAffineQuantity) = print(io, "(", affine_ustrip(q), ") ", dimension(q))
+
 function assert_no_offset(d::AffineDimensions)
     if !iszero(affine_offset(d))
         throw(AffineOffsetError(d))
@@ -107,7 +129,7 @@ function change_symbol(d::AffineDimensions{R}, s::Symbol) where R
     return AffineDimensions{R}(scale=affine_scale(d), offset=affine_offset(d), basedim=affine_base_dim(d), symbol=s)
 end
 
-change_symbol(q::Q, s::Symbol) where Q <: UnionAbstractQuantity = constructorof(Q)(ustrip(q), change_symbol(dimension(q), s))
+change_symbol(q::Q, s::Symbol) where Q <: UnionAbstractQuantity = constructorof(Q)(affine_ustrip(q), change_symbol(dimension(q), s))
 
 """
     uexpand(q::Q) where {T,R,D<:AbstractAffineDimensions{R},Q<:UnionAbstractQuantity{T,D}}
@@ -123,7 +145,7 @@ for (type, _, _) in ABSTRACT_QUANTITY_TYPES
     @eval begin
         function _unsafe_convert(::Type{Q}, q::UnionAbstractQuantity{<:Any,<:AbstractAffineDimensions}) where {T,D<:Dimensions,Q<:$type{T,D}}
             d = dimension(q)
-            v = ustrip(q) * affine_scale(d) + affine_offset(d)
+            v = affine_ustrip(q) * affine_scale(d) + affine_offset(d)
             return constructorof(Q)(convert(T, v), affine_base_dim(d))
         end
 
@@ -154,24 +176,104 @@ for D1 in (:AffineDimensions, :Dimensions, :SymbolicDimensions), D2 in (:AffineD
     end
 end
 
+# Generate *,/ operations for affine units
+for (type, base_type, _) in ABSTRACT_AFFINE_QUANTITY_TYPES
+    # For div, we don't want to go more generic than `Number`
+    div_base_type = base_type <: Number ? base_type : Number
+    @eval begin
+        function Base.:*(l::$type, r::$type)
+            l, r = promote_except_value(l, r)
+            new_quantity(typeof(l), affine_ustrip(l) * affine_ustrip(r), dimension(l) * dimension(r))
+        end
+        function Base.:/(l::$type, r::$type)
+            l, r = promote_except_value(l, r)
+            new_quantity(typeof(l), affine_ustrip(l) / affine_ustrip(r), dimension(l) / dimension(r))
+        end
+        function Base.div(x::$type, y::$type, r::RoundingMode=RoundToZero)
+            x, y = promote_except_value(x, y)
+            new_quantity(typeof(x), div(affine_ustrip(x), affine_ustrip(y), r), dimension(x) / dimension(y))
+        end
+
+        # The rest of the functions are unchanged because they do not operate on two variables of the custom type
+        function Base.:*(l::$type, r::$base_type)
+            new_quantity(typeof(l), affine_ustrip(l) * r, dimension(l))
+        end
+        function Base.:/(l::$type, r::$base_type)
+            new_quantity(typeof(l), affine_ustrip(l) / r, dimension(l))
+        end
+        function Base.div(x::$type, y::$div_base_type, r::RoundingMode=RoundToZero)
+            new_quantity(typeof(x), div(affine_ustrip(x), y, r), dimension(x))
+        end
+
+        function Base.:*(l::$base_type, r::$type)
+            new_quantity(typeof(r), l * affine_ustrip(r), dimension(r))
+        end
+        function Base.:/(l::$base_type, r::$type)
+            new_quantity(typeof(r), l / affine_ustrip(r), inv(dimension(r)))
+        end
+        function Base.div(x::$div_base_type, y::$type, r::RoundingMode=RoundToZero)
+            new_quantity(typeof(y), div(x, affine_ustrip(y), r), inv(dimension(y)))
+        end
+
+        function Base.:*(l::$type, r::AbstractDimensions)
+            new_quantity(typeof(l), affine_ustrip(l), dimension(l) * r)
+        end
+        function Base.:/(l::$type, r::AbstractDimensions)
+            new_quantity(typeof(l), affine_ustrip(l), dimension(l) / r)
+        end
+
+        function Base.:*(l::AbstractDimensions, r::$type)
+            new_quantity(typeof(r), affine_ustrip(r), l * dimension(r))
+        end
+        function Base.:/(l::AbstractDimensions, r::$type)
+            new_quantity(typeof(r), inv(affine_ustrip(r)), l / dimension(r))
+        end
+    end
+end
+
+# Support array types
+
+Base.size(q::UnionAffineQuantity) = size(affine_ustrip(q))
+Base.length(q::UnionAffineQuantity) = length(affine_ustrip(q))
+Base.axes(q::UnionAffineQuantity) = axes(affine_ustrip(q))
+Base.iterate(qd::UnionAffineQuantity, maybe_state...) =
+    let subiterate=iterate(affine_ustrip(qd), maybe_state...)
+        subiterate === nothing && return nothing
+        return new_quantity(typeof(qd), subiterate[1], dimension(qd)), subiterate[2]
+    end
+Base.ndims(::Type{<:UnionAffineQuantity{T}}) where {T} = ndims(T)
+Base.ndims(q::UnionAffineQuantity) = ndims(affine_ustrip(q))
+Base.broadcastable(q::UnionAffineQuantity{<:Any, <:AbstractAffineDimensions}) = new_quantity(typeof(q), Base.broadcastable(affine_ustrip(q)), dimension(q))
+for (type, _, _) in ABSTRACT_AFFINE_QUANTITY_TYPES
+    @eval Base.getindex(q::$type) = new_quantity(typeof(q), getindex(affine_ustrip(q)), dimension(q))
+    @eval Base.getindex(q::$type, i::Integer...) = new_quantity(typeof(q), getindex(affine_ustrip(q), i...), dimension(q))
+    type == AbstractGenericQuantity &&
+        @eval Base.getindex(q::$type, i...) = new_quantity(typeof(q), getindex(affine_ustrip(q), i...), dimension(q))
+end
+QuantityArray(v::QA) where {Q<:UnionAffineQuantity,QA<:AbstractArray{Q}} =
+    let
+        allequal(dimension.(v)) || throw(DimensionError(first(v), v))
+        QuantityArray(affine_ustrip.(v), dimension(first(v)), Q)
+    end
+
 """
     uconvert(qout::UnionAbstractQuantity{<:Any, <:AbstractAffineDimensions}, q::UnionAbstractQuantity{<:Any, <:Dimensions})
 
 You may also convert to a quantity expressed in affine units.
 """
 function uconvert(qout::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q::UnionAbstractQuantity{<:Any,<:Dimensions})
-    @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
+    @assert isone(affine_ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
     dout = dimension(qout)
     dimension(q) == affine_base_dim(dout) || throw(DimensionError(q, qout))
-    vout = (ustrip(q) - affine_offset(dout)) / affine_scale(dout)
+    vout = (affine_ustrip(q) - affine_offset(dout)) / affine_scale(dout)
     return new_quantity(typeof(q), vout, dout)
 end
 
 function uconvert(qout::UnionAbstractQuantity{<:Any,<:AffineDimensions}, q::QuantityArray{<:Any,<:Any,<:Dimensions})
-    @assert isone(ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
+    @assert isone(affine_ustrip(qout)) "You passed a quantity with a non-unit value to uconvert."
     dout = dimension(qout)
     dimension(q) == affine_base_dim(dout) || throw(DimensionError(q, qout))
-    stripped_q = ustrip(q)
+    stripped_q = affine_ustrip(q)
     offset = affine_offset(dout)
     scale = affine_scale(dout)
     vout = @. (stripped_q - offset) / scale
@@ -244,7 +346,7 @@ const DEFAULT_AFFINE_QUANTITY_TYPE = with_type_parameters(DEFAULT_QUANTITY_TYPE,
 module AffineUnits
     using DispatchDoctor: @unstable
 
-    import ..affine_scale, ..affine_offset, ..affine_base_dim, ..dimension, ..change_symbol
+    import ..affine_scale, ..affine_offset, ..affine_base_dim, ..dimension, ..change_symbol, ..affine_ustrip
     import ..ustrip, ..uexpand, ..constructorof, ..DEFAULT_AFFINE_QUANTITY_TYPE
     import ..DEFAULT_DIM_TYPE, ..DEFAULT_VALUE_TYPE, ..DEFAULT_DIM_BASE_TYPE
     import ..Units: UNIT_SYMBOLS, UNIT_VALUES
@@ -260,7 +362,7 @@ module AffineUnits
     end
     function _make_affine_dims(q::UnionAbstractQuantity{<:Any,<:AffineDimensions}, symbol::Symbol=:nothing)
         olddim = dimension(q)
-        newscale  = ustrip(q) * olddim.scale
+        newscale  = affine_ustrip(q) * olddim.scale
         newoffset = Quantity(olddim.offset, olddim.basedim)
         return AffineDimensions{DEFAULT_DIM_BASE_TYPE}(scale=newscale, offset=newoffset, basedim=olddim.basedim, symbol=symbol)
     end
