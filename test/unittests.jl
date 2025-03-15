@@ -2107,7 +2107,7 @@ end
     @test isnothing(DynamicQuantities.update_external_affine_unit(:°C, °C)) # same value yields nothing for quantity
     @test isnothing(DynamicQuantities.update_external_affine_unit(:°C, dimension(°C))) # same value yields nothing for dimension with symbol
     @test isnothing(DynamicQuantities.update_external_affine_unit(dimension(°C))) # same value yields for dimension
-    @test_throws "Cannot register a unit if its symbol is :nothing" DynamicQuantities.update_external_affine_unit(celsius) # cannot register :nothing
+    @test_throws "Cannot register an affine dimension without symbol declared" DynamicQuantities.update_external_affine_unit(celsius) # cannot register :nothing
 
     # Cannot re-register a unit if its value changes
     @test_throws "Unit `°C` already exists as `(scale = 1.0, offset = 273.15, basedim = K)`, its value cannot be changed to `(scale = 2.0, offset = 273.15, basedim = K)`" DynamicQuantities.update_external_affine_unit(:°C, 2*°C)
