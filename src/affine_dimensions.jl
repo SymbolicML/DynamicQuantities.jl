@@ -342,8 +342,8 @@ module AffineUnits
     using DispatchDoctor: @unstable
 
 
-    import ..dimension, ..ustrip, ..uexpand, ..constructorof
-    import ..affine_scale, ..affine_offset, ..affine_base_dim, ..affine_symbol
+    import ..dimension, ..ustrip, ..uexpand, ..constructorof, ..change_symbol
+    import ..affine_scale, ..affine_offset, ..affine_base_dim, ..affine_symbol, ..affine_ustrip
     import ..DEFAULT_AFFINE_QUANTITY_TYPE, ..DEFAULT_DIM_TYPE, ..DEFAULT_VALUE_TYPE, ..DEFAULT_DIM_BASE_TYPE
     import ..PLACEHOLDER_SYMBOL
     import ..Units: UNIT_SYMBOLS, UNIT_VALUES
