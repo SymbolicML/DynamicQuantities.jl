@@ -4,6 +4,15 @@
 A simple struct for representing affine units like Celsius and Fahrenheit.
 This is not part of the AbstractDimensions hierarchy.
 
+AffineUnit only supports scalar multiplication in the form `number * unit` (e.g., `22ua"degC"`),
+which immediately converts it to a regular `Quantity{Float64,Dimensions{R}}`. Other operations
+like `unit * number`, division, addition, or subtraction with AffineUnit are not supported.
+
+!!! warning "Non-associative multiplication"
+    Multiplication with AffineUnit is non-associative due to the auto-conversion property.
+    For example, `(2 * 3) * °C` ≠ `2 * (3 * °C)` because when a number multiplies an AffineUnit,
+    it immediately converts to a regular Quantity with the affine transformation applied.
+
 !!! warning
     This is an experimental feature and may change in the future.
 """
@@ -31,7 +40,7 @@ for op in [:*, :/, :+, :-], (first, second) in [(:AffineUnit, :Number), (:Number
     op == :* && first == :Number && second == :AffineUnit && continue
     
     @eval function Base.$op(a::$first, b::$second)
-        throw(ArgumentError("Affine units only support scalar multiplication in the form 'number * unit', e.g., 22 * ua\"degC\", which will immediately convert it to a regular `Quantity{Float64,<:Dimensions}`. Other operations are not supported."))
+        throw(ArgumentError("Affine units only support scalar multiplication in the form 'number * unit', e.g., 22 * ua\"degC\", which will immediately convert it to a regular `Quantity{Float64,Dimensions{R}}`. Other operations are not supported."))
     end
 end
 
@@ -91,6 +100,9 @@ end
     aff_uparse(s::AbstractString)
 
 Parse a string into an affine unit (°C/degC, °F/degF). Function equivalent of `ua"unit"`.
+
+!!! warning
+    This is an experimental feature and may change in the future.
 """
 function aff_uparse(s::AbstractString)
     ex = AffineUnits.map_to_scope(Meta.parse(s))
