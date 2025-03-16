@@ -6,12 +6,12 @@ export Quantity, GenericQuantity, RealQuantity
 export FixedRational
 export AbstractDimensions, Dimensions, NoDims
 export AbstractSymbolicDimensions, SymbolicDimensions, SymbolicDimensionsSingleton
-export AbstractAffineDimensions, AffineDimensions
+export AffineUnit
 export QuantityArray
 export DimensionError
 export ustrip, dimension, uexpand, uconvert, ustripexpand
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
-export uparse, @u_str, sym_uparse, @us_str, @register_unit, aff_uparse, @ua_str, @register_affine_unit
+export uparse, @u_str, sym_uparse, @us_str, @register_unit, aff_uparse, @ua_str
 
 # Deprecated:
 export expand_units

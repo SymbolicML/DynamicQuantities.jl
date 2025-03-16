@@ -12,13 +12,6 @@ function update_all_values(name_symbol, unit)
         ALL_MAPPING[name_symbol] = i
         UNIT_MAPPING[name_symbol] = i
         update_external_symbolic_unit_value(name_symbol)
-        update_external_affine_unit(name_symbol, unit)
-    end
-end
-
-function update_affine_values(name_symbol, unit)
-    lock(UNIT_UPDATE_LOCK) do
-        update_external_affine_unit(name_symbol, unit)
     end
 end
 
@@ -77,23 +70,4 @@ function _register_unit(name::Symbol, value)
         end
     )
     return reg_expr
-end
-
-"""
-    @register_affine_unit symbol value
-
-Affine unit version of [`@register_unit`](@ref).
-"""
-macro register_affine_unit(name, expr)
-    return esc(_register_affine_unit(name, expr))
-end
-
-function _register_affine_unit(name, expr)
-    name_symbol = Meta.quot(name)
-    index = get(AffineUnits.AFFINE_UNIT_MAPPING, name, INDEX_TYPE(0))
-    if !iszero(index)
-        unit = AffineUnits.AFFINE_UNIT_VALUES[index]
-        error("Unit `$name` is already defined as `$unit`")
-    end
-    return :($update_affine_values($name_symbol, $expr))
 end
