@@ -3,16 +3,18 @@
 
 A simple struct for representing affine units like Celsius and Fahrenheit.
 This is not part of the AbstractDimensions hierarchy.
+
+!!! warning
+    This is an experimental feature and may change in the future.
 """
 struct AffineUnit{R}
     scale::Float64
     offset::Float64
     basedim::Dimensions{R}
+    name::Symbol
 end
 
-# Define Celsius and Fahrenheit units
-const CELSIUS = AffineUnit(1.0, 273.15, Dimensions{DEFAULT_DIM_BASE_TYPE}(temperature=1))
-const FAHRENHEIT = AffineUnit(5/9, 459.67 * 5/9, Dimensions{DEFAULT_DIM_BASE_TYPE}(temperature=1))
+Base.show(io::IO, unit::AffineUnit) = print(io, unit.name)
 
 # This immediately converts to regular Dimensions
 function Base.:*(value::Number, unit::AffineUnit)
@@ -22,25 +24,75 @@ function Base.:*(value::Number, unit::AffineUnit)
     return Quantity(new_value, unit.basedim)
 end
 
-# String parsing for affine units
+# Error messages for unsupported operations - defined using a loop
+for op in [:*, :/, :+, :-], (first, second) in [(:AffineUnit, :Number), (:Number, :AffineUnit)]
+
+    # Skip the already defined value * unit case
+    op == :* && first == :Number && second == :AffineUnit && continue
+    
+    @eval function Base.$op(a::$first, b::$second)
+        throw(ArgumentError("Affine units only support scalar multiplication in the form 'number * unit', e.g., 22 * ua\"degC\", which will immediately convert it to a regular `Quantity{Float64,<:Dimensions}`. Other operations are not supported."))
+    end
+end
+
+# Module for affine unit parsing
+module AffineUnits
+    import ..AffineUnit
+    import ..Dimensions
+    import ..DEFAULT_DIM_BASE_TYPE
+    import ..Quantity
+
+    # Define Celsius and Fahrenheit units inside the module
+    const °C = AffineUnit(1.0, 273.15, Dimensions{DEFAULT_DIM_BASE_TYPE}(temperature=1), :°C)
+    const degC = °C
+    const °F = AffineUnit(5/9, 459.67 * 5/9, Dimensions{DEFAULT_DIM_BASE_TYPE}(temperature=1), :°F)
+    const degF = °F
+
+    const AFFINE_UNIT_SYMBOLS = [:°C, :degC, :°F, :degF]
+
+    function map_to_scope(ex::Expr)
+        if ex.head != :call
+            throw(ArgumentError("Unexpected expression: $ex. Only `:call` is expected."))
+        end
+        ex.args[2:end] = map(map_to_scope, ex.args[2:end])
+        return ex
+    end
+
+    function map_to_scope(sym::Symbol)
+        if !(sym in AFFINE_UNIT_SYMBOLS)
+            throw(ArgumentError("Symbol $sym not found in affine units. Only °C/degC and °F/degF are supported."))
+        end
+        if sym in (:°C, :degC)
+            return °C
+        else  # if sym in (:°F, :degF)
+            return °F
+        end
+    end
+
+    # For literals and other expressions
+    map_to_scope(ex) = ex
+end
+
 """
     ua"unit"
 
 Parse a string containing an affine unit expression.
-Currently only supports °C and °F.
+Currently only supports °C (or degC) and °F (or degF).
+
+!!! warning
+    This is an experimental feature and may change in the future.
 """
 macro ua_str(s)
-    return esc(:($(aff_uparse)($s)))
+    ex = AffineUnits.map_to_scope(Meta.parse(s))
+    return esc(ex)
 end
 
-# For compatibility with existing code
+"""
+    aff_uparse(s::AbstractString)
+
+Parse a string into an affine unit (°C/degC, °F/degF). Function equivalent of `ua"unit"`.
+"""
 function aff_uparse(s::AbstractString)
-    if s == "°C" || s == "degC"
-        return CELSIUS
-    elseif s == "°F" || s == "degF"
-        return FAHRENHEIT
-    else
-        # For other units, convert to regular units
-        return uparse(s)
-    end
+    ex = AffineUnits.map_to_scope(Meta.parse(s))
+    return eval(ex)
 end
