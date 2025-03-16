@@ -64,6 +64,7 @@ Note there are some subtleties about working with these:
 ```@docs
 @ua_str
 aff_uparse
+DynamicQuantities.AffineUnit
 ```
 
 Currently, the only supported affine units are:
