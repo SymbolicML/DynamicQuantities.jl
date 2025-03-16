@@ -6,6 +6,7 @@ using DynamicQuantities: GenericQuantity, with_type_parameters, constructorof
 using DynamicQuantities: promote_quantity_on_quantity, promote_quantity_on_value
 using DynamicQuantities: UNIT_VALUES, UNIT_MAPPING, UNIT_SYMBOLS, ALL_MAPPING, ALL_SYMBOLS, ALL_VALUES
 using DynamicQuantities.SymbolicUnits: SYMBOLIC_UNIT_VALUES
+using DynamicQuantities: AffineUnit, AffineUnits
 using DynamicQuantities: map_dimensions
 using DynamicQuantities: _register_unit
 using Ratios: SimpleRatio
@@ -1998,6 +1999,61 @@ end
     # Symbolic dimensions retain symbols:
     @test QuantityArray([km, km]) |> uconvert(us"m") == [1000m, 1000m]
     @test QuantityArray([km, km]) |> uconvert(us"m") != [km, km]
+end
+
+
+@testset "Tests of AffineDimensions" begin
+    # Test basic unit creation
+    °C = ua"°C"
+    °F = ua"°F"
+
+    # Test unit identity
+    @test °C isa AffineUnit
+
+    # Test basic properties
+    @test °C.basedim.temperature == 1
+    @test °C.basedim.length == 0
+
+    # Test unit equivalence
+    @test ua"°C" == ua"degC"
+    @test ua"°F" == ua"degF"
+
+    # Test conversion to regular dimensions via multiplication
+    @test 0 * °C ≈ 273.15u"K"
+    @test 100 * °C ≈ 373.15u"K"
+    @test 32 * °F ≈ 273.15u"K"
+
+    # Test temperature equivalence
+    @test 0ua"degC" ≈ 32ua"degF"
+    @test -40ua"degC" ≈ -40ua"degF"
+
+    # Can do multiplication inside
+    @test ua"22degC" isa Quantity
+    @test ua"22degC" == 22ua"degC"
+
+    # Test unsupported operations - verify the error message
+    @test_throws "Affine units only support scalar multiplication in the form 'number * unit'" °C * 2
+
+    # Test AffineUnits module functionality
+    @test AffineUnits.°C === °C
+    @test AffineUnits.degC === °C
+    @test AffineUnits.°F === °F
+    @test AffineUnits.degF === °F
+
+    # Test parsing of non-:call expression
+    @test_throws "Unexpected expression" AffineUnits.map_to_scope(:(let x=1; x; end))
+
+    # Test aff_uparse function
+    @test aff_uparse("°C") === ua"°C"
+    @test aff_uparse("degC") === ua"degC"
+    @test aff_uparse("°F") === ua"°F"
+    @test aff_uparse("degF") === ua"degF"
+    @test_throws ArgumentError aff_uparse("K")
+
+    # Test show function for AffineUnit
+    @test sprint(show, °C) == "°C"
+
+    @test sprint(show, °F) == "°F"
 end
 
 @testset "Test div" begin

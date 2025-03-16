@@ -41,3 +41,32 @@ You can define custom units with the `@register_unit` macro:
 ```@docs
 @register_unit
 ```
+
+## Affine Units
+
+DynamicQuantities also supports affine units like Celsius and Fahrenheit through the `AffineUnit{R}` type and the `ua` string macro.
+For example,
+
+```julia
+# Define temperature in Celsius
+room_temp = 22ua"degC"    # 295.15 K
+
+# Define temperature in Fahrenheit
+freezing = 32ua"degF"     # 273.15 K
+
+# Can take differences normally, as these are now regular Quantities:
+room_temp - freezing
+# 22 K
+```
+
+Note there are some subtleties about working with these:
+
+```@docs
+@ua_str
+aff_uparse
+```
+
+Currently, the only supported affine units are:
+
+- `°C` or `degC` - Degrees Celsius
+- `°F` or `degF` - Degrees Fahrenheit
