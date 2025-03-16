@@ -30,7 +30,7 @@ Parse a string containing an affine unit expression.
 Currently only supports °C and °F.
 """
 macro ua_str(s)
-    return esc(:(aff_uparse($s)))
+    return esc(:($(aff_uparse)($s)))
 end
 
 # For compatibility with existing code
