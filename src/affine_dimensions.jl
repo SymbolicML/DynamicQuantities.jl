@@ -106,5 +106,5 @@ Parse a string into an affine unit (°C/degC, °F/degF). Function equivalent of 
 """
 function aff_uparse(s::AbstractString)
     ex = AffineUnits.map_to_scope(Meta.parse(s))
-    return eval(ex)
+    return eval(ex)::AffineUnit{DEFAULT_DIM_BASE_TYPE}
 end

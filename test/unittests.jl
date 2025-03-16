@@ -2031,6 +2031,30 @@ end
     # Test temperature equivalence
     @test 0ua"degC" ≈ 32ua"degF"
     @test -40ua"degC" ≈ -40ua"degF"
+    
+    # Test unsupported operations - verify the error message
+    @test_throws "Affine units only support scalar multiplication in the form 'number * unit'" °C * 2
+    
+    # Test AffineUnits module functionality
+    @test AffineUnits.°C === °C
+    @test AffineUnits.degC === °C
+    @test AffineUnits.°F === °F
+    @test AffineUnits.degF === °F
+    
+    # Test parsing of non-:call expression
+    @test_throws "Unexpected expression" AffineUnits.map_to_scope(:(1 + 2))
+    
+    # Test aff_uparse function
+    @test aff_uparse("°C") === ua"°C"
+    @test aff_uparse("degC") === ua"degC"
+    @test aff_uparse("°F") === ua"°F"
+    @test aff_uparse("degF") === ua"degF"
+    @test_throws ArgumentError aff_uparse("K")
+    
+    # Test show function for AffineUnit
+    @test sprint(show, °C) == "°C"
+    
+    @test sprint(show, °F) == "°F"
 end
 
 @testset "Test div" begin
