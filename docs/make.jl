@@ -46,7 +46,6 @@ makedocs(;
         "Units" => "units.md",
         "Constants" => "constants.md",
         "Symbolic Units" => "symbolic_units.md",
-        "Affine Units" => "affine_units.md",
         "Types" => "types.md",
     ],
     warnonly = [:missing_docs]
