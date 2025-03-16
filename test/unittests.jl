@@ -2006,55 +2006,49 @@ end
     # Test basic unit creation
     °C = ua"°C"
     °F = ua"°F"
-    
-    # Print information about the units
-    println("°C scale: ", °C.scale)
-    println("°C offset: ", °C.offset)
-    println("°F scale: ", °F.scale)
-    println("°F offset: ", °F.offset)
-    
+
     # Test unit identity
     @test °C isa AffineUnit
-    
+
     # Test basic properties
     @test °C.basedim.temperature == 1
     @test °C.basedim.length == 0
-    
+
     # Test unit equivalence
     @test ua"°C" == ua"degC"
     @test ua"°F" == ua"degF"
-    
+
     # Test conversion to regular dimensions via multiplication
     @test 0 * °C ≈ 273.15u"K"
     @test 100 * °C ≈ 373.15u"K"
     @test 32 * °F ≈ 273.15u"K"
-    
+
     # Test temperature equivalence
     @test 0ua"degC" ≈ 32ua"degF"
     @test -40ua"degC" ≈ -40ua"degF"
-    
+
     # Test unsupported operations - verify the error message
     @test_throws "Affine units only support scalar multiplication in the form 'number * unit'" °C * 2
-    
+
     # Test AffineUnits module functionality
     @test AffineUnits.°C === °C
     @test AffineUnits.degC === °C
     @test AffineUnits.°F === °F
     @test AffineUnits.degF === °F
-    
+
     # Test parsing of non-:call expression
     @test_throws "Unexpected expression" AffineUnits.map_to_scope(:(let x=1; x; end))
-    
+
     # Test aff_uparse function
     @test aff_uparse("°C") === ua"°C"
     @test aff_uparse("degC") === ua"degC"
     @test aff_uparse("°F") === ua"°F"
     @test aff_uparse("degF") === ua"degF"
     @test_throws ArgumentError aff_uparse("K")
-    
+
     # Test show function for AffineUnit
     @test sprint(show, °C) == "°C"
-    
+
     @test sprint(show, °F) == "°F"
 end
 
