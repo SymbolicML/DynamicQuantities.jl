@@ -6,6 +6,7 @@ using DynamicQuantities: GenericQuantity, with_type_parameters, constructorof
 using DynamicQuantities: promote_quantity_on_quantity, promote_quantity_on_value
 using DynamicQuantities: UNIT_VALUES, UNIT_MAPPING, UNIT_SYMBOLS, ALL_MAPPING, ALL_SYMBOLS, ALL_VALUES
 using DynamicQuantities.SymbolicUnits: SYMBOLIC_UNIT_VALUES
+using DynamicQuantities: AffineUnit, AffineUnits
 using DynamicQuantities: map_dimensions
 using DynamicQuantities: _register_unit
 using Ratios: SimpleRatio
