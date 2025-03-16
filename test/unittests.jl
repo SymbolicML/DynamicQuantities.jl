@@ -2043,7 +2043,7 @@ end
     @test AffineUnits.degF === °F
     
     # Test parsing of non-:call expression
-    @test_throws "Unexpected expression" AffineUnits.map_to_scope(:(1 + 2))
+    @test_throws "Unexpected expression" AffineUnits.map_to_scope(:(let x=1; x; end))
     
     # Test aff_uparse function
     @test aff_uparse("°C") === ua"°C"
