@@ -10,7 +10,7 @@ like `unit * number`, division, addition, or subtraction with AffineUnit are not
 
 !!! warning "Non-associative multiplication"
     Multiplication with AffineUnit is non-associative due to the auto-conversion property.
-    For example, `(2 * 3) * °C` ≠ `2 * (3 * °C)` because when a number multiplies an AffineUnit,
+    For example, `(2 * 3) * ua"degC"` ≠ `2 * (3 * ua"degC")` because when a number multiplies an AffineUnit,
     it immediately converts to a regular Quantity with the affine transformation applied.
 
 !!! warning
