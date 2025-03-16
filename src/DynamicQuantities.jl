@@ -6,7 +6,6 @@ export Quantity, GenericQuantity, RealQuantity
 export FixedRational
 export AbstractDimensions, Dimensions, NoDims
 export AbstractSymbolicDimensions, SymbolicDimensions, SymbolicDimensionsSingleton
-export AffineUnit
 export QuantityArray
 export DimensionError
 export ustrip, dimension, uexpand, uconvert, ustripexpand
@@ -34,7 +33,6 @@ using DispatchDoctor: @stable
     include("complex.jl")
     include("register_units.jl")
     include("disambiguities.jl")
-    
 
     include("deprecated.jl")
 end

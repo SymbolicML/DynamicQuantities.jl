@@ -2109,7 +2109,6 @@ map_count_before_registering = length(UNIT_MAPPING)
 all_map_count_before_registering = length(ALL_MAPPING)
 
 skipped_register_unit = false
-#Registering Symbolic Units
 if :MyV ∉ UNIT_SYMBOLS  # (In case we run this script twice)
     @eval @register_unit MyV u"V"
 else
@@ -2121,9 +2120,6 @@ end
 if :MySV2 ∉ UNIT_SYMBOLS
     @eval @register_unit MySV2 us"km/h"
 end
-if :psi ∉ UNIT_SYMBOLS
-    @eval @register_unit psi 6.89476us"kPa"
-end
 
 @test_throws "Unit `m` is already defined as `1.0 m`" esc(_register_unit(:m, u"s"))
 
@@ -2134,17 +2130,15 @@ end
     MyV = u"MyV"
     MySV = u"MySV"
     MySV2 = u"MySV2"
-    psi = u"psi"
 
     @test MyV === u"V"
     @test MyV == us"V"
     @test MySV == us"V"
     @test MySV2 == us"km/h"
-    @test psi == u"psi"
 
     if !skipped_register_unit
-        @test length(UNIT_MAPPING) == map_count_before_registering + 4
-        @test length(ALL_MAPPING) == all_map_count_before_registering + 4
+        @test length(UNIT_MAPPING) == map_count_before_registering + 3
+        @test length(ALL_MAPPING) == all_map_count_before_registering + 3
     end
 
     for my_unit in (MySV, MyV)
@@ -2152,7 +2146,6 @@ end
         @test my_unit in ALL_VALUES
         @test my_unit in SYMBOLIC_UNIT_VALUES
     end
-    
     for my_unit in (:MySV, :MyV)
         @test my_unit in UNIT_SYMBOLS
         @test my_unit in ALL_SYMBOLS

@@ -18,10 +18,11 @@ This can greatly improve both runtime performance, by avoiding type instabilitie
 - [Usage](#usage)
   - [Constants](#constants)
   - [Symbolic Units](#symbolic-units)
+    - [Custom Units](#custom-units)
+    - [Affine Units](#affine-units)
   - [Arrays](#arrays)
   - [Unitful](#unitful)
 - [Types](#types)
-- [Vectors](#vectors)
 
 ## Performance
 
@@ -291,13 +292,10 @@ using the `ua"..."` string macro:
 
 ```julia
 julia> room_temp = 22ua"degC"
-22.0 °C
+295.15 K
 
-julia> room_temp |> ua"degF" |> round
-72.0 °F
-
-julia> room_temp |> uexpand |> round
-295.0 K
+julia> freezing = 32ua"degF"
+273.15 K
 ```
 
 ### Arrays

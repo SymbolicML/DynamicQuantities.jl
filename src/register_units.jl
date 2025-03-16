@@ -15,7 +15,6 @@ function update_all_values(name_symbol, unit)
     end
 end
 
-
 """
     @register_unit symbol value
 
