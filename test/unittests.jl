@@ -2027,6 +2027,10 @@ end
     @test 0ua"degC" ≈ 32ua"degF"
     @test -40ua"degC" ≈ -40ua"degF"
 
+    # Can do multiplication inside
+    @test ua"22degC" isa Quantity
+    @test ua"22degC" == 22ua"degC"
+
     # Test unsupported operations - verify the error message
     @test_throws "Affine units only support scalar multiplication in the form 'number * unit'" °C * 2
 

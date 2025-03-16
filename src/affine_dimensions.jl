@@ -88,6 +88,12 @@ end
 Parse a string containing an affine unit expression.
 Currently only supports °C (or degC) and °F (or degF).
 
+For example:
+
+```julia
+room_temp = 22ua"degC"  # The multiplication returns a Quantity
+```
+
 !!! warning
     This is an experimental feature and may change in the future.
 """
