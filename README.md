@@ -18,10 +18,11 @@ This can greatly improve both runtime performance, by avoiding type instabilitie
 - [Usage](#usage)
   - [Constants](#constants)
   - [Symbolic Units](#symbolic-units)
+    - [Custom Units](#custom-units)
+    - [Affine Units](#affine-units)
   - [Arrays](#arrays)
   - [Unitful](#unitful)
 - [Types](#types)
-- [Vectors](#vectors)
 
 ## Performance
 
@@ -284,6 +285,18 @@ julia> 3us"V" |> us"OneFiveV"
 2.0 OneFiveV
 ```
 
+#### Affine Units
+
+You can also use "*affine*" units such as Celsius or Fahrenheit,
+using the `ua"..."` string macro:
+
+```julia
+julia> room_temp = 22ua"degC"
+295.15 K
+
+julia> freezing = 32ua"degF"
+273.15 K
+```
 
 ### Arrays
 

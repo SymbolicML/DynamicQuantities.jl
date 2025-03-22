@@ -10,7 +10,7 @@ export QuantityArray
 export DimensionError
 export ustrip, dimension, uexpand, uconvert, ustripexpand
 export ulength, umass, utime, ucurrent, utemperature, uluminosity, uamount
-export uparse, @u_str, sym_uparse, @us_str, @register_unit
+export uparse, @u_str, sym_uparse, @us_str, @register_unit, aff_uparse, @ua_str
 
 # Deprecated:
 export expand_units
@@ -29,6 +29,7 @@ using DispatchDoctor: @stable
     include("constants.jl")
     include("uparse.jl")
     include("symbolic_dimensions.jl")
+    include("affine_dimensions.jl")
     include("complex.jl")
     include("register_units.jl")
     include("disambiguities.jl")
@@ -51,5 +52,8 @@ let _units_import_expr = :(using .Units: m, g)
     )
     eval(_units_import_expr)
 end
+
+# Include precompilation directives
+include("precompile.jl")
 
 end
