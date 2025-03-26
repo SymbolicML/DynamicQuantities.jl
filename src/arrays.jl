@@ -108,6 +108,33 @@ end
     )
 end
 
+@inline function promote_except_value(q1::Q1, q2::QA2) where {
+    T1,D1,T2,D2,Q1<:UnionAbstractQuantity{T1,D1},Q2,
+    QA2<:QuantityArray{T2,N2,D2,Q2} where N2,
+}
+    if D1 == D2 && constructorof(Q1) == constructorof(Q2)
+        return (q1, q2)
+    end
+    Q = promote_type(Q1, Q2)
+    D = promote_type(D1, D2)
+
+    # Create quantity with the properly promoted dimension type
+    q1_converted = convert(with_type_parameters(Q, T1, D), q1)
+    # Create a promoted QuantityArray
+    d2 = convert(with_type_parameters(Q, T2, D), new_quantity(Q, one(T2), dimension(q2)))
+    q2_converted = QuantityArray(ustrip(q2), d2)
+
+    return (q1_converted, q2_converted)
+end
+
+@inline function promote_except_value(q1::QA1, q2::Q2) where {
+    T1,D1,T2,D2,Q1,Q2<:UnionAbstractQuantity{T2,D2},
+    QA1<:QuantityArray{T1,N1,D1,Q1} where N1,
+}
+    q2_converted, q1_converted = promote_except_value(q2, q1)
+    return (q1_converted, q2_converted)
+end
+
 function Base.convert(::Type{QA}, A::QA) where {QA<:QuantityArray}
     return A
 end
@@ -126,6 +153,7 @@ end
 @inline ustrip(A::QuantityArray) = A.value
 @inline ustrip(A::AbstractArray{<:UnionAbstractQuantity}) = ustrip.(A)
 @inline function ustrip(unit::UnionAbstractQuantity, q::QuantityArray)
+    unit, q = promote_except_value(unit, q)
     dimension(unit) == dimension(q) || throw(DimensionError(unit, q))
     conversion_factor = ustrip(dimension(q) / unit)
     return ustrip(q) .* conversion_factor
