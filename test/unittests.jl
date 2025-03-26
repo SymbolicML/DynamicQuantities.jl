@@ -1017,6 +1017,41 @@ end
     end
 end
 
+@testset "ustrip with unit conversion" begin
+    # Test Dimension/Dimension conversions
+    # Basic
+    @test ustrip(u"km", 1000u"m") == 1.0
+    @test ustrip(u"mm", 1000u"m") == 1000000.0
+    @test ustrip(u"s", 1u"minute") == 60.0
+    @test ustrip(u"minute", 60u"s") == 1.0
+
+    # Arrays
+    m_qarray = QuantityArray([1000.0, 2000.0], u"m")
+    @test ustrip(u"km", m_qarray) == [1.0, 2.0]
+    @test ustrip(u"mm", m_qarray) == [1000000.0, 2000000.0]
+
+    # Mixed dimensions
+    @test_throws DimensionError ustrip(u"m", u"K")
+    @test_throws DimensionError ustrip(u"K", u"m")
+    @test_throws DimensionError ustrip(u"K", u"m")
+
+    # Test with SymbolicDimensions
+    @test ustrip(u"km", us"m") == 0.001
+    @test ustrip(us"km", u"m") == 0.001
+    @test ustrip(us"mm", u"km") == 1000000.0
+    @test ustrip(us"km", 500us"km") == 500.0
+
+    # But, if no promotion, we still check dimensions symbolically!
+    @test_throws DimensionError ustrip(us"km", us"m")
+    @test_throws DimensionError ustrip(us"km", us"m")
+
+    # SymbolicDimensions arrays
+    m_sym_qarray = QuantityArray([1000us"km", 2000us"km"])
+    @test ustrip(u"m", m_sym_qarray) == [1000000.0, 2000000.0]
+    @test ustrip(us"km", m_sym_qarray) == [1000.0, 2000.0]
+    @test_throws DimensionError ustrip(us"cm", m_sym_qarray)
+end
+
 @testset "Test missing" begin
     x = 1.0u"m"
     @test round(Union{Int32,Missing}, FixedRational{Int32,100}(1)) isa Int32
