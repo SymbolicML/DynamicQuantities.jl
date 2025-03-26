@@ -390,7 +390,6 @@ ustrip(::AbstractDimensions) = error("Cannot remove units from an `AbstractDimen
 
 """
     ustrip(unit::UnionAbstractQuantity, q::UnionAbstractQuantity)
-    ustrip(unit::UnionAbstractQuantity, q::AbstractArray{<:UnionAbstractQuantity})
 
 Convert quantity `q` to the units specified by `unit`, then strip the units.
 This is equivalent to `ustrip(q / unit)`, but also verifies the dimensions are compatible.
@@ -410,12 +409,9 @@ julia> ustrip(u"km", [1000u"m", 2000u"m"])
 ```
 """
 @inline function ustrip(unit::UnionAbstractQuantity, q::UnionAbstractQuantity)
+    unit, q = promote_except_value(unit, q)
     dimension(unit) == dimension(q) || throw(DimensionError(unit, q))
     return ustrip(q / unit)
-end
-@inline function ustrip(unit::UnionAbstractQuantity, q::AbstractArray{<:UnionAbstractQuantity})
-    all(qi -> dimension(qi) == dimension(unit), q) || throw(DimensionError(unit, q))
-    return @. ustrip(q / unit)
 end
 
 """
