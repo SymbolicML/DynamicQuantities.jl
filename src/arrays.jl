@@ -125,6 +125,11 @@ end
 
 @inline ustrip(A::QuantityArray) = A.value
 @inline ustrip(A::AbstractArray{<:UnionAbstractQuantity}) = ustrip.(A)
+@inline function ustrip(unit::UnionAbstractQuantity, q::QuantityArray)
+    dimension(unit) == dimension(q) || throw(DimensionError(unit, q))
+    conversion_factor = ustrip(dimension(q) / unit)
+    return ustrip(q) .* conversion_factor
+end
 @inline dimension(A::QuantityArray) = A.dimensions
 
 array_type(::Type{<:QuantityArray{T,N,D,Q,V}}) where {T,N,D,Q,V} = V
