@@ -107,7 +107,7 @@ end
 
 @add_prefixes Hz (n, μ, u, m, k, M, G)
 @add_prefixes N (μ, u, m, k)
-@add_prefixes Pa (k,)
+@add_prefixes Pa (μ, u, m, k)
 @add_prefixes J (k,)
 @add_prefixes W (m, k, M, G)
 @add_prefixes C ()
@@ -131,7 +131,7 @@ end
     N,
 )
 @doc(
-    "Pressure in Pascals. Available variant: `kPa`.",
+    "Pressure in Pascals. Available variants: `μPa` (/`uPa`), `mPa`, `kPa`.",
     Pa,
 )
 @doc(
