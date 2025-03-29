@@ -127,14 +127,6 @@ end
     return (q1_converted, q2_converted)
 end
 
-@inline function promote_except_value(q1::QA1, q2::Q2) where {
-    T1,D1,T2,D2,Q1,Q2<:UnionAbstractQuantity{T2,D2},
-    QA1<:QuantityArray{T1,N1,D1,Q1} where N1,
-}
-    q2_converted, q1_converted = promote_except_value(q2, q1)
-    return (q1_converted, q2_converted)
-end
-
 function Base.convert(::Type{QA}, A::QA) where {QA<:QuantityArray}
     return A
 end
@@ -358,7 +350,7 @@ Base.fill(x::UnionAbstractQuantity, t::Tuple{}) = QuantityArray(fill(ustrip(x), 
 
 # Will be overloaded by `DynamicQuantitiesLinearAlgebraExt`:
 function norm end
-is_ext_loaded(::Val) = false
+is_ext_loaded(::Val) = false  # COV_EXCL_LINE
 
 # Define isapprox for vectors of Quantity's
 struct AutoTolerance end
