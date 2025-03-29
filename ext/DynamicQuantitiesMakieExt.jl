@@ -9,18 +9,18 @@ M.expand_dimensions(::M.PointBased, y::AbstractVector{<:UnionAbstractQuantity}) 
 M.create_dim_conversion(::Type{<:UnionAbstractQuantity}) = DQConversion()
 M.MakieCore.should_dim_convert(::Type{<:UnionAbstractQuantity}) = true
 
-unit_string(quantitiy::UnionAbstractQuantity) = string(dimension(quantitiy))
+unit_string(quantity::UnionAbstractQuantity) = string(dimension(quantity))
 
 function unit_convert(::M.Automatic, x)
     x
 end
 
-function unit_convert(quantitiy::UnionAbstractQuantity, x::AbstractArray)
-    unit_convert.(Ref(quantitiy), x)
+function unit_convert(quantity::UnionAbstractQuantity, x::AbstractArray)
+    unit_convert.(Ref(quantity), x)
 end
 
-function unit_convert(quantitiy::UnionAbstractQuantity, value)
-    conv = value / quantitiy
+function unit_convert(quantity::UnionAbstractQuantity, value)
+    conv = value / dimension(quantity)
     return Float64(ustrip(conv))
 end
 
@@ -30,8 +30,8 @@ struct DQConversion <: M.AbstractDimConversion
     units_in_label::M.Observable{Bool}
 end
 
-function DQConversion(quantitiy=M.automatic; units_in_label=true)
-    return DQConversion(quantitiy, quantitiy isa M.Automatic, units_in_label)
+function DQConversion(quantity=M.automatic; units_in_label=true)
+    return DQConversion(quantity, quantity isa M.Automatic, units_in_label)
 end
 
 M.needs_tick_update_observable(conversion::DQConversion) = conversion.quantity
@@ -41,7 +41,7 @@ function M.get_ticks(conversion::DQConversion, ticks, scale, formatter, vmin, vm
     quantity isa M.Automatic && return [], []
     unit_str = unit_string(quantity)
     tick_vals, labels = M.get_ticks(ticks, scale, formatter, vmin, vmax)
-    return tick_vals, labels .* unit_str #string.(labels, string(dimension(conversion.quantities[])))
+    return tick_vals, labels .* unit_str
 end
 
 function M.convert_dim_observable(conversion::DQConversion, value_obs::M.Observable, deregister)
@@ -52,14 +52,14 @@ function M.convert_dim_observable(conversion::DQConversion, value_obs::M.Observa
             # Is there a function for this to check in DynamicQuantities?
             unit_convert(unit, values[1])
         end
-        return unit_convert(conversion.quantity[], values)
+        return M.convert_dim_value(conversion, values)
     end
     append!(deregister, result.inputs)
     return result
 end
 
-function M.convert_dim_value(conversion::DQConversion, value::UnionAbstractQuantity)
-    return unit_convert(conversion.quantity[], value)
+function M.convert_dim_value(conversion::DQConversion, values)
+    return unit_convert(conversion.quantity[], values)
 end
 
 @testitem "conversion" begin
