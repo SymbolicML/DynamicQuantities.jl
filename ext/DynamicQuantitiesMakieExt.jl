@@ -20,7 +20,7 @@ function unit_convert(quantity::UnionAbstractQuantity, x::AbstractArray)
 end
 
 function unit_convert(quantity::UnionAbstractQuantity, value)
-    conv = value / dimension(quantity)
+    conv = value / quantity
     return Float64(ustrip(conv))
 end
 
@@ -45,7 +45,10 @@ function M.get_ticks(conversion::DQConversion, ticks, scale, formatter, vmin, vm
 end
 
 function M.convert_dim_observable(conversion::DQConversion, value_obs::M.Observable, deregister)
-    conversion.quantity[] = value_obs[][1]
+    # TODO: replace with update_extrema
+    if conversion.automatic_units
+        conversion.quantity[] = oneunit(value_obs[][1])
+    end
     result = map(conversion.quantity, value_obs; ignore_equal_values=true) do unit, values
         if !isempty(values)
             # try if conversion works, to through error if not!
