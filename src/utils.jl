@@ -411,7 +411,7 @@ julia> ustrip(u"km", [1000u"m", 2000u"m"])
 @inline function ustrip(unit::UnionAbstractQuantity, q::UnionAbstractQuantity)
     unit, q = promote_except_value(unit, q)
     dimension(unit) == dimension(q) || throw(DimensionError(unit, q))
-    return ustrip(q / unit)
+    return ustrip(q) / ustrip(unit)
 end
 
 """

@@ -155,8 +155,7 @@ end
 @inline function ustrip(unit::UnionAbstractQuantity, q::QuantityArray)
     unit, q = promote_except_value(unit, q)
     dimension(unit) == dimension(q) || throw(DimensionError(unit, q))
-    conversion_factor = ustrip(dimension(q) / unit)
-    return ustrip(q) .* conversion_factor
+    return ustrip(q) ./ ustrip(unit)
 end
 @inline dimension(A::QuantityArray) = A.dimensions
 
