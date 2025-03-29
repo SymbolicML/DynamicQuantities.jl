@@ -131,6 +131,13 @@ julia> ustrip(ua"degF", 300u"K")
 ```
 """
 function ustrip(unit::AffineUnit, q::UnionAbstractQuantity)
-    unit.basedim == dimension(q) || throw(DimensionError(unit, q))
-    return (ustrip(q) - unit.offset) / unit.scale
+    q_promoted = _promote_quantity_for_affine(unit, q)
+    unit.basedim == dimension(q_promoted) || throw(DimensionError(unit, q_promoted))
+    return (ustrip(q_promoted) - unit.offset) / unit.scale
+end
+
+function _promote_quantity_for_affine(unit::AffineUnit, q::UnionAbstractQuantity{T,D}) where {T,D}
+    D_new = promote_type(D, typeof(unit.basedim))
+    Q_new = with_type_parameters(typeof(q), T, D_new)
+    return convert(Q_new, q)
 end

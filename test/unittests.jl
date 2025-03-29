@@ -2098,6 +2098,10 @@ end
     @test ustrip(ua"degC", 22ua"degC") ≈ 22.0
     @test ustrip(ua"degF", 22ua"degC") ≈ 71.6
     @test_throws DimensionError ustrip(ua"degC", 1.0u"m")
+
+    # Test symbolic units with ustrip
+    @test ustrip(ua"degC", 273.15us"K") ≈ 0.0
+    @test ustrip(ua"degC", 55us"K") ≈ -218.15
 end
 
 @testset "Test div" begin
