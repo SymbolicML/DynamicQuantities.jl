@@ -1,37 +1,90 @@
 module DynamicQuantitiesMakieExt
 
-using DynamicQuantities: UnionAbstractQuantity, ustrip, dimension
+using DynamicQuantities: UnionAbstractQuantity, AbstractDimensions, ustrip, dimension
+using TestItems: @testitem
 
 import Makie as M
 
-struct DQConversion <: M.AbstractDimConversion
-    quantities::M.Observable{Any}
-    DQConversion() = new(M.automatic)
-end
-
 M.expand_dimensions(::M.PointBased, y::AbstractVector{<:UnionAbstractQuantity}) = (keys(y), y)
-
-M.needs_tick_update_observable(conversion::DQConversion) = nothing
-
 M.create_dim_conversion(::Type{<:UnionAbstractQuantity}) = DQConversion()
-
 M.MakieCore.should_dim_convert(::Type{<:UnionAbstractQuantity}) = true
 
-M.convert_dim_value(::DQConversion, quantities) = [ustrip(q) for q in quantities]
+unit_string(unit::D) where D <: AbstractDimensions = string(dimension(unit))
 
-function M.convert_dim_observable(conversion::DQConversion, values_obs::M.Observable, deregister)
-    result = M.Observable(Float64[])
-    f = M.on(values_obs; update=true) do values
-        result[] = M.convert_dim_value(conversion, values)
-        conversion.quantities[] = values
+function unit_convert(::M.Automatic, x)
+    x
+end
+
+function unit_convert(unit::D, x::AbstractArray) where D <: AbstractDimensions
+    unit_convert.(Ref(unit), x)
+end
+
+function unit_convert(unit::D, value) where D <: AbstractDimensions
+    conv = value / unit
+    return Float64(ustrip(conv))
+end
+
+struct DQConversion <: M.AbstractDimConversion
+    unit::M.Observable{Any}
+    automatic_units::Bool
+    units_in_label::M.Observable{Bool}
+end
+
+function DQConversion(unit=M.automatic; units_in_label=true)
+    return DQConversion(dimension(unit), unit isa M.Automatic, units_in_label)
+end
+
+M.needs_tick_update_observable(conversion::DQConversion) = conversion.unit
+
+function M.get_ticks(conversion::DQConversion, ticks, scale, formatter, vmin, vmax)
+    unit = conversion.unit[]
+    unit isa M.Automatic && return [], []
+    unit_str = unit_string(unit)
+    tick_vals, labels = M.get_ticks(ticks, scale, formatter, vmin, vmax)
+    return tick_vals, labels .* unit_str #string.(labels, string(dimension(conversion.quantities[])))
+end
+
+function M.convert_dim_observable(conversion::DQConversion, value_obs::M.Observable, deregister)
+    result = map(conversion.unit, value_obs; ignore_equal_values=true) do unit, values
+        if !isempty(values)
+            # try if conversion works, to through error if not!
+            # Is there a function for this to check in DynamicQuantities?
+            unit_convert(unit, values[1])
+        end
+        conversion.unit[] = dimension(values)
+        return unit_convert(conversion.unit[], values)
     end
-    push!(deregister, f)
+    append!(deregister, result.inputs)
     return result
 end
 
-function M.get_ticks(conversion::DQConversion, ticks, scale, formatter, vmin, vmax)
-    tick_vals, labels = M.get_ticks(ticks, scale, formatter, vmin, vmax)
-    return tick_vals, string.(labels, string(dimension(conversion.quantities[])))
+function M.convert_dim_value(conversion::DQConversion, value::UnionAbstractQuantity)
+    return unit_convert(conversion.unit[], value)
+end
+
+@testitem "conversion" begin
+    using DynamicQuantities, Makie, Dates
+    const DQConversion = Base.get_extension(DynamicQuantities, :DynamicQuantitiesMakieExt).DQConversion
+
+    f, ax, pl = scatter(u"m" .* (1:10))
+    @test pl isa Scatter{Tuple{Vector{Point2{Float64}}}}
+
+    @recipe(DQPlot, x) do scene
+        return Attributes()
+    end
+
+    function Makie.plot!(plot::DQPlot)
+        return scatter!(plot, plot.x, map(x -> x .* u"s", plot.x))
+    end
+
+    f, ax, pl = dqplot(1:5)
+
+    pl_conversion = Makie.get_conversions(pl)
+    ax_conversion = Makie.get_conversions(ax)
+
+    @test pl_conversion[2] isa DQConversion
+    @test ax_conversion[2] isa DQConversion
+    @test pl.plots[1][1][] == Point{2,Float32}.(1:5, 1:5)
 end
 
 end
