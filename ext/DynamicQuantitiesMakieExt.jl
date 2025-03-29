@@ -24,6 +24,7 @@ function unit_convert(quantity::UnionAbstractQuantity, value)
     return Float64(ustrip(conv))
 end
 
+# TODO: Maybe only allow symbolic units to avoid bugs?
 struct DQConversion <: M.AbstractDimConversion
     quantity::M.Observable{Any}
     automatic_units::Bool

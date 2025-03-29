@@ -504,3 +504,33 @@ function my_func(x::UnionAbstractQuantity{T,D}) where {T,D}
     return x / ustrip(x)
 end
 ```
+
+
+### Plotting
+
+!!! warn "Experimental"
+
+We can also use `DynamicQuantities.jl` for plotting with units in [`Makie.jl`](https://docs.makie.org/v0.22/).
+
+```julia
+using CairoMakie, DynamicQuantities
+
+# Temporary until this is upstreamed to Makie.jl
+const DQConversion = Base.get_extension(DynamicQuantities, :DynamicQuantitiesMakieExt).DQConversion
+
+scatter((6:10)u"m")
+
+# Note use of `us""` instead of `u""`
+scatter((6:10)u"m"; axis=(; dim2_conversion=DQConversion(us"cm")))
+```
+
+```julia
+fig = Figure()
+
+ax = Axis(fig[1, 1]; dim2_conversion=DQConversion(us"m"))
+
+scatter!(ax, (6:10)u"m")
+scatter!(ax, (6:10)u"km")
+
+fig
+```
