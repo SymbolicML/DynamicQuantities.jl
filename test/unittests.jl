@@ -1558,6 +1558,39 @@ end
             @test typeof(reduce(vcat, [[0.5us"hr"], [0.5us"m"]])) <: Vector{<:Quantity{Float64,<:SymbolicDimensions}}
         end
 
+        @testset "Array promotion" begin
+            A_f32 = QuantityArray(Float32[1.0 2.0; 3.0 4.0], Q{Float32}(u"m"))
+            B_f64 = QuantityArray(Float64[5.0 6.0; 7.0 8.0], Q(u"s"))
+            C_mul = A_f32 * B_f64
+
+            @test eltype(C_mul) <: Q{Float64}
+            @test dimension(C_mul) == dimension(u"m*s")
+            @test ustrip(C_mul) ≈ Float64[19.0 22.0; 43.0 50.0]
+
+            A = QuantityArray([1.0, 2.0], Q(u"m"))
+            q_f32 = 2.0f0 * Q{Float32}(u"s")
+            C_bcast = A .* q_f32
+
+            @test eltype(C_bcast) <: Q{Float64} # Promoted value type
+            @test dimension(C_bcast) == dimension(u"m*s")
+            @test ustrip(C_bcast) ≈ [2.0, 4.0]
+
+            A_dim = QuantityArray([1.0 2.0; 3.0 4.0], Q(u"m"))       # Uses Dimensions
+            B_sym = QuantityArray([5.0 6.0; 7.0 8.0], Q(us"km/s")) # Uses SymbolicDimensions
+            C_mixed_mul = A_dim * B_sym
+            @test eltype(C_mixed_mul) <: Q{Float64,<:Dimensions}
+            @test dimension(C_mixed_mul) == dimension(u"m^2/s")
+            @test ustrip(C_mixed_mul) ≈ [1.0 2.0; 3.0 4.0] * [5000.0 6000.0; 7000.0 8000.0]
+
+            A_vec_dim = QuantityArray([1.0, 2.0], Q(u"m"))
+            B_vec_sym = QuantityArray([3.0, 4.0], Q(us"km"))
+            C_mixed_bcast = A_vec_dim .* B_vec_sym
+
+            @test eltype(C_mixed_bcast) <: Q{Float64,<:Dimensions}
+            @test dimension(C_mixed_bcast) == dimension(u"m^2")
+            @test ustrip(C_mixed_bcast) ≈ [3000.0, 8000.0]
+        end
+
         Q in (Quantity, RealQuantity) && @testset "Broadcast different arrays $Q" begin
             f(x, y, z, w) = x * y + z * w
             g(x, y, z, w) = f.(x, y, z, w)
