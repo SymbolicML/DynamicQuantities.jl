@@ -1017,6 +1017,41 @@ end
     end
 end
 
+@testset "ustrip with unit conversion" begin
+    # Test Dimension/Dimension conversions
+    # Basic
+    @test ustrip(u"km", 1000u"m") == 1.0
+    @test ustrip(u"mm", 1000u"m") == 1000000.0
+    @test ustrip(u"s", 1u"minute") == 60.0
+    @test ustrip(u"minute", 60u"s") == 1.0
+
+    # Arrays
+    m_qarray = QuantityArray([1000.0, 2000.0], u"m")
+    @test ustrip(u"km", m_qarray) == [1.0, 2.0]
+    @test ustrip(u"mm", m_qarray) == [1000000.0, 2000000.0]
+
+    # Mixed dimensions
+    @test_throws DimensionError ustrip(u"m", u"K")
+    @test_throws DimensionError ustrip(u"K", u"m")
+    @test_throws DimensionError ustrip(u"K", u"m")
+
+    # Test with SymbolicDimensions
+    @test ustrip(u"km", us"m") == 0.001
+    @test ustrip(us"km", u"m") == 0.001
+    @test ustrip(us"mm", u"km") == 1000000.0
+    @test ustrip(us"km", 500us"km") == 500.0
+
+    # But, if no promotion, we still check dimensions symbolically!
+    @test_throws DimensionError ustrip(us"km", us"m")
+    @test_throws DimensionError ustrip(us"km", us"m")
+
+    # SymbolicDimensions arrays
+    m_sym_qarray = QuantityArray([1000us"km", 2000us"km"])
+    @test ustrip(u"m", m_sym_qarray) == [1000000.0, 2000000.0]
+    @test ustrip(us"km", m_sym_qarray) == [1000.0, 2000.0]
+    @test_throws DimensionError ustrip(us"cm", m_sym_qarray)
+end
+
 @testset "Test missing" begin
     x = 1.0u"m"
     @test round(Union{Int32,Missing}, FixedRational{Int32,100}(1)) isa Int32
@@ -1521,6 +1556,39 @@ end
             # Should work for incompatible units as well
             @test reduce(vcat, [[0.5us"hr"], [0.5us"m"]]) == [0.5u"hr", 0.5u"m"]
             @test typeof(reduce(vcat, [[0.5us"hr"], [0.5us"m"]])) <: Vector{<:Quantity{Float64,<:SymbolicDimensions}}
+        end
+
+        @testset "Array promotion" begin
+            A_f32 = QuantityArray(Float32[1.0 2.0; 3.0 4.0], Q{Float32}(u"m"))
+            B_f64 = QuantityArray(Float64[5.0 6.0; 7.0 8.0], Q(u"s"))
+            C_mul = A_f32 * B_f64
+
+            @test eltype(C_mul) <: Q{Float64}
+            @test dimension(C_mul) == dimension(u"m*s")
+            @test ustrip(C_mul) ≈ Float64[19.0 22.0; 43.0 50.0]
+
+            A = QuantityArray([1.0, 2.0], Q(u"m"))
+            q_f32 = 2.0f0 * Q{Float32}(u"s")
+            C_bcast = A .* q_f32
+
+            @test eltype(C_bcast) <: Q{Float64} # Promoted value type
+            @test dimension(C_bcast) == dimension(u"m*s")
+            @test ustrip(C_bcast) ≈ [2.0, 4.0]
+
+            A_dim = QuantityArray([1.0 2.0; 3.0 4.0], Q(u"m"))       # Uses Dimensions
+            B_sym = QuantityArray([5.0 6.0; 7.0 8.0], Q(us"km/s")) # Uses SymbolicDimensions
+            C_mixed_mul = A_dim * B_sym
+            @test eltype(C_mixed_mul) <: Q{Float64,<:Dimensions}
+            @test dimension(C_mixed_mul) == dimension(u"m^2/s")
+            @test ustrip(C_mixed_mul) ≈ [1.0 2.0; 3.0 4.0] * [5000.0 6000.0; 7000.0 8000.0]
+
+            A_vec_dim = QuantityArray([1.0, 2.0], Q(u"m"))
+            B_vec_sym = QuantityArray([3.0, 4.0], Q(us"km"))
+            C_mixed_bcast = A_vec_dim .* B_vec_sym
+
+            @test eltype(C_mixed_bcast) <: Q{Float64,<:Dimensions}
+            @test dimension(C_mixed_bcast) == dimension(u"m^2")
+            @test ustrip(C_mixed_bcast) ≈ [3000.0, 8000.0]
         end
 
         Q in (Quantity, RealQuantity) && @testset "Broadcast different arrays $Q" begin
@@ -2054,6 +2122,19 @@ end
     @test sprint(show, °C) == "°C"
 
     @test sprint(show, °F) == "°F"
+    
+    # Test the two-argument ustrip method with AffineUnit
+    @test ustrip(ua"degC", 273.15u"K") ≈ 0.0
+    @test ustrip(ua"degC", 300.15u"K") ≈ 27.0
+    @test ustrip(ua"degF", 273.15u"K") ≈ 32.0
+    @test ustrip(ua"degF", 300.15u"K") ≈ 80.6
+    @test ustrip(ua"degC", 22ua"degC") ≈ 22.0
+    @test ustrip(ua"degF", 22ua"degC") ≈ 71.6
+    @test_throws DimensionError ustrip(ua"degC", 1.0u"m")
+
+    # Test symbolic units with ustrip
+    @test ustrip(ua"degC", 273.15us"K") ≈ 0.0
+    @test ustrip(ua"degC", 55us"K") ≈ -218.15
 end
 
 @testset "Test div" begin

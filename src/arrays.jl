@@ -108,6 +108,25 @@ end
     )
 end
 
+@inline function promote_except_value(q1::Q1, q2::QA2) where {
+    T1,D1,T2,D2,Q1<:UnionAbstractQuantity{T1,D1},Q2,
+    QA2<:QuantityArray{T2,N2,D2,Q2} where N2,
+}
+    if D1 == D2 && constructorof(Q1) == constructorof(Q2)
+        return (q1, q2)
+    end
+    Q = promote_type(Q1, Q2)
+    D = promote_type(D1, D2)
+
+    # Create quantity with the properly promoted dimension type
+    q1_converted = convert(with_type_parameters(Q, T1, D), q1)
+    # Create a promoted QuantityArray
+    d2 = convert(with_type_parameters(Q, T2, D), new_quantity(Q, one(T2), dimension(q2)))
+    q2_converted = QuantityArray(ustrip(q2), d2)
+
+    return (q1_converted, q2_converted)
+end
+
 function Base.convert(::Type{QA}, A::QA) where {QA<:QuantityArray}
     return A
 end
@@ -125,6 +144,11 @@ end
 
 @inline ustrip(A::QuantityArray) = A.value
 @inline ustrip(A::AbstractArray{<:UnionAbstractQuantity}) = ustrip.(A)
+@inline function ustrip(unit::UnionAbstractQuantity, q::QuantityArray)
+    unit, q = promote_except_value(unit, q)
+    dimension(unit) == dimension(q) || throw(DimensionError(unit, q))
+    return ustrip(q) ./ ustrip(unit)
+end
 @inline dimension(A::QuantityArray) = A.dimensions
 
 array_type(::Type{<:QuantityArray{T,N,D,Q,V}}) where {T,N,D,Q,V} = V
@@ -326,7 +350,7 @@ Base.fill(x::UnionAbstractQuantity, t::Tuple{}) = QuantityArray(fill(ustrip(x), 
 
 # Will be overloaded by `DynamicQuantitiesLinearAlgebraExt`:
 function norm end
-is_ext_loaded(::Val) = false
+is_ext_loaded(::Val) = false  # COV_EXCL_LINE
 
 # Define isapprox for vectors of Quantity's
 struct AutoTolerance end

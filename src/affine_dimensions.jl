@@ -114,3 +114,30 @@ function aff_uparse(s::AbstractString)
     ex = AffineUnits.map_to_scope(Meta.parse(s))
     return eval(ex)::AffineUnit{DEFAULT_DIM_BASE_TYPE}
 end
+
+"""
+    ustrip(unit::AffineUnit, q::UnionAbstractQuantity)
+
+Convert a quantity `q` to the numerical value in terms of affine units specified by `unit`,
+then strip the units. This allows getting the numerical value in terms of degrees Celsius or Fahrenheit.
+
+# Examples
+```julia
+julia> ustrip(ua"degC", 27ua"degC")
+27.0
+
+julia> ustrip(ua"degF", 300u"K")
+80.33000000000003
+```
+"""
+function ustrip(unit::AffineUnit, q::UnionAbstractQuantity)
+    q_promoted = _promote_quantity_for_affine(unit, q)
+    unit.basedim == dimension(q_promoted) || throw(DimensionError(unit, q_promoted))
+    return (ustrip(q_promoted) - unit.offset) / unit.scale
+end
+
+function _promote_quantity_for_affine(unit::AffineUnit, q::UnionAbstractQuantity{T,D}) where {T,D}
+    D_new = promote_type(D, typeof(unit.basedim))
+    Q_new = with_type_parameters(typeof(q), T, D_new)
+    return convert(Q_new, q)
+end

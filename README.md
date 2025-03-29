@@ -163,11 +163,24 @@ julia> ulength(x)
 ```
 
 Finally, you can strip units with `ustrip`:
-    
+
 ```julia
 julia> ustrip(x)
 0.2
 ```
+
+You can also convert a quantity to a desired unit and *then* strip the units
+using a two-argument version of `ustrip`:
+
+```julia
+julia> ustrip(u"km", 1000u"m")
+1.0
+
+julia> ustrip(u"minute", 60u"s")
+1.0
+```
+
+This is equivalent to `ustrip(quantity / unit)` but performs dimension checks first.
 
 ### Constants
 
@@ -296,6 +309,16 @@ julia> room_temp = 22ua"degC"
 
 julia> freezing = 32ua"degF"
 273.15 K
+```
+
+These are regular `Quantity{Float64,Dimensions{...}}` objects, meaning that you
+can use them in the same way as regular quantities, including taking differences.
+
+To convert back, you can use the two-argument `ustrip` with the particular affine unit:
+
+```julia
+julia> ustrip(ua"degC", 295.15u"K")
+22.0
 ```
 
 ### Arrays
@@ -439,3 +462,4 @@ julia> @btime f($q8);
 julia> @btime f($q32);
   1.883 μs (4 allocations: 39.12 KiB)
 ```
+
