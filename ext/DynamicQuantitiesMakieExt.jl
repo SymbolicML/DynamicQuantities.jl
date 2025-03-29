@@ -20,8 +20,8 @@ function unit_convert(quantity::UnionAbstractQuantity, x::AbstractArray)
 end
 
 function unit_convert(quantity::UnionAbstractQuantity, value)
-    conv = value / quantity
-    return Float64(ustrip(conv))
+    conv = ustrip(quantity, value)
+    return Float64(conv)
 end
 
 # TODO: Maybe only allow symbolic units to avoid bugs?
