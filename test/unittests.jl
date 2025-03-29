@@ -2089,6 +2089,15 @@ end
     @test sprint(show, °C) == "°C"
 
     @test sprint(show, °F) == "°F"
+    
+    # Test the two-argument ustrip method with AffineUnit
+    @test ustrip(ua"degC", 273.15u"K") ≈ 0.0
+    @test ustrip(ua"degC", 300.15u"K") ≈ 27.0
+    @test ustrip(ua"degF", 273.15u"K") ≈ 32.0
+    @test ustrip(ua"degF", 300.15u"K") ≈ 80.6
+    @test ustrip(ua"degC", 22ua"degC") ≈ 22.0
+    @test ustrip(ua"degF", 22ua"degC") ≈ 71.6
+    @test_throws DimensionError ustrip(ua"degC", 1.0u"m")
 end
 
 @testset "Test div" begin
