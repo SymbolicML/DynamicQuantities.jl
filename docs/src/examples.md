@@ -40,13 +40,13 @@ Also, using `DynamicQuantities.Constants`, we were able to obtain the (dimension
 Let's solve a simple projectile motion problem.
 First load the `DynamicQuantities` module:
 
-```julia
+```@example projectile
 using DynamicQuantities
 ```
 
 Set up initial conditions as quantities:
 
-```julia
+```@example projectile
 # Can explicitly import units:
 using DynamicQuantities: km, m, s, min
 
@@ -54,39 +54,44 @@ y0 = 10km
 v0 = 250m/s
 θ = deg2rad(60)
 g = 9.81m/s^2
+nothing # hide
 ```
 
 Next, we use trig functions to calculate x and y components of initial velocity.
 `vx0` is the x component and
 `vy0` is the y component:
 
-```julia
+```@example projectile
 vx0 = v0 * cos(θ)
 vy0 = v0 * sin(θ)
+nothing # hide
 ```
 
 Next, let's create a time vector from 0 seconds to 1.3 minutes.
 Note that these are the same dimension (time), so it's fine to treat
 them as dimensionally equivalent!
 
-```julia
+```@example projectile
 t = range(0s, 1.3min, length=100)
+nothing # hide
 ```
 
 Next, use kinematic equations to calculate x and y as a function of time.
 `x(t)` is the x position at time t, and
 `y(t)` is the y position:
 
-```julia
+```@example projectile
 x(t) = vx0*t
 y(t) = vy0*t - 0.5*g*t^2 + y0
+nothing # hide
 ```
 
 These are functions, so let's evaluate them:
 
-```julia
+```@example projectile
 x_si = x.(t)
 y_si = y.(t)
+nothing # hide
 ```
 
 These are regular vectors of quantities
@@ -105,6 +110,8 @@ Now, we plot:
 ```julia
 plot(x_km, y_km, label="Trajectory", xlabel="x [km]", ylabel="y [km]")
 ```
+
+See [Plotting](@ref) for more plotting support with units.
 
 ## 3. Using dimensional angles
 
@@ -508,29 +515,55 @@ end
 
 ### Plotting
 
-!!! warn "Experimental"
+We can use [`Makie.jl`](https://docs.makie.org/v0.22/) to create plots with units. Below are a few usage examples. See [Makie.jl > Dimension conversion](https://docs.makie.org/stable/explanations/dim-converts#Current-conversions-in-Makie) for more.
 
-We can also use `DynamicQuantities.jl` for plotting with units in [`Makie.jl`](https://docs.makie.org/v0.22/).
+!!! warning "Experimental"
+    Unit support is still a new feature, so please report an issue if you notice any unintended behavior.
 
-```julia
-using CairoMakie, DynamicQuantities
 
+Continuing from [2. Projectile motion](@ref), we can also plot `x_si` and `y_si` directly without needing to manually strip their units beforehand:
+
+```@example projectile
+using CairoMakie
+
+lines(x_si, y_si; axis=(xlabel="x", ylabel="y"))
+```
+
+To convert units, we pass a `DQConversion` object to `axis` with our desired unit:
+
+```@example projectile
 # Temporary until this is upstreamed to Makie.jl
 const DQConversion = Base.get_extension(DynamicQuantities, :DynamicQuantitiesMakieExt).DQConversion
 
-scatter((6:10)u"m")
-
-# Note use of `us""` instead of `u""`
-scatter((6:10)u"m"; axis=(; dim2_conversion=DQConversion(us"cm")))
+lines(x_si, y_si;
+    axis = (
+        xlabel = "x",
+        ylabel = "y",
+        dim1_conversion = DQConversion(us"km"),
+        dim2_conversion = DQConversion(us"km"),
+    )
+)
 ```
 
-```julia
+!!! warning
+    Make sure to use [Symbolic Dimensions](@ref) for this conversion to work properly.
+
+Finally, the desired units for a figure can also be set ahead of time. All plot objects within it will automatically convert to the given units:
+
+```@example projectile
 fig = Figure()
 
-ax = Axis(fig[1, 1]; dim2_conversion=DQConversion(us"m"))
+ax = Axis(fig[1, 1];
+    xlabel = "time",
+    ylabel = "displacement",
+    dim1_conversion=DQConversion(us"s"),
+    dim2_conversion=DQConversion(us"km"),
+)
 
-scatter!(ax, (6:10)u"m")
-scatter!(ax, (6:10)u"km")
+lines!(ax, t, x_si; label="x")
+lines!(ax, t, y_si; label="y")
+
+axislegend()
 
 fig
 ```
