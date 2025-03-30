@@ -66,12 +66,16 @@ function M.convert_dim_value(conversion::DQConversion, values)
     return unit_convert(conversion.quantity[], values)
 end
 
-@testitem "conversion" begin
+@testitem "1 arg expansion" begin
     using DynamicQuantities, Makie, Dates
-    const DQConversion = Base.get_extension(DynamicQuantities, :DynamicQuantitiesMakieExt).DQConversion
 
     f, ax, pl = scatter(u"m" .* (1:10))
     @test pl isa Scatter{Tuple{Vector{Point2{Float64}}}}
+end
+
+@testitem "recipe" begin
+    using DynamicQuantities, Makie, Dates
+    const DQConversion = Base.get_extension(DynamicQuantities, :DynamicQuantitiesMakieExt).DQConversion
 
     @recipe(DQPlot, x) do scene
         return Attributes()
@@ -89,6 +93,27 @@ end
     @test pl_conversion[2] isa DQConversion
     @test ax_conversion[2] isa DQConversion
     @test pl.plots[1][1][] == Point{2,Float32}.(1:5, 1:5)
+end
+
+@testitem "unit switching" begin
+    using DynamicQuantities, Makie
+    f, ax, pl = scatter((1:10)u"m")
+    @test_throws DynamicQuantities.DimensionError scatter!(ax, (1:10)u"kg")
+    @test_throws MethodError scatter!(ax, (1:10))
+end
+
+@testitem "observables cleanup" begin
+    using DynamicQuantities, Makie
+
+    function test_cleanup(arg)
+        obs = Observable(arg)
+        f, ax, pl = scatter(obs)
+        @test length(obs.listeners) == 1
+        delete!(ax, pl)
+        @test length(obs.listeners) == 0
+    end
+
+     test_cleanup([0.01u"km", 0.02u"km", 0.03u"km", 0.04u"km"])
 end
 
 end
