@@ -16,7 +16,10 @@ function unit_convert(::M.Automatic, x)
 end
 
 function unit_convert(quantity::UnionAbstractQuantity, x::AbstractArray)
-    unit_convert.(Ref(quantity), x)
+    # Note: unit_convert.(Ref(quantity), x) currently causes broadcasting error for `QuantityArray`s
+    map(x) do xi
+        unit_convert(quantity, xi)
+    end
 end
 
 function unit_convert(quantity::UnionAbstractQuantity, value)
@@ -71,6 +74,7 @@ end
 function M.convert_dim_observable(conversion::DQConversion, value_obs::M.Observable, deregister)
     # TODO: replace with update_extrema
     if conversion.automatic_units
+        @info :wuuh value_obs[]
         conversion.quantity[] = oneunit(value_obs[][1])
     end
     result = map(conversion.quantity, value_obs; ignore_equal_values=true) do unit, values
