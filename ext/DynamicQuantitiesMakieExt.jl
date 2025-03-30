@@ -25,6 +25,26 @@ function unit_convert(quantity::UnionAbstractQuantity, value)
 end
 
 # TODO: Maybe only allow symbolic units to avoid bugs?
+"""
+    DQConversion(unit=automatic; units_in_label=false)
+Allows to plot arrays of DynamicQuantity objects into an axis.
+# Arguments
+- `unit=automatic`: sets the unit as conversion target. If left at automatic, the best unit will be chosen for all plots + values plotted to the axis (e.g. years for long periods, or km for long distances, or nanoseconds for short times).
+- `units_in_label=true`: controls, whether plots are shown in the label_prefix of the axis labels, or in the tick labels
+# Examples
+```julia
+using DynamicQuantities, CairoMakie
+# DQConversion will get chosen automatically:
+scatter(1:4, [1u"ns", 2u"ns", 3u"ns", 4u"ns"])
+```
+Fix unit to always use Meter & display unit in the xlabel:
+```julia
+# Temporary until this is upstreamed to Makie.jl
+const DQConversion = Base.get_extension(DynamicQuantities, :DynamicQuantitiesMakieExt).DQConversion
+dqc = DQConversion(us"m"; units_in_label=false)
+scatter(1:4, [0.01u"km", 0.02u"km", 0.03u"km", 0.04u"km"]; axis=(dim2_conversion=dqc, xlabel="x (km)"))
+```
+"""
 struct DQConversion <: M.AbstractDimConversion
     quantity::M.Observable{Any}
     automatic_units::Bool
