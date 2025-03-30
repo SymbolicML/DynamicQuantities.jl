@@ -74,7 +74,6 @@ end
 function M.convert_dim_observable(conversion::DQConversion, value_obs::M.Observable, deregister)
     # TODO: replace with update_extrema
     if conversion.automatic_units
-        @info :wuuh value_obs[]
         conversion.quantity[] = oneunit(value_obs[][1])
     end
     result = map(conversion.quantity, value_obs; ignore_equal_values=true) do unit, values

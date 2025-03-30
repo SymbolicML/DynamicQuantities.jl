@@ -567,3 +567,6 @@ axislegend()
 
 fig
 ```
+
+!!! tip
+    For nice unit support with Makie.jl and tabular data, see [AlgebraOfGraphics.jl > Units](https://aog.makie.org/dev/examples/scales/units#units).
