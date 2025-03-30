@@ -62,7 +62,10 @@ function M.get_ticks(conversion::DQConversion, ticks, scale, formatter, vmin, vm
     quantity isa M.Automatic && return [], []
     unit_str = unit_string(quantity)
     tick_vals, labels = M.get_ticks(ticks, scale, formatter, vmin, vmax)
-    return tick_vals, labels .* unit_str
+    if conversion.units_in_label[]
+        labels = labels .* unit_str
+    end
+    return tick_vals, labels
 end
 
 function M.convert_dim_observable(conversion::DQConversion, value_obs::M.Observable, deregister)
