@@ -139,4 +139,23 @@ end
      test_cleanup([0.01u"km", 0.02u"km", 0.03u"km", 0.04u"km"])
 end
 
+# TODO: Move upstream to Makie.jl
+@testitem "reftest" begin
+    using DynamicQuantities, Makie
+    const DQConversion = Base.get_extension(DynamicQuantities, :DynamicQuantitiesMakieExt).DQConversion
+
+    fig = Figure()
+
+    ax1 = Axis(fig[1, 1]; dim2_conversion=DQConversion(us"J/s"))
+    ax2 = Axis(fig[1, 2]; dim2_conversion=DQConversion(us"mm/m^2"))
+    ax3 = Axis(fig[2, 1]; dim1_conversion=DQConversion(us"W/m^2"), dim2_conversion=DQConversion(us"μm"))
+    ax4 = Axis(fig[2, 2]; dim1_conversion=DQConversion(us"W/m^2"))
+
+    scatter!(ax1, (1:10) .* u"J/s")
+    scatter!(ax2, (1:10) .* u"K", exp.(1:10) .* u"mm/m^2")
+    scatter!(ax3, 10 .^ (1:6) .* u"W/m^2", (1:6) .* 1000 .* u"nm")
+    scatter!(ax4, (0:10) .* u"W/m^2", (0:10) .* u"g")
+    scatter!(ax4, (0:10) .* u"kW/m^2", (0:10) .* u"kg")
+end
+
 end
