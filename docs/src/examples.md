@@ -512,14 +512,12 @@ function my_func(x::UnionAbstractQuantity{T,D}) where {T,D}
 end
 ```
 
-
 ### Plotting
 
 We can use [`Makie.jl`](https://docs.makie.org/v0.22/) to create plots with units. Below are a few usage examples. See [Makie.jl > Dimension conversion](https://docs.makie.org/stable/explanations/dim-converts#Current-conversions-in-Makie) for more.
 
 !!! warning "Experimental"
     Unit support is still a new feature, so please report an issue if you notice any unintended behavior.
-
 
 Continuing from [2. Projectile motion](@ref), we can also plot `x_si` and `y_si` directly without needing to manually strip their units beforehand:
 
