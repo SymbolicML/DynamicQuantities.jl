@@ -56,7 +56,7 @@ deploydocs(;
     devbranch="main"
 )
 
- Mirror to DAMTP:
+# Mirror to DAMTP:
 ENV["DOCUMENTER_KEY"] = ENV["DOCUMENTER_KEY_CAM"]
 ENV["GITHUB_REPOSITORY"] = "ai-damtp-cam-ac-uk/dynamicquantities.git"
 deploydocs(;
