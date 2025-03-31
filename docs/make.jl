@@ -6,27 +6,27 @@ using Documenter
 DocMeta.setdocmeta!(DynamicQuantities, :DocTestSetup, :(using DynamicQuantities); recursive=true)
 doctest(DynamicQuantities)
 
-#readme = open(dirname(@__FILE__) * "/../README.md") do io
-#    read(io, String)
-#end
-#
-## We replace every instance of <img src="IMAGE" ...> with ![](IMAGE).
-#readme = replace(readme, r"<img src=\"([^\"]+)\"[^>]+>.*" => s"![](\1)")
-#
-## Then, we remove any line with "<div" on it:
-#readme = replace(readme, r"<[/]?div.*" => s"")
-#
-## Finally, we read in file docs/src/index_base.md:
-#index_base = open(dirname(@__FILE__) * "/src/index_base.md") do io
-#    read(io, String)
-#end
-#
-## And then we create "/src/index.md":
-#open(dirname(@__FILE__) * "/src/index.md", "w") do io
-#    write(io, readme)
-#    write(io, "\n")
-#    write(io, index_base)
-#end
+readme = open(dirname(@__FILE__) * "/../README.md") do io
+    read(io, String)
+end
+
+# We replace every instance of <img src="IMAGE" ...> with ![](IMAGE).
+readme = replace(readme, r"<img src=\"([^\"]+)\"[^>]+>.*" => s"![](\1)")
+
+# Then, we remove any line with "<div" on it:
+readme = replace(readme, r"<[/]?div.*" => s"")
+
+# Finally, we read in file docs/src/index_base.md:
+index_base = open(dirname(@__FILE__) * "/src/index_base.md") do io
+    read(io, String)
+end
+
+# And then we create "/src/index.md":
+open(dirname(@__FILE__) * "/src/index.md", "w") do io
+    write(io, readme)
+    write(io, "\n")
+    write(io, index_base)
+end
 
 makedocs(;
     modules=[DynamicQuantities, DynamicQuantities.Units],
@@ -51,15 +51,15 @@ makedocs(;
     warnonly = [:missing_docs]
 )
 
-#deploydocs(;
-#    repo="github.com/SymbolicML/DynamicQuantities.jl",
-#    devbranch="main"
-#)
+deploydocs(;
+    repo="github.com/SymbolicML/DynamicQuantities.jl",
+    devbranch="main"
+)
 
-# Mirror to DAMTP:
-#ENV["DOCUMENTER_KEY"] = ENV["DOCUMENTER_KEY_CAM"]
-#ENV["GITHUB_REPOSITORY"] = "ai-damtp-cam-ac-uk/dynamicquantities.git"
-#deploydocs(;
-#    repo="github.com/ai-damtp-cam-ac-uk/dynamicquantities.git",
-#    devbranch="main"
-#)
+ Mirror to DAMTP:
+ENV["DOCUMENTER_KEY"] = ENV["DOCUMENTER_KEY_CAM"]
+ENV["GITHUB_REPOSITORY"] = "ai-damtp-cam-ac-uk/dynamicquantities.git"
+deploydocs(;
+    repo="github.com/ai-damtp-cam-ac-uk/dynamicquantities.git",
+    devbranch="main"
+)
