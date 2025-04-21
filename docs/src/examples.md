@@ -112,7 +112,7 @@ Say that we wish to track angles as a unit, rather than assume
 the SI convention that `1 rad = 1`. We can do this by creating
 a new struct to track dimensions:
 
-```julia
+```@example dimensional-angle
 using DynamicQuantities
 
 struct AngleDimensions{R} <: AbstractDimensions{R}
@@ -130,15 +130,14 @@ end
 Simply by inheriting from `AbstractDimensions`, we get all the
 constructors and operations as defined on `Dimensions`:
 
-```julia
-julia> x = Quantity(1.0, AngleDimensions(length=1, angle=-1))
-1.0 m angle⁻¹
+```@repl dimensional-angle
+x = Quantity(1.0, AngleDimensions(length=1, angle=-1))
 ```
 
 However, perhaps we want to set the default `angle` dimension as
 `rad`. We can do this by defining a method for `dimension_name`:
 
-```julia
+```@example dimensional-angle
 import DynamicQuantities: DynamicQuantities as DQ
 
 function DQ.dimension_name(::AngleDimensions, k::Symbol)
@@ -154,13 +153,13 @@ function DQ.dimension_name(::AngleDimensions, k::Symbol)
     )
     return get(default_dimensions, k, string(k))
 end
+nothing # hide
 ```
 
 This gives us the following behavior:
 
-```julia
-julia> x = Quantity(1.0, AngleDimensions(length=1, angle=-1))
-1.0 m rad⁻¹
+```@repl dimensional-angle
+x = Quantity(1.0, AngleDimensions(length=1, angle=-1))
 ```
 
 Next, say that we are working with existing quantities defined using
@@ -169,7 +168,7 @@ standard `Dimensions`. We want to promote these to our new `AngleDimensions` typ
 For this, we define two functions: `promote_rule` and a constructor for `AngleDimensions`
 from regular `Dimensions`:
 
-```julia
+```@example dimensional-angle
 function Base.promote_rule(::Type{AngleDimensions{R1}}, ::Type{Dimensions{R2}}) where {R1,R2}
     return AngleDimensions{promote_type(R1, R2)}
 end
@@ -183,6 +182,7 @@ function Base.convert(::Type{Quantity{T,AngleDimensions{R}}}, q::Quantity{<:Any,
         )
     )
 end
+nothing # hide
 ```
 
 This means that whenever a `Quantity{<:Any,<:Dimensions}`
@@ -194,22 +194,16 @@ tracked.)
 
 Let's define a constant for `rad`:
 
-```julia
-julia> const rad = Quantity(1.0, AngleDimensions(angle = 1))
-1.0 rad
+```@repl dimensional-angle
+const rad = Quantity(1.0, AngleDimensions(angle = 1))
 ```
 
 and use it in a calculation:
 
-```julia
-julia> x = 2rad
-2.0 rad
-
-julia> y = 10u"min"
-600.0 s
-
-julia> angular_velocity = x / y
-0.0033333333333333335 s⁻¹ rad
+```@repl dimensional-angle
+x = 2rad
+y = 10u"min"
+angular_velocity = x / y
 ```
 
 which as we can see, automatically promotes to
