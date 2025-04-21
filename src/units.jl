@@ -147,7 +147,7 @@ end
     C,
 )
 @doc(
-    "Voltage in Volts. Available variants: `pV`, `nV`, `μV` (/`uV`), `mV`, kV`, `MV`, `GV`.",
+    "Voltage in Volts. Available variants: `pV`, `nV`, `μV` (/`uV`), `mV`, `kV`, `MV`, `GV`.",
     V,
 )
 @doc(
