@@ -40,6 +40,7 @@ makedocs(;
         edit_link="main",
         assets=String[]
     ),
+    doctest = false,
     pages=[
         "Home" => "index.md",
         "Examples" => "examples.md",
