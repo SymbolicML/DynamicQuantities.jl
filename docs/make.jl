@@ -5,7 +5,6 @@ using Documenter
 using Documenter.Remotes: GitHub
 
 DocMeta.setdocmeta!(DynamicQuantities, :DocTestSetup, :(using DynamicQuantities); recursive=true)
-doctest(DynamicQuantities)
 
 readme = open(dirname(@__FILE__) * "/../README.md") do io
     read(io, String)
@@ -40,7 +39,6 @@ makedocs(;
         edit_link="main",
         assets=String[]
     ),
-    doctest = false,
     pages=[
         "Home" => "index.md",
         "Examples" => "examples.md",
