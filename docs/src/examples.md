@@ -152,8 +152,7 @@ function DQ.dimension_name(::AngleDimensions, k::Symbol)
         angle = "rad",
     )
     return get(default_dimensions, k, string(k))
-end
-nothing # hide
+end;
 ```
 
 This gives us the following behavior:
@@ -181,8 +180,7 @@ function Base.convert(::Type{Quantity{T,AngleDimensions{R}}}, q::Quantity{<:Any,
             d.length, d.mass, d.time, d.current, d.temperature, d.luminosity, d.amount, angle=zero(R)
         )
     )
-end
-nothing # hide
+end;
 ```
 
 This means that whenever a `Quantity{<:Any,<:Dimensions}`
