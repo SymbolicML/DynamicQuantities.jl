@@ -26,7 +26,7 @@ DynamicQuantitiesUnitfulExt = "Unitful"
 [compat]
 DispatchDoctor = "0.4"
 LinearAlgebra = "1"
-Makie = "0.22.2"
+Makie = ">= 0.21.0"
 Measurements = "2"
 PrecompileTools = "1"
 ScientificTypes = "3"
