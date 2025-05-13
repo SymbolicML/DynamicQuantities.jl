@@ -543,8 +543,8 @@ lines(x_si, y_si;
 )
 ```
 
-!!! warning
-    Make sure to use [Symbolic Dimensions](@ref) for this conversion to work properly.
+!!! note
+    A [Symbolic Dimensions](@ref) object is passed to `DQConversion` for this conversion to work properly. Passing a regular `Quantity`, e.g., (u"km") will throw an error.
 
 Finally, the desired units for a figure can also be set ahead of time. All plot objects within it will automatically convert to the given units:
 

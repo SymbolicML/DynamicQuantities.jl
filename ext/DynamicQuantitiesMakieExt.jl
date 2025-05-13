@@ -1,6 +1,6 @@
 module DynamicQuantitiesMakieExt
 
-using DynamicQuantities: UnionAbstractQuantity, ustrip, dimension
+using DynamicQuantities: UnionAbstractQuantity, SymbolicDimensions, ustrip, dimension
 using TestItems: @testitem
 
 import Makie as M
@@ -25,7 +25,6 @@ function unit_convert(quantity::UnionAbstractQuantity, value)
     return Float64(conv)
 end
 
-# TODO: Maybe only allow symbolic units to avoid bugs?
 """
     DQConversion(unit=automatic; units_in_label=false)
 
@@ -40,7 +39,7 @@ Allows to plot arrays of DynamicQuantity objects into an axis.
 ```julia
 using DynamicQuantities, CairoMakie
 
-# DQConversion will get chosen automatically:
+# DQConversion will get chosen automatically,
 scatter(1:4, [1u"ns", 2u"ns", 3u"ns", 4u"ns"])
 ```
 
@@ -56,7 +55,7 @@ scatter(1:4, [0.01u"km", 0.02u"km", 0.03u"km", 0.04u"km"]; axis=(dim2_conversion
 ```
 """
 struct DQConversion <: M.AbstractDimConversion
-    quantity::M.Observable{Any}
+    quantity::M.Observable{UnionAbstractQuantity{T1, SymbolicDimensions{T2}} where {T1 <: Real, T2 <: Real}}
     automatic_units::Bool
     units_in_label::M.Observable{Bool}
 end
