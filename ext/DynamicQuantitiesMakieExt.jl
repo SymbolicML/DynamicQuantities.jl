@@ -17,9 +17,7 @@ end
 
 function unit_convert(quantity::UnionAbstractQuantity, x::AbstractArray)
     # Note: unit_convert.(Ref(quantity), x) currently causes broadcasting error for `QuantityArray`s
-    map(x) do xi
-        unit_convert(quantity, xi)
-    end
+    map(Base.Fix1(unit_convert, quantity), x)
 end
 
 function unit_convert(quantity::UnionAbstractQuantity, value)
