@@ -22,7 +22,7 @@ end
 
 function unit_convert(quantity::UnionAbstractQuantity, value)
     conv = ustrip(quantity, value)
-    return Float64(conv)
+    return float(conv)
 end
 
 """
@@ -55,7 +55,7 @@ scatter(1:4, [0.01u"km", 0.02u"km", 0.03u"km", 0.04u"km"]; axis=(dim2_conversion
 ```
 """
 struct DQConversion <: M.AbstractDimConversion
-    quantity::M.Observable{UnionAbstractQuantity{T1, SymbolicDimensions{T2}} where {T1 <: Real, T2 <: Real}}
+    quantity::M.Observable{Any}
     automatic_units::Bool
     units_in_label::M.Observable{Bool}
 end
@@ -99,7 +99,7 @@ function M.convert_dim_value(conversion::DQConversion, values)
 end
 
 @testitem "1 arg expansion" begin
-    using DynamicQuantities, Makie, Dates
+    using DynamicQuantities, Makie
 
     f, ax, pl = scatter(u"m" .* (1:10))
     @test pl isa Scatter{Tuple{Vector{Point2{Float64}}}}
