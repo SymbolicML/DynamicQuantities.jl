@@ -8,8 +8,11 @@ permissions:
 jobs:
   bench:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        julia-version: ["1", "1.10"]
     steps:
       - uses: MilesCranmer/AirspeedVelocity.jl@action-overhaul
         with:
-          julia-version: '1'
+          julia-version: ${{ matrix.julia-version }}
           exeflags: '-O3'
