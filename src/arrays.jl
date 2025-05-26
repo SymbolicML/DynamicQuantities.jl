@@ -16,30 +16,41 @@ and so can be used in most places where a normal array would be used, including 
 
 - `QuantityArray(v::AbstractArray, d::AbstractDimensions)`: Create a `QuantityArray` with value `v` and dimensions `d`,
   using `Quantity` if the eltype of `v` is numeric, and `GenericQuantity` otherwise.
+
 - `QuantityArray(v::AbstractArray{<:Number}, q::AbstractQuantity)`: Create a `QuantityArray` with value `v` and dimensions inferred
-   with `dimension(q)`. This is so that you can easily create an array with the units module, like so:
-   ```julia
-   julia> A = QuantityArray(randn(32), 1u"m")
-   ```
+  with `dimension(q)`. This is so that you can easily create an array with the units module, like so:
+
+  ```julia
+  A = QuantityArray(randn(32), 1u"m")
+  ```
+
 - `QuantityArray(v::AbstractArray{<:Any}, q::AbstractGenericQuantity)`: Create a `QuantityArray` with
-    value `v` and dimensions inferred with `dimension(q)`.
-    This is so that you can easily create quantity arrays of non-numeric eltypes, like so:
-   ```julia
-   julia> A = QuantityArray([[1.0], [2.0, 3.0]], GenericQuantity(1u"m"))
-   ```
+  value `v` and dimensions inferred with `dimension(q)`.
+  This is so that you can easily create quantity arrays of non-numeric eltypes, like so:
+
+  ```julia
+  A = QuantityArray([[1.0], [2.0, 3.0]], GenericQuantity(1u"m"))
+  ```
+
 - `QuantityArray(v::AbstractArray{<:UnionAbstractQuantity})`: Create a `QuantityArray` from an array of quantities. This means the following
   syntax works:
+
   ```julia
-  julia> A = QuantityArray(randn(32) .* 1u"km/s")
+  A = QuantityArray(randn(32) .* 1u"km/s")
   ```
+
 - `QuantityArray(v::AbstractArray; kws...)`: Create a `QuantityArray` with dimensions inferred from the keyword arguments. For example:
+
   ```julia
-  julia> A = QuantityArray(randn(32); length=1)
+  A = QuantityArray(randn(32); length=1)
   ```
+
   is equivalent to
+
   ```julia
-  julia> A = QuantityArray(randn(32), u"m")
+  A = QuantityArray(randn(32), u"m")
   ```
+
   The keyword arguments are passed to `DEFAULT_DIM_TYPE`.
 """
 struct QuantityArray{T,N,D<:AbstractDimensions,Q<:UnionAbstractQuantity{T,D},V<:AbstractArray{T,N}} <: AbstractArray{Q,N}
@@ -480,7 +491,7 @@ end
         for dim1 in ((3,), (3, 3)), dim2 in ((3,), (3, 3))
             A = QuantityArray(rand(T, dim1...), Q{T}(u"m"))
             B = QuantityArray(rand(T, dim2...), Q{T}(u"s^2"))
-            
+
             if dim1 == (3,) && dim2 == (3,)
                 @test ustrip(A / B) ≈ ustrip(A) / ustrip(B)
                 @test dimension(A / B) == dimension(A) / dimension(B)
