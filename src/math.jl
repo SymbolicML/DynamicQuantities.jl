@@ -49,6 +49,11 @@ for (type, base_type, _) in ABSTRACT_QUANTITY_TYPES
         function Base.:/(l::AbstractDimensions, r::$type)
             new_quantity(typeof(r), inv(ustrip(r)), l / dimension(r))
         end
+
+        # Defining here instead of outside loop with UnionAbstractQuantity to avoid method ambiguities
+        Base.:*(A::AbstractArray, q::$type) = QuantityArray(A, q)
+        Base.:*(q::$type, A::AbstractArray) = A * q
+        Base.:/(A::AbstractArray, q::$type) = A * inv(q)
     end
 end
 
