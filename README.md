@@ -364,6 +364,22 @@ julia> @btime $f.(qa) setup=(xa = randn(100000) .* u"km/s"; qa = QuantityArray(x
 
 So we can see the `QuantityArray` version saves on both time and memory.
 
+By default, DynamicQuantities will create a `QuantityArray` from an `AbstractArray`, similarly to how a `Quantity` is created from a scalar in the [Usage](@ref) examples:
+
+```@repl quantity-array
+using DynamicQuantities # hide
+
+x = [0.3, 0.4, 0.5]u"km/s"
+
+y = (42:45) * u"kg"
+```
+
+This can be overridden to produce a vector of `Quantity`s by explicitly broadcasting the unit:
+
+```@repl quantity-array
+z = [0.3, 0.4, 0.5] .* u"km/s"
+```
+
 ### Unitful
 
 DynamicQuantities allows you to convert back and forth from Unitful.jl:
