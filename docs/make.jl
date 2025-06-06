@@ -2,9 +2,9 @@ using DynamicQuantities
 using DynamicQuantities.Units
 using DynamicQuantities: constructorof, with_type_parameters, dimension_names
 using Documenter
+using Documenter.Remotes: GitHub
 
 DocMeta.setdocmeta!(DynamicQuantities, :DocTestSetup, :(using DynamicQuantities); recursive=true)
-doctest(DynamicQuantities)
 
 readme = open(dirname(@__FILE__) * "/../README.md") do io
     read(io, String)
@@ -31,7 +31,7 @@ end
 makedocs(;
     modules=[DynamicQuantities, DynamicQuantities.Units],
     authors="MilesCranmer <miles.cranmer@gmail.com> and contributors",
-    repo="https://github.com/SymbolicML/DynamicQuantities.jl/blob/{commit}{path}#{line}",
+    repo=GitHub("SymbolicML/DynamicQuantities.jl"),
     sitename="DynamicQuantities.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
