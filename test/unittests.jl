@@ -265,6 +265,7 @@ end
 end
 
 @testset "Arrays" begin
+    T_QA_GenericQuantity(T, N) = QuantityArray{T, N, D, Q, V} where {T, D<:Dimensions, Q<:UnionAbstractQuantity, V<:AbstractArray{T, N}}
     for T in [Float16, Float32, Float64], R in [Rational{Int16}, Rational{Int32}, SimpleRatio{Int}, SimpleRatio{SafeInt16}]
         D = Dimensions{R}
 
@@ -288,9 +289,9 @@ end
         @test ustrip(x + ones(T, 32))[32] == 2
         @test typeof(x + ones(T, 32)) <: GenericQuantity{Vector{T}}
         @test typeof(x - ones(T, 32)) <: GenericQuantity{Vector{T}}
-        @test typeof(ones(T, 32) * GenericQuantity(T(1), D, length=1)) <: GenericQuantity{Vector{T}}
-        @test typeof(ones(T, 32) / GenericQuantity(T(1), D, length=1)) <: GenericQuantity{Vector{T}}
-        @test ones(T, 32) / GenericQuantity(T(1), length=1) == GenericQuantity(ones(T, 32), length=-1)
+        @test typeof(ones(T, 32) * GenericQuantity(T(1), D, length=1)) <: T_QA_GenericQuantity(T, 1)
+        @test typeof(ones(T, 32) / GenericQuantity(T(1), D, length=1)) <: T_QA_GenericQuantity(T, 1)
+        @test ones(T, 32) / GenericQuantity(T(1), length=1) == QuantityArray(ones(T, 32), GenericQuantity(T(1), length=-1))
     end
 
     @testset "isapprox" begin
@@ -395,9 +396,11 @@ end
     end
 
     @testset "Multiplying ranges with units" begin
+        T_QA_StepRangeLen = QuantityArray{T, 1, D, Q, V} where {T, D<:Dimensions, Q<:UnionAbstractQuantity, V<:StepRangeLen}
+        T_QA_s_StepRangeLen = QuantityArray{T, 1, D, Q, V} where {T, D<:SymbolicDimensions, Q<:UnionAbstractQuantity, V<:StepRangeLen}
         # Test multiplying ranges with units
         x = (1:0.25:4)u"inch"
-        @test x isa StepRangeLen
+        @test x isa T_QA_StepRangeLen
         @test first(x) == 1u"inch"
         @test x[2] == 1.25u"inch"
         @test last(x) == 4u"inch"
@@ -405,7 +408,7 @@ end
 
         # Integer range (but real-valued unit)
         x = (1:4)u"inch"
-        @test x isa StepRangeLen
+        @test x isa T_QA_StepRangeLen
         @test first(x) == 1u"inch"
         @test x[2] == 2u"inch"
         @test last(x) == 4u"inch"
@@ -414,7 +417,7 @@ end
 
         # Test with floating point range
         x = (1.0:0.5:3.0)u"m"
-        @test x isa StepRangeLen
+        @test x isa T_QA_StepRangeLen
         @test first(x) == 1.0u"m"
         @test x[2] == 1.5u"m"
         @test last(x) == 3.0u"m"
@@ -427,7 +430,7 @@ end
 
         # Test with symbolic units
         x = (1:0.25:4)us"inch"
-        @test x isa StepRangeLen{<:Quantity{Float64,<:SymbolicDimensions}}
+        @test x isa T_QA_s_StepRangeLen
         @test first(x) == us"inch"
         @test x[2] == 1.25us"inch"
         @test last(x) == 4us"inch"
@@ -435,7 +438,7 @@ end
 
         # Test that symbolic units preserve their symbolic nature
         x = (0:0.1:1)us"km/h"
-        @test x isa AbstractRange
+        @test x isa QuantityArray
         @test first(x) == 0us"km/h"
         @test x[2] == 0.1us"km/h"
         @test last(x) == 1us"km/h"
@@ -443,14 +446,14 @@ end
 
         # Similarly, integers should stay integers:
         x = (1:4)us"inch"
-        @test_skip x isa StepRangeLen{<:Quantity{Int64,<:SymbolicDimensions}}
+        @test_skip x isa T_QA_s_StepRangeLen
         @test first(x) == us"inch"
         @test x[2] == 2us"inch"
         @test last(x) == 4us"inch"
         @test length(x) == 4
 
         # With RealQuantity:
-        @test_skip (1.0:4.0) * RealQuantity(u"inch") isa StepRangeLen{<:RealQuantity{Float64,<:SymbolicDimensions}}
+        @test_skip (1.0:4.0) * RealQuantity(u"inch") isa T_QA_s_StepRangeLen
         # TODO: This is not available as TwicePrecision interacts with Real in a way
         #       that demands many other functions to be defined.
     end
