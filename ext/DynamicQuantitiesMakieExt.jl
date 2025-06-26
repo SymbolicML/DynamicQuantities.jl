@@ -7,7 +7,7 @@ import Makie as M
 
 M.expand_dimensions(::M.PointBased, y::AbstractVector{<:UnionAbstractQuantity}) = (keys(y), y)
 M.create_dim_conversion(::Type{<:UnionAbstractQuantity}) = DQConversion()
-M.MakieCore.should_dim_convert(::Type{<:UnionAbstractQuantity}) = true
+M.should_dim_convert(::Type{<:UnionAbstractQuantity}) = true
 
 unit_string(quantity::UnionAbstractQuantity) = string(dimension(quantity))
 
@@ -77,21 +77,18 @@ function M.get_ticks(conversion::DQConversion, ticks, scale, formatter, vmin, vm
     return tick_vals, labels
 end
 
-function M.convert_dim_observable(conversion::DQConversion, value_obs::M.Observable, deregister)
-    # TODO: replace with update_extrema
+function M.convert_dim_value(conversion::DQConversion, attr, values, last_values)
     if conversion.automatic_units
-        conversion.quantity[] = oneunit(value_obs[][1])
+        conversion.quantity[] = oneunit(first(values))
     end
-    result = map(conversion.quantity, value_obs; ignore_equal_values=true) do unit, values
-        if !isempty(values)
-            # try if conversion works, to through error if not!
-            # Is there a function for this to check in DynamicQuantities?
-            unit_convert(unit, values[1])
-        end
-        return M.convert_dim_value(conversion, values)
+
+    unit = conversion.quantity[]
+    if !isempty(values)
+        # try if conversion works, to through error if not!
+        # Is there a function for this to check in DynamicQuantities?
+        unit_convert(unit, first(values))
     end
-    append!(deregister, result.inputs)
-    return result
+    return unit_convert(conversion.quantity[], values)
 end
 
 function M.convert_dim_value(conversion::DQConversion, values)
@@ -109,8 +106,7 @@ end
     using DynamicQuantities, Makie, Dates
     const DQConversion = Base.get_extension(DynamicQuantities, :DynamicQuantitiesMakieExt).DQConversion
 
-    @recipe(DQPlot, x) do scene
-        return Attributes()
+    @recipe DQPlot (x, y) begin
     end
 
     function Makie.plot!(plot::DQPlot)
