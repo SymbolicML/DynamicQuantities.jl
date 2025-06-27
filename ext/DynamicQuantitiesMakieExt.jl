@@ -56,12 +56,11 @@ scatter(1:4, [0.01u"km", 0.02u"km", 0.03u"km", 0.04u"km"]; axis=(dim2_conversion
 """
 struct DQConversion <: M.AbstractDimConversion
     quantity::M.Observable{Any}
-    automatic_units::Bool
     units_in_label::M.Observable{Bool}
 end
 
 function DQConversion(quantity=M.automatic; units_in_label=true)
-    return DQConversion(quantity, quantity isa M.Automatic, units_in_label)
+    return DQConversion(quantity, units_in_label)
 end
 
 M.needs_tick_update_observable(conversion::DQConversion) = conversion.quantity
@@ -78,19 +77,22 @@ function M.get_ticks(conversion::DQConversion, ticks, scale, formatter, vmin, vm
 end
 
 function M.convert_dim_value(conversion::DQConversion, attr, values, last_values)
-    if conversion.automatic_units
+    if conversion.quantity[] isa M.Automatic
         conversion.quantity[] = oneunit(first(values))
     end
 
     unit = conversion.quantity[]
+
     if !isempty(values)
         # try if conversion works, to through error if not!
         # Is there a function for this to check in DynamicQuantities?
         unit_convert(unit, first(values))
     end
+
     return unit_convert(conversion.quantity[], values)
 end
 
+# Can probably be dropped, but keeping for correspondence with unitful-integration.jl in upstream Makie
 function M.convert_dim_value(conversion::DQConversion, values)
     return unit_convert(conversion.quantity[], values)
 end
@@ -106,7 +108,7 @@ end
     using DynamicQuantities, Makie, Dates
     const DQConversion = Base.get_extension(DynamicQuantities, :DynamicQuantitiesMakieExt).DQConversion
 
-    @recipe DQPlot (x, y) begin
+    @recipe DQPlot (x,) begin
     end
 
     function Makie.plot!(plot::DQPlot)
@@ -126,8 +128,8 @@ end
 @testitem "unit switching" begin
     using DynamicQuantities, Makie
     f, ax, pl = scatter((1:10)u"m")
-    @test_throws DynamicQuantities.DimensionError scatter!(ax, (1:10)u"kg")
-    @test_throws MethodError scatter!(ax, (1:10))
+    @test_throws Makie.ComputePipeline.ResolveException{T} where {T <: DynamicQuantities.DimensionError} scatter!(ax, (1:10)u"kg")
+    @test_throws Makie.ComputePipeline.ResolveException{MethodError} scatter!(ax, (1:10))
 end
 
 @testitem "observables cleanup" begin
