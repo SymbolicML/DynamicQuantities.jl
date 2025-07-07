@@ -23,14 +23,14 @@ a particular value.
 
 # Example
 
-```julia
+```jldoctest register-unit
 julia> @register_unit MyVolt 1.5u"V"
 ```
 
 This will register a new unit `MyVolt` with a value of `1.5u"V"`.
 You can then use this unit in your calculations:
 
-```julia
+```jldoctest register-unit
 julia> x = 20us"MyVolt^2"
 20.0 MyVolt²
 

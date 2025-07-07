@@ -38,7 +38,7 @@ for op in [:*, :/, :+, :-], (first, second) in [(:AffineUnit, :Number), (:Number
 
     # Skip the already defined value * unit case
     op == :* && first == :Number && second == :AffineUnit && continue
-    
+
     @eval function Base.$op(a::$first, b::$second)
         throw(ArgumentError("Affine units only support scalar multiplication in the form 'number * unit', e.g., 22 * ua\"degC\", which will immediately convert it to a regular `Quantity{Float64,Dimensions{R}}`. Other operations are not supported."))
     end
@@ -122,7 +122,7 @@ Convert a quantity `q` to the numerical value in terms of affine units specified
 then strip the units. This allows getting the numerical value in terms of degrees Celsius or Fahrenheit.
 
 # Examples
-```julia
+```jldoctest
 julia> ustrip(ua"degC", 27ua"degC")
 27.0
 
