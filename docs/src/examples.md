@@ -40,13 +40,13 @@ Also, using `DynamicQuantities.Constants`, we were able to obtain the (dimension
 Let's solve a simple projectile motion problem.
 First load the `DynamicQuantities` module:
 
-```julia
+```@example projectile
 using DynamicQuantities
 ```
 
 Set up initial conditions as quantities:
 
-```julia
+```@example projectile
 # Can explicitly import units:
 using DynamicQuantities: km, m, s, min
 
@@ -54,57 +54,63 @@ y0 = 10km
 v0 = 250m/s
 θ = deg2rad(60)
 g = 9.81m/s^2
+nothing # hide
 ```
 
 Next, we use trig functions to calculate x and y components of initial velocity.
 `vx0` is the x component and
 `vy0` is the y component:
 
-```julia
+```@example projectile
 vx0 = v0 * cos(θ)
 vy0 = v0 * sin(θ)
+nothing # hide
 ```
 
 Next, let's create a time vector from 0 seconds to 1.3 minutes.
 Note that these are the same dimension (time), so it's fine to treat
 them as dimensionally equivalent!
 
-```julia
+```@example projectile
 t = range(0s, 1.3min, length=100)
+nothing # hide
 ```
 
 Next, use kinematic equations to calculate x and y as a function of time.
 `x(t)` is the x position at time t, and
 `y(t)` is the y position:
 
-```julia
+```@example projectile
 x(t) = vx0*t
 y(t) = vy0*t - 0.5*g*t^2 + y0
+nothing # hide
 ```
 
 These are functions, so let's evaluate them:
 
-```julia
+```@example projectile
 x_si = x.(t)
 y_si = y.(t)
+nothing # hide
 ```
 
 These are regular vectors of quantities
 with `Dimensions` for physical dimensions.
 
-Next, let's plot the trajectory.
-First convert to km and strip units:
+Next, let's plot the trajectory. We will use [Makie.jl](https://docs.makie.org/) for its nice unit support:
 
-```julia
-x_km = ustrip.(x_si .|> us"km")
-y_km = ustrip.(y_si .|> us"km")
+```@example projectile
+using CairoMakie
+
+# Convert to kilometers first
+x_km = x_si .|> us"km"
+y_km = y_si .|> us"km"
+
+# Display
+lines(x_km, y_km; label="Trajectory", axis=(xlabel="x [km]", ylabel="y [km]"))
 ```
 
-Now, we plot:
-
-```julia
-plot(x_km, y_km, label="Trajectory", xlabel="x [km]", ylabel="y [km]")
-```
+See [Makie.jl > Dimension conversions](https://docs.makie.org/stable/explanations/dim-converts#Dimension-conversions) for more.
 
 ## 3. Using dimensional angles
 
