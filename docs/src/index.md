@@ -1,6 +1,6 @@
-<div align="center">
 
-<img src="https://github.com/SymbolicML/DynamicQuantities.jl/assets/7593028/10b1e6b8-f1c5-43bc-97e6-4ddb4c175293" width=500>
+
+![](https://github.com/SymbolicML/DynamicQuantities.jl/assets/7593028/10b1e6b8-f1c5-43bc-97e6-4ddb4c175293)
 
 
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://symbolicml.org/DynamicQuantities.jl/dev/)
@@ -8,7 +8,7 @@
 [![Coverage](https://coveralls.io/repos/github/SymbolicML/DynamicQuantities.jl/badge.svg?branch=main)](https://coveralls.io/github/SymbolicML/DynamicQuantities.jl?branch=main)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
-</div>
+
   
 DynamicQuantities defines a simple statically-typed `Quantity` type for Julia.
 Physical dimensions are stored as a *value*, as opposed to a parametric type, as in [Unitful.jl](https://github.com/PainterQubits/Unitful.jl).
@@ -478,4 +478,5 @@ julia> @btime f($q8);
 julia> @btime f($q32);
   1.883 μs (4 allocations: 39.12 KiB)
 ```
+
 
