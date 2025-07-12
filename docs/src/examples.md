@@ -97,21 +97,20 @@ nothing # hide
 These are regular vectors of quantities
 with `Dimensions` for physical dimensions.
 
-Next, let's plot the trajectory.
-First convert to km and strip units:
+Next, let's plot the trajectory. We will use [Makie.jl](https://docs.makie.org/) for its nice unit support:
 
-```julia
-x_km = ustrip.(x_si .|> us"km")
-y_km = ustrip.(y_si .|> us"km")
+```@example projectile
+using CairoMakie
+
+# Convert to kilometers first
+x_km = x_si .|> us"km"
+y_km = y_si .|> us"km"
+
+# Display
+lines(x_km, y_km; label="Trajectory", axis=(xlabel="x [km]", ylabel="y [km]"))
 ```
 
-Now, we plot:
-
-```julia
-plot(x_km, y_km, label="Trajectory", xlabel="x [km]", ylabel="y [km]")
-```
-
-See [Plotting](@ref) for more plotting support with units.
+See [Makie.jl > Dimension conversions](https://docs.makie.org/stable/explanations/dim-converts#Dimension-conversions) for more.
 
 ## 3. Using dimensional angles
 
@@ -511,60 +510,3 @@ function my_func(x::UnionAbstractQuantity{T,D}) where {T,D}
     return x / ustrip(x)
 end
 ```
-
-### Plotting
-
-We can use [`Makie.jl`](https://docs.makie.org/v0.22/) to create plots with units. Below are a few usage examples. See [Makie.jl > Dimension conversion](https://docs.makie.org/stable/explanations/dim-converts#Current-conversions-in-Makie) for more.
-
-!!! warning "Experimental"
-    Unit support is still a new feature, so please report an issue if you notice any unintended behavior.
-
-Continuing from [2. Projectile motion](@ref), we can also plot `x_si` and `y_si` directly without needing to manually strip their units beforehand:
-
-```@example projectile
-using CairoMakie
-
-lines(x_si, y_si; axis=(xlabel="x", ylabel="y"))
-```
-
-To convert units, we pass a `DQConversion` object to `axis` with our desired unit:
-
-```@example projectile
-# Temporary until this is upstreamed to Makie.jl
-const DQConversion = Base.get_extension(DynamicQuantities, :DynamicQuantitiesMakieExt).DQConversion
-
-lines(x_si, y_si;
-    axis = (
-        xlabel = "x",
-        ylabel = "y",
-        dim1_conversion = DQConversion(us"km"),
-        dim2_conversion = DQConversion(us"km"),
-    )
-)
-```
-
-!!! note
-    A [Symbolic Dimensions](@ref) object is passed to `DQConversion` for this conversion to work properly. Passing a regular `Quantity`, e.g., (u"km") will throw an error.
-
-Finally, the desired units for a figure can also be set ahead of time. All plot objects within it will automatically convert to the given units:
-
-```@example projectile
-fig = Figure()
-
-ax = Axis(fig[1, 1];
-    xlabel = "time",
-    ylabel = "displacement",
-    dim1_conversion=DQConversion(us"s"),
-    dim2_conversion=DQConversion(us"km"),
-)
-
-lines!(ax, t, x_si; label="x")
-lines!(ax, t, y_si; label="y")
-
-axislegend()
-
-fig
-```
-
-!!! tip
-    For nice unit support with Makie.jl and tabular data, see [AlgebraOfGraphics.jl > Units](https://aog.makie.org/dev/examples/scales/units#units).
