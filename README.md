@@ -321,7 +321,7 @@ julia> ustrip(ua"degC", 295.15u"K")
 22.0
 ```
 
-### [Arrays](@id home_arrays)
+### Arrays
 
 For working with an array of quantities that have the same dimensions,
 you can use a `QuantityArray`:
