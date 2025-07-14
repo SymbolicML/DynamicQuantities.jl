@@ -366,7 +366,7 @@ So we can see the `QuantityArray` version saves on both time and memory.
 
 By default, DynamicQuantities will create a `QuantityArray` from an `AbstractArray`, similarly to how a `Quantity` is created from a scalar in the [Usage](@ref) examples:
 
-```@repl quantity-array
+```julia
 using DynamicQuantities # hide
 
 x = [0.3, 0.4, 0.5]u"km/s"
