@@ -376,7 +376,7 @@ y = (42:45) * u"kg"
 
 This can be overridden to produce a vector of `Quantity`s by explicitly broadcasting the unit:
 
-```@repl quantity-array
+```julia
 z = [0.3, 0.4, 0.5] .* u"km/s"
 ```
 
