@@ -282,7 +282,7 @@ f_square(v) = v^2 * 1.5 - v^2
 println("Applying function to y_q: ", sum(f_square.(y_q)))
 ```
 
-See [Home > Arrays](https://ai.damtp.cam.ac.uk/dynamicquantities/stable/#arrays) for more.
+See [Home > Arrays](index.md#Arrays) for more.
 
 ### Fill
 
